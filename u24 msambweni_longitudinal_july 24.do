@@ -4,7 +4,7 @@
  *lebeaud lab               				        *
  *last updated july 23, 2016  						*
  ***************************************************/
-cd "c:\users\amy\google drive\labeaud\longitudinal_data_chkv_and_dengue_cases-2016-07-14\longitudinal data chkv and dengue cases"
+cd "C:\Users\Amy\Google Drive\labeaud\R01\longitudinal_data_chkv_and_dengue_cases-2016-07-14\longitudinal data chkv and dengue cases"
 capture log close 
 log using "msambwenijuly23,2016.smcl", text replace 
 set scrollbufsize 100000
@@ -16,7 +16,7 @@ foreach dataset in "july 1 2016 - coast (msambweni, ukunda) aic elisa.common she
 		insheet using "`dataset'", clear
 				**make id_wide. creating a new study id that we can use for longitudinal data over time. 7 digit child #
 							*rename studyid1 to studyid and drop studyid2 which is childnum
-								capture renae studyid2 childnum
+								capture rename studyid2 childnum
 								capture rename studyid1 studyid
 							*drop if studyid==""
 								drop if studyid==""
@@ -221,27 +221,69 @@ replace malariabldsmrpos = 1 if malariabldsmrpos == 2
 tab malariabldsmrpos  malariabloods~r
 sum  malariabldsmrpos  malariabloods~r
 
+**import and merge the RDT results
+	import excel "RDT_results_aug2.xls", sheet("RDT_results_aug2") firstrow clear
+				rename STUDY_ID studyid
+				**make id_wide. creating a new study id that we can use for longitudinal data over time. 7 digit child #
+							*rename studyid1 to studyid and drop studyid2 which is childnum
+								capture rename studyid2 childnum
+								capture rename studyid1 studyid
+							*drop if studyid==""
+								drop if studyid==""
+								replace studyid=lower(studyid)
+						gen firstpart= reverse(studyid)
+						order studyid firstpart
+						replace firstpart = substr(studyid, strpos(studyid, ":") -7, .)
+						replace firstpart = substr(firstpart, strpos(firstpart, ":") -7, .)
+						drop firstpart
+						gen firstpart= reverse(studyid)
+						replace firstpart = substr(firstpart, strpos(firstpart, ":") -7, .)
+						order studyid firstpart
+						replace firstpart= reverse(firstpart)
+						forval i = 1/3 { 
+							gen firstpart_`i' = substr(firstpart, `i', 1) 
+						}
+						rename firstpart_1 id_city
+						rename firstpart_2 id_cohort
+						rename firstpart_3 id_visit
+						drop firstpart
+						gen id_childnum = substr(studyid, strpos(studyid, ":") + 4, .)
+						egen id_wide = concat(id_city id_cohort id_childnum)
+						order studyid id_wide id_city id_cohort id_childnum id_visit
+					*unique id
+						rename *, lower
+						replace id_wide = lower(id_wide) 
+						bysort id_wide id_visit: gen freq_id_wide_visit = _n
+						list id_wide id_visit freq_id_wide_visit if freq_id_wide_visit>1
+						tostring freq_id_wide_visit, replace
+			save RDT_results_aug2.dta, replace
+		use main2.dta, clear
+			drop _merge
+			merge 1:1 id_wide id_visit using RDT_results_aug2.dta
+			/***none of these results match to currently available dataset as this is a msambweni only data set. 
+			*/
+		save main3.dta, replace
 
 ***do this over strata of stanford vs kenya and igg vs pcr. no igm in this dataset***
-	save main2.dta, replace
-	use main2.dta, clear
+	save main3.dta, replace
+	use main3.dta, clear
 		drop *stfd* 
 		save kenya_pcr_igg_only.dta, replace
 
-	use main2.dta, clear
+	use main3.dta, clear
 		drop *stfd* *igg*
 		save kenya_pcr_only.dta, replace
 
-	use main2.dta, clear
+	use main3.dta, clear
 		drop *stfd* *pcr*
 		save kenya_igg_only.dta, replace
 
-	use main2.dta, clear
+	use main3.dta, clear
 		keep *stfd* age *gender* *id *visit id* visit* 
 		save stfd_only.dta, replace
 
 ***this is the loop i can use with malaria results	
-foreach dataset in "kenya_pcr_igg_only.dta" "kenya_igg_only.dta" "kenya_pcr_only.dta" "main2.dta"{
+foreach dataset in "kenya_pcr_igg_only.dta" "kenya_igg_only.dta" "kenya_pcr_only.dta" "main3.dta"{
 
 **this is the loop i can use without malaira reults
 *foreach dataset in "stfd_only.dta"{
