@@ -4,115 +4,79 @@
  *lebeaud lab               				        		  *
  *last updated august 15, 2016  							  *
  **************************************************************/
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016"
-
+cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18"
 capture log close 
 log using "R01_discrepencies.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
 **lab
+foreach dataset in "MILALANI HCC.csv" "MILALANI HCC_may4.csv" "Msambweni  AIC.csv" "Msambweni  AIC_infectiongroups.csv" "Msambweni  AIC_may4.csv" "NGANJA HCC.csv" "NGANJA HCC_may4.csv" "PCR DATABASE AUGUST 2016.csv" "Ukunda AIC.csv" "Ukunda AIC_may4.csv" "Ukunda HCC.csv" "Ukunda HCC_may4.csv" "CHULAIMBO AIC.csv" "CHULAIMBO HCC.csv" "KISUMU AIC.csv" "KISUMU HCC.csv" "Copy of ArbovirusCBC samples.csv"{ 
+		insheet using "`dataset'", clear
+			capture rename sampleid studyid
+			capture rename *id studyid
+			capture rename *NUMBER studyid
+			capture rename *ALIQUOT studyid
+			
+			replace studyid= subinstr(studyid, ".", "",.) 
+			replace studyid= subinstr(studyid, "/", "",.)
+			replace studyid= subinstr(studyid, " ", "",.)
+		save "`dataset'.dta",  replace
+	}
+
+foreach dataset in "PRNT_july 2016 _Ukunda.xls" "PRNT LaBeaud RESULTS - july 2016.xls" "RDT_results_aug2.xls" "DENGUE RDT RESULTS_august2.xls"{ 
+	import excel "`dataset'", clear firstrow
+			capture rename sampleid studyid
+			capture rename *id studyid
+			capture rename *ID studyid
+			capture rename *ALIQUOT studyid
+			capture rename *NUMBER studyid
+
+			replace studyid= subinstr(studyid, ".", "",.) 
+			replace studyid= subinstr(studyid, "/", "",.)
+			replace studyid= subinstr(studyid, " ", "",.)
+	save "`dataset'.dta",  replace
+	}
+
 	clear
-	append using "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\MILALANI HCC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\MILALANI HCC_may4.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Msambweni  AIC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Msambweni  AIC_infectiongroups.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Msambweni  AIC_may4.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\NGANJA HCC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\NGANJA HCC_may4.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Ukunda AIC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Ukunda AIC_may4.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Ukunda HCC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Ukunda HCC_may4.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\CHULAIMBO AIC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\CHULAIMBO HCC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\KISUMU AIC.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\KISUMU HCC.csv"
+	append using "Msambweni  AIC.csv.dta" "Msambweni  AIC_infectiongroups.csv.dta" "Msambweni  AIC_may4.csv.dta" "NGANJA HCC.csv.dta" "Ukunda AIC.csv.dta" "Ukunda HCC.csv.dta" "CHULAIMBO AIC.csv.dta" "CHULAIMBO HCC.csv.dta" "KISUMU AIC.csv.dta" "KISUMU HCC.csv.dta" "MILALANI HCC.csv.dta", generate(append) force
+	save merged.dta, replace
 
-	*	append using "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\Elizas_aug102016\Msambweni  AIC.csv.dta", generate(append) force
-	drop if id_wide==""
-	bysort id_wide : gen duplab = _n 
-	replace duplab = duplab -1
-	bysort id_wide id_visit : replace duplab = _n 
-	drop if duplab >1
-save lab.dta, replace
+foreach dataset in "MILALANI HCC_may4.csv.dta" "NGANJA HCC_may4.csv.dta" "PCR DATABASE AUGUST 2016.csv.dta" "PRNT_july 2016 _Ukunda.xls.dta" "PRNT LaBeaud RESULTS - july 2016.xls.dta" "Ukunda HCC_may4.csv.dta" "Ukunda AIC_may4.csv.dta" "RDT_results_aug2.xls.dta" "Copy of ArbovirusCBC samples.csv.dta" "DENGUE RDT RESULTS_august2.xls.dta"{
+	use "`dataset'" 
+	capture rename sampleid studyid
+	capture rename *id studyid
+	capture rename *ALIQUOT studyid
+	
+	replace studyid= subinstr(studyid, ".", "",.) 
+	replace studyid= subinstr(studyid, "/", "",.)
+	replace studyid= subinstr(studyid, " ", "",.)
 
-drop v31 v32 v33
-tostring *, replace force
-
-**field
-	clear
-	append using "coastal data-katherine july_18_2016_coast_aic_init-katherine_coast_aic_init-katherine.csv.dta" "coastal data-katherine july_18_2016_file1   4 coast_aicfu_18apr16.csv.dta", generate(append) force
-	bysort id_wide id_visit: gen freq_id_wide_appended = _n
-	tab freq_id_wide_appended
-	drop if freq_id_wide_appended >1
-	save demography.dta, replace
-
-**malaria
-	clear
-	use "coastal data-katherine july_18_2016_file2  aic ukunda malaria....csv.dta" 
-	bysort id_wide id_visit: gen freq_malaria = _n
-	drop if freq_malaria >1
-	drop freq_id_wide 
-	*drop studyid2
-	tab gender
-	encode gender, gen(gender01)
-	drop gender
-	rename gender01 gender
-	replace gender = 0 if gender ==1
-	replace gender = 1 if gender ==2
-	save malaria.dta, replace
-
-**merge**	
-	use lab.dta, clear
-		drop append
-		drop freq_id_wide_visit
-	merge 1:1 studyid using demography.dta
+	merge m:m studyid using "merged.dta", force	
 	drop _merge
 	save merged.dta, replace
-	use merged.dta, replace
-	destring childnum, replace force
-	merge 1:1 studyid using malaria.dta
-		drop if _merge ==2
-	save merged.dta, replace		
-
-**epi analysis*****
-				*make the infections groups: (dengue positive, chikv positivie, negative, coinfection), by lab (kenya and stanford) and by tests(pcr+/pcr+ igm+/pcr+ igg+/igg+)
-						/*
-				infection groups (9)				lab (2)			lab test (3)	total strata combos (54)
-				dengue infected						kenya			pcr				
-				chikv infected						stanford		pcr/igm	
-				co-infected											pcr/igg	
-				non-infected			
-				dengue unknown chikv+			
-				dengue unkonwn chikv- 			
-				dengue + chikv unknown			
-				dengue - chikv unknown			
-				unknown dengue unknown chik			
-						*/
-
-				/* i want the following infection_groups: 
-								dengue		
-									+							-						missing/unequivocal
-				chikv	+			coinfection					chikv+					chikv+ dengue unknown
-						
-						-			dengue +					not-infected			chikv- dengueunknown
-					
-					missing/
-					unequivocal		dengue+ chikv unknown		dengue- chikvunknown	bothunknown
-
-				*/
+}	
+	drop if studyid==""
+	bysort studyid: gen duplab = _n 
+	replace duplab = duplab -1
+	bysort studyid: replace duplab = _n 
+save lab.dta, replace
+		keep if duplab >1 
+save dup.dta, replace
+use lab.dta, replace
+	drop if duplab >1
+save lab.dta, replace
+merge m:m studyid using "dup.dta", force	
 
 tostring *, replace force
-foreach var of varlist studyid id_wide id_city id_cohort id_childnum id_visit datesamplecollected_initialvisit chikvpcr_initialvisit chikvigm_initialvisit denvpcr_initialvisit denvigm_initialvisit chikviggod_initialvisit chikviggresult_initialvisit stanfordchikvod_initialvisit stanfordchikviggresult_initialvi denviggod_initialvisit denvresult_initialvisit sample_initialvisit stanforddenvigg_initialvisit stanforddenvod_initialvisit followupaliquotid_onemonthfollow chikvpcr_onemonthfollowupvisit1 chikvigm_onemonthfollowupvisit1 denvpcr_onemonthfollowupvisit1 denvigm_onemonthfollowupvisit1 stanfordchikvod_onemonthfollowup stanfordchikviggresult_onemonthf chikvigg_onemonthfollowupvisit1 chikviggod_onemonthfollowupvisit denvigg_onemonthfollowupvisit1 denviggod_onemonthfollowupvisit1 _onemonthfollowupvisit1 sample_onemonthfollowupvisit1 stanforddenvigg_onemonthfollowup stanforddenvod_onemonthfollowupv v31 v32 v33 datesamplewascollected_initialvi chikvigg_initialvisit denvigg_initialvisit followupaliquotid_followupvisit1 chikvigg_followupvisit1 chikviggod_followupvisit1 denvigg_followupvisit1 denviggod_followupvisit1 followupaliquotid_followupvisit2 chikvigg_followupvisit2 chikviggod_followupvisit2 denvigg_followupvisit2 denviggod_followupvisit2 followupaliquotid_followupvisit3 chikvigg_followupvisit3 chikviggod_followupvisit3 denvigg_followupvisit3 denviggod_followupvisit3 followupaliquotid_followupvisit4 chikvigg_followupvisit4 chikviggod_followupvisit4 denvigg_followupvisit4 denviggod_followupvisit4 followupaliquotid_followupvisit5 chikvigg_followupvisit5 chikviggod_followupvisit5 denvigg_followupvisit5 denviggod_followupvisit5 followupaliquotid_followupvisit6 chikvigg_followupvisit6 chikviggod_followupvisit6 denvigg_followupvisit6 denviggod_followupvisit6 followupaliquotid_followupvisit7 chikvigg_followupvisit7 chikviggod_followupvisit7 denvigg_followupvisit7 denviggod_followupvisit7 followupaliquotid_followupvisit8 chikvigg_followupvisit8 chikviggod_followupvisit8 denvigg_followupvisit8 denviggod_followupvisit8 followupaliquotid_followupvisit9 chikvigg_followupvisit9 chikviggod_followupvisit9 denvigg_followupvisit9 denviggod_followupvisit9 duplab append childnum start end today hospitalsite hccparticipant hccid visittype childvillage childvillagev11 othchildvillage interviewername othinterviewername interviewdate childidnum ffthname informantrelation othinformantrelation dob age gender phonenumber othphonenumber childoccupation othchildoccupation numsiblings educlevel otheduclevel mumeduclevel othmumeduclevel rooftype othrooftype latrinetype othlatrinetype floortype othfloortype watersource lightsource othlightsource windows windowscoded windownum numroomhse numpplehse v46 othnumchild numsleeproom telephone radio television bicycle motorizedvehicle domesticworker childcontact outdooractivity mosquitobites mosquitocoil sleepbednet childtravel wheretravel nightaway everhospitalised numhospitalized counthosp reasonhospitalized1 datehospitalized1 hospitalname1 othhospitalname1 durationhospitalized1 reasonhospitalized2 datehospitalized2 hospitalname2 othhospitalname2 durationhospitalized2 reasonhospitalized3 datehospitalized3 hospitalname3 othhospitalname3 durationhospitalized3 reasonhospitalized4 datehospitalized4 hospitalname4 othhospitalname4 durationhospitalized4 reasonhospitalized5 datehospitalized5 hospitalname5 othhospitalname5 durationhospitalized5 eversurgery reasonsurgery datesurgery gestational breastfed durationbfed othdurationbfed childvaccination yellowfever dateyellowfever encephalitis dateencephalitis pastmedhist othpastmedhist malariapastmedhist pneumoniapastmedhist currenttakingmeds currentmeds othcurrentmeds paracetamolcurrentmeds everpregnant numdaysonset currentsymptoms fever chills sickfeeling shortnessofbreath generalbodyache itchiness redeyes jointpains musclepains bonepains headache painbehindeyes runnynose sorethroat cough earache lossofappetite funnytaste nausea vomiting diarrhea dizziness abdominalpain bloodystool bruises fits bloodyurine impairedmentalstatus bleedingums eyessensitivetolight bloodynose bloodyvomit stiffneck rash othcurrentsymptoms temperature childheight childweight headcircum heartrate resprate systolicbp diastolicbp pulseoximetry performvisualacuity leftvisualacuity rightvisualacuity headneckexam sclerallcterus v163 adenopathy otherhneck cliniciannoteshneck chestexam chestexamcoded cliniciannoteschest heartexam heartexamcoded cliniciannotesheart abdomenexam splenomegaly adbtenderness hepatomegaly abdlocation cliniciannotesabd nodeexam nodenormal nodeabnormal othnode othnodeexam cliniciannotesnode jointexam jointnormal jointabnormal jointlocation cliniciannotesjoint skinexam skinexamcoded othskinexam cliniciannotesskin neuroexam neuroexamcoded neuronormal neuroabnormal othneuroexam cliniciannotesneuro tourniquettest maltestordered othmaltestordered bsresults rdtresults labtests malariabloodsmear ovaparasites hemoglobin wbc neutropercent lymphpercent monopercent eosinopercent v214 mcv platelets othbloodcounts hb hivresult urinalysisresult abnormalurinalysisresult stoolovacyst othstoolovacyst othstooltestresult widalresult sicklecellresult othlabtests othlabresults primarydiag othprimarydiag primarybacterialdx secondarydiag othsecondarydiag secondarybacterialdx priviraldisease specifypriviraldisease othspecifypriviraldisease pribacterialdisease specifypribactdisease priparasiticdisease specifypriparadisease othspecifypriparadisease primarydiagv11 othprimarydiagv11 cliniciannotesprim v246 v247 v248 secviraldisease specifysecviraldisease othspecifysecviraldisease secbacterialdisease specifysecbactdisease secparasiticdisease specifysecparadisease othspecifysecparadisease freq_id_wide_visit visit funo v5 interviewdate2 age2 currentsick stageofdisease othstageofdisease healthimpacts othhealthimpacts medsprescribe othmedsprescribe outcome othoutcome outcomehospitalized locationhospital othlocationhospital datehospitalized version key freq_id_wide_appended initialdate2 initialdate2_format unformatted_dob childsname mothername fathername village nearestpoint spp1 countul1 pos_neg gametocytes1 expectedfollowupdate v19 actualfollowdate v21 followed treatment1 spp2 countul2 gametocytes2 treatment2 pos_neg1 notes freq_malaria _merge{ 
+foreach var of varlist DATE studyid IgM IgG NSI date igm igg nsi wbc ne ly mo eo ba v12 v13 v14 v15 v16 rbc hgb hct mcv mch mchc rdw plt pct mpv pdw blasts atypically lymointerference microcytosis pltrbcinterference lymphocytosis leftshift monocytosis anemia smallnucleatedcell abnormalmchc eosinophilia neutrophilia leukocytosis neeointerference erythrocytosis lymphopenia thrombocytopenia thrombocytosis immaturegr neutropenia pltclumps basophilia hypochromia anisocytosis remarks v54 DATE_formatted NSI_Result datesamplecollected_initialvisit chikvpcr_initialvisit chikvigm_initialvisit denvpcr_initialvisit denvigm_initialvisit stanfordchikvod_initialvisit stanfordchikvigg_initialvisit chikvigg_initialvisit chikviggod_initialvisit denvigg_initialvisit denviggod_initialvisit stanforddenvigg_ stanforddenvod_ followupaliquotid_onemonthfollow chikvpcr_onemonthfollowupvisit1 chikvigm_onemonthfollowupvisit1 denvpcr_onemonthfollowupvisit1 denvigm_onemonthfollowupvisit1 stanfordchikvod_onemonthfollowup stanfordchikvigg_onemonthfollowu chikvigg_onemonthfollowupvisit1 chikviggod_onemonthfollowupvisit denvigg_onemonthfollowupvisit1 denviggod_onemonthfollowupvisit1 v26 v27 v28 chikvigg_onemonthfollowupvisit2 v30 denvigg_onemonthfollowupvisit2 denviggod_onemonthfollowupvisit2 v33 chikvigg_onemonthfollowupvisit3 v35 denvigg_onemonthfollowupvisit3 denviggod_onemonthfollowupvisit3 v38 chikvigg_onemonthfollowupvisit4 v40 denvigg_onemonthfollowupvisit4 denviggod_onemonthfollowupvisit4 villhouse personid child_name collectiondate_initialvisit aliquotid_initialvisit followupaliquotid_followupvisit1 dateofcollection_followupvisit1 aliquotid_followupvisit1 chikviggod_followupvisit1 chikvigg_followupvisit1 denviggod_followupvisit1 denvigg_followupvisit1 followupaliquotid_followupvisit2 chikvigg_followupvisit2 chikviggod_followupvisit2 denvigg_followupvisit2 denviggod_followupvisit2 followupaliquotid_followupvisit3 chikvigg_followupvisit3 chikviggod_followupvisit3 denvigg_followupvisit3 denviggod_followupvisit3 followupaliquotid_followupvisit4 chikvigg_followupvisit4 chikviggod_followupvisit4 denvigg_followupvisit4 denviggod_followupvisit4 followupaliquotid_followupvisit5 chikvigg_followupvisit5 chikviggod_followupvisit5 denvigg_followupvisit5 denviggod_followupvisit5 followupaliquotid_followupvisit6 chikvigg_followupvisit6 chikviggod_followupvisit6 denvigg_followupvisit6 denviggod_followupvisit6 followupaliquotid_followupvisit7 chikvigg_followupvisit7 chikviggod_followupvisit7 denvigg_followupvisit7 denviggod_followupvisit7 followupaliquotid_followupvisit8 chikvigg_followupvisit8 chikviggod_followupvisit8 denvigg_followupvisit8 denviggod_followupvisit8 followupaliquotid_followupvisit9 chikvigg_followupvisit9 chikviggod_followupvisit9 denvigg_followupvisit9 denviggod_followupvisit9 DENV2 WNV CHIKV ONNV datesamplecollected datepcrdone site aliquotid denvpcrresults denvserotype chikvpcrresults datesamplewascollected_initialvi chikviggresults_followupvisit2 datesamplewascollected_ chikvigg_ chikviggod_ denvigg_ denviggod_ chikviggresuilts_followupvisit2 append chikviggresult_initialvisit stanfordchikviggresult_initialvi denvresult_initialvisit sample_initialvisit stanforddenvigg_initialvisit stanforddenvod_initialvisit stanfordchikviggresult_onemonthf _onemonthfollowupvisit1 sample_onemonthfollowupvisit1 stanforddenvigg_onemonthfollowup stanforddenvod_onemonthfollowupv v31 v32 v22 v23 v24 v29 v34 v37 chikvigg_onemonthfollowupvisit5 v39 denvigg_onemonthfollowupvisit5 denviggod_onemonthfollowupvisit5 v42 chikvigg_onemonthfollowupvisit6 v44 denvigg_onemonthfollowupvisit6 denviggod_onemonthfollowupvisit6 v47 chikvigg_onemonthfollowupvisit7 v49 denvigg_onemonthfollowupvisit7 denviggod_onemonthfollowupvisit7 kenyachikvreading_initialvisit kenyadenvreading_initialvisit stanforddenvreading_initialvisit initialaliquotid_initialvisit stforddenviggod_initialvisit stforddenvigg_initialvisit stforddenviggod_onemonthfollowup stforddenvigg_onemonthfollowupvi datesamplerun_41725 followupid_followupvisit1 followupid_followupvisit2 datesamplerun_initialvisit chikvpcr_onemonthfollowupvisit chikvigm_onemonthfollowupvisit denvpcr_onemonthfollowupvisit denvigm_onemonthfollowupvisit chikvigg_onemonthfollowupvisit denvigg_onemonthfollowupvisit denviggod_onemonthfollowupvisit _onemonthfollowupvisit stfrddenviggod_onemonthfollowupv stfrddenvigg_onemonthfollowupvis dateofcollection_initialvisit dateofcollection_followupvisit2 duplab _merge{
 	replace `var'=lower(`var')
 }
 
 
-foreach var of varlist stanford* *pcr* *res* *denv* denv* *chikv* chikv*{ 
-	tab `var'
-}
-
-destring age*, replace
-gen ages = age
-replace ages = age2 if ages==.
-tab ages
-drop age age2
-rename ages age
-
-destring gender, replace 
-
-encode malariabloods~r , gen(malariabldsmrpos)
-replace malariabldsmrpos = 0 if malariabldsmrpos == 1
-replace malariabldsmrpos = 1 if malariabldsmrpos == 2
-tab malariabldsmrpos  malariabloods~r
-sum  malariabldsmrpos  malariabloods~r
+	foreach var of varlist *pcr* *res* *denv* denv* *chikv* chikv* *nsi{ 
+		tab `var' if strpos(`var', "neg")|strpos(`var', "pos")
+	}
 
 save main2.dta, replace
 
@@ -120,26 +84,13 @@ save main2.dta, replace
 ***do this over strata of stanford vs kenya and igg vs pcr. no igm in this dataset***
 	use main2.dta, clear
 		drop stanford* 
-		save kenya_pcr_igg_only.dta, replace
-
+		save kenya_only.dta, replace
 	use main2.dta, clear
-		drop stanford* *igg*
-		save kenya_pcr_only.dta, replace
-
-	use main2.dta, clear
-		drop stanford* *pcr*
-		save kenya_igg_only.dta, replace
-
-	use main2.dta, clear
-		keep studyid stanford* age *gender* 
+		keep studyid stanford* 
 		save stfd_only.dta, replace
 
-***this is the loop i can use with malaria results	
-foreach dataset in "kenya_pcr_igg_only.dta" "kenya_igg_only.dta" "kenya_pcr_only.dta" "main3.dta"{
-
-**this is the loop i can use without malaira reults
-*foreach dataset in "stfd_only.dta"{
-
+*make infection groups for each
+foreach dataset in "kenya_only.dta"  "stfd_only.dta" "main2.dta"{
 	use `dataset',clear
 	gen infection_groups=""
 	gen infection_group_deng =""
@@ -186,12 +137,7 @@ if infection_group_chikv!="chikv positive" foreach i of varlist *chik*{
 
 			*table one over infection_group
 			encode infection_groups, gen(groups)
-			*destring age, replace
-			*destring gender, replace
-			table1, by(groups) vars(gender cat\age contn\malariabldsmrpos cat\) saving("table1_msambweni`dataset'.xls", replace) missing test
-		*	table1, by(groups) vars(gender cat\age contn\) saving("table1_msambweni`dataset'.xls", replace) missing test
+			table1, vars(groups cat\) saving("table1_`dataset'.xls", replace) missing test
 
-			*sum over infection_group
-			by groups, sort : summarize age gender, format
-			local sum = r(mean)
+	
 }
