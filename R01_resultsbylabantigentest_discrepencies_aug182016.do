@@ -77,11 +77,7 @@ foreach var of varlist *pcr* *res* *denv* denv* *chikv* chikv* *nsi{
 		tab `var' if strpos(`var', "neg")|strpos(`var', "pos")
 	}
 
-save main2.dta, replace
 **create site, village, cohort variables from studyid
-
-
-
 						drop if studyid==""
 						gen firstpart= reverse(studyid)
 						order studyid firstpart
@@ -100,19 +96,43 @@ save main2.dta, replace
 						rename firstpart_3 id_visit
 						drop firstpart
 						gen id_childnum = substr(studyid, strpos(studyid, ":") + 4, .)
-												
 						
+						order id_city - id_childnum
+											 
+											
+						gen firstpart= reverse(studyid) if id_city== ""
+						order studyid firstpart 
+						replace firstpart = substr(studyid, strpos(studyid, ":") -4, .) if id_city== ""
+						replace firstpart = substr(firstpart, strpos(firstpart, ":") -4, .) if id_city== ""
+						drop firstpart
+						gen firstpart= reverse(studyid) if id_city== ""
+						replace firstpart = substr(firstpart, strpos(firstpart, ":") -4, .) if id_city== ""
+						order studyid firstpart
+						replace firstpart= reverse(firstpart) if id_city== ""
+						forval i = 1/3 { 
+							gen firstpart_`i' = substr(firstpart, `i', 1)  if id_city== ""
+						}
+						replace id_city = firstpart_1  if id_city== ""
+						replace id_cohort = firstpart_2  if id_cohort== ""
+						replace id_visit = firstpart_3 if id_visit== ""
+						drop firstpart
+						replace id_childnum = substr(studyid, strpos(studyid, ":") + 4, .) if id_city== ""
+
 						egen id_wide = concat(id_city id_cohort id_childnum)
 
+**gen assay var
+gen assay = . 
+replace assay = .
 
-
+save main2.dta, replace
 
 ***do this over strata of stanford vs kenya and igg vs pcr. no igm in this dataset***
 	use main2.dta, clear
 		drop stanford* 
 		save kenya_only.dta, replace
+
 	use main2.dta, clear
-		keep studyid stanford* site
+		keep studyid stanford* *id*
 		save stfd_only.dta, replace
 
 *make infection groups for each
@@ -163,7 +183,7 @@ if infection_group_chikv!="chikv positive" foreach i of varlist *chik*{
 
 			*table one over infection_group
 			encode infection_groups, gen(groups)
-			table1, by(site) vars(groups cat\) saving("table1_`dataset'.xls", replace) missing test
+			table1, by(groups) vars(id_city cat \ id_cohort cat\id_visit cat\assay cat) saving("table1_`dataset'.xls", replace) missing test
 
 	
 }
