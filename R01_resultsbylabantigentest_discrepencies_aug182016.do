@@ -362,7 +362,11 @@ use "final_incidence", clear
 
 
 
-		*all the stfd igg results are negative. 
+*all the stfd igg results are negative. 		
+*compared to stanford igg denv
+*grpdenv_kenya_incident_igg==dengue positive 
+diagti 0 307 577 2865 
+
 		tab grpdenv_stfd_incident_igg
 		tab grpdenv_kenya_incident_iggZ2 
 		tab grpdenv_kenya_incident_pcrZ2 
