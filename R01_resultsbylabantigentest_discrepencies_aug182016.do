@@ -387,7 +387,7 @@ use "final_incidence", clear
 		foreach var of varlist grp*{
 			tab `var'
 				replace `var' = "" if strpos(`var', "unknown")		
-				capture tab `var' if strpos(`var', "neg")|strpos(`var', "pos"), gen(`var'Z)
+				capture tab `var' if strpos(`var', "neg")|strpos(`var', "pos")
 		}
 save "final_incidence2", replace
 
@@ -445,7 +445,7 @@ use "final_prevalence", clear
 		foreach var of varlist grp*{
 			tab `var'
 				replace `var' = "" if strpos(`var', "unknown")		
-				capture tab `var' if strpos(`var', "neg")|strpos(`var', "pos"), gen(`var'Z)
+				capture tab `var' if strpos(`var', "neg")|strpos(`var', "pos")
 		}
 
 
