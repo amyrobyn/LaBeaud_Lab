@@ -4,14 +4,24 @@
  *lebeaud lab               				        		  *
  *last updated august 15, 2016  							  *
  **************************************************************/
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18"
+ /*to do
+ -longitudinal nature of data- survival analysis, rain data
+ -sensisitivty by site (west vs coast)
+ -prnt n = 200. check the sensitivity analysis
+ -rdt ns1+/+igm =+. compare that to stfd igg incidence.
+ -add 700 samples from ukunda
+ -pcr + copmared to igg at next visit (ab/bc/cd)
+ */
+ 
+*cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18"
+cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/lab results and discrepencies august 18"
 capture log close 
-log using "R01_discrepencies.smcl", text replace 
+log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 ***update these databases and add in the test date for antigen strata
 **lab
-foreach dataset in "MILALANI HCC.csv" "Msambweni AIC.csv" "NGANJA HCC.csv" "Ukunda AIC.csv" "Ukunda HCC.csv" "CHULAIMBO AIC.csv" "CHULAIMBO HCC.csv" "KISUMU AIC.csv" "KISUMU HCC.csv" "Copy of ArbovirusCBCDatabase_Updated_19th August 2016JS.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 2nd Followup Database_15Jul2016.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 3rd Followup_15Jul2016.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC Initial Database_15Jul2016.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Western Data-Katherine july_14_2016_Western_AIC_Init-Katherine.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Western Data-Katherine july_14_2016_Western_AICFU-Katherine.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_Coast_AIC_Init-Katherine_Coast_AIC_Init-Katherine.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_FILE1   4 coast_aicfu_18apr16.csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_FILE2  AIC Ukunda Malaria....csv" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 1st Followup Database_15Jul2016.csv"{ 
+foreach dataset in "MILALANI HCC.csv" "Msambweni AIC.csv" "NGANJA HCC.csv" "Ukunda AIC.csv" "Ukunda HCC.csv" "CHULAIMBO AIC.csv" "CHULAIMBO HCC.csv" "KISUMU AIC.csv" "KISUMU HCC.csv" "Copy of ArbovirusCBCDatabase_Updated_19th August 2016JS.csv" "West_HCC 2nd Followup Database_15Jul2016.csv" "West_HCC 3rd Followup_15Jul2016.csv" "West_HCC Initial Database_15Jul2016.csv" "Western Data-Katherine july_14_2016_Western_AIC_Init-Katherine.csv" "Western Data-Katherine july_14_2016_Western_AICFU-Katherine.csv" "Coastal Data-Katherine july_18_2016_Coast_AIC_Init-Katherine_Coast_AIC_Init-Katherine.csv" "Coastal Data-Katherine july_18_2016_FILE1   4 coast_aicfu_18apr16.csv" "Coastal Data-Katherine july_18_2016_FILE2  AIC Ukunda Malaria....csv" "West_HCC 1st Followup Database_15Jul2016.csv"{ 
 		insheet using "`dataset'", clear
 			capture drop studyid2
 			capture rename studyid1 studyid
@@ -41,7 +51,7 @@ foreach dataset in "PRNT_july 2016 _Ukunda.xls" "PRNT LaBeaud RESULTS - july 201
 	}
 
 	clear
-	append using "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 1st Followup Database_15Jul2016.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 2nd Followup Database_15Jul2016.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC 3rd Followup_15Jul2016.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\West_HCC Initial Database_15Jul2016.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Western Data-Katherine july_14_2016_Western_AIC_Init-Katherine.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Western Data-Katherine july_14_2016_Western_AICFU-Katherine.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_Coast_AIC_Init-Katherine_Coast_AIC_Init-Katherine.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_FILE1   4 coast_aicfu_18apr16.csv.dta" "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\lab results and discrepencies august 18\surveys\Coastal Data-Katherine july_18_2016_FILE2  AIC Ukunda Malaria....csv.dta", generate(append) force
+	append using "West_HCC 1st Followup Database_15Jul2016.csv.dta" "West_HCC 2nd Followup Database_15Jul2016.csv.dta" "West_HCC 3rd Followup_15Jul2016.csv.dta" "West_HCC Initial Database_15Jul2016.csv.dta" "Western Data-Katherine july_14_2016_Western_AIC_Init-Katherine.csv.dta" "Western Data-Katherine july_14_2016_Western_AICFU-Katherine.csv.dta" "Coastal Data-Katherine july_18_2016_Coast_AIC_Init-Katherine_Coast_AIC_Init-Katherine.csv.dta" "Coastal Data-Katherine july_18_2016_FILE1   4 coast_aicfu_18apr16.csv.dta" "Coastal Data-Katherine july_18_2016_FILE2  AIC Ukunda Malaria....csv.dta", generate(append) force
 	save merged.dta, replace
 
 foreach dataset in "PRNT_july 2016 _Ukunda.xls.dta" "PRNT LaBeaud RESULTS - july 2016.xls.dta" "RDT_results_aug2.xls.dta" "Copy of ArbovirusCBCDatabase_Updated_19th August 2016JS.csv.dta" "DENGUE RDT RESULTS_august2.xls.dta" "Msambweni AIC.csv.dta" "NGANJA HCC.csv.dta" "Ukunda AIC.csv.dta" "Ukunda HCC.csv.dta" "CHULAIMBO AIC.csv.dta" "CHULAIMBO HCC.csv.dta" "KISUMU AIC.csv.dta" "KISUMU HCC.csv.dta" "MILALANI HCC.csv.dta"{
@@ -200,55 +210,59 @@ foreach dataset in "stfd_incident_prnt" "stfd_incident_pcr" "stfd_incident_nsi" 
 				replace `i' = "" if `i' ==" "
 				replace `i' = "." if `i' ==""
 			}
+			
+			foreach id_visit in a b c d e f g h {
+			
 
-	gen infection_groups="."
-	gen infection_group_denv ="."
-	gen infection_group_chikv ="."
+	gen infection_groups`id_visit'="."
+	gen infection_group_denv`id_visit' ="."
+	gen infection_group_chikv`id_visit' ="."
 
 
-if infection_group_denv!="dengue positive" foreach i of varlist *denv* { 
-				replace infection_group_denv= "dengue unknown" if `i'=="." & infection_group_denv =="."
-				replace infection_group_denv= "dengue unknown" if `i'=="no serum" & infection_group_denv =="."
-				replace infection_group_denv= "dengue unknown" if `i'=="equivocal" & infection_group_denv =="."
-				replace infection_group_denv= "dengue unknown" if `i'=="not followed" & infection_group_denv =="."
-				replace infection_group_denv= "dengue negative" if `i'=="neg"  & infection_group_denv !="dengue positive"
-				replace infection_group_denv= "dengue negative" if `i'=="negative" & infection_group_denv !="dengue positive"
-				replace infection_group_denv= "dengue positive" if `i'=="pos" 
-				replace infection_group_denv= "dengue positive" if `i'=="positive" 
+if infection_group_denv`id_visit' !="dengue positive" foreach i of varlist *denv* { 
+				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="." & infection_group_denv`id_visit' =="."
+				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="no serum" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="equivocal" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="not followed" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv`id_visit'= "dengue negative" if `i'=="neg"  & infection_group_denv`id_visit' !="dengue positive"
+				replace infection_group_denv`id_visit'= "dengue negative" if `i'=="negative" & infection_group_denv`id_visit' !="dengue positive"
+				replace infection_group_denv`id_visit'= "dengue positive" if `i'=="pos" 
+				replace infection_group_denv`id_visit'= "dengue positive" if `i'=="positive" 
 			}
 
-if infection_group_chikv!="chikv positive" foreach i of varlist *chik*{
-				replace infection_group_chikv= "chikv unknown" if `i'=="." & infection_group_chikv =="."
-				replace infection_group_chikv= "chikv unknown" if `i'=="no serum" & infection_group_chikv =="."
-				replace infection_group_chikv= "chikv unknown" if `i'=="equivocal" & infection_group_chikv =="."
-				replace infection_group_chikv= "chikv unknown" if `i'=="not followed" & infection_group_chikv =="."
-				replace infection_group_chikv= "chikv negative" if `i'=="neg" & infection_group_chikv !="chikv negative"
-				replace infection_group_chikv= "chikv negative" if `i'=="negative" & infection_group_chikv !="chikv negative" 
-				replace infection_group_chikv= "chikv positive" if `i'=="pos" 
-				replace infection_group_chikv= "chikv positive" if `i'=="positive" 
+if infection_group_chikv`id_visit'!="chikv positive" foreach i of varlist *chik*{
+				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="." & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="no serum" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="equivocal" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="not followed" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv`id_visit'= "chikv negative" if `i'=="neg" & infection_group_chikv`id_visit' !="chikv negative"
+				replace infection_group_chikv`id_visit'= "chikv negative" if `i'=="negative" & infection_group_chikv`id_visit' !="chikv negative" 
+				replace infection_group_chikv`id_visit'= "chikv positive" if `i'=="pos" 
+				replace infection_group_chikv`id_visit'= "chikv positive" if `i'=="positive" 
 			}
 
 
-			replace infection_groups= "both unknown" if infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv unknown"
-			replace infection_groups= "dengue- chikv unknown" if  infection_group_chikv== "chikv unknown" & infection_group_denv == "dengue negative"
-			replace infection_groups= "chikv- dengue unknown" if  infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv negative" 
-			replace infection_groups= "dengue+ chikv unknown" if  infection_group_chikv== "chikv unknown" & infection_group_denv == "dengue positive"
-			replace infection_groups= "chikv+ dengue unknown" if  infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv positive"
-			replace infection_groups= "no infection" if  infection_group_denv == "dengue negative" & infection_group_chikv== "chikv negative" 
-			replace infection_groups= "dengue positive chikv negative" if  infection_group_denv == "dengue positive" & infection_group_chikv== "chikv negative" 
-			replace infection_groups= "chikv positive denv negative" if  infection_group_chikv == "chikv positive" & infection_group_denv == "dengue negative" 
-			replace infection_groups= "coinfection" if  infection_group_denv == "dengue positive" & infection_group_chikv== "chikv positive" 
+			replace infection_groups`id_visit'= "both unknown" if infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv unknown"
+			replace infection_groups`id_visit'= "dengue- chikv unknown" if  infection_group_chikv`id_visit'== "chikv unknown" & infection_group_denv`id_visit' == "dengue negative"
+			replace infection_groups`id_visit'= "chikv- dengue unknown" if  infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv negative" 
+			replace infection_groups`id_visit'= "dengue+ chikv unknown" if  infection_group_chikv`id_visit'== "chikv unknown" & infection_group_denv`id_visit' == "dengue positive"
+			replace infection_groups`id_visit'= "chikv+ dengue unknown" if  infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv positive"
+			replace infection_groups`id_visit'= "no infection" if  infection_group_denv`id_visit' == "dengue negative" & infection_group_chikv`id_visit'== "chikv negative" 
+			replace infection_groups`id_visit'= "dengue positive chikv negative" if  infection_group_denv`id_visit' == "dengue positive" & infection_group_chikv`id_visit'== "chikv negative" 
+			replace infection_groups`id_visit'= "chikv positive denv negative" if  infection_group_chikv`id_visit' == "chikv positive" & infection_group_denv`id_visit' == "dengue negative" 
+			replace infection_groups`id_visit'= "coinfection" if  infection_group_denv`id_visit' == "dengue positive" & infection_group_chikv`id_visit'== "chikv positive" 
 
-			tab infection_groups
-			tab infection_group_chikv
-			tab infection_group_denv
+			tab infection_groups`id_visit'
+			tab infection_group_chikv`id_visit'
+			tab infection_group_denv`id_visit'
 				
 
 			*encode infection_group
-			gen grp_`dataset' = infection_groups
-			gen grpdenv_`dataset' = infection_group_denv
-			gen grpchikv_`dataset' = infection_group_chikv
+			gen grp_`id_visit'`dataset' = infection_groups`id_visit'
+			gen grpdenv_`id_visit'`dataset' = infection_group_denv`id_visit'
+			gen grpchikv_`id_visit'`dataset' = infection_group_chikv`id_visit'
 			save `dataset'_2.dta, replace
+}
 }
 
 *final prevelance
