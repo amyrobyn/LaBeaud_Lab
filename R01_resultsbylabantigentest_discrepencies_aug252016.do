@@ -154,6 +154,15 @@ tab datesamplerun~t antigenused, m
    
    
 save main2.dta, replace
+	
+	
+	use main2.dta, clear
+
+	rename *initialvisit *visit0
+	keep studyid chikvpcr_onemonthfollowupvisit chikvigm_onemonthfollowupvisit denvpcr_onemonthfollowupvisit denvigm_onemonthfollowupvisit chikvigg_onemonthfollowupvisit chikviggod_onemonthfollowupvisit denvigg_onemonthfollowupvisit denviggod_onemonthfollowupvisit _onemonthfollowupvisit chikvigg_visit0 chikviggod_visit0 denvigg_visit0 denviggod_visit0 followupaliquotid_followupvisit1 chikvigg_followupvisit1 chikviggod_followupvisit1 denvigg_followupvisit1 denviggod_followupvisit1 followupaliquotid_followupvisit2 chikviggod_followupvisit2 chikviggresuilts_followupvisit2 denvigg_followupvisit2 denviggod_followupvisit2 followupaliquotid_followupvisit3 chikvigg_followupvisit3 chikviggod_followupvisit3 denvigg_followupvisit3 denviggod_followupvisit3 followupaliquotid_followupvisit4 chikvigg_followupvisit4 chikviggod_followupvisit4 denvigg_followupvisit4 denviggod_followupvisit4 followupaliquotid_followupvisit5 chikvigg_followupvisit5 chikviggod_followupvisit5 denvigg_followupvisit5 denviggod_followupvisit5 followupaliquotid_followupvisit6 chikvigg_followupvisit6 chikviggod_followupvisit6 denvigg_followupvisit6 denviggod_followupvisit6 followupaliquotid_followupvisit7 chikvigg_followupvisit7 chikviggod_followupvisit7 denvigg_followupvisit7 denviggod_followupvisit7 followupaliquotid_followupvisit8 chikvigg_followupvisit8 chikviggod_followupvisit8 denvigg_followupvisit8 denviggod_followupvisit8 followupaliquotid_followupvisit9 chikvigg_followupvisit9 chikviggod_followupvisit9 denvigg_followupvisit9 denviggod_followupvisit9 dateofcollection_visit0 initialaliquotid_visit0 dateofcollection_followupvisit1 dateofcollection_followupvisit2 chikvigg_followupvisit2 datesamplecollected_visit0 datesamplerun_visit0 chikvpcr_visit0 chikvigm_visit0 denvpcr_visit0 denvigm_visit0 stanfordchikvod_visit0 stanfordchikvigg_visit0 stforddenviggod_visit0 stforddenvigg_visit0 followupid_followupvisit1 followupid_followupvisit2 chikvpcr_onemonthfollowupvisit1 chikvigm_onemonthfollowupvisit1 denvpcr_onemonthfollowupvisit1 denvigm_onemonthfollowupvisit1 chikvigg_onemonthfollowupvisit1 denvigg_onemonthfollowupvisit1 denviggod_onemonthfollowupvisit1 _onemonthfollowupvisit1
+	save long.dta, replace
+	reshape long stub, i(studyid) j(visit)
+	save long.dta, replace
 
 
 *this can seperate incidence and prevalence data by test. 
@@ -209,60 +218,56 @@ foreach dataset in "stfd_incident_prnt" "stfd_incident_pcr" "stfd_incident_nsi" 
 				replace `i' = itrim(`i')
 				replace `i' = "" if `i' ==" "
 				replace `i' = "." if `i' ==""
-			}
-			
-			foreach id_visit in a b c d e f g h {
-			
+			}			
 
-	gen infection_groups`id_visit'="."
-	gen infection_group_denv`id_visit' ="."
-	gen infection_group_chikv`id_visit' ="."
+	gen infection_groups="."
+	gen infection_group_denv ="."
+	gen infection_group_chikv ="."
 
 
-if infection_group_denv`id_visit' !="dengue positive" foreach i of varlist *denv* { 
-				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="." & infection_group_denv`id_visit' =="."
-				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="no serum" & infection_group_denv`id_visit' =="."
-				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="equivocal" & infection_group_denv`id_visit' =="."
-				replace infection_group_denv`id_visit'= "dengue unknown" if `i'=="not followed" & infection_group_denv`id_visit' =="."
-				replace infection_group_denv`id_visit'= "dengue negative" if `i'=="neg"  & infection_group_denv`id_visit' !="dengue positive"
-				replace infection_group_denv`id_visit'= "dengue negative" if `i'=="negative" & infection_group_denv`id_visit' !="dengue positive"
-				replace infection_group_denv`id_visit'= "dengue positive" if `i'=="pos" 
-				replace infection_group_denv`id_visit'= "dengue positive" if `i'=="positive" 
+if infection_group_denv !="dengue positive" foreach i of varlist *denv* { 
+				replace infection_group_denv= "dengue unknown" if `i'=="." & infection_group_denv`id_visit' =="."
+				replace infection_group_denv= "dengue unknown" if `i'=="no serum" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv= "dengue unknown" if `i'=="equivocal" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv= "dengue unknown" if `i'=="not followed" & infection_group_denv`id_visit' =="."
+				replace infection_group_denv= "dengue negative" if `i'=="neg"  & infection_group_denv`id_visit' !="dengue positive"
+				replace infection_group_denv= "dengue negative" if `i'=="negative" & infection_group_denv`id_visit' !="dengue positive"
+				replace infection_group_denv= "dengue positive" if `i'=="pos" 
+				replace infection_group_denv= "dengue positive" if `i'=="positive" 
 			}
 
 if infection_group_chikv`id_visit'!="chikv positive" foreach i of varlist *chik*{
-				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="." & infection_group_chikv`id_visit' =="."
-				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="no serum" & infection_group_chikv`id_visit' =="."
-				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="equivocal" & infection_group_chikv`id_visit' =="."
-				replace infection_group_chikv`id_visit'= "chikv unknown" if `i'=="not followed" & infection_group_chikv`id_visit' =="."
-				replace infection_group_chikv`id_visit'= "chikv negative" if `i'=="neg" & infection_group_chikv`id_visit' !="chikv negative"
-				replace infection_group_chikv`id_visit'= "chikv negative" if `i'=="negative" & infection_group_chikv`id_visit' !="chikv negative" 
-				replace infection_group_chikv`id_visit'= "chikv positive" if `i'=="pos" 
-				replace infection_group_chikv`id_visit'= "chikv positive" if `i'=="positive" 
+				replace infection_group_chikv= "chikv unknown" if `i'=="." & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv= "chikv unknown" if `i'=="no serum" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv= "chikv unknown" if `i'=="equivocal" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv= "chikv unknown" if `i'=="not followed" & infection_group_chikv`id_visit' =="."
+				replace infection_group_chikv= "chikv negative" if `i'=="neg" & infection_group_chikv`id_visit' !="chikv negative"
+				replace infection_group_chikv= "chikv negative" if `i'=="negative" & infection_group_chikv`id_visit' !="chikv negative" 
+				replace infection_group_chikv= "chikv positive" if `i'=="pos" 
+				replace infection_group_chikv= "chikv positive" if `i'=="positive" 
 			}
 
 
-			replace infection_groups`id_visit'= "both unknown" if infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv unknown"
-			replace infection_groups`id_visit'= "dengue- chikv unknown" if  infection_group_chikv`id_visit'== "chikv unknown" & infection_group_denv`id_visit' == "dengue negative"
-			replace infection_groups`id_visit'= "chikv- dengue unknown" if  infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv negative" 
-			replace infection_groups`id_visit'= "dengue+ chikv unknown" if  infection_group_chikv`id_visit'== "chikv unknown" & infection_group_denv`id_visit' == "dengue positive"
-			replace infection_groups`id_visit'= "chikv+ dengue unknown" if  infection_group_denv`id_visit' == "dengue unknown" & infection_group_chikv`id_visit'== "chikv positive"
-			replace infection_groups`id_visit'= "no infection" if  infection_group_denv`id_visit' == "dengue negative" & infection_group_chikv`id_visit'== "chikv negative" 
-			replace infection_groups`id_visit'= "dengue positive chikv negative" if  infection_group_denv`id_visit' == "dengue positive" & infection_group_chikv`id_visit'== "chikv negative" 
-			replace infection_groups`id_visit'= "chikv positive denv negative" if  infection_group_chikv`id_visit' == "chikv positive" & infection_group_denv`id_visit' == "dengue negative" 
-			replace infection_groups`id_visit'= "coinfection" if  infection_group_denv`id_visit' == "dengue positive" & infection_group_chikv`id_visit'== "chikv positive" 
+			replace infection_groups= "both unknown" if infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv unknown"
+			replace infection_groups= "dengue- chikv unknown" if  infection_group_chikv== "chikv unknown" & infection_group_denv == "dengue negative"
+			replace infection_groups= "chikv- dengue unknown" if  infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv negative" 
+			replace infection_groups= "dengue+ chikv unknown" if  infection_group_chikv== "chikv unknown" & infection_group_denv == "dengue positive"
+			replace infection_groups= "chikv+ dengue unknown" if  infection_group_denv == "dengue unknown" & infection_group_chikv== "chikv positive"
+			replace infection_groups= "no infection" if  infection_group_denv == "dengue negative" & infection_group_chikv== "chikv negative" 
+			replace infection_groups= "dengue positive chikv negative" if  infection_group_denv == "dengue positive" & infection_group_chikv== "chikv negative" 
+			replace infection_groups= "chikv positive denv negative" if  infection_group_chikv == "chikv positive" & infection_group_denv == "dengue negative" 
+			replace infection_groups= "coinfection" if  infection_group_denv == "dengue positive" & infection_group_chikv== "chikv positive" 
 
-			tab infection_groups`id_visit'
-			tab infection_group_chikv`id_visit'
-			tab infection_group_denv`id_visit'
+			tab infection_groups
+			tab infection_group_chikv
+			tab infection_group_denv
 				
 
 			*encode infection_group
-			gen grp_`id_visit'`dataset' = infection_groups`id_visit'
-			gen grpdenv_`id_visit'`dataset' = infection_group_denv`id_visit'
-			gen grpchikv_`id_visit'`dataset' = infection_group_chikv`id_visit'
+			gen grp_`dataset' = infection_groups
+			gen grpdenv_`dataset' = infection_group_denv
+			gen grpchikv_`dataset' = infection_group_chikv
 			save `dataset'_2.dta, replace
-}
 }
 
 *final prevelance
@@ -400,11 +405,12 @@ use "final_incidence", clear
 		}
 		foreach var of varlist grp*{
 			tab `var'
-				replace `var' = "" if strpos(`var', "unknown")		
+				replace `var' = "" if strpos(`var', "unknown")	
+				replace `var' = "" if strpos(`var', ".")		
 				capture tab `var' if strpos(`var', "neg")|strpos(`var', "pos")
 		}
 save "final_incidence2", replace
-
+/*
 use "final_incidence2", clear 
 keep if antigenused == "feb ichik ag"
 save incidenceantigen1.dta, replace
@@ -423,11 +429,11 @@ use "incidenceantigen2.dta", clear
 keep if id_cohort =="AIC_"
 save "incidenceantigen2aic.dta", replace
 
-foreach dataset in "final_incidence2.dta" "incidenceantigen1" "incidenceantigen2" "incidenceantigen1hcc" "incidenceantigen2hcc" "incidenceantigen1aic" "incidenceantigen2aic"{
+foreach dataset in "final_incidence2.dta" "incidenceantigen2" "incidenceantigen1hcc" "incidenceantigen2hcc" "incidenceantigen1aic" "incidenceantigen2aic"{
 use `dataset', clear
 display "****************************************************************************************************************************************"
 display "`dataset'"
-diagt grpchikv_stfd_incident_iggZ2 grpchikv_kenya_incident_iggZ2 
+capture diagt grpchikv_stfd_incident_iggZ2 grpchikv_kenya_incident_iggZ2 
 tab grpchikv_stfd_incident_iggZ2 grpchikv_kenya_incident_iggZ2 
 diagt grpchikv_stfd_incident_iggZ2 grpchikv_stfd_incident_prntZ2 
 tab grpchikv_stfd_incident_iggZ2 grpchikv_stfd_incident_prntZ2 
@@ -439,8 +445,8 @@ diagt grpchikv_stfd_incident_iggZ2 grpchikv_stfd_incident_igmZ2
 tab grpchikv_stfd_incident_iggZ2 grpchikv_stfd_incident_igmZ2 
 
 
-diagt grpdenv_stfd_incident_iggZ2 grpdenv_kenya_incident_iggZ2 
-tab grpdenv_stfd_incident_iggZ2 grpdenv_kenya_incident_iggZ2 
+*diagt grpdenv_stfd_incident_iggZ2 grpdenv_kenya_incident_iggZ2 
+*tab grpdenv_stfd_incident_iggZ2 grpdenv_kenya_incident_iggZ2 
 diagt grpdenv_stfd_incident_iggZ2 grpdenv_stfd_incident_prntZ2 
 tab grpdenv_stfd_incident_iggZ2 grpdenv_stfd_incident_prntZ2 
 diagt grpdenv_stfd_incident_iggZ2 grpdenv_stfd_incident_pcrZ2 
@@ -451,7 +457,7 @@ diagt grpdenv_stfd_incident_iggZ2 grpdenv_stfd_incident_igmZ2
 tab grpdenv_stfd_incident_iggZ2 grpdenv_stfd_incident_igmZ2 
 display "****************************************************************************************************************************************"
 }		
-
+*/
 use "final_prevalence", clear 
 		foreach var of varlist grpdenv* grpchikv*{ 
 			rename `var' `=substr("`var'",1,30)'
@@ -466,6 +472,8 @@ use "final_prevalence", clear
 save "final_prevalence2", replace
 
 use "final_prevalence2", clear 
+
+/*
 keep if antigenused == "feb ichik ag"
 save prevalenceantigen1.dta, replace
 keep if id_cohort =="HCC_"
