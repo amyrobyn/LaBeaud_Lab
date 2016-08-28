@@ -345,13 +345,8 @@ tab stanforddenvigg_encode, gen(stanforddenvigg_dum)
 destring prevalent  stanfordchikvigg_dum2 stanforddenvigg_dum2 time, replace
 replace prevalent = 1 if  stanfordchikvigg_dum2==1 & time ==1
 replace prevalent = 1 if  stanforddenvigg_dum2==1 & time ==1
-save prevalent.dta, replace
-keep if id_cohort =="c"
-save prevalentC.dta, replace
-use prevalent.dta, clear
-keep if id_cohort =="f"
-save prevalentF.dta, replace
 
+save prevalent.dta, replace
 use prevalent.dta, clear
 drop if prevalent == 1 
 save incident.dta, replace
@@ -362,6 +357,31 @@ keep if id_cohort =="f"
 save incidentF.dta, replace
 
 
+use prevalent.dta
+*add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
+				expand 2 if time == 1, gen(x)
+				gsort id time -x
+				replace time= time- 1 if x == 1
+
+				foreach var of varlist *denv* {
+				tostring `var', replace force
+					replace `var'= "." if x == 1
+				}
+
+				foreach var of varlist *chikv* {
+				tostring `var', replace force
+					replace `var'= "." if x == 1
+				}
+
+	tab denvigg_, gen(denvigg_encode)
+	destring id time denvigg_encode chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 site city, replace
+save prevalent.dta, replace
+keep if id_cohort =="c"
+save prevalentC.dta, replace
+use prevalent.dta, clear
+keep if id_cohort =="f"
+save prevalentF.dta, replace
+
 ************************************************survival and longitudinal analysis********************************************
 cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
@@ -370,27 +390,11 @@ capture log close
 set scrollbufsize 100000
 set more 1
 
+
+
 *stanforddenvigg_dum2  no incident events
-foreach dataset in "prevalent" "prevalentC" "prevalentF" "incident" "incidentC" "incidentF"{
+foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "incidentC" "prevalentC"  {
 use `dataset', clear
-
-*add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
-			expand 2 if time == 1, gen(x)
-			gsort id time -x
-			replace time= time- 1 if x == 1
-
-			foreach var of varlist *denv* {
-			tostring `var', replace force
-				replace `var'= "." if x == 1
-			}
-
-			foreach var of varlist *chikv* {
-			tostring `var', replace force
-				replace `var'= "." if x == 1
-			}
-
-tab denvigg_, gen(denvigg_encode)
-destring id time denvigg_encode chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 site city, replace
 
 foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 {
 
@@ -441,60 +445,7 @@ foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2
 **
 
 
-
-
-
-
-
-
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016"
-*cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
-capture log close 
-*log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
-set scrollbufsize 100000
-set more 1
-
-use prevalent.dta, clear
-
-expand 2 if time == 1, gen(x)
-gsort id time -x
-replace time= time- 1 if x == 1
-
-foreach var of varlist *denv* {
-tostring `var', replace force
-	replace `var'= "." if x == 1
-}
-
-foreach var of varlist *chikv* {
-tostring `var', replace force
-	replace `var'= "." if x == 1
-}
-
-
-tab denvigg_, gen(denvigg_encode)
-destring denvigg_encode   time stanforddenvigg_dum2, replace force
-*drop if  stanforddenvigg_dum2 == . 
-*drop if  denvigg_encode  == . 
-*stanford
-*many unordered events per person
-stset time, failure (stanforddenvigg_dum2) origin(time==0)
-* single event per person
-
-stset time, failure (stanforddenvigg_dum2) id(id) origin(time==0)
-list id time stanforddenvigg_dum2 in 1/25
-
-*stanford
-*many unordered events per person 
-stset time, failure (denvigg_encode) origin(time==0)
-* single event per person
-stset time, failure (denvigg_encode) id(id) origin(time==0)
-list id time denvigg_encode in 1/25
-
-
-
 *simple prevalence/incidence by visit
 foreach var of varlist *chikv* *denv*{
 	bysort time: tab `var'
 }
-
-	
