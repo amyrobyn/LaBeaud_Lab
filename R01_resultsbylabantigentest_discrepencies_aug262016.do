@@ -399,57 +399,9 @@ rename stanfordchikvigg_dum2 SCIGG
 rename stanforddenvigg_dum2 SDIGG
 foreach failvar of varlist DIGG CIGG SCIGG SDIGG{
 
-		**********longitudinal***************
-		*b) Create individual profiles over time with a solid trend line. 
-		sort id time
-		*xtline `failvar', t(time) i(id) overlay addplot(qfit `failvar' time, lcolor(red) lwidth(thick))
-		*graph export "xtlineqfit`dataset'`failvar'.png", replace
-
-		*c) Create individual profiles over time with a solid trend line for treatment groups. Comment on it. [5 points]
-		*xtline `failvar', t(time) i(id) overlay addplot (( qfit `failvar' time if site== "West", n(4) lwidth(thick)) || ( qfit lead_µgperdL week if site == "Coast", n(4) lwidth(thick)))
-		*graph export "xtlineqfitsite`dataset'`failvar'.png", replace
-
-		*d) Plot empirical mean response over time for treatment groups.
-		by time site, sort : egen float mean`failvar' = mean(`failvar')
-		separate  mean`failvar', by(site) veryshortlabel
-		scatter mean`failvar'? time, c(direct)
-		graph export "scattermean`dataset'`failvar'.png", replace
-
-		
-		
-		
-		
-
-		*e.
-		xtset id time
-		xtdes
-		xtsum
-		xttab `failvar'
-		xtreg `failvar' site
-		xtreg `failvar' city
-		xtgraph `failvar', group(city)
-
-		*compare gee and mixed but use mixed
-		xtgee `failvar' b0.time b1.site time#site, family(gaussian) link(identity) corr(exchangeable) vce(robust)
-		xtmixed `failvar' b0.time b1.site time#site, vce(robust) 
-		*reference group = week 0 and placebo
-
-		*h)
-		*compare gee and mixed but use mixed
-		xi: xtgee `failvar' time i.site|time, family(gaussian) link(identity) corr(exchangeable) vce(robust)
-		xi: xtmixed `failvar' time i.site|time, vce(robust) 
-
-
-		*m.
-		*compare gee and mixed but use mixed
-		xi: xtgee `failvar' time site i.site|time, family(gaussian) link(identity) corr(exchangeable) vce(robust)
-		xi: xtmixed `failvar' time site i.site|time, vce(robust)
-
-
-
 		**********survival***************	
 			
-			/*stset time, id(id) failure(`failvar') origin(time==1)
+			stset time, id(id) failure(`failvar') origin(time==1)
 			stdescribe
 			stsum
 			*sts graph, hazard 
@@ -477,10 +429,10 @@ foreach failvar of varlist DIGG CIGG SCIGG SDIGG{
 			stcurve, surv
 			graph export "stcurvesurv`dataset'`failvar'.png", replace
 			streg site city
-			*/
+
 }
 
-/*
+
 		table1, by(site_stanfordigg_chik)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(site_stanfordigg_chik`dataset'.xls, replace)
 		table1, by(site_stanfordigg_denv)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(site_stanfordigg_denv`dataset'.xls, replace)
 		table1, by(city_stanfordigg_chik)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(city_stanfordigg_chik`dataset', replace)
@@ -488,5 +440,5 @@ foreach failvar of varlist DIGG CIGG SCIGG SDIGG{
 		table1, by(westcoast)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(westcoast`dataset'.xls, replace)
 		table1, by(city)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(city`dataset'.xls, replace)
 		table1, vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(total`dataset'.xls, replace)
-		*/
+		
 }
