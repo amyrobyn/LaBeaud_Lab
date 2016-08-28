@@ -158,6 +158,8 @@ use wide.dta, clear
 tostring *, replace force
 
 encode id_wide, gen(ID)
+sort visit
+drop if visit =="a2"
 encode visit, gen(time)
 encode stanfordchikvigg_, gen(CHIKV_igg_stanford)
 encode stanforddenvigg_, gen(DENV_igg_stanford)
@@ -359,6 +361,7 @@ use incident.dta, clear
 keep if id_cohort =="f"
 save incidentF.dta, replace
 
+
 ************************************************survival and longitudinal analysis********************************************
 cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
@@ -367,41 +370,33 @@ capture log close
 set scrollbufsize 100000
 set more 1
 
-*trajectory.do file for Stata 6.0
-clear
-use prevalent
-egen newid=group(id)
-sum newid
-drop id
-ren newid id
-sort id time
-gen pick = 0
-local i=1
-while `i' < 8{
-set seed `i'
-local r = round(1+uniform()*369,1)
-gen denvigg_encode`i' = denvigg_encode if (id == `r')
- local i=`i'+1
-}
-ksm denvigg_encode  time, lowess gen(denvigg_encodesmth) nograph
-graph7 denvigg_encode denvigg_encode1 - denvigg_encodesmth1 time, c(.LLLLLLL.) s(.iiiiiiio) pen(233333334) xlab ylab 
-
-
 *stanforddenvigg_dum2  no incident events
 foreach dataset in "prevalent" "prevalentC" "prevalentF" "incident" "incidentC" "incidentF"{
 use `dataset', clear
 
-destring id time  denvigg_encode chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 site city, replace
+*add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
+			expand 2 if time == 1, gen(x)
+			gsort id time -x
+			replace time= time- 1 if x == 1
 
-rename denvigg_encode DIGG
-rename  chikvigg_encode CIGG
-rename stanfordchikvigg_dum2 SCIGG 
-rename stanforddenvigg_dum2 SDIGG
-foreach failvar of varlist DIGG CIGG SCIGG SDIGG{
+			foreach var of varlist *denv* {
+			tostring `var', replace force
+				replace `var'= "." if x == 1
+			}
+
+			foreach var of varlist *chikv* {
+			tostring `var', replace force
+				replace `var'= "." if x == 1
+			}
+
+tab denvigg_, gen(denvigg_encode)
+destring id time denvigg_encode chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 site city, replace
+
+foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 {
 
 		**********survival***************	
 			
-			stset time, id(id) failure(`failvar') origin(time==1)
+			stset time, id(id) failure(`failvar') origin(time==0)
 			stdescribe
 			stsum
 			*sts graph, hazard 
@@ -442,3 +437,64 @@ foreach failvar of varlist DIGG CIGG SCIGG SDIGG{
 		table1, vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(total`dataset'.xls, replace)
 		
 }
+
+**
+
+
+
+
+
+
+
+
+cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016"
+*cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
+capture log close 
+*log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
+set scrollbufsize 100000
+set more 1
+
+use prevalent.dta, clear
+
+expand 2 if time == 1, gen(x)
+gsort id time -x
+replace time= time- 1 if x == 1
+
+foreach var of varlist *denv* {
+tostring `var', replace force
+	replace `var'= "." if x == 1
+}
+
+foreach var of varlist *chikv* {
+tostring `var', replace force
+	replace `var'= "." if x == 1
+}
+
+
+tab denvigg_, gen(denvigg_encode)
+destring denvigg_encode   time stanforddenvigg_dum2, replace force
+*drop if  stanforddenvigg_dum2 == . 
+*drop if  denvigg_encode  == . 
+*stanford
+*many unordered events per person
+stset time, failure (stanforddenvigg_dum2) origin(time==0)
+* single event per person
+
+stset time, failure (stanforddenvigg_dum2) id(id) origin(time==0)
+list id time stanforddenvigg_dum2 in 1/25
+
+*stanford
+*many unordered events per person 
+stset time, failure (denvigg_encode) origin(time==0)
+* single event per person
+stset time, failure (denvigg_encode) id(id) origin(time==0)
+list id time denvigg_encode in 1/25
+
+
+
+*simple prevalence/incidence by visit
+foreach var of varlist *chikv* *denv*{
+	bysort time: tab `var'
+}
+
+	
