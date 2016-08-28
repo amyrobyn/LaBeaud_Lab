@@ -255,6 +255,7 @@ if infection_group_chikv!="chikv positive" foreach i of varlist *chik*{
 	use "kenya_prevalence_igm_2.dta", clear
 	merge m:m studyid using "kenya_prevalence_igg_2", force
 	drop _merge
+
 	save final_prevalence.dta, replace
 	foreach dataset in "stfd_prevalence_prnt_2" "stfd_prevalence_pcr_2" "stfd_prevalence_nsi_2" "stfd_prevalence_igm_2" "stfd_prevalence_igg_2" "kenya_prevalence_prnt_2" "kenya_prevalence_pcr_2" "kenya_prevalence_nsi_2" {
 		use "`dataset'" 	
@@ -266,6 +267,8 @@ if infection_group_chikv!="chikv positive" foreach i of varlist *chik*{
 		bysort studyid: gen dup = _n 
 		replace dup = dup -1
 		tab studyid if dup >0
+	
+	
 	save final_prevalence.dta, replace
 
 *final incidence
