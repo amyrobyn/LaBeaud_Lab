@@ -20,7 +20,7 @@ log using "R01_discrepenciesaugust25longitudinal.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
-
+**download the data from BOX and import here as xlsx sheets. 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BG1579) firstrow clear
 	tostring *, replace force
 	foreach var of varlist _all{
@@ -88,6 +88,8 @@ import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellra
 	drop if studyid_a==""
 save aic_ukunda.dta, replace
 
+
+**append the different site and cohort excel sheets. 
 use "hcc_kisumu", clear
 append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo" "hcc_kisumu", generate(append)
 			tostring *, replace force
@@ -102,9 +104,9 @@ append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukund
 	tab dup_merged
 	list studyid_a if dup_merged>1
 	save merged.dta, replace
-	
+	*keep those that i dropped for duplicate and show to elysse
 	keep if dup_merged >1	
-	save dup.dta, replace
+	export excel using "dup", firstrow(variables) replace
 
 	use merged.dta, replace
 	drop if dup_merged >1
@@ -113,7 +115,6 @@ save merged.dta, replace
 
 
 *take visit out of id
-
 						forval i = 1/3 { 
 							gen id`i' = substr(studyid_a, `i', 1) 
 						}
@@ -140,14 +141,12 @@ foreach v of varlist `r(varlist)' {
 					gen westcoast= "." 
 						replace westcoast = "Coast" if id_city =="Msambweni"|id_city =="Ukunda"|id_city =="Milani"|id_city =="Nganja"
 						replace westcoast = "West" if id_city =="Chulaimbo"|id_city =="Kisumu"
-
-
 save wide.dta, replace
 
 	bysort id_wide: gen dup2 = _n 
 	save wide.dta, replace
 		keep if dup2 >1
-		save dup2.dta, replace
+		export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
 	drop if dup2 >1
 	reshape long   studyid_ followupaliquotid_ dateofcollection_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ datesamplecollected_, i(id_wide) j(visit) string
@@ -161,8 +160,8 @@ encode id_wide, gen(ID)
 sort visit
 drop if visit =="a2"
 encode visit, gen(time)
-encode stanfordchikvigg_, gen(CHIKV_igg_stanford)
-encode stanforddenvigg_, gen(DENV_igg_stanford)
+encode stanfordchikvigg_, gen(stanfordchikvigg_encode)
+encode stanforddenvigg_, gen(stanforddenvigg_encode)
 encode westcoast, gen(site)
 encode id_city, gen(city)
 
@@ -256,31 +255,24 @@ merge 1:1 id_wide visit using elisas_PCR_RDT_PRNT1.dta
 drop _merge
 save "elisas_PCR_RDT_PRNT2.dta", replace
 
+*******declare data as panel data***********
 xtset ID time	
 save longitudinal.dta, replace
-use longitudinal.dta, clear
 egen cohortcityantigen = concat(id_cohort id_city antigenused)
-
-
-			tostring *, replace force
-
-			foreach v of varlist _all { 
-				replace `v' = lower(`v') 
-			} 
-
+tostring *, replace force
+foreach v of varlist _all { 
+			replace `v' = lower(`v') 
+} 
 tostring *, replace
-
 foreach v of varlist _all {
-							rename `v' `=lower("`v'")'
+		rename `v' `=lower("`v'")'
    }
-
  foreach var of varlist _all{
 							replace `var' =trim(itrim(lower(`var')))
 	}
 
-order *denv* *chikv*  chikv*  denv*  denv*  wnv_prnt onnv_prnt 
-
-foreach var in  wnv_prnt onnv_prnt chikv_prnt chikv_igg_stanford denv_prnt denv_nsi_result denv_igg_stanford denvigg_ denviggod_ denvpcr_ denvigm_ chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ {  
+*	 stanfordchikvod_ stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ stanfordchikvigg_encode stanforddenvigg_encode
+foreach var in  wnv_prnt onnv_prnt chikv_prnt stanfordchikvigg_  denv_prnt denv_nsi_result stanforddenvigg_ denvigg_ denviggod_ denvpcr_ denvigm_ chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ {  
 	replace `var' =trim(itrim(lower(`var')))
 	gen `var'_result =""
 	replace `var'_result = "neg" if strpos(`var', "neg")
@@ -290,7 +282,8 @@ foreach var in  wnv_prnt onnv_prnt chikv_prnt chikv_igg_stanford denv_prnt denv_
 	tab `var'
 }
 
-levelsof cohortcityantigen, local(levels) 
+**put this in tables later
+/*levelsof cohortcityantigen, local(levels) 
 foreach l of local levels { 
 	foreach var of varlist *chikv* *denv* chikv* denv*{ 
 		display "`l'"
@@ -311,6 +304,20 @@ levelsof westcoast, local(levels)
 		tab `var'  stanforddenvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m
 	}
 		}
+*/
+*simple prevalence/incidence by visit
+foreach var of varlist *chikv* *denv*{
+	bysort time: tab `var'
+}
+
+*lagg igg by one visit
+destring id time, replace
+xtset id time
+sort id time
+gen l1_iggS_denv=  stanforddenvigg_encode[_n-1] 
+gen l1_iggS_chikv=  stanfordchikvigg_encode[_n-1] 
+encode l1_iggS_denv, gen(l1_iggS_denv_encode)
+encode l1_iggS_chikv, gen(l1_iggS_chikv_encode)
 
 save temp.dta, replace
 keep if site=="1"
@@ -321,16 +328,27 @@ save site2.dta, replace
 
 foreach dataset in site1.dta site2.dta temp.dta{
 use `dataset', clear
-	foreach var in  chikv_prnt chikv_igg_stanford chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ stanfordchikvigg_ denv_prnt denv_nsi_result denv_igg_stanford denvigg_ denviggod_ denvpcr_ denvigm_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ wnv_prnt onnv_prnt{
+	foreach var in  chikv_prnt chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ denv_prnt denv_nsi_result denvigg_ denviggod_ denvpcr_ denvigm_ stanforddenvod_ stanforddenviggod_ wnv_prnt onnv_prnt{
 		encode `var', gen(`var'encode)
 	}
-	
-	foreach var in  chikvigg_encode chikviggod_encode chikvpcr_encode stanfordchikvigg_encode denv_prntencode denv_nsi_resultencode denvigg_encode denviggod_encode denvpcr_encode stanforddenvigg_encode wnv_prntencode onnv_prntencode{
-		diagt  stanfordchikvigg_encode  `var' 
-		diagt stanforddenvigg_encode `var'		
-		save `dataset', replace
-}
-}
+save `dataset', replace
+
+destring  denvigm_ chikv_prntencode stanforddenvigg_encode chikvigg_encode chikviggod_encode chikvpcr_encode chikvigm_encode stanfordchikvod_encode stanfordchikvigg_encode denv_prntencode denv_nsi_resultencode  denvigg_encode denviggod_encode denvpcr_encode denvigm_encode stanforddenvod_encode stanforddenvigg_encode stanforddenviggod_encode wnv_prntencode onnv_prntencode, replace
+sum denvigm_ chikv_prntencode  chikvigg_encode chikviggod_encode chikvpcr_encode chikvigm_encode stanfordchikvod_encode stanfordchikvigg_encode denv_prntencode denv_nsi_resultencode  denvigg_encode denviggod_encode denvpcr_encode denvigm_encode stanforddenvod_encode stanforddenvigg_encode stanforddenviggod_encode wnv_prntencode onnv_prntencode
+order denvigm_ chikv_prntencode  chikvigg_encode chikviggod_encode chikvpcr_encode chikvigm_encode stanfordchikvod_encode stanfordchikvigg_encode denv_prntencode denv_nsi_resultencode  denvigg_encode denviggod_encode denvpcr_encode denvigm_encode stanforddenvod_encode stanforddenvigg_encode stanforddenviggod_encode wnv_prntencode onnv_prntencode
+
+ 
+diagt chikv_prntencode stanfordchikvigg_encode
+diagt stanfordchikvigg_encode chikvigg_encode  
+diagt chikvpcr_encode l1_iggS_chikv_encode
+ 
+diagt denv_prntencode stanforddenvigg_encode 
+diagt stanforddenvigg_encode denvigg_encode  
+diagt denvpcr_encode l1_iggS_denv_encode 
+diagt denvigm_encode denv_nsi_resultencode  
+	}
+
+
 use temp.dta, clear
 
 egen site_stanfordigg_chik = concat(site stanforddenvigg_encode)
@@ -338,13 +356,29 @@ egen site_stanfordigg_denv= concat(site stanforddenvigg_encode)
 egen city_stanfordigg_chik = concat(city stanfordchikvigg_encode)
 egen city_stanfordigg_denv = concat(city stanforddenvigg_encode)
 
+*add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
+			expand 2 if time == 1, gen(x)
+			gsort id time -x
+			replace time= time- 1 if x == 1
 
+			foreach var of varlist *denv* {
+			tostring `var', replace force
+				replace `var'= "." if x == 1
+			}
+
+			foreach var of varlist *chikv* {
+			tostring `var', replace force
+				replace `var'= "." if x == 1
+			}
+
+			
 gen prevalent = .
 tab stanfordchikvigg_encode, gen(stanfordchikvigg_dum)
 tab stanforddenvigg_encode, gen(stanforddenvigg_dum)
 destring prevalent  stanfordchikvigg_dum2 stanforddenvigg_dum2 time, replace
 replace prevalent = 1 if  stanfordchikvigg_dum2==1 & time ==1
 replace prevalent = 1 if  stanforddenvigg_dum2==1 & time ==1
+
 save prevalent.dta, replace
 keep if id_cohort =="c"
 save prevalentC.dta, replace
@@ -373,22 +407,6 @@ set more 1
 *stanforddenvigg_dum2  no incident events
 foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear
-
-*add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
-			expand 2 if time == 1, gen(x)
-			gsort id time -x
-			replace time= time- 1 if x == 1
-
-			foreach var of varlist *denv* {
-			tostring `var', replace force
-				replace `var'= "." if x == 1
-			}
-
-			foreach var of varlist *chikv* {
-			tostring `var', replace force
-				replace `var'= "." if x == 1
-			}
-
 tab denvigg_, gen(denvigg_encode)
 destring id time denvigg_encode chikvigg_encode stanfordchikvigg_dum2 stanforddenvigg_dum2 site city, replace
 
@@ -410,20 +428,20 @@ foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2
 			sts graph, by(city)
 			graph export "survivalcity`dataset'`failvar'.png", replace
 			
-			stcox site
-			stcox city
-			stir site
-			strate
-			estat phtest 
-			streg site, d(w)
-			streg site, d(gomp)
-			streg site, d(e)
-			streg site, d(logn)
-			streg site, d(ln)
+			*stcox site
+			*stcox city
+			*stir site
+			*strate
+			*estat phtest 
+			*streg site, d(w)
+			*streg site, d(gomp)
+			*streg site, d(e)
+			*streg site, d(logn)
+			*streg site, d(ln)
 			*streg site city, d(gam)
-			stcurve, surv
-			graph export "stcurvesurv`dataset'`failvar'.png", replace
-			streg site city
+			*stcurve, surv
+			*graph export "stcurvesurv`dataset'`failvar'.png", replace
+			*streg site city
 
 }
 
@@ -437,40 +455,3 @@ foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2
 		table1, vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(total`dataset'.xls, replace)
 		
 }
-
-**
-
-use prevalent.dta, replace
-*simple prevalence/incidence by visit
-foreach var of varlist *chikv* *denv*{
-	bysort time: tab `var'
-}
-*lagg igg by one visit
-gen 1_lagged_iggS_denv = l1.stanford_igg_denv
-gen 1_lagged_iggS_chikv = l1.stanford_igg_chikv
-save prevalent.dta, replace
-
-use prevalent.dta, clear
-keep if site = "West"
-save west.dta, replace
-
-use prevalent.dta, clear
-keep if site = "Coast"
-save coast.dta, replace
-
-foreach dataset in prevalent coast west{
-	diagt  stanforddenvigg_dum2  denvpcr_ 
-	diagt  1_lagged_iggS_denv  denvpcr_ 
-	diagt  stanforddenvigg_dum2  denvigg_ 
-	diagt  stanforddenvigg_dum2  denv_nsi_result 
-	diagt  denvigm_ denv_nsi_result 
-	diagt  stanforddenvigg_dum2  denv_prnt 
-		
-
-	diagt stanfordchikvigg_
-	diagt  stanfordchikvigg_  chikvpcr_ 
-	diagt  1_lagged_iggS_chikv chikvpcr_ 
-	diagt  stanfordchikvigg_ chikvigg_ 
-	diagt  stanfordchikvigg_ denv_nsi_result 
-	diagt  stanfordchikvigg_dum2  chikv_prnt 
-	}
