@@ -440,8 +440,37 @@ foreach failvar of varlist denvigg_encode  chikvigg_encode stanfordchikvigg_dum2
 
 **
 
-
+use prevalent.dta, replace
 *simple prevalence/incidence by visit
 foreach var of varlist *chikv* *denv*{
 	bysort time: tab `var'
 }
+*lagg igg by one visit
+gen 1_lagged_iggS_denv = l1.stanford_igg_denv
+gen 1_lagged_iggS_chikv = l1.stanford_igg_chikv
+save prevalent.dta, replace
+
+use prevalent.dta, clear
+keep if site = "West"
+save west.dta, replace
+
+use prevalent.dta, clear
+keep if site = "Coast"
+save coast.dta, replace
+
+foreach dataset in prevalent coast west{
+	diagt  stanforddenvigg_dum2  denvpcr_ 
+	diagt  1_lagged_iggS_denv  denvpcr_ 
+	diagt  stanforddenvigg_dum2  denvigg_ 
+	diagt  stanforddenvigg_dum2  denv_nsi_result 
+	diagt  denvigm_ denv_nsi_result 
+	diagt  stanforddenvigg_dum2  denv_prnt 
+		
+
+	diagt stanfordchikvigg_
+	diagt  stanfordchikvigg_  chikvpcr_ 
+	diagt  1_lagged_iggS_chikv chikvpcr_ 
+	diagt  stanfordchikvigg_ chikvigg_ 
+	diagt  stanfordchikvigg_ denv_nsi_result 
+	diagt  stanfordchikvigg_dum2  chikv_prnt 
+	}
