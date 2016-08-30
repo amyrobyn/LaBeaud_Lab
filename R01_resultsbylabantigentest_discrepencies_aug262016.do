@@ -409,14 +409,14 @@ capture log close
 set scrollbufsize 100000
 set more 1
 
-*stanforddenvigg_dum2  no incident events
 foreach dataset in "prevalent" "incident"{
 *foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear
+foreach axis of varlist city time{
 foreach failvar of varlist denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
 preserve
 destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 site city, replace
-
+drop if `failvar'==.
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 
@@ -427,102 +427,18 @@ destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanf
 		label variable cohort "Cohort"
 		label define Cohort 1 "HCC" 2 "AIC"
 		
-/*		**********graphs***************							
-			
-			collapse (mean) mean`failvar'= `failvar' (sd) sd`failvar'=`failvar' (count) n=`failvar', by(city cohort) 
-			generate hi`failvar'= mean`failvar'+ invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-			generate lo`failvar'= mean`failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-			graph twoway (bar mean`failvar' city, sort) (rcap hi`failvar' lo`failvar' city), by(cohort) yscale(range(0.00 `=r(max)')) xlabel(1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda", angle(45))  legend(label(1 "`failvar'") label(2 "95% CI")) ///
-			
-						graph export "city_cohort1`dataset'`failvar'.tif", width(4000) replace 
-
-restore	
-preserve	
-
-			destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 site city, replace
-
-					label variable city "City"
-					label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-
-					capture drop if id_cohort=="d"
-					replace id_cohort = "HCC" if id_cohort == "c"
-					replace id_cohort = "AIC" if id_cohort == "f"
-					encode id_cohort, gen(cohort)
-					label variable cohort "Cohort"
-					label define Cohort 1 "HCC" 2 "AIC"
-*/
-				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(city cohort site)
-				egen axis = axis(city site)
+				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
+				egen axis = axis(`axis')
 				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 			graph twoway ///
 			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
 			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlabcolor(black) ///
-			   || , by(cohort) yscale(range(0.00 `=r(max)')) legend(label(1 "`failvar'") label(2 "95% CI"))
+			   || , by(cohort) yscale(range(0.00 `=r(max)')) xscale(range(1`=r(max)')) legend(label(1 "`failvar'") label(2 "95% CI"))
 				*xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Milani" 4 "Kisumu" 5 "Msambweni" 6 "Ukunda", angle(45))  
-				graph export "city_cohort2`dataset'`failvar'.tif", width(4000) replace 
+				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
 restore	
-/*preserve	
-  
-			destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 site city, replace
-
-					label variable city "City"
-					label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-
-					capture drop if id_cohort=="d"
-					replace id_cohort = "HCC" if id_cohort == "c"
-					replace id_cohort = "AIC" if id_cohort == "f"
-					encode id_cohort, gen(cohort)
-					label variable cohort "Cohort"
-					label define Cohort 1 "HCC" 2 "AIC"
-
-					
-						collapse (mean) `failvar' (count) n=`failvar', by(cohort city)
-						egen axis = axis(cohort city), gap label(city)
-						graph twoway ///
-						   || bar `failvar' axis   ///
-						   || bar `failvar' axis   ///
-						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabcolor(black) ///
-						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabcolor(black) ///
-						   || ,  legend (label(1 "Denv IgG")) xlabel(1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda" 7 "AIC" 8"HCC", angle(45)) 
-						graph export "city_cohort3`dataset'`failvar'.tif", width(4000) replace 
-
-restore*/
-/*		**********survival***************	
-			
-			stset time, id(id) failure(`failvar') origin(time==0)
-			stdescribe
-			stsum
-			*sts graph, hazard 
-			sts graph, cumhaz 
-			graph export "cumhaz`dataset'`failvar'.png", replace
-			sts graph, survival
-			graph export "survival`dataset'`failvar'.png", replace
-			sts list, survival
-			sts graph, by(site)
-			graph export "survivalsite`dataset'`failvar'.png", replace
-			sts graph, by(city)
-			graph export "survivalcity`dataset'`failvar'.png", replace
-			
-			*stcox site
-			*stcox city
-			*stir site
-			*strate
-			*estat phtest 
-			*streg site, d(w)
-			*streg site, d(gomp)
-			*streg site, d(e)
-			*streg site, d(logn)
-			*streg site, d(ln)
-			*streg site city, d(gam)
-			*stcurve, surv
-			*graph export "stcurvesurv`dataset'`failvar'.png", replace
-			*streg site city
-			*/
-
-}
-
 /*
 		table1, by(site_stanfordigg_chik)  vars(stanfordchikvigg_encode2 cat \stanforddenvigg_encode2 cat \ wnv_prntencode2 cat \onnv_prntencode2 cat \ chikv_prntencode2 cat \denv_prntencode2  cat \ denv_nsi_resultencode2 cat \denvigg_encode2 cat \ denvigg_encode2 cat \denvpcr_encode2 cat \chikvigg_encode2 cat \chikviggod_encode2 cat \chikvpcr_encode2 cat \)saving(site_stanfordigg_chik`dataset'.xls, replace)
 		table1, by(site_stanfordigg_denv)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(site_stanfordigg_denv`dataset'.xls, replace)
@@ -532,5 +448,7 @@ restore*/
 		table1, by(city)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(city`dataset'.xls, replace)
 		table1, vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(total`dataset'.xls, replace)
 */		
+}
+}
 }
 
