@@ -401,26 +401,20 @@ keep if id_cohort =="f"
 save incidentF.dta, replace
 
 
+
+
+
+
 ************************************************survival and longitudinal analysis********************************************
 cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
 capture log close 
 *log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
-set scrollbufsize 100000
-set more 1
 
 foreach dataset in "prevalent" "incident"{
-*foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear
-foreach axis of varlist city time{
-foreach failvar of varlist denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
-preserve
-destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 site city, replace
-drop if `failvar'==.
-recast double time
-		label variable city "City"
-		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-
+		destring id time denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 site city, replace
+		
 		capture drop if id_cohort=="d"
 		replace id_cohort = "HCC" if id_cohort == "c"
 		replace id_cohort = "AIC" if id_cohort == "f"
@@ -428,6 +422,20 @@ recast double time
 		label variable cohort "Cohort"
 		label define Cohort 1 "HCC" 2 "AIC"
 		
+		label variable city "City"
+		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
+save `dataset', replace
+}
+set scrollbufsize 100000
+set more 1
+
+foreach dataset in "prevalent" "incident"{
+*foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
+use `dataset', clear
+foreach failvar of varlist denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
+foreach axis of varlist city time{
+	preserve		
+				drop if `failvar'==.
 				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
 				egen axis = axis(`axis')
 				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
@@ -437,25 +445,23 @@ recast double time
 			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlabcolor(black) ///
 			   || , by(cohort) yscale(range(0.00 `=r(max)')) xscale(range(1`=r(max)')) legend(label(1 "`failvar'") label(2 "95% CI")) 
 				*xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Milani" 4 "Kisumu" 5 "Msambweni" 6 "Ukunda", angle(45))  
-				graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
+				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
-restore	
-
-	**********survival***************	
-			
+	restore	
+**********survival***************				
 			stset time, id(id) failure(`failvar') origin(time==0)
 			stdescribe
 			stsum
 			*sts graph, hazard 
-			sts graph, cumhaz 
-			graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\cumhaz`dataset'`failvar'.png", replace
+			sts graph, cumhaz risktable tmax(11) tmax(1) atrisk censored(single) title(`failvar') by(cohort) 
+			graph export "cumhaz`dataset'`failvar'.tif", width(4000) replace
 			sts graph, survival
-			graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\survival`dataset'`failvar'.png", replace
+			graph export "survival`dataset'`failvar'.tif", width(4000) replace
 			sts list, survival
 			sts graph, by(site)
-			graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\survivalsite`dataset'`failvar'.png", replace
+			graph export "survivalsite`dataset'`failvar'.tif", width(4000) replace
 			sts graph, by(city)
-			graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\survivalcity`dataset'`failvar'.png", replace
+			graph export "survivalcity`dataset'`failvar'.tif", width(4000) replace
 			
 			*stcox site
 			*stcox city
@@ -469,20 +475,13 @@ restore
 			*streg site, d(ln)
 			*streg site city, d(gam)
 			*stcurve, surv
-			*graph export "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\stcurvesurv`dataset'`failvar'.png", replace
+			*graph export "stcurvesurv`dataset'`failvar'.png", replace
 			*streg site city
-			
-
-}
-
-		table1, by(site_stanfordigg_chik)  vars(stanfordchikvigg_encode2 cat \stanforddenvigg_encode2 cat \ wnv_prntencode2 cat \onnv_prntencode2 cat \ chikv_prntencode2 cat \denv_prntencode2  cat \ denv_nsi_resultencode2 cat \denvigg_encode2 cat \ denvigg_encode2 cat \denvpcr_encode2 cat \chikvigg_encode2 cat \chikviggod_encode2 cat \chikvpcr_encode2 cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\site_stanfordigg_chik`dataset'.xls, replace)
-		table1, by(site_stanfordigg_denv)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\site_stanfordigg_denv`dataset'.xls, replace)
-		table1, by(city_stanfordigg_chik)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\city_stanfordigg_chik`dataset', replace)
-		table1, by(city_stanfordigg_denv)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\city_stanfordigg_denv`dataset'.xls, replace)
-		table1, by(westcoast)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\westcoast`dataset'.xls, replace)
-		table1, by(city)  vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\city`dataset'.xls, replace)
-		table1, vars(stanfordchikvigg_encode cat \stanforddenvigg_encode cat \ wnv_prntencode cat \onnv_prntencode cat \ chikv_prntencode cat \denv_prntencode  cat \ denv_nsi_resultencode cat \denvigg_encode cat \ denvigg_encode cat \denvpcr_encode cat \chikvigg_encode cat \chikviggod_encode cat \chikvpcr_encode cat \)saving(C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output\total`dataset'.xls, replace)
 		
+foreach strata of varlist site_stanfordigg_chik site_stanfordigg_denv city_stanfordigg_chik city_stanfordigg_denv westcoast city cohort{
+		table1, by(`strata')  vars(stanfordchikvigg_encode2 cat \stanforddenvigg_encode2 cat \ wnv_prntencode2 cat \onnv_prntencode2 cat \ chikv_prntencode2 cat \denv_prntencode2  cat \ nsiencode1 cat \denvigg_encode2 cat \ denvigg_encode2 cat \denvpcr_encode2 cat \chikvigg_encode2 cat \chikviggod_encode2 cat \chikvpcr_encode1 cat \)saving(site_stanfordigg_chik`dataset'.xls, replace)
+}
+}
 }
 }
 
