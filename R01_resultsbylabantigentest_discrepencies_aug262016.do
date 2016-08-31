@@ -62,7 +62,7 @@ use `dataset', clear
 	
 **append the different site and cohort excel sheets. 
 use "hcc_kisumu", clear
-append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo" "hcc_kisumu" "aic_chulaimbo.dta", generate(append)
+append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo"  "aic_chulaimbo.dta", generate(append)
 			tostring *, replace force
 	
 			replace studyid_a= subinstr(studyid_a, ".", "",.) 
