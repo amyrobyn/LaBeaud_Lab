@@ -20,31 +20,31 @@ set scrollbufsize 100000
 set more 1
 
 local import "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\"
-import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AX1579) firstrow clear
+import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
 save aic_ukunda
-import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BH1579) firstrow clear
+import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BH1388) firstrow clear
 tempfile  aic_msambweni
 save aic_msambweni
-import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A4:BA601) firstrow clear
+import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A4:BA555) firstrow clear
 tempfile hcc_milalani
 save hcc_milalani
-import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A4:BA1002) firstrow clear
+import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A4:BA334) firstrow clear
 tempfile hcc_nganja
 save hcc_nganja
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda HCC") cellrange(A4:BJ1193) firstrow clear
 tempfile hcc_ukunda
 save hcc_ukunda
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO HCC") cellrange(A4:BG1011) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO HCC") cellrange(A4:BG911) firstrow clear
 tempfile hcc_chulaimbo
 save hcc_chulaimbo
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:AD1004) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:AD741) firstrow clear
 tempfile aic_kisumu
 save aic_kisumu
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:BE1010) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:BE831) firstrow clear
 tempfile hcc_kisumu
 save hcc_kisumu
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:AN1005) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:AE680) firstrow clear
 tempfile aic_chulaimbo
 save aic_chulaimbo
 
@@ -235,11 +235,10 @@ encode id_wide, gen(id)
 sort visit
 drop if visit =="a2"
 encode visit, gen(time)
-
+replace id_city = "1" if id_city =="6"
 encode id_city, gen(city)
 xtset id time	
 save longitudinal.dta, replace
-
 	   					replace id_city  = "Chulaimbo" if id_city == "c"|id_city == "r"
 						replace id_city  = "Msambweni" if id_city == "m"
 						replace id_city  = "Kisumu" if id_city == "k"
@@ -421,18 +420,23 @@ foreach dataset in "prevalent" "incident"{
 *foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear
 foreach failvar of varlist denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
-foreach axis of varlist city time{
+foreach axis of varlist time{
 	preserve		
-				*drop if `failvar' == .
 				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
 				egen axis = axis(`axis')
 				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-			graph twoway ///
-			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
-			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlabcolor(black) ///
-			   || , by(cohort) ylabel(minmax, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) 
-				*xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Milani" 4 "Kisumu" 5 "Msambweni" 6 "Ukunda", angle(45))  
+				graph twoway || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4), by(cohort) ylabel(, format(%5.3f)) legend(label(1 "`failvar'") label(2 "95% CI")) title(`dataset' by cohort and `axis') xlabel(0 (1) 9)
+				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
+	restore	
+
+foreach axis of varlist city{
+	preserve		
+				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
+				egen axis = axis(`axis')
+				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+				graph twoway || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4), by(cohort) ylabel(, format(%5.3f)) legend(label(1 "`failvar'") label(2 "95% CI")) title(dataset by cohort and axis) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 7" Ukunda", angle(45))  
 				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
 	restore	
@@ -473,4 +477,4 @@ foreach strata of varlist site_stanfordigg_chik site_stanfordigg_denv city_stanf
 }
 }
 }
-
+}
