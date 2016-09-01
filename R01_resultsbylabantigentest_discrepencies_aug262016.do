@@ -48,6 +48,7 @@ import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx"
 tempfile aic_chulaimbo
 save aic_chulaimbo
 
+
 foreach dataset in "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo" "hcc_kisumu" "aic_chulaimbo.dta"{
 use `dataset', clear
 	tostring *, replace force
@@ -235,11 +236,12 @@ encode id_wide, gen(id)
 sort visit
 drop if visit =="a2"
 encode visit, gen(time)
-replace id_city = "1" if id_city =="6"
+replace id_city ="c" if id_city =="r" 
 encode id_city, gen(city)
 xtset id time	
 save longitudinal.dta, replace
-	   					replace id_city  = "Chulaimbo" if id_city == "c"|id_city == "r"
+
+	   					replace id_city  = "Chulaimbo" if id_city == "c"
 						replace id_city  = "Msambweni" if id_city == "m"
 						replace id_city  = "Kisumu" if id_city == "k"
 						replace id_city  = "Ukunda" if id_city == "u"
@@ -422,24 +424,33 @@ use `dataset', clear
 foreach failvar of varlist denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
 foreach axis of varlist time{
 	preserve		
+				*drop if `failvar' == .
 				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
 				egen axis = axis(`axis')
 				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-				graph twoway || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4), by(cohort) ylabel(, format(%5.3f)) legend(label(1 "`failvar'") label(2 "95% CI")) title(`dataset' by cohort and `axis') xlabel(0 (1) 9)
+			graph twoway ///
+			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlsize(4) mlabcolor(black) ///
+			   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
 				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
-	restore	
 
-foreach axis of varlist city{
+	restore	
+	}
+	foreach axis of varlist city {
 	preserve		
+				*drop if `failvar' == .
 				collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
 				egen axis = axis(`axis')
 				generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-				graph twoway || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4), by(cohort) ylabel(, format(%5.3f)) legend(label(1 "`failvar'") label(2 "95% CI")) title(dataset by cohort and axis) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 7" Ukunda", angle(45))  
+			graph twoway ///
+			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlabcolor(black) mlsize(4) ///
+			   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 6 "Ukunda", angle(45))  
 				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
-	restore	
+	restore	}
 **********survival***************				
 			stset time, id(id) failure(`failvar') origin(time==0)
 			stdescribe
@@ -473,8 +484,6 @@ foreach axis of varlist city{
 		
 foreach strata of varlist site_stanfordigg_chik site_stanfordigg_denv city_stanfordigg_chik city_stanfordigg_denv westcoast city cohort{
 		table1, by(`strata')  vars(stanfordchikvigg_encode2 cat \stanforddenvigg_encode2 cat \ wnv_prntencode2 cat \onnv_prntencode2 cat \ chikv_prntencode2 cat \denv_prntencode2  cat \ nsiencode1 cat \denvigg_encode2 cat \ denvigg_encode2 cat \denvpcr_encode2 cat \chikvigg_encode2 cat \chikviggod_encode2 cat \chikvpcr_encode1 cat \)saving(site_stanfordigg_chik`dataset'.xls, replace)
-}
-}
 }
 }
 }
