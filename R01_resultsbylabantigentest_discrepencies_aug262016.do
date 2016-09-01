@@ -431,7 +431,7 @@ foreach axis of varlist time{
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 			graph twoway ///
 			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
-			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlsize(4) mlabcolor(black) ///
+			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
 			   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
 				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
@@ -446,11 +446,12 @@ foreach axis of varlist time{
 				generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 			graph twoway ///
 			   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
-			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(12) mlabgap(2) mlabangle(45) mlabcolor(black) mlsize(4) ///
-			   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 6 "Ukunda", angle(45))  
+			   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+			   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 6 "Ukunda", angle(45)) title(`dataset' by cohort and `axis')
 				graph export "`dataset'`failvar'`axis'cohort.tif", width(4000) replace 
 
-	restore	}
+	restore	
+	}
 **********survival***************				
 			stset time, id(id) failure(`failvar') origin(time==0)
 			stdescribe
