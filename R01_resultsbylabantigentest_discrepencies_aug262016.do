@@ -22,49 +22,82 @@ set more 1
 local import "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
-save aic_ukunda
+save aic_ukunda, replace
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BH1388) firstrow clear
 tempfile  aic_msambweni
-save aic_msambweni
+save aic_msambweni, replace
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A4:BA555) firstrow clear
 tempfile hcc_milalani
-save hcc_milalani
+save hcc_milalani, replace
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A4:BA334) firstrow clear
 tempfile hcc_nganja
-save hcc_nganja
+save hcc_nganja, replace
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda HCC") cellrange(A4:BJ1193) firstrow clear
 tempfile hcc_ukunda
-save hcc_ukunda
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO HCC") cellrange(A4:BG911) firstrow clear
+save hcc_ukunda, replace
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO HCC") cellrange(A4:ad770) firstrow clear
 tempfile hcc_chulaimbo
-save hcc_chulaimbo
+save hcc_chulaimbo, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:AD741) firstrow clear
 tempfile aic_kisumu
-save aic_kisumu
+save aic_kisumu, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:BE831) firstrow clear
 tempfile hcc_kisumu
-save hcc_kisumu
+save hcc_kisumu, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:AE680) firstrow clear
 tempfile aic_chulaimbo
-save aic_chulaimbo
+save aic_chulaimbo, replace
 
 
 foreach dataset in "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo" "hcc_kisumu" "aic_chulaimbo.dta"{
 use `dataset', clear
-	tostring *, replace force
-	foreach var of varlist _all{
+foreach var of varlist _all{
+		rename `var', lower
+}
+	ds date*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
 		replace `var'=lower(`var')
 		rename `var', lower
 		}	
 	drop if studyid_a==""|studyid_a=="???"
+
 	
+foreach var of varlist date*{
+		capture confirm string var `var'
+			if _rc==0 {
+						gen double my`var'= date(`var',"DMY")
+						format my`var' %td
+						drop `var'
+						}
+			else {
+						gen double my`var'= `var'
+						format my`var' %td
+						drop `var'
+				}
+							}
+	ds my*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+		}	
+
 	save `dataset', replace
 }
-	
+
 **append the different site and cohort excel sheets. 
 use "hcc_kisumu", clear
-append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo"  "aic_chulaimbo.dta", generate(append)
-			tostring *, replace force
+append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukunda" "aic_kisumu" "hcc_chulaimbo"  "aic_chulaimbo.dta", generate(append) force
+			
+			
+	ds my*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+	}	
+
 	
 			replace studyid_a= subinstr(studyid_a, ".", "",.) 
 			replace studyid_a= subinstr(studyid_a, "/", "",.)
@@ -76,12 +109,12 @@ append using "aic_ukunda" "aic_msambweni" "hcc_milalani" "hcc_nganja" "hcc_ukund
 	tab dup_merged
 	list studyid_a if dup_merged>1
 	tempfile merged
-	save merged
+	save merged, replace
 	*keep those that i dropped for duplicate and show to elysse
 	keep if dup_merged >1	
 	export excel using "`save'dup", firstrow(variables) replace
 
-	use merged.dta, replace
+	use merged.dta, clear
 	drop if dup_merged >1
 	
 tempfile merged
@@ -107,7 +140,7 @@ foreach v of varlist `r(varlist)' {
 	replace `v' = lower(`v') 
 } 
 tempfile wide
-save wide
+save wide, replace
 
 	bysort id_wide: gen dup2 = _n 
 	save wide, replace
@@ -115,16 +148,25 @@ save wide
 		export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
 	drop if dup2 >1
-	reshape long   studyid_ followupaliquotid_ dateofcollection_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ datesamplecollected_, i(id_wide) j(visit) string
+	reshape long mydatesamplecollected_ mydatesamplerun_ studyid_ followupaliquotid_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(visit) string
 	tempfile long
-	save long
+	save long, replace
 	
 	use long.dta, clear
 	drop if id_wide==""
-tostring *, replace force
+
+	ds my*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+	}	
+
+
+	
 capture drop _merge
 tempfile elisas
-save elisas
+save elisas, replace
 
 ************************************add RDT data**********************************
 
@@ -133,7 +175,7 @@ rename STUDYNUMBER STUDY_ID
 rename IgM dengueigm_sammy
 rename IgG dengue_igg_sammy
 tempfile ns1
-save ns1
+save ns1, replace
 *take visit out of id
 
 						forval i = 1/3 { 
@@ -148,9 +190,37 @@ save ns1
 	replace id_childnumber = substr(STUDY_ID, +4, .)
 	order id_cohort id_city STUDY_ID id_childnumber 
 	egen id_wide = concat(id_city id_cohort id_childnum)
-	
-tostring *, replace force
+
 	foreach var of varlist _all{
+		rename `var', lower
+}
+	ds date*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+		}	
+
+	
+	foreach var of varlist date*{
+		*capture destring `var', replace
+		capture gen double my`var'= date(`var',"DMY")
+		capture format my`var' %td
+}
+
+	
+	
+	
+	ds my*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+	}	
+
+	
+	ds my*, not
+	foreach var of var `r(varlist)'{
 	replace `var' =trim(itrim(lower(`var')))
 	}
 save ns1, replace
@@ -161,10 +231,10 @@ save elisas_PCR_RDT, replace
 ************************************add PRNT data**********************************
 import excel "`import'LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Msambweni Results") cellrange(A2:E154) firstrow clear
 tempfile PRNT_Msambweni 
-save PRNT_Msambweni 
+save PRNT_Msambweni, replace
 import excel "`import'LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Ukunda Results") cellrange(A2:F80) firstrow clear
 tempfile PRNT_Ukunda
-save PRNT_Ukunda
+save PRNT_Ukunda, replace
 
 foreach dataset in "PRNT_Msambweni" "PRNT_Ukunda"{
 use "`dataset'", clear
@@ -189,22 +259,36 @@ use "`dataset'", clear
 			egen id_wide = concat(id_city id_cohort id_childnumber4)
 			
 		*recode prnt values as pos(20+)/ neg
-		tostring *, replace force
-			foreach var of varlist _all{
-			replace `var' =trim(itrim(lower(`var')))
-			}
+	foreach var of varlist _all{
+		rename `var', lower
+}
+	foreach var of var _all{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+		}	
 
-		 foreach v of varlist  DENV2 WNV CHIKV ONNV{
+	foreach var of var _all{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		rename `var', lower
+	}	
+	
+	foreach var of var _all{
+			replace `var' =trim(itrim(lower(`var')))
+	}
+
+		 foreach v of varlist  denv2 wnv chikv onnv{
 			  replace `v' = "pos" if `v' == "40"|`v' == ">80"|`v' == "20"
 			  replace `v' = "neg" if `v' == "10"|`v' == "<10"
 			  replace `v' = "" if `v' == "no sample"|`v' == "no sample received at cdc"|`v' == ""
 		   tab `v', m
 		   }   
 		   
-		   rename  DENV2 denv_prnt
-		   rename  WNV wnv_prnt 
-		   rename  CHIKV chikv_prnt 
-		   rename  ONNV onnv_prnt
+		   rename  denv2 denv_prnt
+		   rename  wnv wnv_prnt 
+		   rename  chikv chikv_prnt 
+		   rename  onnv onnv_prnt
 	save "`dataset'", replace
 }
 use "PRNT_Msambweni", clear
@@ -212,26 +296,30 @@ use "PRNT_Msambweni", clear
 merge 1:1 id_wide visit using "elisas_PCR_RDT.dta"
 drop _merge
 tempfile elisas_PCR_RDT_PRNT1
-save elisas_PCR_RDT_PRNT1
+save elisas_PCR_RDT_PRNT1, replace
 use PRNT_Ukunda, clear
 *merge with elisas.dta
 merge 1:1 id_wide visit using elisas_PCR_RDT_PRNT1.dta
 drop _merge
 tempfile elisas_PCR_RDT_PRNT2
-save elisas_PCR_RDT_PRNT2
+save elisas_PCR_RDT_PRNT2, replace
 
 *******declare data as panel data***********
-tostring *, replace force
-foreach v of varlist _all { 
-			replace `v' = lower(`v') 
-} 
-tostring *, replace
-foreach v of varlist _all {
-		rename `v' `=lower("`v'")'
-   }
- foreach var of varlist _all{
-							replace `var' =trim(itrim(lower(`var')))
-	}
+	foreach var of varlist date*{
+		*capture destring `var', replace
+		capture gen double my`var'= date(`var',"DMY")
+		capture format my`var' %td
+}
+
+	ds my*, not
+	foreach var of var `r(varlist)'{
+		tostring `var', replace force
+		replace `var'=lower(`var')
+		replace `var' =trim(itrim(lower(`var')))
+		rename `var', lower
+	}	
+
+
 encode id_wide, gen(id)
 sort visit
 drop if visit =="a2"
@@ -312,16 +400,16 @@ gen l1_iggS_chikv=  stanfordchikvigg_encode2[_n-1]
 *destring  denvigm_ chikv_prntencode stanforddenvigg_encode chikvigg_encode chikviggod_encode chikvpcr_encode chikvigm_encode stanfordchikvod_encode stanfordchikvigg_encode denv_prntencode denv_nsi_resultencode  denvigg_encode denviggod_encode denvpcr_encode denvigm_encode stanforddenvod_encode stanforddenvigg_encode stanforddenviggod_encode wnv_prntencode onnv_prntencode, replace
 
 tempfile temp
-save temp
+save temp, replace
 preserve
 keep if site==1
 tempfile site1
-save site1
+save site1, replace
 restore
 preserve
 keep if site ==2
 tempfile site2
-save site2
+save site2, replace
 restore	
 
 foreach dataset in site1 site2 temp{
@@ -370,34 +458,30 @@ replace prevalent = 1 if  stanfordchikvigg_encode2==1 & time ==1
 replace prevalent = 1 if  stanforddenvigg_encode2==1 & time ==1
 
 tempfile prevalent
-save prevalent
+save prevalent, replace
 preserve
 keep if id_cohort =="c"
 tempfile prevalentC
-save prevalentC
+save prevalentC, replace
 restore
 preserve
 keep if id_cohort =="f"
 tempfile prevalentF
-save prevalentF
+save prevalentF, replace
 restore
 preserve
 drop if prevalent == 1 
 tempfile incident
-save incident
+save incident, replace
 keep if id_cohort =="c"
 tempfile incidentC
-save incidentC
+save incidentC, replace
 restore
 preserve
 keep if id_cohort =="f"
 tempfile incidentF
-save incidentF
+save incidentF, replace
 restore
-
-
-
-
 
 ************************************************survival and longitudinal analysis********************************************
 foreach dataset in "prevalent" "incident"{
@@ -414,10 +498,6 @@ use `dataset', clear
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 save `dataset', replace
 }
-
-set scrollbufsize 100000
-set more 1
-
 foreach dataset in "prevalent" "incident"{
 *foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear
