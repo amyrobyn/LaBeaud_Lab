@@ -200,25 +200,18 @@ save ns1, replace
 		replace `var'=lower(`var')
 		rename `var', lower
 		}	
-
-	
 	foreach var of varlist date*{
 		*capture destring `var', replace
 		capture gen double my`var'= date(`var',"DMY")
 		capture format my`var' %td
+		drop `var'
 }
-
-	
-	
-	
 	ds my*, not
 	foreach var of var `r(varlist)'{
 		tostring `var', replace force
 		replace `var'=lower(`var')
 		rename `var', lower
 	}	
-
-	
 	ds my*, not
 	foreach var of var `r(varlist)'{
 	replace `var' =trim(itrim(lower(`var')))
@@ -305,12 +298,6 @@ tempfile elisas_PCR_RDT_PRNT2
 save elisas_PCR_RDT_PRNT2, replace
 
 *******declare data as panel data***********
-	foreach var of varlist date*{
-		*capture destring `var', replace
-		capture gen double my`var'= date(`var',"DMY")
-		capture format my`var' %td
-}
-
 	ds my*, not
 	foreach var of var `r(varlist)'{
 		tostring `var', replace force
@@ -436,6 +423,16 @@ egen site_stanfordigg_denv= concat(site stanforddenvigg_encode2)
 egen city_stanfordigg_chik = concat(city stanfordchikvigg_encode2)
 egen city_stanfordigg_denv = concat(city stanforddenvigg_encode2)
 
+*add year and month to merge with rain and vector data
+foreach var of varlist my*{
+	gen `var'_year = year(`var')
+	gen `var'_month = month(`var')
+}
+rename  mydatesamplecollected__year year
+rename mydatesamplecollected__month month
+
+merge m:m year month site using merged_enviro.dta
+
 *add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
 			expand 2 if time == 1, gen(x)
 			gsort id time -x
@@ -483,6 +480,7 @@ tempfile incidentF
 save incidentF, replace
 restore
 
+
 ************************************************survival and longitudinal analysis********************************************
 foreach dataset in "prevalent" "incident"{
 use `dataset', clear
@@ -498,6 +496,8 @@ use `dataset', clear
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 save `dataset', replace
 }
+
+
 foreach dataset in "prevalent" "incident"{
 *foreach dataset in "prevalent" "incident" "prevalentF" "incidentF" "prevalentC"  "incidentC"  {
 use `dataset', clear

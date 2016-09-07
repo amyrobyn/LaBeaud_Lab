@@ -21,29 +21,35 @@ gen month = month(date2)
 collapse chulaimbo_rainfall_mm obama_rainfall_mm, by(month year) 
 rename chulaimbo_rainfall_mm rainfall_mm_chulaimbo 
 rename obama_rainfall_mm rainfall_mm_obama
-reshape long rainfall_mm_, i(year month) j(Site) string
+reshape long rainfall_mm_, i(year month) j(city) string
 save Rainfall, replace
 
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Prokopack") firstrow clear
 tab month, m
+rename Site city
 save Prokopack, replace
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("pupae") firstrow clear
+rename Site city
 tab month, m
 save pupae, replace
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("BG sentinel") firstrow clear
+rename Site city
 tab month, m
 save BG_sentinel, replace
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Larval") firstrow clear
+rename Site city
 tab month, m
 save Larval, replace
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Ovitraps") firstrow clear
+rename Site city
 tab month, m
 save Ovitraps, replace
 import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("HLC") firstrow clear
+rename Site city
 tab month, m
 save HLC, replace
 
-merge m:m month year Site using Rainfall
+merge m:m month year city using Rainfall
 drop _merge
 capture drop  Month_year 
 capture drop  MonthYear
@@ -57,16 +63,41 @@ use `dataset', clear
 	capture drop Month_year 
 	capture drop MonthYear
 
-merge m:m year month  Site  using merged_enviro.dta
+merge m:m year month city  using merged_enviro.dta
 drop _merge
 save merged_enviro.dta, replace
 }
 gen date= ym(year, month)
 format date %tm
-encode Site, gen(site_dum)
-xtset site_dum date
+encode city, gen(city_dum)
+xtset city_dum date
 
 foreach var in  Aedes_aegyti_ovi_IN Culex_species_ovi_IN Indoors_Total_ovi_IN Aedes_aegyti_ovi_OUT Culex_species_ovi_OUT Outdoors_Total_ovi_OUT Grand_Total_ovi Aedes_aegypti_Larva_IN Aedes_simpsoni_Larva_IN Anopheles_Larva_IN Culex_Larva_IN Total_Larva_IN Aedes_Larva_OUT Aedes_simpsoni_Larva_OUT Anopheles_Larva_OUT Culex_Larva_OUT Toxorhynchite_Larva_OUT Total_Larva_OUT Grand_Total_Larva Aedeseagypti_BG Aedessimpsoni_BG Aedesspp_BG Anophelesgambiae_BG Anophelesfunestus_BG Culexspecies_BG Mansoni_BG Grandtotal_BG Aedes_aegypti_papae Anopheles_papae Culex_papae Toxorhynchites_papae GrandTotal_papae Aedes_aegypti_propack_PP_IN Aedessimpsoni_PP_IN Anophelesgambiae_PP_IN AnophelesCostani_PP_IN Anophelesfunestus_PP_IN Culex_PP_IN IndoorsTotal_PP_IN Aedes_PP_OUT Aedessimpsoni_PP_OUT Anophelesgambiae_PP_OUT Anophelesfunestus_PP_OUT Culex_PP_OUT OutdoorsTotal_PP_OUT GrandTotal_PP Aedes_eagypti_HLC_IN Aedes_eagypti_HLC_OUT Aedes_eagypti_HLC_TTL Anopheles_gambiae_HLC_IN Anopheles_gambiae_HLC_OUT Anopheles_gambiae_HLC_TTL Anopheles_funestus_HLC_IN Anopheles_funestus_HLC_OUT Anopheles_funestus_HLC_TTL Aedes_simpsoni_HLC_IN Aedes_simpsoni_HLC_OUT Aedes_simpsoni_HLC_TTL Culex_species_HLC_IN Culex_species_HLC_OUT Culex_species_HLC_TTL HLC_Grand_TTL rainfall_mm_{
-xtline `var', overlay title(`var' by site and month)  xtitle(Month and Year) xlabel(#20, angle(45) )
+xtline `var', overlay title(`var' by City and month)  xtitle(Month and Year) xlabel(#20, angle(45) )
 graph export "`var'.tif", width(4000) replace  
 }
+
+replace city = "c" if city =="Chulaimbo"
+replace city = "k" if city =="Kisumu"
+replace city = "m" if city =="Msambweni"
+replace city = "u" if city =="Ukunda"
+replace city = "c" if city =="chulaimbo"
+replace city = "k" if city =="obama"
+
+gen site = "" 
+replace site = "coast" if city =="m"|city =="u"
+replace site = "west" if city =="k"|city =="c"
+
+encode city, gen(city1)
+drop city
+rename city1 city
+tab city
+tab city, nolab
+
+encode site, gen(site1)
+drop site
+rename site1 site
+tab site
+tab site, nolab
+
+save merged_enviro.dta, replace
