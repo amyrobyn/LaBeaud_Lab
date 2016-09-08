@@ -5,21 +5,33 @@
  *last updated august 15, 2016  							  *
  **************************************************************/
  /*to do
-+ -longitudinal nature of data- survival analysis, rain data
-+ -sensisitivty by site (west vs coast)
++ survival for hcc only
+	lag it by one visit (if they have positive eliza at b, that means they were infected at a).
++ prevalence/incidence only for aic
+	lag it by one visit (if they have positive eliza at b, that means they were infected at a).
++ #kids by number of visits
+	bysort subject: gen numvisits = count (visits)
+	tab numvisits
++ aic fever/igg pcr/igg igm/igg (ab bc cd de)
+	do the same thing that we did with pcr igm
+
+
++ -longitudinal nature of data- survival analysis- done by visit. do it by date
++rain data- add the data from dan
++ -sensisitivty by site (west vs coast)- done. put in tables and add the fever/igg lagged and igm/igg lagged
 + -prnt n = 200. check the sensitivity analysis
-+ -rdt ns1+/+igm =+. compare that to stfd igg incidence.
-+ -pcr + copmared to igg at next visit (ab/bc/cd)
++ -rdt ns1+/+igm =+. compare that to stfd igg incidence.- done. add to tables
++ -pcr + copmared to igg at next visit (ab/bc/cd)- done add to tables. 
  */
  
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output"
+cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
 capture log close 
 log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-local import "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\"
+local import "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
 save aic_ukunda, replace

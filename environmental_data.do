@@ -4,8 +4,8 @@
  *lebeaud lab               				        		  *
  *last updated august 15, 2016  							  *
  **************************************************************/
-local import "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\"
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\R01\longitudinal_analysis_aug252016\output"
+local import "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\environmental_data\KenyaMerged&FormattedDataSets\"
+cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
  
 capture log close 
 log using "enviro.smcl", text replace 
@@ -13,57 +13,97 @@ set scrollbufsize 100000
 set more 1
 
 
-insheet using "`import'Rainfall_Daily Data_Jul 1 2016.csv", comma clear
-gen date2 = date(date, "M20Y")
+import excel "`import'ChulaimboMonthlyClimateData.xls", clear firstrow
+gen site = Chulaimbo
+gen date2 = date(Month, "M20Y")
+rename Month monthyear
 format date2  %tmy
 gen year = year(date2)
 gen month = month(date2)
-collapse chulaimbo_rainfall_mm obama_rainfall_mm, by(month year) 
-rename chulaimbo_rainfall_mm rainfall_mm_chulaimbo 
-rename obama_rainfall_mm rainfall_mm_obama
-reshape long rainfall_mm_, i(year month) j(city) string
-save Rainfall, replace
+save ChulaimboMonthlyClimateData, replace
 
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Prokopack") firstrow clear
-tab month, m
-rename Site city
-save Prokopack, replace
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("pupae") firstrow clear
-rename Site city
-tab month, m
-save pupae, replace
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("BG sentinel") firstrow clear
-rename Site city
-tab month, m
-save BG_sentinel, replace
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Larval") firstrow clear
-rename Site city
-tab month, m
-save Larval, replace
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("Ovitraps") firstrow clear
-rename Site city
-tab month, m
-save Ovitraps, replace
-import excel "`import'Mosquito monthly summaries coast Jun16.xls", sheet("HLC") firstrow clear
-rename Site city
-tab month, m
-save HLC, replace
+import excel "`import'KisumuMonthlyClimateData.xls", clear firstrow
+gen site = Kisumu
+gen date2 = date(Month, "M20Y")
+rename Month monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save KisumuMonthlyClimateData, replace
 
-merge m:m month year city using Rainfall
+import excel "`import'LandingCatchesMonthlySummaries_all.xls", clear firstrow
+gen date2 = date(Month, "M20Y")
+rename Month monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save LandingCatchesMonthlySummaries_all, replace
+
+import excel "`import'LarvalMonthlySummaries.xls", clear firstrow
+gen date2 = date(Date, "M20Y")
+rename Date monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save LarvalMonthlySummaries, replace
+
+
+import excel "`import'MsamMonthlyClimateData.xls", clear firstrow
+gen date2 = date(Month, "M20Y")
+rename Month monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save MsamMonthlyClimateData, replace
+
+import excel "`import'OvitrapMonthlySummaries.xls", clear firstrow
+gen date2 = date(Date, "M20Y")
+rename Date monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save OvitrapMonthlySummaries, replace
+
+import excel "`import'ProkopackMonthlySummaries.xls", clear firstrow
+gen date2 = date(Date, "M20Y")
+rename Date monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save ProkopackMonthlySummaries, replace
+
+import excel "`import'SentinelTrapMonthlySummaries.xls", clear firstrow
+gen date2 = date(Date, "M20Y")
+rename Date monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save SentinelTrapMonthlySummaries, replace
+
+import excel "`import'UkundaMonthlyClimateData.xls", clear firstrow
+gen date2 = date(Month, "M20Y")
+rename Month monthyear
+format date2  %tmy
+gen year = year(date2)
+gen month = month(date2)
+save UkundaMonthlyClimateData, replace
+
+
+merge m:m month year site using SentinelTrapMonthlySummaries
 drop _merge
 capture drop  Month_year 
 capture drop  MonthYear
 save merged_enviro.dta, replace
 
 
-foreach dataset in "Prokopack" "pupae" "BG_sentinel" "Larval" "Ovitraps"{
+foreach dataset in "ProkopackMonthlySummaries" "OvitrapMonthlySummaries" "MsamMonthlyClimateData" "LarvalMonthlySummaries"  "ChulaimboMonthlyClimateData" "KisumuMonthlyClimateData" "LandingCatchesMonthlySummaries_all"{
 use `dataset', clear
 
 	capture drop MonthYear 
 	capture drop Month_year 
 	capture drop MonthYear
 
-merge m:m year month city  using merged_enviro.dta
+merge m:m year month site using merged_enviro.dta
 drop _merge
 save merged_enviro.dta, replace
 }
