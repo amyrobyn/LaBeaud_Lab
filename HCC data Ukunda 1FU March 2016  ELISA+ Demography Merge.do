@@ -21,6 +21,7 @@ set more 1
 						capture tostring `var', replace
 			}
 			foreach var of varlist *ses*{
+						replace `var'=trim(itrim(lower(`var')))
 						gen index`var' ="."
 						replace index`var' = "1" if `var' == "yes" 
 						replace index`var' = "0" if `var' == "no" |`var' == "none" 
@@ -123,8 +124,8 @@ egen ses_index_sum2= rowtotal(indexhabits_ses_telephone - indexhabits_ses_domest
 xtile ses_index_sum2_pct =  ses_index_sum2, n(4)
 *tab ses_index_sum2_pct, gen(ses_index_sum2_quart)
 
-gen ed_cat = educlevel 
-replace ed_cat= 5 if ed_cat ==9
+gen ed_cate = educlevel 
+replace ed_cate= 5 if ed_cate ==9
 
 *mosquito index
 sum hh_screens_int hh_sleep_window_int hh_own_bednet_int hh_sleep_bednet_int hh_kids_sleep_bed_int hh_mosquito_contr_int
@@ -143,22 +144,16 @@ foreach var in hh_sleep_window_int hh_own_bednet_int hh_sleep_bednet_int{
 tab `var', gen("dum`var'")
 }
 egen mosqcontrol_index= rowtotal(hh_screens_int  hh_mosquito_contr_dum hh_kids_sleep_bed_int dumhh_sleep_window_int2 dumhh_own_bednet_int2 dumhh_sleep_bednet_int2)
-xtile mosqcontrol_indexpct =  mosqcontrol_index, n(3)
+xtile mosqcontrol_indexpct =  mosqcontrol_index, n(4)
 *tab mosqcontrol_indexpct, gen(mosqcontrol_index_quart)
 
 gen hh_water_collecti_dum=1
 replace hh_water_collecti_dum =0 if hh_water_collecti_int  ==16|hh_water_collecti_int ==17
 replace hh_water_collecti_dum =. if hh_water_collecti_int  == . 
 
-
-*education continuous
-table1, by(Disease) vars(gender cat\age contn\educlevel contn\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_disease.xls", replace) test missing
-table1, by(chikv) vars(gender cat\age contn\educlevel contn\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_chikv.xls", replace) test missing
-table1, by(denv) vars(gender cat\age contn\educlevel contn\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_denv.xls", replace) test missing
-table1, vars(gender cat\age contn\educlevel contn\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_total.xls", replace) test missing
-
-*ed in two cats
-table1, by(Disease) vars(gender cat\age contn\ed_cat cat\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_disease2.xls", replace) test missing
-table1, by(chikv) vars(gender cat\age contn\ed_cat cat\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_chikv2.xls", replace) test missing
-table1, by(denv) vars(gender cat\age contn\ed_cat cat\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_denv2.xls", replace) test missing
-table1, vars(gender cat\age contn\ed_cat cat\ ses_index_sum2_pct cat\childheight contn\ childweight contn\ mosqcontrol_indexpct cat \ hh_water_collecti_dum cat \) saving("table1_ukunda_total2.xls", replace) test missing
+*ed in two cates
+table1, by(Disease) vars(gender cate\age contn\ed_cate cate\ ses_index_sum2_pct cate\childheight conts\ childweight conts\ mosqcontrol_indexpct cate \ hh_water_collecti_dum cate \) saving("table1_ukunda_disease2.xls", replace) test missing
+table1, by(chikv) vars(gender cate\age contn\ed_cate cate\ ses_index_sum2_pct cate\childheight conts\ childweight conts\ mosqcontrol_indexpct cate \ hh_water_collecti_dum cate \) saving("table1_ukunda_chikv2.xls", replace) test missing
+table1, by(denv) vars(gender cate\age contn\ed_cate cate\ ses_index_sum2_pct cate\childheight conts\ childweight conts\ mosqcontrol_indexpct cate \ hh_water_collecti_dum cate \) saving("table1_ukunda_denv2.xls", replace) test missing
+table1, vars(gender cate\age contn\ed_cate cate\ ses_index_sum2_pct cate\childheight conts\ childweight conts\ mosqcontrol_indexpct cate \ hh_water_collecti_dum cate \) saving("table1_ukunda_total2.xls", replace) test missing
+export excel using "ukunda", firstrow(variables) replace
