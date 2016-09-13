@@ -353,8 +353,8 @@ foreach var in dengueigm_sammy nsi wnv_prnt onnv_prnt chikv_prnt stanfordchikvig
 	tab `var'
 }
 
-**put this in tables later
-/*levelsof cohortcityantigen, local(levels) 
+
+levelsof cohortcityantigen, local(levels) 
 foreach l of local levels { 
 	foreach var of varlist *chikv* *denv* chikv* denv*{ 
 		display "`l'"
@@ -375,7 +375,8 @@ levelsof westcoast, local(levels)
 		tab `var'  stanforddenvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m
 	}
 		}
-*/
+
+
 *simple prevalence/incidence by visit
 foreach var of varlist *chikv* *denv*{
 	bysort visit_s: tab `var'
@@ -386,11 +387,16 @@ destring id visit_s, replace
 xtset id visit_s
 sort id visit_s
 
-	foreach var in dengueigm_sammy  nsi stanforddenvigg_  stanfordchikvigg_ chikv_prnt chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ denv_prnt denvigg_ denviggod_ denvpcr_ denvigm_ stanforddenvod_ stanforddenviggod_ wnv_prnt onnv_prnt{
+
+	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ chikviggod_ stanfordchikvod_ denvigg_ denviggod_ stanforddenvod_ stanforddenviggod_ {
 		tab `var', gen(`var'encode)
 		gen l1_`var'=  `var'[_n-1] 
 		tab l1_`var', gen(l1_`var'encode)
 	}
+
+*+ #kids by number of visits
+	bysort id_code: egen numvisits = count(visit_s)
+	tab numvisits
 
 tempfile temp
 save temp, replace

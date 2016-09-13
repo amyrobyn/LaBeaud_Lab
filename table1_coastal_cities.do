@@ -23,16 +23,14 @@ drop sex2 HHM2_Sex
 drop age AlphavirusCorrected Alphaviruscorrected Habits_Date habits_Date infoInform_Date infoinform_Date  infoInform_Study_ID infoinform_Study_ID  meanArmcirc MeanArmCirc meanheight MeanHeight meanTric_fold MeanTric_Fold meanweight MeanWeight OtherRelationToHH OtherRelationtoHH
 foreach var of varlist _all{
 capture replace `var'=trim(itrim(lower(`var')))
-capture replace `var' = "." if `var'==""
+capture replace `var' = "" if `var'==""
 rename *, lower
 }
-encode rvfvelisa, gen(rvfvelisa_int)
-replace rvfvelisa_int =0 if rvfvelisa_int ==2
-replace rvfvelisa_int =. if rvfvelisa_int ==1|rvfvelisa_int ==4
-replace rvfvelisa_int =1 if rvfvelisa_int ==3
 
-label define  rvfvelisa_int 0 "rvfv negative", modify
-label define  rvfvelisa_int 1 "rvfv positive", modify
+replace rvfvelisa ="0" if rvfvelisa=="negative"
+replace rvfvelisa="" if rvfvelisa=="Repeat"|rvfvelisa =="repeat"
+replace rvfvelisa="1" if rvfvelisa=="positive"
+destring rvfvelisa, replace
 
 egen village_rfv=concat(village rvfvelisa)
 sum
@@ -42,6 +40,14 @@ sum
 			capture tostring `var', replace
 			tab `var'
 			}
+
+			foreach var of varlist _all{
+			capture replace `var'=trim(itrim(lower(`var')))
+			capture replace `var' = "" if `var'==""
+			rename *, lower
+			}
+
+
 gen own_index = "no"
 replace own_index = "yes" if ownrent =="own"
 
@@ -79,7 +85,7 @@ replace land_index = "1" if ownland =="own"|ownland =="all"
 		order sesindex*
 		sum sesindexown_index - sesindexland_index
 		egen ses_index_sum= rowtotal(sesindexown_index - sesindexland_index)
-		bysort village_rfv : tab ses_index_sum
+		bysort village_rfv: tab ses_index_sum
 
 		
 foreach var in sleepbywindow usebednet childrenusebednet nettreated{
@@ -104,12 +110,10 @@ foreach var in sleepbywindow usebednet childrenusebednet nettreated{
 		sum mosqsleepbywindow - mosqnettreated
 		egen mosq_index_sum= rowtotal(mosqsleepbywindow - mosqnettreated)
 
-
-
 replace yf = lower(yf)
 replace yf= "1" if yf== "yes" 
 replace yf= "0" if yf== "no"  
-replace yf= "." if yf== "3953"|yf== "not available"||yf== ""
+replace yf= "" if yf== "3953"|yf== "not available"||yf== ""
 destring yf, replace
 
 
@@ -128,28 +132,31 @@ encode tribe, gen(tribe_int)
 save coastal_villages, replace 
 
 xtile ses_index_sum_pct =  ses_index_sum, n(4)
-xtile mosq_index_sum_pct =  mosq_index_sum, n(4)
 
-bysort 	rvfvelisa_int: sum age gender ses_index_sum mosq_index_sum yf tribe_int educ_int
-bysort 	rvfvelisa_int: sum age gender ses_index_sum_pct mosq_index_sum_pct yf tribe_int educ_int
+gen mosqcontrol_index0 =  mosq_index_sum if  mosq_index_sum==0
+replace  mosq_index_sum=. if  mosq_index_sum==0
+xtile mosq_index_sum_pct =   mosq_index_sum, n(3)
+replace mosq_index_sum_pct =  mosqcontrol_index0 if mosqcontrol_index0 !=.
 
 
+bysort 	rvfvelisa: sum age gender ses_index_sum mosq_index_sum yf tribe_int educ_int
+bysort 	rvfvelisa: sum age gender ses_index_sum_pct mosq_index_sum_pct yf tribe_int educ_int
 
-foreach i in Jego Milalani Kinango Nganja Vuga{
+foreach i in jego milalani kinango nganja vuga{
 preserve
 keep if village== "`i'"
-table1, by(rvfvelisa_int) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_`i'.xls", replace) test missing
+table1, by(rvfvelisa) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_`i'.xls", replace) test missing
 restore
 }
 
-foreach i in Magodzoni{
+foreach i in magodzoni{
 preserve
 keep if village== "`i'" 
 table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_`i'.xls", replace) test missing
 restore
 }
 
-table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \tribe_int cate \gender cate \) saving("table1_coastalvillages_total.xls", replace) test missing
-table1, by(rvfvelisa_int) vars(village cate \ age conts \gender cate \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \tribe_int cate \educ_int cate \) saving("table1_coastalvillages.xls", replace) test missing
+table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_total.xls", replace) test missing
+table1, by(rvfvelisa) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages.xls", replace) test missing
 
 export excel using "coastal villages", firstrow(variables) replace
