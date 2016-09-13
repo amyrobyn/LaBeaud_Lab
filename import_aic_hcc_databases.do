@@ -1,4 +1,8 @@
-cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
+cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/output"
+foreach sheet in "Coast_AIC_Init-Katherine" "Coastal_aic_followup" "Coastal_aic_initial" "Coastal_aic_ukunda_malaria" "FILE2  AIC Ukunda Malaria...  " "HCC Follow-up Msambweni" "HCC Initial Msambweni" "In Data Missing Lab - Msambweni" "In Lab But No Data Msambweni" "In Lab Missing Data - Msambweni" "Rainfall_Daily Data_Jul 1 2016" "west_HCC_1st Followup" "west_HCC_2nd Followup" "west_HCC_3rd Followup" "west_HCC_Initial" "Western_AIC_Init-Katherine" "Western_AICFU-Katherine" "Copy of ArbovirusCBCDatabase_Updated_19th August 2016JS" "FILE1   4 coast_aicfu_18apr16"{ 	insheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/`sheet'.csv", comma clear
+	save "`sheet'", replace
+}
+
 *coast
 *aic
 import excel "C:\Users\Amy\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\Coastal Data-Katherine aug_4_2016", sheet("Coast_AIC_Init-Katherine") firstrow clear
