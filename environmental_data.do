@@ -151,17 +151,22 @@ gen date3= ym(year, month)
 format date3 %tm
 encode site, gen(city_dum)
 xtset city_dum date
+rename site city
+merge m:m year month day city_dum using ro1.dta, force
 
 foreach var in  aedesaegyptiinside aedesaegyptioutside aedesaegyptitotal aedesaegyptiindoor aedesaegyptioutdoor aedesaegypti anophelesgambiaeinside anophelesgambiaeoutside anophelesgambiaetotal anophelesfunestusinside anophelesfunestusoutside k culexsppinside culexsppoutside culexspptotal o p q culexsppindoor indoortotal anophelesoutdoor culexoutdoor toxorhynchitesoutdoor outdoortotal culexsppoutdoor anophelesgambiaeindoor anophelesfunestusindoor anophelesgambiaeoutdoor anophelesfunestusoutdoor anophelesgambiae anophelesfunestus culexspp toxorhynchites maxtemp mintemp temp rh dewpt rainfall  temprange dewdiff rain2 MaxTemp MinTemp Temp RH DewPt TempRange DewDiff{
+foreach outcome in chikvigg_ denvigg_ stanforddenvigg_  stanfordchikvigg_ {
+tab `outcome', gen(`outcome'dum)
 destring `var', replace
-xtline `var', overlay title(`var' by city and date)  xtitle(date) xlabel(#20, angle(45))
-graph export "`var'.tif", width(4000) replace  
+xtline `var', overlay title(`var' by city and date)  xtitle(date) xlabel(#20, angle(45)) 
+graph export "`var'`outcome'.tif", width(4000) replace  
 
 preserve
-collapse `var', by(season site)
-twoway scatter `var' season,  title(`var' by city and season)  xtitle(season) xlabel(#4, angle(45))
+collapse `var' `outcome', by(season site)
+twoway scatter `var' season,  title(`var' by city and season)  xtitle(season) xlabel(#4, angle(45)) addplot (scatter `outcome'dum3, yaxis(2))
 graph export "`var'_season.tif", width(4000) replace  
 restore
+}
 }
 
 /*replace city = "c" if city =="Chulaimbo"
@@ -176,4 +181,5 @@ gen site = .
 replace site = 1 if city ==3|city ==4
 replace site = 2 if city ==1|city ==2
 
-save merged_enviro.dta, replace
+
+save merged_enviro.dta, replace 

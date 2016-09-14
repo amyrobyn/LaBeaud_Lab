@@ -161,7 +161,7 @@ ds, has(type string)
 		}	
 save "West_AIC_INITIAL", replace
 
-append using "In Data Missing Lab - Msambweni.dta" "In Lab But No Data Msambweni.dta" "In Lab Missing Data - Msambweni.dta" "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta" "HCC Follow-up Msambweni.dta" "Coastal_aic_followup.dta" "Coastal_aic_initial.dta" "Coastal_aic_ukunda_malaria.dta" "Coast_AIC_Init-Katherine.dta" "West_AIC_INITIAL.dta" "Western_AICFU-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" "HCC Initial Msambweni.dta", gen(append) force
+append using "In Data Missing Lab - Msambweni.dta" "In Lab But No Data Msambweni.dta" "In Lab Missing Data - Msambweni.dta" "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta" "HCC Follow-up Msambweni.dta" "Coast_AIC_Init-Katherine.dta" "West_AIC_INITIAL.dta" "Western_AICFU-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" "HCC Initial Msambweni.dta", gen(append) force
 
 gen fevertemp =.
 replace fevertemp = 1 if temperature >= 37.8
@@ -216,5 +216,7 @@ save merged, replace
 	replace id_childnumber = substr(studyid, +4, .)
 	order id_cohort id_city id_visit id_childnumber studyid
 	egen id_wide = concat(id_city id_cohort id_childnum)
-				
+
+drop append
+	
 save all_interviews, replace

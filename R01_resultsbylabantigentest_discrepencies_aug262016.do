@@ -5,18 +5,18 @@
  *last updated august 15, 2016  							  *
  **************************************************************/
  /*to do
-+ survival for hcc only
++++ survival for hcc only
 	lag it by one visit (if they have positive eliza at b, that means they were infected at a).
-+ prevalence/incidence only for aic
+++++ prevalence/incidence only for aic
 	lag it by one visit (if they have positive eliza at b, that means they were infected at a).
-+ #kids by number of visits
+++++ #kids by number of visits
 	bysort subject: gen numvisits = count (visits)
 	tab numvisits
-+ aic fever/igg pcr/igg igm/igg (ab bc cd de)
+666+ aic fever/igg pcr/igg igm/igg (ab bc cd de)
 	do the same thing that we did with pcr igm
 
 
-+ -longitudinal nature of data- survival analysis- done by visit. do it by date
++++ -longitudinal nature of data- survival analysis- done by visit. do it by date
 +rain data- add the data from dan
 + -sensisitivty by site (west vs coast)- done. put in tables and add the fever/igg lagged and igm/igg lagged
 + -prnt n = 200. check the sensitivity analysis
@@ -160,8 +160,10 @@ save wide, replace
 		export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
 	drop if dup2 >1
-	gen begin = mydatesamplecollected_a 
+	gen begindate = mydatesamplecollected_a if mydatesamplecollected_a !=.
 	reshape long mydatesamplecollected_ mydatesamplerun_ studyid_ followupaliquotid_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(visit) string
+	format mydatesamplecollected_ %td
+	format begindate %td
 	tempfile long
 	save long, replace
 	
@@ -207,7 +209,7 @@ save ns1, replace
 	foreach var of varlist _all{
 		rename `var', lower
 }
-	ds date*, not
+	ds *date*, not
 	foreach var of var `r(varlist)'{
 		tostring `var', replace force
 		replace `var'=lower(`var')
@@ -354,7 +356,7 @@ foreach var in dengueigm_sammy nsi wnv_prnt onnv_prnt chikv_prnt stanfordchikvig
 }
 
 
-levelsof cohortcityantigen, local(levels) 
+/*levelsof cohortcityantigen, local(levels) 
 foreach l of local levels { 
 	foreach var of varlist *chikv* *denv* chikv* denv*{ 
 		display "`l'"
@@ -374,7 +376,7 @@ levelsof westcoast, local(levels)
 		display "************************************************************site**********************************************"
 		tab `var'  stanforddenvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m
 	}
-		}
+		}*/
 
 
 *simple prevalence/incidence by visit
@@ -387,16 +389,25 @@ destring id visit_s, replace
 xtset id visit_s
 sort id visit_s
 
+*+ #kids by number of visits
+	bysort id_wide: egen numvisits = count(visit_s)
+	tab numvisits 
 
-	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ chikviggod_ stanfordchikvod_ denvigg_ denviggod_ stanforddenvod_ stanforddenviggod_ {
-		tab `var', gen(`var'encode)
-		gen l1_`var'=  `var'[_n-1] 
-		tab l1_`var', gen(l1_`var'encode)
+	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
+		*tab `var', gen(`var'encode)
+		*gen l1_`var'=  `var'[_n-1] 
+		*tab l1_`var', gen(l1_`var'encode)
+		tab numvisits  `var'
+		bysort visit_s: tab l1_`var'encode2 chikvpcr_
+		bysort visit_s: tab l1_`var'encode2 fevertemp
+		bysort visit_s: tab l1_`var'encode2 denvpcr_
+		bysort visit_s: tab l1_`var'encode2 sammy_pcr
+		bysort visit_s: tab l1_`var'encode2 denvigm_ 
+		bysort visit_s: tab l1_`var'encode2 chikvigm_
+		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
+		
 	}
 
-*+ #kids by number of visits
-	bysort study_id: egen numvisits = count(visit_s)
-	tab numvisits
 
 tempfile temp
 save temp, replace
@@ -448,8 +459,10 @@ rename mydatesamplecollected__month month
 rename mydatesamplecollected__day day
 
 merge m:m year month day site using merged_enviro.dta
+drop _merge
 save lab_enviro, replace
-merge m:m id_wide using all_interviews.dta
+merge m:m id_wide using all_interviews.dta, force
+drop _merge
 save lab_enviro_interviews, replace
 
 replace season =1 if month >=1 & month  <=3 & season ==.
@@ -461,9 +474,8 @@ replace season =3 if month >=7 & month  <=10 & season ==.
 replace season =4 if month >=11 & month  <=12 & season ==.
 *label define 4 "short rains"
 
-twoway (scatter rainfall season, sort mlabel(month))
-
 *add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
+drop x
 			expand 2 if visit_s == 1, gen(x)
 			gsort id visit_s -x
 			replace visit_s= visit_s- 1 if x == 1
@@ -514,61 +526,44 @@ restore
 ************************************************survival and longitudinal analysis********************************************
 foreach dataset in "prevalent" "incident"{
 use `dataset', clear
-		destring id visit_s l1_denvigg_encode2 l1_chikvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 site city, replace
+		destring id visit_s l1_denvigg_encode2 l1_chikvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 site city denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 , replace
 		*capture drop if id_cohort=="d"
 		replace id_cohort = "HCC" if id_cohort == "c"
 		replace id_cohort = "AIC" if id_cohort == "f"
 		encode id_cohort, gen(cohort)
 		replace cohort = 1 if cohort ==3|cohort ==4
 		label variable cohort "Cohort"
-		label define Cohort 1 "HCC" 2 "AIC"
+		label define Cohort 1 "AIC" 2 "HCC"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 save `dataset', replace
 }
 
-
+set graphics on 
 cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
-foreach dataset in "prevalent" "incident"{
+foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
-		foreach failvar of varlist l1_denvigg_encode2 l1_chikvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 {
-								preserve
-									keep if date ==.
-									keep date id
-									outsheet using no_dates`var', comma replace
-								restore
-								
-								preserve		
-							drop if `failvar' == .
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit_s)
-							egen axis = axis(visit_s)
-							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-						graph twoway ///
-						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
-						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
-						   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
-							graph export "`dataset'`failvar'visit_scohort.tif", width(4000) replace 
-
-				restore				
-				preserve		
-							drop if `failvar' == .
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city)
-							egen axis = axis(city)
-							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
-						graph twoway ///
-						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
-						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
-						   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 6 "Ukunda", angle(45)) title(`dataset' by cohort and city)
-							graph export "`dataset'`failvar'citycohort.tif", width(4000) replace 
-
-				restore	
-			**********survival***************				
+	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
+										**********survival***************				
 			preserve 
 						keep if cohort ==2
-						drop if `failvar' == .
-						*drop if visit_s== .
+						destring begindate, replace
+						drop if begindate ==.
+						format begindate %td
+						stset date, id(id) failure(`failvar') time0(begindate) enter(begindate)
+						stdescribe
+						stsum
+						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "cumhaz`dataset'`failvar'date.tif", width(4000) replace
+						sts graph, survival risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survival`dataset'`failvar'date.tif", width(4000) replace
+						sts list, survival
+						sts graph, risktable censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survivalsite`dataset'`failvar'date.tif", width(4000) replace
+						sts graph, risktable censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survivalcity`dataset'`failvar'date.tif", width(4000) replace
+
+						
 						stset visit_s, id(id) failure(`failvar')
 						stdescribe
 						stsum
@@ -582,20 +577,43 @@ foreach dataset in "prevalent" "incident"{
 						sts graph, risktable tmax(11) censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f))ymtick(##5,  tlength(scheme tick))
 						graph export "survivalcity`dataset'`failvar'visit.tif", width(4000) replace
 						
-						destring begin, replace
-						stset date, id(id) failure(`failvar') time0(begin) origin(begin)
-						stdescribe
-						stsum
-						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(minmax, format(%td)) xlabel(1 "2014"  , angle(45)) xmtick(##5, tlength(scheme tick)) 
-						graph export "cumhaz`dataset'`failvar'date.tif", width(4000) replace
-						sts graph, survival risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(minmax, format(%td)) xlabel(1 "2014"  , angle(45)) xmtick(##5, tlength(scheme tick))  
-						graph export "survival`dataset'`failvar'date.tif", width(4000) replace
-						sts list, survival
-						sts graph, risktable censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(minmax, format(%td)) xlabel(1 "2014"  , angle(45)) xmtick(##5, tlength(scheme tick))  
-						graph export "survivalsite`dataset'`failvar'date.tif", width(4000) replace
-						sts graph, risktable censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(minmax, format(%td)) xlabel(1 "2014"  , angle(45)) xmtick(##5, tlength(scheme tick)) 
-						graph export "survivalcity`dataset'`failvar'date.tif", width(4000) replace
 						
 			restore 
+
+							destring `failvar', replace 
+								preserve
+							
+									keep if date ==.
+									keep date id
+									outsheet using no_dates`var', comma replace
+								restore
+								
+							preserve		
+							drop if `failvar' == .
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit_s)
+							egen axis = axis(visit_s)
+							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+						graph twoway ///
+						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+						   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
+							graph export "`dataset'`failvar'visit_scohort1.tif", width(4000) replace 
+
+				restore				
+				preserve		
+							*drop if `failvar' == .
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city)
+							egen axis = axis(city)
+							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+						graph twoway ///
+						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+						   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1 "Chulaimbo" 2 "Nganja" 3 "Kisumu" 4 "Milani" 5 "Msambweni" 6 "Ukunda", angle(45)) title(`dataset' by cohort and city)
+							graph export "`dataset'`failvar'citycohort.tif", width(4000) replace 
+
+				restore	
 			}
 			}
+save ro1.dta, replace
