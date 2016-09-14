@@ -395,7 +395,7 @@ sort id visit_s
 	}
 
 *+ #kids by number of visits
-	bysort id_code: egen numvisits = count(visit_s)
+	bysort study_id: egen numvisits = count(visit_s)
 	tab numvisits
 
 tempfile temp
@@ -411,7 +411,7 @@ tempfile site2
 save site2, replace
 restore	
 
-foreach dataset in site1 site2 temp{
+/*foreach dataset in site1 site2 temp{
 display "**********************`dataset'*******************"
 use `dataset', clear
 destring *, replace force
@@ -427,7 +427,7 @@ diagt stanforddenvigg_encode2 denvigg_encode2
 diagt denvpcr_encode2  l1_denvigg_encode2 
 diagt dengueigm_sam~2 nsiencode1
 }
-
+*/
 
 use temp, clear
 
@@ -448,6 +448,9 @@ rename mydatesamplecollected__month month
 rename mydatesamplecollected__day day
 
 merge m:m year month day site using merged_enviro.dta
+save lab_enviro, replace
+merge m:m id_wide using all_interviews.dta
+save lab_enviro_interviews, replace
 
 replace season =1 if month >=1 & month  <=3 & season ==.
 *label define 1 "hot no rain from mid december"
