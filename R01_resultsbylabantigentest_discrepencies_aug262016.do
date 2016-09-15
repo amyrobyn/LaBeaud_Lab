@@ -53,7 +53,7 @@ save hcc_chulaimbo, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:AD741) firstrow clear
 tempfile aic_kisumu
 save aic_kisumu, replace
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:BE831) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:Bf829) firstrow clear
 tempfile hcc_kisumu
 save hcc_kisumu, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:AE680) firstrow clear
@@ -393,60 +393,8 @@ sort id visit_s
 	bysort id_wide: egen numvisits = count(visit_s)
 	tab numvisits 
 
-	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
-		*tab `var', gen(`var'encode)
-		*gen l1_`var'=  `var'[_n-1] 
-		*tab l1_`var', gen(l1_`var'encode)
-		tab numvisits  `var'
-		bysort visit_s: tab l1_`var'encode2 chikvpcr_
-		bysort visit_s: tab l1_`var'encode2 fevertemp
-		bysort visit_s: tab l1_`var'encode2 denvpcr_
-		bysort visit_s: tab l1_`var'encode2 sammy_pcr
-		bysort visit_s: tab l1_`var'encode2 denvigm_ 
-		bysort visit_s: tab l1_`var'encode2 chikvigm_
-		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
-		
-	}
 
-
-tempfile temp
-save temp, replace
-preserve
-keep if site==1
-tempfile site1
-save site1, replace
-restore
-preserve
-keep if site ==2
-tempfile site2
-save site2, replace
-restore	
-
-/*foreach dataset in site1 site2 temp{
-display "**********************`dataset'*******************"
-use `dataset', clear
-destring *, replace force
-sum _all 
-*l1_dengueigm_sammy l1_dengueigm_sammyencode1 l1_dengueigm_sammyencode2 l1_nsi l1_nsiencode1 l1_stanforddenvigg_ l1_stanforddenvigg_encode1 l1_stanforddenvigg_encode2 l1_stanfordchikvigg_ l1_stanfordchikvigg_encode1 l1_stanfordchikvigg_encode2 l1_chikv_prnt l1_chikv_prntencode1 l1_chikv_prntencode2 l1_chikvigg_ l1_chikvigg_encode1 l1_chikvigg_encode2 l1_chikviggod_ l1_chikviggod_encode1 l1_chikviggod_encode2 l1_chikvpcr_ l1_chikvpcr_encode1 l1_chikvigm_ l1_stanfordchikvod_ l1_denv_prnt l1_denv_prntencode1 l1_denv_prntencode2 l1_denvigg_ l1_denvigg_encode1 l1_denvigg_encode2 l1_denviggod_ l1_denviggod_encode1 l1_denviggod_encode2 l1_denvpcr_ l1_denvpcr_encode1 l1_denvpcr_encode2 l1_denvigm_ l1_stanforddenvod_ l1_stanforddenviggod_ l1_wnv_prnt l1_wnv_prntencode1 l1_wnv_prntencode2 l1_onnv_prnt l1_onnv_prntencode1 l1_onnv_prntencode2
-
-diagt chikv_prntencode2 stanfordchikvigg_encode2
-diagt stanfordchikvigg_encode2 chikvigg_encode2
-diagt chikvpcr_encode1  l1_chikvigg_encode2
- 
-diagt denv_prntencode2 stanforddenvigg_encode2 
-diagt stanforddenvigg_encode2 denvigg_encode2  
-diagt denvpcr_encode2  l1_denvigg_encode2 
-diagt dengueigm_sam~2 nsiencode1
-}
-*/
-
-use temp, clear
-
-egen site_stanfordigg_chik = concat(site stanforddenvigg_encode2)
-egen site_stanfordigg_denv= concat(site stanforddenvigg_encode2)
-egen city_stanfordigg_chik = concat(city stanfordchikvigg_encode2)
-egen city_stanfordigg_denv = concat(city stanforddenvigg_encode2)
-
+capture drop mydate_year mydate_month mydate_day
 *add year and month to merge with rain and vector data
 foreach var of varlist my*{
 	gen `var'_year = year(`var')
@@ -454,16 +402,80 @@ foreach var of varlist my*{
 	gen `var'_day = day(`var')
 
 }
+
 rename  mydatesamplecollected__year year
 rename mydatesamplecollected__month month
 rename mydatesamplecollected__day day
 
-merge m:m year month day site using merged_enviro.dta
+replace id_city =lower(id_city)
+drop city 
+rename id_city city
+merge m:m year month day city using merged_enviro.dta
 drop _merge
 save lab_enviro, replace
 merge m:m id_wide using all_interviews.dta, force
 drop _merge
 save lab_enviro_interviews, replace
+
+	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
+		tab `var', gen(`var'encode)
+		gen l1_`var'=  `var'[_n-1] 
+		tab l1_`var', gen(l1_`var'encode)
+		tab numvisits  `var'
+		bysort visit_s: tab l1_`var'encode2 chikvpcr_
+		bysort visit_s: tab l1_`var'encode2 fevertemp
+		bysort visit_s: tab l1_`var'encode2 denvpcr_
+		bysort visit_s: tab l1_`var'encode2 denvigm_ 
+		bysort visit_s: tab l1_`var'encode2 chikvigm_
+		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
+		
+}
+	
+foreach var in dengueigm_sammy nsi chikv_prnt denv_prnt denvpcr_ chikvpcr{
+			tab `var', gen(`var'encode)
+}
+
+save temp, replace
+preserve
+keep if site==1
+save site1, replace
+restore
+preserve
+keep if site ==2
+save site2, replace
+restore	
+
+foreach dataset in  site2 site1{
+display "**********************`dataset'*******************"
+use `dataset', clear
+
+  capture gen igmns1pos=.
+ replace igmns1 = 1 if dengueigm_sammyencode2 == 1 & nsiencode1 == 1
+  replace igmns1 = 0 if dengueigm_sammyencode2 == 0 & nsiencode1 == 0
+/*
+diagt l1_stanforddenvigg_encode2 igmns1
+diagt chikv_prntencode2 l1_stanfordchikvigg_encode2
+diagt stanfordchikvigg_encode2 chikvigg_encode2
+diagt chikvpcrencode1  l1_stanfordchikvigg_encode2
+ 
+diagt denv_prntencode2 l1_stanforddenvigg_encode2 
+diagt stanforddenvigg_encode2 denvigg_encode2  
+diagt denvpcr_encode2  l1_stanforddenvigg_encode2
+diagt dengueigm_sammyencode2 nsiencode1
+
+diagt l1_stanforddenvigg_encode2 fevertemp
+diagt l1_stanfordchikvigg_encode2 fevertemp
+
+diagt denvpcr_encode2 fevertemp
+diagt denv_prntencode2 fevertemp
+
+diagt chikv_prntencode2 fevertemp
+diagt chikvpcr_encode2 fevertemp*/
+
+}
+
+
+
 
 replace season =1 if month >=1 & month  <=3 & season ==.
 *label define 1 "hot no rain from mid december"
@@ -539,22 +551,26 @@ use `dataset', clear
 save `dataset', replace
 }
 
-set graphics on 
-cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
+
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
-	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
+	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 l1_chikvigg_encode2 l1_denvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 {
 										**********survival***************				
 			preserve 
 						keep if cohort ==2
 						destring begindate, replace
 						drop if begindate ==.
 						format begindate %td
-						stset date, id(id) failure(`failvar') time0(begindate) enter(begindate)
+						stset mydatesamplecollected_, id(id) failure(`failvar') time0(begindate) enter(begindate)
 						stdescribe
 						stsum
 						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
-						graph export "cumhaz`dataset'`failvar'date.tif", width(4000) replace
+								graph export "cumhaz`dataset'`failvar'date.tif", width(4000) replace
+						sts graph, cumhaz risktable censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+								graph export "cumhaz`dataset'`failvar'citydate.tif", width(4000) replace
+						sts graph, cumhaz risktable censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+								graph export "cumhaz`dataset'`failvar'sitedate.tif", width(4000) replace
+						
 						sts graph, survival risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
 						graph export "survival`dataset'`failvar'date.tif", width(4000) replace
 						sts list, survival

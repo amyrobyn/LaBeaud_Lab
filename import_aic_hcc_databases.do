@@ -1,3 +1,7 @@
+log using "R01_import_interviews.smcl", text replace 
+set scrollbufsize 100000
+set more 1
+
 cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/output"
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/"
 import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("HCC Follow-up Msambweni") firstrow clear
@@ -30,7 +34,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_1st Followup", replace
-import excel "`import'west_HCC_2nd Followup.xls", sheet("Sheet1") firstrow clear
+import excel "`import'HCC_2nd Followup.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -40,7 +44,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_2nd Followup", replace
-import excel "`import'west_HCC_3rd Followup.xls", sheet("Sheet1") firstrow clear
+import excel "`import'HCC_3rd Followup.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -50,7 +54,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_3rd Followup", replace
-import excel "`import'west_HCC_Initial.xls", sheet("Sheet1") firstrow clear
+import excel "`import'HCC_Initial.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -90,7 +94,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "HCC Initial Msambweni", replace
-import excel "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\coast_HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Data Missing Lab - Msambweni") clear
+import excel "`import'HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Data Missing Lab - Msambweni") clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -100,7 +104,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "In Data Missing Lab - Msambweni", replace
-import excel "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\coast_HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Lab Missing Data - Msambweni") clear
+import excel "`import'HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Lab Missing Data - Msambweni") clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -110,7 +114,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "In Lab Missing Data - Msambweni", replace
-insheet using "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\Coast_AIC_Init-Katherine.csv", comma clear
+insheet using "`import'Coast_AIC_Init-Katherine.csv", comma clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -120,7 +124,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "Coast_AIC_Init-Katherine", replace
-insheet using "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\FILE1   4 coast_aicfu_18apr16.csv", comma clear
+insheet using "`import'FILE1   4 coast_aicfu_18apr16.csv", comma clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -130,7 +134,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "FILE1   4 coast_aicfu_18apr16", replace
-insheet using "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\FILE2  AIC Ukunda Malaria...  .csv", comma clear
+insheet using "`import'FILE2  AIC Ukunda Malaria...  .csv", comma clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -140,7 +144,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "FILE2  AIC Ukunda Malaria", replace
-insheet using "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\Western_AICFU-Katherine.csv", comma clear
+insheet using "`import'Western_AICFU-Katherine.csv", comma clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -150,7 +154,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "Western_AICFU-Katherine", replace
-insheet using "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\West_AIC_INITIAL.csv", comma clear case
+insheet using "`import'Western_AIC_Init-Katherine.csv", comma clear case
 foreach var of varlist _all{
 	capture rename `var', lower
 }
