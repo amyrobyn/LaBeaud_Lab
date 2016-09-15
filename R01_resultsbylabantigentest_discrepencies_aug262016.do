@@ -2,7 +2,7 @@
  *amy krystosik                  							  *
  *R01 results and discrepencies by strata (lab, antigen, test)*
  *lebeaud lab               				        		  *
- *last updated august 15, 2016  							  *
+ *last updated September 15, 2016  							  *
  **************************************************************/
  /*to do
 +++ survival for hcc only
@@ -22,16 +22,20 @@
 + -prnt n = 200. check the sensitivity analysis
 + -rdt ns1+/+igm =+. compare that to stfd igg incidence.- done. add to tables
 + -pcr + copmared to igg at next visit (ab/bc/cd)- done add to tables. 
+
+
+
+updates after lab meeting sept 15: 
+Get incidence and prevalence tables by cohort by site by visit using stanford only data to desiree by october 1
+ 
  */
  
-local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/environmental_data/KenyaMerged&FormattedDataSets/"
-*cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
 capture log close 
 log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
 save aic_ukunda, replace
@@ -410,7 +414,7 @@ rename mydatesamplecollected__day day
 replace id_city =lower(id_city)
 drop city 
 rename id_city city
-merge m:m year month day city using merged_enviro.dta
+merge m:1 year month day city using merged_enviro.dta
 drop _merge
 save lab_enviro, replace
 merge m:m id_wide using all_interviews.dta, force
@@ -551,7 +555,7 @@ use `dataset', clear
 save `dataset', replace
 }
 
-
+/*
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 l1_chikvigg_encode2 l1_denvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 {
@@ -632,4 +636,5 @@ foreach dataset in "incident" "prevalent"{
 				restore	
 			}
 			}
+			*/
 save ro1.dta, replace
