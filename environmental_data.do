@@ -4,8 +4,8 @@
  *lebeaud lab               				        		  *
  *last updated august 15, 2016  							  *
  **************************************************************/
-local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/environmental_data/KenyaMerged&FormattedDataSets/"
-cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/output"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/environmental_data/KenyaMerged&FormattedDataSets copy/"
+cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/output"
 *local import "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\environmental_data\KenyaMerged&FormattedDataSets\"
 *cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
  
@@ -243,7 +243,7 @@ drop if dup_merged>1
 xtset city_dum date
 
 rename site city
-merge m:m date city_dum using ro1.dta, force
+/*merge m:1 date city_dum using ro1.dta, force
 
 foreach outcome in l1_denvigg_ l1_stanforddenvigg_  l1_stanfordchikvigg_ l1_chikvigg_  denvigg_ stanforddenvigg_  stanfordchikvigg_ chikvigg_ {
 tab `outcome', gen(`outcome'dum)

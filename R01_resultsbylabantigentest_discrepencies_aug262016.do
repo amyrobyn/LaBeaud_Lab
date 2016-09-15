@@ -34,7 +34,7 @@ capture log close
 log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
-
+cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/output"
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
