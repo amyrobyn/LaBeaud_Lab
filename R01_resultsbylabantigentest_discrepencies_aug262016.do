@@ -24,14 +24,14 @@
 + -pcr + copmared to igg at next visit (ab/bc/cd)- done add to tables. 
  */
  
-cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/environmental_data/KenyaMerged&FormattedDataSets/"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
 capture log close 
 log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-local import "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
 save aic_ukunda, replace
@@ -209,7 +209,7 @@ save ns1, replace
 	foreach var of varlist _all{
 		rename `var', lower
 }
-	ds *date*, not
+	ds *t*, not
 	foreach var of var `r(varlist)'{
 		tostring `var', replace force
 		replace `var'=lower(`var')

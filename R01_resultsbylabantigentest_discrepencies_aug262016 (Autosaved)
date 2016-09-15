@@ -24,14 +24,14 @@
 + -pcr + copmared to igg at next visit (ab/bc/cd)- done add to tables. 
  */
  
-cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/environmental_data/KenyaMerged&FormattedDataSets/"
 *cd "/Users/amykrystosik/Box Sync/Amy Krystosik's Files/R01/longitudinal_analysis_aug252016"
 capture log close 
 log using "R01_discrepenciesaugust25longitudinal.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-local import "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\"
+local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_aug252016/"
 import excel "`import'UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1375) firstrow clear
 tempfile aic_ukunda
 save aic_ukunda, replace
@@ -53,7 +53,7 @@ save hcc_chulaimbo, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:AD741) firstrow clear
 tempfile aic_kisumu
 save aic_kisumu, replace
-import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:BE831) firstrow clear
+import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A4:Bf829) firstrow clear
 tempfile hcc_kisumu
 save hcc_kisumu, replace
 import excel "`import'Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:AE680) firstrow clear
@@ -393,21 +393,6 @@ sort id visit_s
 	bysort id_wide: egen numvisits = count(visit_s)
 	tab numvisits 
 
-	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
-		*tab `var', gen(`var'encode)
-		*gen l1_`var'=  `var'[_n-1] 
-		*tab l1_`var', gen(l1_`var'encode)
-		tab numvisits  `var'
-		bysort visit_s: tab l1_`var'encode2 chikvpcr_
-		bysort visit_s: tab l1_`var'encode2 fevertemp
-		bysort visit_s: tab l1_`var'encode2 denvpcr_
-		bysort visit_s: tab l1_`var'encode2 sammy_pcr
-		bysort visit_s: tab l1_`var'encode2 denvigm_ 
-		bysort visit_s: tab l1_`var'encode2 chikvigm_
-		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
-		
-	}
-
 
 tempfile temp
 save temp, replace
@@ -442,10 +427,6 @@ diagt dengueigm_sam~2 nsiencode1
 
 use temp, clear
 
-egen site_stanfordigg_chik = concat(site stanforddenvigg_encode2)
-egen site_stanfordigg_denv= concat(site stanforddenvigg_encode2)
-egen city_stanfordigg_chik = concat(city stanfordchikvigg_encode2)
-egen city_stanfordigg_denv = concat(city stanforddenvigg_encode2)
 
 *add year and month to merge with rain and vector data
 foreach var of varlist my*{
@@ -458,12 +439,29 @@ rename  mydatesamplecollected__year year
 rename mydatesamplecollected__month month
 rename mydatesamplecollected__day day
 
-merge m:m year month day site using merged_enviro.dta
+replace id_city =lower(id_city)
+drop city 
+rename id_city city
+merge m:m year month day city using merged_enviro.dta
 drop _merge
 save lab_enviro, replace
 merge m:m id_wide using all_interviews.dta, force
 drop _merge
 save lab_enviro_interviews, replace
+
+	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
+		tab `var', gen(`var'encode)
+		gen l1_`var'=  `var'[_n-1] 
+		tab l1_`var', gen(l1_`var'encode)
+		tab numvisits  `var'
+		bysort visit_s: tab l1_`var'encode2 chikvpcr_
+		bysort visit_s: tab l1_`var'encode2 fevertemp
+		bysort visit_s: tab l1_`var'encode2 denvpcr_
+		bysort visit_s: tab l1_`var'encode2 denvigm_ 
+		bysort visit_s: tab l1_`var'encode2 chikvigm_
+		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
+		
+	}
 
 replace season =1 if month >=1 & month  <=3 & season ==.
 *label define 1 "hot no rain from mid december"
@@ -539,8 +537,6 @@ use `dataset', clear
 save `dataset', replace
 }
 
-set graphics on 
-cd "C:\Users\Amy\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\longitudinal_analysis_aug252016\output"
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 {
