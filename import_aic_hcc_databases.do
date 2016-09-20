@@ -7,7 +7,7 @@ log using "R01_import_interviews.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
-cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/output"
+cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/output"
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("HCC Follow-up Msambweni") firstrow clear
 foreach var of varlist _all{
