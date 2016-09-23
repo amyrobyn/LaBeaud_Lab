@@ -4,7 +4,7 @@
  *lebeaud lab               				        *
  *last updated august 8, 2016  						*
  ***************************************************/
-cd "C:\Users\Amy\Box Sync\Amy Krystosik's Files\elysse coastal village map"
+cd "C:\Users\Amy\Downloads\elysse coastal village map\elysse coastal village map"
 capture log close 
 log using "use coastal_9_8_16.smcl", text replace 
 set scrollbufsize 100000
@@ -142,21 +142,22 @@ replace mosq_index_sum_pct =  mosqcontrol_index0 if mosqcontrol_index0 !=.
 bysort 	rvfvelisa: sum age gender ses_index_sum mosq_index_sum yf tribe_int educ_int
 bysort 	rvfvelisa: sum age gender ses_index_sum_pct mosq_index_sum_pct yf tribe_int educ_int
 
-foreach i in jego milalani kinango nganja vuga{
-preserve
-keep if village== "`i'"
-table1, by(rvfvelisa) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_`i'.xls", replace) test missing
-restore
-}
+egen village_elisa = concat(village rvfvelisa)
+keep if rvfvelisa!=.
 
+table1, by(village_elisa) vars(age conts \ses_index_sum_pct cat \mosq_index_sum_pct cat \yf cat \educ_int cat \gender cat \tribe_int cat \) saving("table1_coastalvillages_`i'.xls", replace) test missing
+
+/*
 foreach i in magodzoni{
 preserve
 keep if village== "`i'" 
 table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_`i'.xls", replace) test missing
 restore
 }
-
+*/
 table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_total.xls", replace) test missing
 table1, by(rvfvelisa) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages.xls", replace) test missing
 
 export excel using "coastal villages", firstrow(variables) replace
+
+tabout  ses_index_sum_pct mosq_index_sum_pct yf educ_int gender tribe_int village_elisa using rowpercent.xls,  replace c(freq row) show(all)
