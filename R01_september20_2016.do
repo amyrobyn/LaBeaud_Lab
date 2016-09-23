@@ -407,6 +407,13 @@ rename id_city city
 merge m:1 year month day city using merged_enviro.dta
 drop _merge
 save lab_enviro, replace
+
+encode visit, gen(visitbyte)
+tab visit visitbyte
+ drop visit
+rename visitbyte visit
+
+drop dup_merged
 merge m:m id_wide using all_interviews.dta
 drop _merge
 save lab_enviro_interviews, replace
@@ -545,17 +552,14 @@ use `dataset', clear
 save `dataset', replace
 }
 
-/*
+
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 l1_chikvigg_encode2 l1_denvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 {
 										**********survival***************				
 			preserve 
 						keep if cohort ==2
-						destring begindate, replace
-						drop if begindate ==.
-						format begindate %td
-						stset mydatesamplecollected_, id(id) failure(`failvar') time0(begindate) enter(begindate)
+						stset visit_s, id(id) failure(`failvar')
 						stdescribe
 						stsum
 						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
@@ -626,5 +630,5 @@ foreach dataset in "incident" "prevalent"{
 				restore	
 			}
 			}
-			*/
+			
 save ro1.dta, replace
