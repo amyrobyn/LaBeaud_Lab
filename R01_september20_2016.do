@@ -65,6 +65,12 @@ capture drop *od* followupaliquotid_*
 save "ukunda_hcc", replace
 clear
 
+foreach dataset in "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta"{
+use `dataset', clear
+capture drop villhouse_a
+capture destring personid_a, replace
+save `dataset', replace
+}
 append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta"
 drop if studyid_a =="example"
 drop if studyid_a =="EXAMPLE"
@@ -132,14 +138,14 @@ save merged, replace
 							gen id`i' = substr(studyid_a, `i', 1) 
 						}
 *gen id_wid without visit						 
-	rename id1 id_city  
+	rename id1 city  
 	rename id2 id_cohort  
 	rename id3 id_visit 
 	tab id_visit 
 	gen id_childnumber = ""
 	replace id_childnumber = substr(studyid_a, +4, .)
-	order id_cohort id_city id_visit id_childnumber studyid_a
-	egen id_wide = concat(id_city id_cohort id_childnum)
+	order id_cohort city id_visit id_childnumber studyid_a
+	egen id_wide = concat(city id_cohort id_childnum)
 
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
@@ -174,12 +180,11 @@ use wide.dta, clear
 
 	
 capture drop _merge
-tempfile elisas
 save elisas, replace
 
 ************************************add RDT data**********************************
 
-import excel "`import'DENGUE RDT RESULTS Aug 30th august 2016.xls", sheet("Sheet3") firstrow clear
+import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/DENGUE RDT RESULTS Aug 30th august 2016.xls", sheet("Sheet3") firstrow clear
 rename STUDYNUMBER STUDY_ID
 rename IgM dengueigm_sammy
 rename IgG dengue_igg_sammy
@@ -191,14 +196,14 @@ save ns1, replace
 							gen id`i' = substr(STUDY_ID, `i', 1) 
 						}
 *gen id_wid without visit						 
-	gen id_city  = id1 
+	gen city  = id1 
 	gen id_cohort = id2 
 	gen visit = id3
 	tab visit
 	gen id_childnumber = ""
 	replace id_childnumber = substr(STUDY_ID, +4, .)
-	order id_cohort id_city STUDY_ID id_childnumber 
-	egen id_wide = concat(id_city id_cohort id_childnum)
+	order id_cohort city STUDY_ID id_childnumber 
+	egen id_wide = concat(city id_cohort id_childnum)
 
 	foreach var of varlist _all{
 		rename `var', lower
@@ -231,10 +236,10 @@ drop _merge
 save elisas_PCR_RDT, replace
 
 ************************************add PRNT data**********************************
-import excel "`import'LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Msambweni Results") cellrange(A2:E154) firstrow clear
+import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Msambweni Results") cellrange(A2:E154) firstrow clear
 tempfile PRNT_Msambweni 
 save PRNT_Msambweni, replace
-import excel "`import'LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Ukunda Results") cellrange(A2:F80) firstrow clear
+import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Ukunda Results") cellrange(A2:F80) firstrow clear
 tempfile PRNT_Ukunda
 save PRNT_Ukunda, replace
 
@@ -248,7 +253,7 @@ use "`dataset'", clear
 									gen id`i' = substr(ALIQUOTELISAID, `i', 1) 
 								}
 		*gen id_wid without visit						 
-			gen id_city  = id1 
+			gen city  = id1 
 			gen id_cohort = id2 
 			gen visit = id3
 			tab visit
@@ -257,8 +262,8 @@ use "`dataset'", clear
 			destring id_childnumber, replace
 			gen str4 id_childnumber4 = string(id_childnumber,"%04.0f")
 			
-			order id_cohort id_city ALIQUOTELISAID id_childnumber4 
-			egen id_wide = concat(id_city id_cohort id_childnumber4)
+			order id_cohort city ALIQUOTELISAID id_childnumber4 
+			egen id_wide = concat(city id_cohort id_childnumber4)
 			
 		*recode prnt values as pos(20+)/ neg
 	foreach var of varlist _all{
@@ -320,26 +325,25 @@ encode id_wide, gen(id)
 sort visit
 drop if visit =="a2"
 encode visit, gen(visit_s)
-replace id_city ="c" if id_city =="r" 
-encode id_city, gen(city)
+replace city ="c" if city =="r" 
 xtset id visit_s	
 save longitudinal.dta, replace
 
-	   					replace id_city  = "Chulaimbo" if id_city == "c"
-						replace id_city  = "Msambweni" if id_city == "m"
-						replace id_city  = "Kisumu" if id_city == "k"
-						replace id_city  = "Ukunda" if id_city == "u"
-						replace id_city  = "Milani" if id_city == "l"
-						replace id_city  = "Nganja" if id_city == "g"
+	   					replace city  = "Chulaimbo" if city == "c"
+						replace city  = "Msambweni" if city == "m"
+						replace city  = "Kisumu" if city == "k"
+						replace city  = "Ukunda" if city == "u"
+						replace city  = "Milani" if city == "l"
+						replace city  = "Nganja" if city == "g"
 					gen westcoast= "." 
-						replace westcoast = "Coast" if id_city =="Msambweni"|id_city =="Ukunda"|id_city =="Milani"|id_city =="Nganja"
-						replace westcoast = "West" if id_city =="Chulaimbo"|id_city =="Kisumu"
+						replace westcoast = "Coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
+						replace westcoast = "West" if city =="Chulaimbo"|city =="Kisumu"
 					encode westcoast, gen(site)			
-					egen cohortcityantigen = concat(id_cohort id_city antigenused)
+					egen cohortcityantigen = concat(id_cohort city antigenused)
 
 						
-	*	 stanfordchikvod_ stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ stanfordchikvigg_encode stanforddenvigg_encode
-foreach var in dengueigm_sammy nsi wnv_prnt onnv_prnt chikv_prnt stanfordchikvigg_  denv_prnt stanforddenvigg_ denvigg_ denviggod_ denvpcr_ denvigm_ chikvigg_ chikviggod_ chikvpcr_ chikvigm_ stanfordchikvod_ stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ stanforddenviggod_ {  
+ drop stanforddenviggod_ stanfordchikvod_ stanforddenvod_
+foreach var of varlist stanford*{ 
 	replace `var' =trim(itrim(lower(`var')))
 	gen `var'_result =""
 	replace `var'_result = "neg" if strpos(`var', "neg")
@@ -350,42 +354,14 @@ foreach var in dengueigm_sammy nsi wnv_prnt onnv_prnt chikv_prnt stanfordchikvig
 }
 
 
-/*levelsof cohortcityantigen, local(levels) 
-foreach l of local levels { 
-	foreach var of varlist *chikv* *denv* chikv* denv*{ 
-		display "`l'"
-		display "************************************************************stratachik**********************************************"
-		tab `var'  stanfordchikvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m 
-		display "************************************************************stratadenv**********************************************"
-		tab `var' stanforddenvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m 
-		display "************************************************************sitechik**********************************************"
-		}
-		}
-
-levelsof westcoast, local(levels) 
-		foreach l of local levels { 
-		display "`l'"
-		foreach var of varlist *chikv* *denv* chikv* denv*{ 
-		tab `var'  stanfordchikvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m 
-		display "************************************************************site**********************************************"
-		tab `var'  stanforddenvigg_ if strpos(`var', "neg")|strpos(`var', "pos") & cohortcityantigen== "`l'", m
-	}
-		}*/
-
-
 *simple prevalence/incidence by visit
-foreach var of varlist *chikv* *denv*{
-	bysort visit_s: tab `var'
-}
+save temp, replace
+
 
 *lagg igg by one visit
 destring id visit_s, replace
 xtset id visit_s
 sort id visit_s
-
-*+ #kids by number of visits
-	bysort id_wide: egen numvisits = count(visit_s)
-	tab numvisits 
 
 
 capture drop mydate_year mydate_month mydate_day
@@ -401,83 +377,25 @@ rename  mydatesamplecollected__year year
 rename mydatesamplecollected__month month
 rename mydatesamplecollected__day day
 
-replace id_city =lower(id_city)
-drop city 
-rename id_city city
-merge m:1 year month day city using merged_enviro.dta
-drop _merge
-save lab_enviro, replace
+*merge m:1 year month day city using merged_enviro.dta
+capture drop _merge
+*save lab_enviro, replace
 
-encode visit, gen(visitbyte)
-tab visit visitbyte
- drop visit
-rename visitbyte visit
-
-drop dup_merged
+drop visit
+rename visit_s visit
+capture drop dup_merged
 merge m:m id_wide using all_interviews.dta
 drop _merge
-save lab_enviro_interviews, replace
-
-	foreach var in stanforddenvigg_  stanfordchikvigg_ chikvigg_ denvigg_ {
-		tab `var', gen(`var'encode)
-		gen l1_`var'=  `var'[_n-1] 
-		tab l1_`var', gen(l1_`var'encode)
-		tab numvisits  `var'
-		bysort visit_s: tab l1_`var'encode2 chikvpcr_
-		bysort visit_s: tab l1_`var'encode2 fevertemp
-		bysort visit_s: tab l1_`var'encode2 denvpcr_
-		bysort visit_s: tab l1_`var'encode2 denvigm_ 
-		bysort visit_s: tab l1_`var'encode2 chikvigm_
-		bysort visit_s: tab l1_`var'encode2 dengueigm_sammy
-		
-}
+*save lab_enviro_interviews, replace
 	
 foreach var in dengueigm_sammy nsi chikv_prnt denv_prnt denvpcr_ chikvpcr{
 			tab `var', gen(`var'encode)
 }
 
-save temp, replace
-preserve
-keep if site==1
-save site1, replace
-restore
-preserve
-keep if site ==2
-save site2, replace
-restore	
-
-foreach dataset in  site2 site1{
-display "**********************`dataset'*******************"
-use `dataset', clear
-
-  capture gen igmns1pos=.
+ capture gen igmns1pos=.
  replace igmns1 = 1 if dengueigm_sammyencode2 == 1 & nsiencode1 == 1
   replace igmns1 = 0 if dengueigm_sammyencode2 == 0 & nsiencode1 == 0
-/*
-diagt l1_stanforddenvigg_encode2 igmns1
-diagt chikv_prntencode2 l1_stanfordchikvigg_encode2
-diagt stanfordchikvigg_encode2 chikvigg_encode2
-diagt chikvpcrencode1  l1_stanfordchikvigg_encode2
- 
-diagt denv_prntencode2 l1_stanforddenvigg_encode2 
-diagt stanforddenvigg_encode2 denvigg_encode2  
-diagt denvpcr_encode2  l1_stanforddenvigg_encode2
-diagt dengueigm_sammyencode2 nsiencode1
-
-diagt l1_stanforddenvigg_encode2 fevertemp
-diagt l1_stanfordchikvigg_encode2 fevertemp
-
-diagt denvpcr_encode2 fevertemp
-diagt denv_prntencode2 fevertemp
-
-diagt chikv_prntencode2 fevertemp
-diagt chikvpcr_encode2 fevertemp*/
-
-}
-
-
-
-
+gen season = . 
 replace season =1 if month >=1 & month  <=3 & season ==.
 *label define 1 "hot no rain from mid december"
 replace season =2 if month >=4 & month  <=6 & season ==.
@@ -489,9 +407,9 @@ replace season =4 if month >=11 & month  <=12 & season ==.
 
 *add time 0 so we can estimate the prevelance in the surival curve too. set dengue and chik =. 
 drop x
-			expand 2 if visit_s == 1, gen(x)
-			gsort id visit_s -x
-			replace visit_s= visit_s- 1 if x == 1
+			expand 2 if visit == 1, gen(x)
+			gsort id visit -x
+			replace visit= visit- 1 if x == 1
 
 			foreach var of varlist *denv* {
 			tostring `var', replace 
@@ -501,65 +419,55 @@ drop x
 			foreach var of varlist *chikv* {
 			tostring `var', replace 
 				replace `var'= "." if x == 1
-			}
+				}
+			
 
 			
 gen prevalent = .
-destring prevalent  stanfordchikvigg_encode2 stanforddenvigg_encode2 visit_s, replace
-replace prevalent = 1 if  stanfordchikvigg_encode2==1 & visit_s ==1
-replace prevalent = 1 if  stanforddenvigg_encode2==1 & visit_s ==1
 
-tempfile prevalent
+tab stanfordchikvigg_, gen(stanfordchikviggencode)
+rename stanfordchikviggencode3 CHIKVPOS
+
+tab stanforddenvigg_, gen(stanforddenviggencode)
+rename stanforddenviggencode3 DENVPOS
+drop stanford* 
+
+replace prevalent = 1 if  DENVPOS ==1 & visit ==1
+replace prevalent = 1 if  CHIKV ==1 & visit ==1
+
 save prevalent, replace
 preserve
-keep if id_cohort =="c"
-tempfile prevalentC
-save prevalentC, replace
-restore
-preserve
-keep if id_cohort =="f"
-tempfile prevalentF
-save prevalentF, replace
-restore
-preserve
 drop if prevalent == 1 
-tempfile incident
 save incident, replace
-keep if id_cohort =="c"
-tempfile incidentC
-save incidentC, replace
-restore
-preserve
-keep if id_cohort =="f"
-tempfile incidentF
-save incidentF, replace
 restore
 
 
 ************************************************survival and longitudinal analysis********************************************
 foreach dataset in "prevalent" "incident"{
 use `dataset', clear
-		destring id visit_s l1_denvigg_encode2 l1_chikvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 site city denvigg_encode2 chikvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 , replace
-		*capture drop if id_cohort=="d"
 		replace id_cohort = "HCC" if id_cohort == "c"
 		replace id_cohort = "AIC" if id_cohort == "f"
 		encode id_cohort, gen(cohort)
-		replace cohort = 1 if cohort ==3|cohort ==4
+		*replace cohort = 1 if cohort ==3|cohort ==4
 		label variable cohort "Cohort"
-		label define Cohort 1 "AIC" 2 "HCC"
+		*label define Cohort 1 "AIC" 2 "HCC"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 save `dataset', replace
 }
 
+drop if visit ==0
+foreach v of varlist CHIKVPOS DENVPOS{
+	tabout visit city `v' using `v'_tab.xls, replace
+}
 
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
-	foreach failvar of varlist chikvigg_encode2 denvigg_encode2 stanfordchikvigg_encode2 stanforddenvigg_encode2 l1_chikvigg_encode2 l1_denvigg_encode2 l1_stanfordchikvigg_encode2 l1_stanforddenvigg_encode2 {
+	foreach failvar of varlist CHIKVPOS DENVPOS {
 										**********survival***************				
-			preserve 
-						keep if cohort ==2
-						stset visit_s, id(id) failure(`failvar')
+			/*preserve 
+						 keep if cohort ==2
+						stset visit, id(id) failure(`failvar')
 						stdescribe
 						stsum
 						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
@@ -578,7 +486,7 @@ foreach dataset in "incident" "prevalent"{
 						graph export "survivalcity`dataset'`failvar'date.tif", width(4000) replace
 
 						
-						stset visit_s, id(id) failure(`failvar')
+						stset visit, id(id) failure(`failvar')
 						stdescribe
 						stsum
 						sts graph, cumhaz risktable tmax(11) censored(single) title(`failvar') ylabel(minmax, format(%5.3f))  ymtick(##5,  tlength(scheme tick))
@@ -592,27 +500,27 @@ foreach dataset in "incident" "prevalent"{
 						graph export "survivalcity`dataset'`failvar'visit.tif", width(4000) replace
 						
 						
-			restore 
+			restore */
 
 							destring `failvar', replace 
 								preserve
 							
-									keep if date ==.
-									keep date id
+									capture keep if date ==.
+									capture keep date id
 									outsheet using no_dates`var', comma replace
 								restore
 								
 							preserve		
 							drop if `failvar' == .
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit_s)
-							egen axis = axis(visit_s)
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit)
+							egen axis = axis(visit)
 							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 						graph twoway ///
 						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
 						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
 						   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
-							graph export "`dataset'`failvar'visit_scohort1.tif", width(4000) replace 
+							graph export "`dataset'`failvar'visitcohort1.tif", width(4000) replace 
 
 				restore				
 				preserve		
@@ -631,4 +539,4 @@ foreach dataset in "incident" "prevalent"{
 			}
 			}
 			
-save ro1.dta, replace
+			
