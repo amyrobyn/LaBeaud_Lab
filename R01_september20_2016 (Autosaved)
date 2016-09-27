@@ -481,8 +481,7 @@ foreach v of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG{
 
 foreach dataset in "incident" "prevalent"{
 	use `dataset', clear
-	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG{
-	foreach axis of city visit{
+	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG {
 										**********survival***************				
 			/*preserve 
 						 keep if cohort ==2
@@ -529,21 +528,32 @@ foreach dataset in "incident" "prevalent"{
 									outsheet using no_dates`var', comma replace
 								restore
 								
-								
-				preserve		
+							preserve		
 							drop if `failvar' == .
-							egen axis = axis(`axis')
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort `axis')
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit)
+							egen axis = axis(visit)
 							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 						graph twoway ///
 						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
 						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
-						   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1(1)4, valuelabel  angle(45))  title(`dataset' by cohort and `axis')
+						   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 9)  
+							graph export "`dataset'`failvar'visitcohort1.tif", width(4000) replace 
+
+				restore				
+				preserve		
+							*drop if `failvar' == .
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city)
+							egen axis = axis(city)
+							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+						graph twoway ///
+						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+						   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1(1)4, valuelabel  angle(45))  title(`dataset' by cohort and city)
 							graph export "`dataset'`failvar'citycohort.tif", width(4000) replace 
 
 				restore	
-			}
 			}
 			}
 			
