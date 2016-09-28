@@ -339,7 +339,6 @@ save longitudinal.dta, replace
 						replace westcoast = "Coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
 						replace westcoast = "West" if city =="Chulaimbo"|city =="Kisumu"
 					encode westcoast, gen(site)			
-					egen cohortcityantigen = concat(id_cohort city antigenused)
 
 						
  drop stanforddenviggod_ stanfordchikvod_ stanforddenvod_
@@ -422,9 +421,8 @@ drop x
 				}
 			
 
-			
+dropmiss, force	
 gen prevalent = .
-
 encode stanfordchikvigg_, gen(stanfordchikviggencode)
 rename stanfordchikviggencode CHIKVPOS
 replace CHIKVPOS = . if CHIKVPOS==1
@@ -451,6 +449,7 @@ drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
 save prevelent, replace
 
 preserve
+dropmiss 
 drop if prevalent == 1 
 drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
 save incident, replace
@@ -458,7 +457,7 @@ restore
 
 
 ************************************************survival and longitudinal analysis********************************************
-foreach dataset in "prevalent" "incident"{
+foreach dataset in  "incident" "prevalent"{
 use `dataset', clear
 		replace id_cohort = "HCC" if id_cohort == "c"
 		replace id_cohort = "AIC" if id_cohort == "f"
@@ -468,9 +467,8 @@ use `dataset', clear
 		*label define Cohort 1 "AIC" 2 "HCC"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-		drop cohortcityantigen
-		export excel year mydate_day mydate_month mydate_year site visit antigenused_ mydatesamplecollected_ city study_id Stanford_DENV_IGG Stanford_CHIKV_IGG cohort using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/`dataset'", firstrow(variables) replace
-
+		drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
+		export excel site visit antigenused_ city Stanford_DENV_IGG Stanford_CHIKV_IGG cohort using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/`dataset'", firstrow(variables) replace
 save `dataset', replace
 }
 
