@@ -30,12 +30,12 @@ Get incidence and prevalence tables by cohort by site by visit using stanford on
  
  */
  
-capture log close 
-log using "R01_september20.smcl", text replace 
-set scrollbufsize 100000
-set more 1
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/output"
+capture log close 
+log using "R01_september30.smcl", text replace 
+set scrollbufsize 100000
+set more 1
 insheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/chulaimbo_aic.csv", comma clear names
 capture drop *od* followupaliquotid_*
 save "chulaimbo_aic", replace
@@ -341,7 +341,7 @@ save longitudinal.dta, replace
 					encode westcoast, gen(site)			
 
 						
- drop stanforddenviggod_ stanfordchikvod_ stanforddenvod_
+drop stanforddenviggod_ stanfordchikvod_ stanforddenvod_
 foreach var of varlist stanford*{ 
 	replace `var' =trim(itrim(lower(`var')))
 	gen `var'_result =""
@@ -421,8 +421,8 @@ drop x
 				}
 			
 
-dropmiss, force	
-gen prevalent = .
+gen prevalentchikv = .
+gen prevalentdenv = .
 encode stanfordchikvigg_, gen(stanfordchikviggencode)
 rename stanfordchikviggencode CHIKVPOS
 replace CHIKVPOS = . if CHIKVPOS==1
@@ -442,29 +442,31 @@ drop stanford*
 rename DENVPOS Stanford_DENV_IGG
 rename CHIKVPOS Stanford_CHIKV_IGG
 
-replace prevalent = 1 if  Stanford_DENV_IGG ==1 & visit ==1
-replace prevalent = 1 if  Stanford_CHIKV_IGG ==1 & visit ==1
+replace prevalentdenv = 1 if  Stanford_DENV_IGG ==1 & visit ==1
+replace prevalentchikv = 1 if  Stanford_CHIKV_IGG ==1 & visit ==1
 
-drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
+replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
+		replace id_cohort = "AIC" if id_cohort == "f"|id_cohort == "m" 
+		capture drop cohort
+		encode id_cohort, gen(cohort)
+		
+bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
 save prevelent, replace
 
-preserve
-dropmiss 
-drop if prevalent == 1 
-drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
-save incident, replace
-restore
+drop if prevalentchikv == 1 
+bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
+save incidentchikv, replace
+
+use prevalent,clear
+drop if prevalentdenv == 1 
+bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
+save incidentdenv, replace
 
 
 ************************************************survival and longitudinal analysis********************************************
-foreach dataset in  "incident" "prevalent"{
+foreach dataset in  "incidentdenv" "incidentchikv" "prevalent"{
 use `dataset', clear
-		replace id_cohort = "HCC" if id_cohort == "c"
-		replace id_cohort = "AIC" if id_cohort == "f"
-		encode id_cohort, gen(cohort)
-		*replace cohort = 1 if cohort ==3|cohort ==4
 		label variable cohort "Cohort"
-		*label define Cohort 1 "AIC" 2 "HCC"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
 		drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
@@ -477,7 +479,7 @@ foreach v of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG{
 	tabout visit city `v' using `v'_tab.xls, replace
 }
 
-foreach dataset in "incident" "prevalent"{
+foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG {
 										**********survival***************				
@@ -528,7 +530,7 @@ foreach dataset in "incident" "prevalent"{
 								
 							preserve		
 							drop if `failvar' == .
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit site prevalent)
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit)
 							egen axis = axis(visit)
 							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
@@ -542,7 +544,7 @@ foreach dataset in "incident" "prevalent"{
 				restore				
 				preserve		
 							*drop if `failvar' == .
-							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city site prevalent)
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city)
 							egen axis = axis(city)
 							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
 							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
