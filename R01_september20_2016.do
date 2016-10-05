@@ -453,7 +453,7 @@ replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
 bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
 save prevalent, replace
 
-	*chikv
+	*chikv matched prevalence
 	use prevalent, clear
 		keep if visit == 1 & Stanford_CHIKV_IGG!=.
 		save visit_a_chikv, replace
@@ -468,7 +468,7 @@ save prevalent, replace
 		keep if visit_ab ==3
 		keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2
 		export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_visitab_chikv", firstrow(variables) replace
-	*denv
+	*denv matched prevalence
 	use prevalent, clear
 		keep if visit == 1 & Stanford_DENV_IGG!=.
 		save visit_a_denv, replace
@@ -484,28 +484,37 @@ save prevalent, replace
 		keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2
 		export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_visitab_denv", firstrow(variables) replace
 		
-
+*denv prevlanece
 use prevalent, clear
 keep if Stanford_DENV_IGG!=.
-save prevalent_denv, replace
+keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2 prevalentdenv
+export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_denv", firstrow(variables) replace
+save prevalentdenv, replace
+*denv incidence
+use prevalentdenv, clear
+drop if prevalentdenv == 1 
+keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2
+export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/incidentdenv", firstrow(variables) replace
+save incidentdenv, replace
 
+*chikv prevalence
 use prevalent, clear
 keep if Stanford_CHIKV_IGG!=.
+keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2 prevalentchikv
+export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalentchikv", firstrow(variables) replace
+save prevalentchikv, replace
+*chikv prevalence
+use prevalentchikv, clear
+drop if prevalentchikv == 1 
+keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2
+export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/incidentchikv", firstrow(variables) replace
 save incidentchikv, replace
 
-use prevalent, clear
-drop if prevalentchikv == 1 
-bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
-save prevalent_chikv, replace
 
-use prevalent, clear
-drop if prevalentdenv == 1 
-bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
-save incidentdenv, replace
 
 
 ************************************************survival and longitudinal analysis********************************************
-foreach dataset in  "incidentdenv" "incidentchikv" "prevalent_denv" "prevalent_chikv"{
+foreach dataset in  "incidentdenv" "incidentchikv" "prevalentdenv" "prevalentchikv"{
 use `dataset', clear
 		label variable cohort "Cohort"
 		label variable city "City"
@@ -523,7 +532,7 @@ foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG {
 										**********survival***************				
-			preserve 
+			/*preserve 
 						keep if cohort ==2
 						stset visit, id(id) failure(`failvar')
 						stdescribe
@@ -558,7 +567,7 @@ foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
 						graph export "survivalcity`dataset'`failvar'visit.tif", width(4000) replace
 						
 						
-			restore 
+			restore */
 
 							destring `failvar', replace 
 								preserve
