@@ -451,13 +451,29 @@ replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
 		encode id_cohort, gen(cohort)
 		
 bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
-save prevelent, replace
+save prevalent, replace
 
+	use prevalent, clear
+		keep if visit == 1
+		save visit_a, replace
+	use prevalent, clear
+		keep if visit == 2
+		save visit_b, replace
+		
+		merge 1:1 id_wide using visit_a
+		rename _merge visit_ab
+		merge 1:m id_wide using prevalent
+		keep if visit_ab ==3
+		keep id_wide site visit antigenused_ city Stanford_DENV_IGG Stanford_CHIKV_IGG cohort age2
+		export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_visitab", firstrow(variables) replace
+		
+
+use prevalent, clear
 drop if prevalentchikv == 1 
 bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
 save incidentchikv, replace
 
-use prevalent,clear
+use prevalent, clear
 drop if prevalentdenv == 1 
 bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
 save incidentdenv, replace
@@ -469,8 +485,8 @@ use `dataset', clear
 		label variable cohort "Cohort"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-		drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.
-		export excel site visit antigenused_ city Stanford_DENV_IGG Stanford_CHIKV_IGG cohort using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/`dataset'", firstrow(variables) replace
+		drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.	
+		export excel id_wide site visit antigenused_ city Stanford_DENV_IGG Stanford_CHIKV_IGG cohort age2 age  using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/`dataset'", firstrow(variables) replace
 save `dataset', replace
 }
 
@@ -483,8 +499,8 @@ foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
 	use `dataset', clear
 	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG {
 										**********survival***************				
-			/*preserve 
-						 keep if cohort ==2
+			preserve 
+						keep if cohort ==2
 						stset visit, id(id) failure(`failvar')
 						stdescribe
 						stsum
@@ -518,7 +534,7 @@ foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
 						graph export "survivalcity`dataset'`failvar'visit.tif", width(4000) replace
 						
 						
-			restore */
+			restore 
 
 							destring `failvar', replace 
 								preserve
