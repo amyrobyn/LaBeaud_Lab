@@ -71,13 +71,14 @@ capture drop villhouse_a
 capture destring personid_a, replace
 save `dataset', replace
 }
-append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta"
+append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta"
 drop if studyid_a =="example"
 drop if studyid_a =="EXAMPLE"
 drop if studyid_a =="Example"
 save appended_september20.dta, replace
 
-	drop if studyid_a==""|studyid_a=="???"
+replace studyid_a = followupid_b if studyid_a ==""
+
 
 	
 foreach var of varlist date*{
@@ -114,7 +115,7 @@ foreach var of varlist date*{
 			replace studyid_a= subinstr(studyid_a, ".", "",.) 
 			replace studyid_a= subinstr(studyid_a, "/", "",.)
 			replace studyid_a= subinstr(studyid_a, " ", "",.)
-			drop if studyid_a==""
+*			drop if studyid_a==""
 		
 
 	bysort  studyid_a: gen dup_merged = _n 
@@ -127,7 +128,12 @@ foreach var of varlist date*{
 	export excel using "`save'dup", firstrow(variables) replace
 
 	use merged.dta, clear
-	drop if dup_merged >1
+
+	gen dupkey = "dup" if dup_merged >1
+	egen studyid_adup = concat(studyid_a dupkey dup_merged) if dup_merged >1
+	replace studyid_a = studyid_adup if studyid_adup !=""
+	drop dupkey
+*	drop if dup_merged >1
 	
 tempfile merged
 save merged, replace
@@ -159,7 +165,9 @@ save wide, replace
 		keep if dup2 >1
 		export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
-	drop if dup2 >1
+	gen dupkey = "dup" if dup2 >1
+	egen id_widedup = concat(id_wide dupkey dup2) if dup2 >1
+	replace id_wide = id_widedup if id_widedup !=""
 	gen begindate = mydatesamplecollected_a if mydatesamplecollected_a !=.
 	reshape long mydatesamplecollected_ mydatesamplerun_ studyid_ followupaliquotid_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(visit) string
 	format mydatesamplecollected_ %td
@@ -458,55 +466,58 @@ save prevalent, replace
 		keep if visit == 1 & Stanford_CHIKV_IGG!=.
 		save visit_a_chikv, replace
 	use prevalent, clear
-		keep if visit == 2 & Stanford_CHIKV_IGG!=.
+		keep if visit == 3 & Stanford_CHIKV_IGG!=.
 		save visit_b_chikv, replace
 		
 		merge 1:1 id_wide using visit_a_chikv
 		rename _merge visit_ab
 		keep visit_ab id_wide
 		merge m:m id_wide using prevalent
-		keep if visit_ab ==3
+		keep if visit_ab ==3 & Stanford_CHIKV_IGG!=.
 		keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2
 		export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_visitab_chikv", firstrow(variables) replace
+	
 	*denv matched prevalence
 	use prevalent, clear
 		keep if visit == 1 & Stanford_DENV_IGG!=.
 		save visit_a_denv, replace
 	use prevalent, clear
-		keep if visit == 2 & Stanford_DENV_IGG!=.
+		keep if visit == 3 & Stanford_DENV_IGG!=.
 		save visit_b_denv, replace
 		
 		merge 1:1 id_wide using visit_a_denv
 		rename _merge visit_ab
 		keep visit_ab id_wide
 		merge m:m id_wide using prevalent
-		keep if visit_ab ==3
+		keep if visit_ab ==3 & Stanford_DENV_IGG!=.
 		keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2
 		export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_visitab_denv", firstrow(variables) replace
 		
 *denv prevlanece
 use prevalent, clear
 keep if Stanford_DENV_IGG!=.
-keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2 prevalentdenv
+keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2 prevalentdenv studyid_
 export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalent_denv", firstrow(variables) replace
 save prevalentdenv, replace
+
 *denv incidence
 use prevalentdenv, clear
 drop if prevalentdenv == 1 
-keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2
+keep id_wide site visit antigenused_ city Stanford_DENV_IGG cohort age2 studyid_
 export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/incidentdenv", firstrow(variables) replace
 save incidentdenv, replace
 
 *chikv prevalence
 use prevalent, clear
 keep if Stanford_CHIKV_IGG!=.
-keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2 prevalentchikv
+keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2 prevalentchikv studyid_
 export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/prevalentchikv", firstrow(variables) replace
 save prevalentchikv, replace
-*chikv prevalence
+
+*chikv incidence
 use prevalentchikv, clear
 drop if prevalentchikv == 1 
-keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2
+keep id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort age2 studyid_
 export excel using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/incidentchikv", firstrow(variables) replace
 save incidentchikv, replace
 
@@ -514,23 +525,119 @@ save incidentchikv, replace
 
 
 ************************************************survival and longitudinal analysis********************************************
-foreach dataset in  "incidentdenv" "incidentchikv" "prevalentdenv" "prevalentchikv"{
+foreach dataset in  "incidentdenv" "prevalentdenv"{
 use `dataset', clear
 		label variable cohort "Cohort"
 		label variable city "City"
 		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
-		drop if Stanford_DENV_IGG==. & Stanford_CHIKV_IGG==.	
 save `dataset', replace
-}
 
 drop if visit ==0
-foreach v of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG{
+foreach v of varlist Stanford_DENV_IGG{
+	tabout visit city `v' using `v'_tab.xls, replace
+}
+}
+
+
+
+foreach dataset in "incidentchikv" "prevalentchikv"{
+use `dataset', clear
+		label variable cohort "Cohort"
+		label variable city "City"
+		label define City 1 "Chulaimbo" 2 "Kisumu" 3 "Milani" 5 "Nganja" 6 "Ukunda"
+save `dataset', replace
+
+drop if visit ==0
+foreach v of varlist Stanford_CHIKV_IGG{
 	tabout visit city `v' using `v'_tab.xls, replace
 }
 
-foreach dataset in "incidentchikv" "incidentdenv" "prevalent"{
+}
+
+
+foreach dataset in "incidentchikv" "prevalentchikv"{
 	use `dataset', clear
-	foreach failvar of varlist Stanford_CHIKV_IGG Stanford_DENV_IGG {
+	foreach failvar of varlist Stanford_CHIKV_IGG {
+										**********survival***************				
+			/*preserve 
+						keep if cohort ==2
+						stset visit, id(id) failure(`failvar')
+						stdescribe
+						stsum
+						sts graph, cumhaz risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+								graph export "cumhaz`dataset'`failvar'date.tif", width(4000) replace
+						sts graph, cumhaz risktable censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+								graph export "cumhaz`dataset'`failvar'citydate.tif", width(4000) replace
+						sts graph, cumhaz risktable censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+								graph export "cumhaz`dataset'`failvar'sitedate.tif", width(4000) replace
+						
+						sts graph, survival risktable censored(single) title(`failvar') ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survival`dataset'`failvar'date.tif", width(4000) replace
+						sts list, survival
+						sts graph, risktable censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survivalsite`dataset'`failvar'date.tif", width(4000) replace
+						sts graph, risktable censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f)) ymtick(##5, tlength(scheme tick)) xlabel(, format(%td)) xlabel(, angle(45)) xmtick(##5, tlength(scheme tick)) 
+						graph export "survivalcity`dataset'`failvar'date.tif", width(4000) replace
+
+						
+						stset visit, id(id) failure(`failvar')
+						stdescribe
+						stsum
+						sts graph, cumhaz risktable tmax(11) censored(single) title(`failvar') ylabel(minmax, format(%5.3f))  ymtick(##5,  tlength(scheme tick))
+						graph export "cumhaz`dataset'`failvar'visit.tif", width(4000) replace
+						sts graph, survival risktable tmax(11) censored(single) title(`failvar')  ylabel(minmax, format(%5.3f))ymtick(##5,  tlength(scheme tick))
+						graph export "survival`dataset'`failvar'visit.tif", width(4000) replace
+						sts list, survival
+						sts graph, risktable tmax(11)  censored(single) title(`failvar') by(site) ylabel(minmax, format(%5.3f))ymtick(##5,  tlength(scheme tick))
+						graph export "survivalsite`dataset'`failvar'visit.tif", width(4000) replace
+						sts graph, risktable tmax(11) censored(single) title(`failvar') by(city) ylabel(minmax, format(%5.3f))ymtick(##5,  tlength(scheme tick))
+						graph export "survivalcity`dataset'`failvar'visit.tif", width(4000) replace
+						
+						
+			restore */
+
+							destring `failvar', replace 
+								preserve
+							
+									capture keep if date ==.
+									capture keep date id
+									outsheet using no_dates`var', comma replace
+								restore
+								
+							preserve		
+							drop if `failvar' == .
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort visit)
+							egen axis = axis(visit)
+							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+
+						graph twoway ///
+						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+						   || , by(cohort) ylabel(, format(%5.3f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(0 (1) 3)   
+						 graph export "`dataset'`failvar'visitcohort1.tif", width(4000) replace 
+
+				restore				
+				preserve		
+							*drop if `failvar' == .
+							collapse (mean) `failvar' (count) n=`failvar' (sd) sd`failvar'=`failvar', by(cohort city)
+							egen axis = axis(city)
+							generate hi`failvar'= `failvar' + invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+							generate lo`failvar'= `failvar'- invttail(n-1,0.025)*(sd`failvar'/ sqrt(n))
+						graph twoway ///
+						   || (bar `failvar' axis, sort )(rcap hi`failvar' lo`failvar' axis) ///
+						   || scatter `failvar' axis, ms(i) mlab(n) mlabpos(2) mlabgap(2) mlabangle(45) mlabcolor(black) mlabsize(4) ///
+						   || , by(cohort) ylabel(, format(%5.4f)) ymtick(#4,  tlength(scheme tick)) legend(label(1 "`failvar'") label(2 "95% CI")) xlabel(1(1)4, valuelabel  angle(45))  title(`dataset' by cohort and city)
+							graph export "`dataset'`failvar'citycohort.tif", width(4000) replace 
+
+				restore	
+			}
+			}
+			
+			
+foreach dataset in "incidentdenv" "prevalentdenv"{
+	use `dataset', clear
+	foreach failvar of varlist Stanford_DENV_IGG {
 										**********survival***************				
 			/*preserve 
 						keep if cohort ==2
