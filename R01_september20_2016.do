@@ -71,7 +71,10 @@ capture drop villhouse_a
 capture destring personid_a, replace
 save `dataset', replace
 }
-append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta"
+append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta", force
+save temp, replace
+dropmiss
+drop denvigg_e 
 drop if studyid_a =="example"
 drop if studyid_a =="EXAMPLE"
 drop if studyid_a =="Example"
@@ -169,7 +172,7 @@ use wide.dta, clear
 	egen id_widedup = concat(id_wide dupkey dup2) if dup2 >1
 	replace id_wide = id_widedup if id_widedup !=""
 	gen begindate = mydatesamplecollected_a if mydatesamplecollected_a !=.
-	reshape long mydatesamplecollected_ mydatesamplerun_ studyid_ followupaliquotid_ chikvigg_ chikviggod_ denvigg_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ stanforddenvigg_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(visit) string
+	reshape long mydatesamplerun_ studyid_ followupaliquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(visit) string
 	format mydatesamplecollected_ %td
 	format begindate %td
 	tempfile long
@@ -192,16 +195,19 @@ save elisas, replace
 
 ************************************add RDT data**********************************
 
-import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/DENGUE RDT RESULTS Aug 30th august 2016.xls", sheet("Sheet3") firstrow clear
-rename STUDYNUMBER STUDY_ID
-rename IgM dengueigm_sammy
-rename IgG dengue_igg_sammy
+*import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/DENGUE RDT RESULTS Aug 30th august 2016.xls", sheet("Sheet3") firstrow clear
+*import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/RDT/sammy case control oct 23.xls", sheet("cases ") firstrow clear
+insheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/RDT/sammy case control oct 23.csv", comma clear
+rename studynumber study_id
+rename igm dengueigm_sammy
+rename igg dengue_igg_sammy
 tempfile ns1
 save ns1, replace
+
 *take visit out of id
 
 						forval i = 1/3 { 
-							gen id`i' = substr(STUDY_ID, `i', 1) 
+							gen id`i' = substr(study_id, `i', 1) 
 						}
 *gen id_wid without visit						 
 	gen city  = id1 
@@ -209,8 +215,8 @@ save ns1, replace
 	gen visit = id3
 	tab visit
 	gen id_childnumber = ""
-	replace id_childnumber = substr(STUDY_ID, +4, .)
-	order id_cohort city STUDY_ID id_childnumber 
+	replace id_childnumber = substr(study_id, +4, .)
+	order id_cohort city study_id id_childnumber 
 	egen id_wide = concat(city id_cohort id_childnum)
 
 	foreach var of varlist _all{
@@ -238,11 +244,14 @@ save ns1, replace
 	foreach var of var `r(varlist)'{
 	replace `var' =trim(itrim(lower(`var')))
 	}
+replace nsi = "0" if nsi =="n eg"
 save ns1, replace
-merge 1:1 id_wide visit using elisas.dta
-drop _merge
+merge m:m id_wide visit using elisas.dta
 save elisas_PCR_RDT, replace
-
+keep if _merge ==3
+save sammy_jael, replace
+*drop _merge
+save elisas_PCR_RDT, replace
 ************************************add PRNT data**********************************
 import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Msambweni Results") cellrange(A2:E154) firstrow clear
 tempfile PRNT_Msambweni 
@@ -308,13 +317,13 @@ use "`dataset'", clear
 }
 use "PRNT_Msambweni", clear
 *merge with elisas.dta
-merge 1:1 id_wide visit using "elisas_PCR_RDT.dta"
+merge 1:m id_wide visit using "elisas_PCR_RDT.dta"
 drop _merge
 tempfile elisas_PCR_RDT_PRNT1
 save elisas_PCR_RDT_PRNT1, replace
 use PRNT_Ukunda, clear
 *merge with elisas.dta
-merge 1:1 id_wide visit using elisas_PCR_RDT_PRNT1.dta
+merge 1:m id_wide visit using elisas_PCR_RDT_PRNT1.dta
 drop _merge
 tempfile elisas_PCR_RDT_PRNT2
 save elisas_PCR_RDT_PRNT2, replace
@@ -634,7 +643,7 @@ foreach dataset in "incidentchikv" "prevalentchikv"{
 			}
 			}
 			
-			
+/*			
 foreach dataset in "incidentdenv" "prevalentdenv"{
 	use `dataset', clear
 	foreach failvar of varlist Stanford_DENV_IGG {
@@ -715,3 +724,4 @@ foreach dataset in "incidentdenv" "prevalentdenv"{
 			}
 			
 			
+*/
