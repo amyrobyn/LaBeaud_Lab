@@ -179,7 +179,7 @@ replace fevertemp = 0 if temperature < 38
 foreach var of varlist *date*{
 		capture gen double my`var'= date(`var',"DMY")
 		capture format my`var' %td
-		drop `var'
+		*drop `var'
 }
 foreach var of varlist my*{
 	gen `var'_year = year(`var')
@@ -190,7 +190,6 @@ foreach var of varlist my*{
 gen day = myinterviewdate_day
 gen month = myinterviewdate_month
 gen year = myinterviewdate_year
-
 			replace studyid = subinstr(studyid, ".", "",.) 
 			replace studyid = subinstr(studyid, "/", "",.)
 			replace studyid = subinstr(studyid, " ", "",.)

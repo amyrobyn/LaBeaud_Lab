@@ -250,7 +250,7 @@ merge m:m id_wide visit using elisas.dta
 save elisas_PCR_RDT, replace
 keep if _merge ==3
 save sammy_jael, replace
-*drop _merge
+capture drop _merge
 save elisas_PCR_RDT, replace
 ************************************add PRNT data**********************************
 import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/LaBeaud RESULTS - july 2016.xls", sheet("2016 PRNT-Msambweni Results") cellrange(A2:E154) firstrow clear
@@ -317,12 +317,15 @@ use "`dataset'", clear
 }
 use "PRNT_Msambweni", clear
 *merge with elisas.dta
-merge 1:m id_wide visit using "elisas_PCR_RDT.dta"
+capture drop _merge
+merge 1:m id_wide visit using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/output/elisas_PCR_RDT.dta"
 drop _merge
 tempfile elisas_PCR_RDT_PRNT1
+capture drop _merge
 save elisas_PCR_RDT_PRNT1, replace
 use PRNT_Ukunda, clear
 *merge with elisas.dta
+capture drop _merge
 merge 1:m id_wide visit using elisas_PCR_RDT_PRNT1.dta
 drop _merge
 tempfile elisas_PCR_RDT_PRNT2
@@ -343,7 +346,7 @@ sort visit
 drop if visit =="a2"
 encode visit, gen(visit_s)
 replace city ="c" if city =="r" 
-xtset id visit_s	
+*xtset id visit_s	
 save longitudinal.dta, replace
 
 	   					replace city  = "Chulaimbo" if city == "c"
@@ -376,7 +379,7 @@ save temp, replace
 
 *lagg igg by one visit
 destring id visit_s, replace
-xtset id visit_s
+*xtset id visit_s
 sort id visit_s
 
 
@@ -400,6 +403,7 @@ capture drop _merge
 drop visit
 rename visit_s visit
 capture drop dup_merged
+drop v28 v19 v20 v21
 merge m:m id_wide using all_interviews.dta
 drop _merge
 *save lab_enviro_interviews, replace
