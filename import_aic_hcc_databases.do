@@ -9,7 +9,9 @@ set more 1
 
 cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/output"
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
-import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("HCC Follow-up Msambweni") firstrow clear
+local importnov15 "/Users/amykrystosik/Box Sync/DENV CHIKV project/Coast Cleaned/HCC/HCC Latest/"
+
+import excel "`importnov15'Msambweni HCC Initial 06Nov16.xls", sheet("#LN00014") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -18,8 +20,10 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-save "HCC Follow-up Msambweni", replace
-import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("In Lab But No Data Msambweni") firstrow clear
+save "Msambweni HCC Initial 06Nov16", replace
+
+
+import excel "`importnov15'Msambweni HCC Follow one 06Nov16.xls", sheet("#LN00015") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
 }
@@ -28,7 +32,34 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-save "In Lab But No Data Msambweni", replace
+save "Msambweni HCC Follow one 06Nov16", replace
+
+
+
+import excel "`importnov15'Msambweni HCC Follow two 06Nov16.xls", sheet("#LN00013") firstrow clear
+foreach var of varlist _all{
+	capture rename `var', lower
+}
+ds, has(type string) 
+	foreach var of var `r(varlist)'{
+	capture tostring `var', replace 
+	capture  replace `var'=lower(`var')
+		}	
+save "Msambweni HCC Follow two 06Nov16", replace
+
+
+import excel "`importnov15'Msambweni HCC Follow three 06Nov16.xls", sheet("#LN00028") firstrow clear
+foreach var of varlist _all{
+	capture rename `var', lower
+}
+ds, has(type string) 
+	foreach var of var `r(varlist)'{
+	capture tostring `var', replace 
+	capture  replace `var'=lower(`var')
+		}	
+save "Msambweni HCC Follow three 06Nov16", replace
+
+*west HCC
 import excel "`import'HCC_1st Followup.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -39,6 +70,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_1st Followup", replace
+
 import excel "`import'HCC_2nd Followup.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -49,6 +81,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_2nd Followup", replace
+
 import excel "`import'HCC_3rd Followup.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -59,6 +92,7 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_3rd Followup", replace
+
 import excel "`import'HCC_Initial.xls", sheet("Sheet1") firstrow clear
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -69,56 +103,10 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 save "west_HCC_Initial", replace
-import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("HCC Follow-up Msambweni") firstrow clear
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-save "HCC Follow-up Msambweni", replace
-import excel "`import'HCC Follow-Up Data_20Jun15 - with Names not Merged.xlsx", sheet("In Lab But No Data Msambweni") firstrow clear
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-save "In Lab But No Data Msambweni", replace
-import excel "`import'HCC Initial Data_20Jun15 - without Names.xlsx", sheet("HCC Initial Msambweni") firstrow clear
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-save "HCC Initial Msambweni", replace
-import excel "`import'HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Data Missing Lab - Msambweni") clear
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-save "In Data Missing Lab - Msambweni", replace
-import excel "`import'HCC Initial Data_20Jun15 - without Names.xlsx", sheet("In Lab Missing Data - Msambweni") clear
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-save "In Lab Missing Data - Msambweni", replace
+
+
+
+*AIC
 insheet using "`import'Coast_AIC_Init-Katherine.csv", comma clear
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -170,7 +158,7 @@ ds, has(type string)
 		}	
 save "West_AIC_INITIAL", replace
 
-append using "In Data Missing Lab - Msambweni.dta" "In Lab But No Data Msambweni.dta" "In Lab Missing Data - Msambweni.dta" "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta" "HCC Follow-up Msambweni.dta" "Coast_AIC_Init-Katherine.dta" "West_AIC_INITIAL.dta" "Western_AICFU-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" "HCC Initial Msambweni.dta", gen(append) force
+append using "Msambweni HCC Follow three 06Nov16" "Msambweni HCC Follow two 06Nov16" "Msambweni HCC Follow one 06Nov16" "Msambweni HCC Initial 06Nov16"  "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta"  "Coast_AIC_Init-Katherine.dta" "West_AIC_INITIAL.dta" "Western_AICFU-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" , gen(append) force
 
 gen fevertemp =.
 replace fevertemp = 1 if temperature >= 38
