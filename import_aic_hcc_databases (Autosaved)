@@ -214,5 +214,9 @@ save merged, replace
 	egen id_wide = concat(id_city id_cohort id_childnum)
 
 drop append
+save temp, replace
 	
+	encode site, gen(siteint)
+	drop site
+	rename siteint site
 save all_interviews, replace
