@@ -7,7 +7,7 @@ log using "R01_import_interviews.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
-cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs September 20/output"
+cd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/output"
 local import "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 local importnov15 "/Users/amykrystosik/Box Sync/DENV CHIKV project/Coast Cleaned/HCC/HCC Latest/"
 
@@ -214,5 +214,9 @@ save merged, replace
 	egen id_wide = concat(id_city id_cohort id_childnum)
 
 drop append
+save temp, replace
 	
+	encode site, gen(siteint)
+	drop site
+	rename siteint site
 save all_interviews, replace
