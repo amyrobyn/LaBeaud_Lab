@@ -6,7 +6,9 @@ dropmiss, forcesave "chulaimbo_aic", replaceinsheet using "/Users/amykrystosik
 dropmiss, forcesave "chulaimbo_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/kisumu aic.csv", comma clear namescapture drop *od* followupaliquotid_*
 dropmiss, forcesave "kisuma_aic", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/kisumu hcc.csv", comma clear namescapture drop *od* followupaliquotid_*
 dropmiss, forcesave "kisumu_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/csvsnov152016/milalani hcc.csv", comma clear namescapture drop *od* followupaliquotid_*
-dropmiss, forcesave "milalani_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/csvsnov152016/Msambweni  AIC.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "msambweni_aic", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/csvsnov152016/nganja hcc.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "nganja_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/ukunda aic.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "ukunda_aic", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/ukunda hcc.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "ukunda_hcc", replaceclearforeach dataset in "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta"{use `dataset', clearcapture drop villhouse_acapture destring personid_a, replacesave `dataset', replace}append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta"save temp, replacedropmiss*drop denvigg_e drop if studyid_a =="example"drop if studyid_a =="EXAMPLE"drop if studyid_a =="Example"save appended_september20.dta, replacereplace studyid_a = followupid_b if studyid_a ==""	/*foreach var of varlist date*{		capture confirm string var `var'			if _rc==0 {						gen double my`var'= date(`var',"DMY")						format my`var' %td						drop `var'						}			else {						gen double my`var'= `var'						format my`var' %td						#drop `var'				}							}	ds my*, not	foreach var of var `r(varlist)'{		tostring `var', replace 		replace `var'=lower(`var')		rename `var', lower		}							ds my*, not	foreach var of var `r(varlist)'{		tostring `var', replace		replace `var'=lower(`var')		rename `var', lower	}	*/				replace studyid_a= subinstr(studyid_a, ".", "",.) 			replace studyid_a= subinstr(studyid_a, "/", "",.)			replace studyid_a= subinstr(studyid_a, " ", "",.)*			drop if studyid_a==""			bysort  studyid_a: gen dup_merged = _n 	tab dup_merged	list studyid_a if dup_merged>1	tempfile merged	save merged, replace	*keep those that i dropped for duplicate and show to elysse	keep if dup_merged >1		export excel using "`save'dup", firstrow(variables) replace	use merged.dta, clear	gen dupkey = "dup" if dup_merged >1	egen studyid_adup = concat(studyid_a dupkey dup_merged) if dup_merged >1	replace studyid_a = studyid_adup if studyid_adup !=""	drop dupkey	drop if dup_merged >1	tempfile mergedsave merged, replace*take visit out of id						forval i = 1/3 { 							gen id`i' = substr(studyid_a, `i', 1) 						}*gen id_wid without visit						 	rename id1 city  	rename id2 id_cohort  	rename id3 id_visit 	tab id_visit 
+dropmiss, forcesave "milalani_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/csvsnov152016/Msambweni  AIC.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "msambweni_aic", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/csvsnov152016/nganja hcc.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "nganja_hcc", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/ukunda aic.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "ukunda_aic", replaceinsheet using "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/ukunda hcc.csv", comma clear namescapture drop *od* followupaliquotid_*dropmiss, forcesave "ukunda_hcc", replaceclearforeach dataset in "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta"{use `dataset', clearcapture drop villhouse_acapture destring personid_a, replacesave `dataset', replace}append using "chulaimbo_aic.dta" "kisumu_hcc.dta"  "chulaimbo_hcc.dta" "kisuma_aic.dta" "milalani_hcc.dta" "msambweni_aic.dta" "nganja_hcc.dta" "ukunda_aic.dta"save temp, replacedropmiss*drop denvigg_e drop if studyid_a =="example"drop if studyid_a =="EXAMPLE"drop if studyid_a =="Example"
+save appended_september20.dta, replacereplace studyid_a = followupid_b if studyid_a ==""	/*foreach var of varlist date*{		capture confirm string var `var'			if _rc==0 {						gen double my`var'= date(`var',"DMY")						format my`var' %td						drop `var'						}			else {						gen double my`var'= `var'						format my`var' %td						#drop `var'				}							}	ds my*, not	foreach var of var `r(varlist)'{		tostring `var', replace 		replace `var'=lower(`var')		rename `var', lower		}							ds my*, not	foreach var of var `r(varlist)'{		tostring `var', replace		replace `var'=lower(`var')		rename `var', lower	}	*/
+			replace studyid_a =lower(studyid_a)			replace studyid_a= subinstr(studyid_a, ".", "",.) 			replace studyid_a= subinstr(studyid_a, "/", "",.)			replace studyid_a= subinstr(studyid_a, " ", "",.)*			drop if studyid_a==""			bysort  studyid_a: gen dup_merged = _n 	tab dup_merged	list studyid_a if dup_merged>1	tempfile merged	save merged, replace	*keep those that i dropped for duplicate and show to elysse	keep if dup_merged >1		export excel using "`save'dup", firstrow(variables) replace	use merged.dta, clear	gen dupkey = "dup" if dup_merged >1	egen studyid_adup = concat(studyid_a dupkey dup_merged) if dup_merged >1	replace studyid_a = studyid_adup if studyid_adup !=""	drop dupkey	drop if dup_merged >1	tempfile mergedsave merged, replace*take visit out of id						forval i = 1/3 { 							gen id`i' = substr(studyid_a, `i', 1) 						}*gen id_wid without visit						 	rename id1 city  	rename id2 id_cohort  	rename id3 id_visit 	tab id_visit 
 		gen id_childnumber = ""	replace id_childnumber = substr(studyid_a, +4, .)	order id_cohort city id_visit id_childnumber studyid_a	egen id_wide = concat(city id_cohort id_childnum)ds, has(type string) foreach v of varlist `r(varlist)' { 	replace `v' = lower(`v') } tempfile widesave wide, replace	bysort id_wide: gen dup2 = _n 	save wide, replace		keep if dup2 >1		export excel using "dup2", firstrow(variables) replaceuse wide.dta, clear
 	gen dupkey = "dup" if dup2 >1	egen id_widedup = concat(id_wide dupkey dup2) if dup2 >1	*replace id_wide = id_widedup if id_widedup !=""	drop if dup2>1
 	*gen begindate = datesamplecollected_a if datesamplecollected_a !=.	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaliquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string	*format datesamplecollected_* %td	*format begindate %td	tempfile long	save long, replace		use long.dta, clear	drop if id_wide==""/*	ds date*, not	foreach var of var `r(varlist)'{		tostring `var', replace 		replace `var'=lower(`var')		rename `var', lower
@@ -101,88 +103,4 @@ save  prevalent, replace
 			else {						display "no failure events"			
 				}		
 							}	
-			}						*masambweni hcc results with gps for donalcd "/Users/amykrystosik/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/output"use incidentchikv, clear
-encode city, gen(cityint)keep if cityint ==4 & cohort ==3 
-sum Stanford_CHIKV_IGG cityint cohort visit gender datesamplecollected_ dob 
-keep studyid id_wide visit village Stanford_CHIKV_IGG cityint cohort visit gender datesamplecollected_ dob agemonths childage age2 gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_
-keep if Stanford_CHIKV_IGG!=.
-save masambweni_hcc_chik, replace
-
-use incidentdenv, clear
-encode city, gen(cityint)keep if cityint ==4 & cohort ==3 
-sum Stanford_DENV_IGG cityint cohort visit gender datesamplecollected_ dob 
-keep studyid id_wide visit village Stanford_DENV_IGG cityint cohort visit gender datesamplecollected_ dob agemonths childage age2 gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_
-keep if Stanford_DENV_IGG!=.
-save masambweni_hcc_denv, replace
-
-merge 1:1 id_wide visit using masambweni_hcc_chik
-drop _merge cohort cityint 
-*rename id_wide studyid
-label drop _all
-keep id_wide studyid visit village Stanford_DENV_IGG visit gender datesamplecollected_ agemonths childage gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_
-
-gen villageid=""
-replace villageid = substr(id_wide, +1, 1)
-replace villageid = "3" if villageid =="g"
-replace villageid = "4" if villageid =="l"
-destring villageid, replace
-
-
-gen houseid = ""
-replace houseid = substr(studyid, +4, 4)
-
-order studyid houseid villageid
-
-save masambweni_hcc_chk_denv, replace
-
-import excel "/Users/amykrystosik/Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Msambweni_coordinates complete Nov 21 2016.xls", sheet("Sheet1") firstrow clear
-gen houseid  = string(House,"%04.0f")
-rename Village villageid
-order houseid villageid
-drop if villageid ==.
-bysort houseid villageid: gen dup =_n
-egen duphouse = concat(houseid dup) if dup>1
-replace houseid = duphouse if dup>1
-
-merge 1:m villageid houseid using masambweni_hcc_chk_denv
-keep id_wide studyid  visit villageid houseid Stanford_DENV_IGG visit gender datesamplecollected_ agemonths childage gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_ X Y 
-order id_wide studyid  visit Stanford_CHIK~G Stanford_DENV~G  X Y 
-keep if id_wide!=""
-
-replace childage = abs(childage)
-replace agemonths = abs(agemonths)
-save masambweni_hcc_chk_denv_xy, replace
-
-outsheet using masambweni_hcc_chk_denv_xy1.csv, names comma replace
-
-
-use masambweni_hcc_chk_denv_xy, clear
-
-
-gen visitstring = ""
-replace visitstring = "a" if visit ==1
-replace visitstring = "b" if visit ==2
-replace visitstring = "c" if visit ==3
-replace visitstring = "d" if visit ==4
-order visit visitstring
-
-
-forval i = 1/2 { 							gen id`i' = substr(id_wide, `i', 1) 						}*gen id_wid without visit						 		gen id_childnumber = ""			replace id_childnumber = substr(id_wide, +3, .)			order id1 id2 visitstring id_childnumber studyid
-			egen idfull = concat(id1 id2 visitstring id_childnumber)order idfull studyid
-compare idfull studyid
-replace studyid=idfull if studyid==""
-outsheet using masambweni_hcc_chk_denv_xy2.csv, names comma replace
-
-keep if childage != . | gender !=.
-save temp, replace
-
-keep if childage ==. | gender ==.
-drop houseid
-merge 1:1 studyid using all_interviews.dta
-drop houseid
-keep if _merge !=2
-append using temp
-*keep id_wide studyid  visit villageid houseid Stanford_DENV_IGG visit gender datesamplecollected_ agemonths childage gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_ X Y 
-
-outsheet using masambweni_hcc_chk_denv_xy3.csv, names comma replace
-
+			}
