@@ -484,4 +484,7 @@ replace city ="c" if city =="r"
 						replace westcoast = "West" if city =="Chulaimbo"|city =="Kisumu"
 					encode westcoast, gen(site)			
 
+tab id_visit visit, m
+replace visit = id_visit if visit ==""
+tostring visit, replace
 save all_interviews, replace

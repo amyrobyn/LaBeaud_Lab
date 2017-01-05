@@ -151,4 +151,6 @@ replace city ="c" if city =="r"
 					encode westcoast, gen(site)			
 
 					replace city = "" if city =="?"
+bysort VISIT : replace  stanfordchikvigg_= stanfordchikvigg2_a if  stanfordchikvigg_ =="" 
+drop stanfordchikvigg2_a stanfordchikvod_ stanforddenvod_ stanforddenviggod_
 save elisas, replace

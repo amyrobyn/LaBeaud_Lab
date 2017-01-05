@@ -2,24 +2,41 @@
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
 *merge elisas with rdt and pcr from sammy
 use sammy, clearmerge 1:1 id_wide VISIT using elisas.dta
-rename VISIT visit
-drop id_visitpreserve	keep if _merge ==1 	export excel using "sammyonly", firstrow(variables) replacerestore
-bysort dengueigm_sammy visit: tab stanforddenvigg_bysort dengueigm_sammy visit: tab denvigg_preserve	keep if _merge ==1 |_merge ==3	keep study_id nsi stanforddenvigg_ denvigg_ dengueigm_sammy dengue_igg_sammy visit _merge 	export excel using "sammy_comparison", firstrow(variables) replace	keep if _merge ==3	save sammy_jael, replacerestore
-capture drop _mergesave elisas_PCR_RDT, replace*******declare data as panel data***********encode id_wide, gen(id)sort visitdrop if visit =="a2"encode visit, gen(visit_s)bysort  id visit_s: gen dup_visit = _n 
-drop if dup_visit >1xtset id visit_s	save longitudinal.dta, replace
-drop stanforddenviggod_ stanfordchikvod_ stanforddenvod_foreach var of varlist stanford*{ 	replace `var' =trim(itrim(lower(`var')))	gen `var'_result =""	replace `var'_result = "neg" if strpos(`var', "neg")	replace `var'_result = "pos" if strpos(`var', "pos") 	drop `var'	rename `var'_result `var'	tab `var'}*simple prevalence/incidence by visit	save temp, replace	destring id visit_s, replace	sort id visit_s	capture drop _merge	drop visit	rename visit_s visit	capture drop dup_merged	drop v28
+		rename VISIT visit
+		drop id_visit		preserve			keep if _merge ==1 			export excel using "sammyonly", firstrow(variables) replace		restore
+		bysort dengueigm_sammy visit: tab stanforddenvigg_		bysort dengueigm_sammy visit: tab denvigg_		preserve			keep if _merge ==1 |_merge ==3			keep study_id nsi stanforddenvigg_ denvigg_ dengueigm_sammy dengue_igg_sammy visit _merge 			export excel using "sammy_comparison", firstrow(variables) replace			keep if _merge ==3			save sammy_jael, replace		restore
+		capture drop _merge		save elisas_PCR_RDT, replace		*******declare data as panel data***********		encode id_wide, gen(id)		encode visit, gen(visit_s)
+		xtset id visit_s			save longitudinal.dta, replace
+		foreach var of varlist stanford*{ 			replace `var' =trim(itrim(lower(`var')))			gen `var'_result =""			replace `var'_result = "neg" if strpos(`var', "neg")			replace `var'_result = "pos" if strpos(`var', "pos") 			drop `var'			rename `var'_result `var'			tab `var'		}		*simple prevalence/incidence by visit			save temp, replace			destring id visit_s, replace			sort id visit_s			capture drop _merge		*	drop visit		*	rename visit_s visit			capture drop dup_merged			drop v28
 
-drop if visit ==2 
-drop if visit >4
-	save lab, replace
+		count if visit_s ==2 
+		count if visit_s >4
+
+save lab, replace
 
 use all_interviews.dta, clear
 merge 1:1 id_wide visit using lab.dta
-*there are some lab visits that don't have a follow up in the interview data. 
-stop
+*there are some lab visits that don't have a follow up in the interview data. those can be dropped if the don't have lab data. 
+	drop if stanforddenvigg_ =="" & stanfordchikvigg_ =="" & malariabloodsmear ==. & chikvpcr_ =="" & denvpcr_=="" & rdt==. & malariaresults ==. & bsresults==. & rdtresults ==. & _merge==2 
+	
+foreach var in nsi denvpcr_ chikvpcr{			tab `var', gen(`var'encode)}gen prevalentchikv = .gen prevalentdenv = .
+encode stanfordchikvigg_, gen(stanfordchikviggencode)
+replace stanfordchikviggencode = stanfordchikviggencode-1rename stanfordchikviggencode Stanford_CHIKV_IGG
+_strip_labels Stanford_CHIKV_IGG
+encode stanforddenvigg_, gen(stanforddenviggencode)replace stanforddenviggencode= stanforddenviggencode-1
+rename stanforddenviggencode Stanford_DENV_IGG
+_strip_labels Stanford_DENV_IGG
+
+replace prevalentdenv = 1 if  Stanford_DENV_IGG ==1 & visit =="a"replace prevalentchikv = 1 if  Stanford_CHIKV_IGG ==1 & visit =="a"replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"		replace id_cohort = "AIC" if id_cohort == "f"|id_cohort == "m" 		capture drop cohort		encode id_cohort, gen(cohort)		bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
 drop _merge
-	foreach var in dengueigm_sammy nsi denvpcr_ chikvpcr{			tab `var', gen(`var'encode)} capture gen igmns1pos=.	 replace igmns1 = 1 if dengueigm_sammyencode2 == 1 & nsiencode1 == 1	 replace igmns1 = 0 if dengueigm_sammyencode2 == 0 & nsiencode1 == 0gen prevalentchikv = .gen prevalentdenv = .encode stanfordchikvigg_, gen(stanfordchikviggencode)rename stanfordchikviggencode CHIKVPOSreplace CHIKVPOS = . if CHIKVPOS==1replace CHIKVPOS = 1 if CHIKVPOS==3replace CHIKVPOS = 0 if CHIKVPOS==2tab CHIKVPOS, nolablabel define CHIKVPOS 0 "Negative" 1 "Positive", replaceencode stanforddenvigg_, gen(stanforddenviggencode)rename stanforddenviggencode DENVPOSreplace DENVPOS = . if DENVPOS ==1replace DENVPOS = 1 if DENVPOS ==3replace DENVPOS = 0 if DENVPOS ==2tab DENVPOS, nolablabel define DENVPOS 0 "Negative" 1 "Positive", replacedrop stanford* rename DENVPOS Stanford_DENV_IGGrename CHIKVPOS Stanford_CHIKV_IGGreplace prevalentdenv = 1 if  Stanford_DENV_IGG ==1 & visit ==1replace prevalentchikv = 1 if  Stanford_CHIKV_IGG ==1 & visit ==1replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"		replace id_cohort = "AIC" if id_cohort == "f"|id_cohort == "m" 		capture drop cohort		encode id_cohort, gen(cohort)		bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGGsave prevalent, replace*chikv matched prevalence	use prevalent, clear		keep if visit == 1 & Stanford_CHIKV_IGG!=.		save visit_a_chikv, replace	use prevalent, clear		keep if visit == 3 & Stanford_CHIKV_IGG!=.		save visit_b_chikv, replace				merge 1:1 id_wide using visit_a_chikv		rename _merge abvisit		keep abvisit visit id_wide		merge 1:1 id_wide visit using prevalent		keep if abvisit ==3 & Stanford_CHIKV_IGG!=.
-		keep studyid  id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort gender datesamplecollected_ dob  agemonths age gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_ 		export excel using "C:\Users\amykr\Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/prevalent_visitab_chikv", firstrow(variables) replace		*denv matched prevalence	use prevalent, clear		keep if visit == 1 & Stanford_DENV_IGG!=.		save visit_a_denv, replace	use prevalent, clear		keep if visit == 3 & Stanford_DENV_IGG!=.		save visit_b_denv, replace				merge 1:1 id_wide using visit_a_denv
+
+replace city = "Chulaimbo" if city =="c"
+replace city = "Kisumu" if city =="u"
+replace city = "Ukunda" if city =="k"
+save prevalent, replace*chikv matched prevalence	use prevalent, clear		keep if visit == "a" & Stanford_CHIKV_IGG!=.
+		save visit_a_chikv, replace	use prevalent, clear		keep if visit == "b" & Stanford_CHIKV_IGG!=.		save visit_b_chikv, replace		merge 1:1 id_wide using visit_a_chikv		rename _merge abvisit		keep abvisit visit id_wide		merge 1:1 id_wide visit using prevalent		keep if abvisit ==3 & Stanford_CHIKV_IGG!=.
+		keep studyid  id_wide site visit antigenused_ city Stanford_CHIKV_IGG cohort gender datesamplecollected_ dob  agemonths age gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_ 		export excel using "C:\Users\amykr\Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/prevalent_visitab_chikv", firstrow(variables) replace		*denv matched prevalence	use prevalent, clear		keep if visit == "a" & Stanford_DENV_IGG!=.		save visit_a_denv, replace	use prevalent, clear		keep if visit == "b" & Stanford_DENV_IGG!=.		save visit_b_denv, replace
+		merge 1:1 id_wide using visit_a_denv
 		rename _merge abvisit		keep abvisit id_wide visit		
 		merge 1:1 id_wide visit using prevalent		
 		keep if abvisit ==3 & Stanford_DENV_IGG!=.		keep studyid  id_wide site visit antigenused_ city Stanford_DENV_IGG cohort gender datesamplecollected_ dob agemonths  age gender  Stanford_CHIK~G Stanford_DENV~G visit datesamplecol~_		export excel using "C:\Users\amykr\Box Sync/DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/prevalent_visitab_denv", firstrow(variables) replace		*denv prevlaneceuse prevalent, clear
@@ -49,6 +66,7 @@ encode pos_neg, gen(malariapos)
 encode pos_neg1, gen(malariapos2)
 replace malariapos = malariapos-1
 replace malariapos2=malariapos2-1
+_strip_labels malariapos malariapos2
 drop pos_neg*
 
 label values malariaresults malariaresults
@@ -171,6 +189,10 @@ save malariadenguemerged, replace
 use xy, clear
 merge 1:m villageid houseid using malariadenguemerged
 drop if _merge ==1
+
+replace city = "Chulaimbo" if city =="c"
+replace city = "Kisumu" if city =="u"
+replace city = "Ukunda" if city =="k"
 
 save denvchikvmalariagps, replace
 outsheet using "denvchikvmalariagps.csv", comma names replace

@@ -80,9 +80,6 @@ replace studyid =  clientno if studyid =="" & clientno !=""
 	bysort id_wide visit_int: gen dup = _n
 	drop if dup >1
 isid id_wide visit_int
-drop visit 
-rename visit_int visit
-	
 	
 foreach var in today dob{
 gen `var'1 = date(`var', "MDY" ,2050)
