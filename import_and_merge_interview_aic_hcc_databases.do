@@ -7,8 +7,7 @@ log using "R01_import_interviews.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
-*cd "C:\Users\amykr\Box Sync\DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/output"
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\output"
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
 
 local import "C:\Users\amykr\Box Sync\DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
 local importnov15 "C:\Users\amykr\Box Sync\DENV CHIKV project/Coast Cleaned/HCC/HCC Latest/"
@@ -450,5 +449,39 @@ save temp, replace
 	encode site, gen(siteint)
 	drop site
 	rename siteint site
+
+*clean age variable
+foreach var in interviewdate2 {
+gen `var'1 = date(`var', "MDY" ,2050)
+format %td `var'1 
+drop `var'
+rename `var'1 `var'
+recast int `var'
+}
+
+replace interviewdate = interviewdate2 if interviewdate ==.
+gen agecalc = (interviewdate-dob)/360
+replace age = age2 if age==.
+replace age = childage if age==.
+replace age = agecalc if age==.
+drop age2 childage agecalc
+replace age = round(age)
+replace agemonths = round(agemonths)
+
+*clean city and site vars
+drop site
+rename id_city city
+replace city ="c" if city =="r" 
+
+	   					replace city  = "Chulaimbo" if city == "c"
+						replace city  = "Msambweni" if city == "m"
+						replace city  = "Kisumu" if city == "k"
+						replace city  = "Ukunda" if city == "u"
+						replace city  = "Milani" if city == "l"
+						replace city  = "Nganja" if city == "g"
+					gen westcoast= "." 
+						replace westcoast = "Coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
+						replace westcoast = "West" if city =="Chulaimbo"|city =="Kisumu"
+					encode westcoast, gen(site)			
+
 save all_interviews, replace
-tab malariabloodsmear id_city

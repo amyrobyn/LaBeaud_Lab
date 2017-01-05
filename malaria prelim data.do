@@ -197,7 +197,20 @@ replace studyid =  clientno if studyid =="" & clientno !=""
 isid id_wide visit_int
 drop visit 
 rename visit_int visit
+	
+	
+foreach var in today dob{
+gen `var'1 = date(`var', "MDY" ,2050)
+format %td `var'1 
+drop `var'
+rename `var'1 `var'
+recast int `var'
+}
+
+
 	save malaria, replace
+stop	
+
 
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\output\prevalent.dta", clear
 keep studyid* Stanford* malaria* *malaria* rdt* site city id_wide visit
