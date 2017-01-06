@@ -76,16 +76,85 @@ sum malaria* Stanford*
 tab malariaresults 
 bysort city: sum malaria* Stanford*
 bysort city: tab malariaresults 
+isid id_wide visit
+save malariatemp, replace
 
-bysort  id_wide: gen repeatoffender = _n if malariabloodsmear ==1
-bysort id_wide : egen max=max(repeatoffender)
-bysort id_wide : replace repeatoffender =. if repeatoffender!=max
+*malaria repeat offenders by bloodsmear
+	use malariatemp, clear
+		keep if visit == "a" & malariabloodsmear==1
+		save visit_a_malaria, replace
 
+	use malariatemp, clear
+		keep if visit == "b" & malariabloodsmear==1
+		save visit_b_malaria, replace
+		merge 1:1 id_wide using visit_a_malaria
+		keep if _merge==3
+		rename _merge malariapos_ab
+		keep malariapos_ab id_wide visit
+		save abmalaria , replace
+		
+	use malariatemp, clear
+		keep if visit == "c" & malariabloodsmear==1
+		save visit_c_malaria, replace
+		merge 1:1 id_wide using visit_b_malaria
+		keep if _merge==3
+		rename _merge malariapos_bc
+		keep malariapos_bc id_wide visit
+		save bcmalaria, replace
+	
+	use malariatemp, clear
+		keep if visit == "d" & malariabloodsmear==1
+		save visit_d_malaria, replace
+		merge 1:1 id_wide using visit_c_malaria
+		keep if _merge==3
+		rename _merge malariapos_cd
+		keep malariapos_cd id_wide visit
+		save cdmalaria, replace
+	
+	use malariatemp, clear
+		keep if visit == "e" & malariabloodsmear==1
+		save visit_e_malaria, replace
+		merge 1:1 id_wide using visit_d_malaria
+		keep if _merge==3
+		rename _merge malariapos_de
+		keep malariapos_de id_wide visit
+		save demalaria, replace 
 
+	use malariatemp, clear
+		keep if visit == "f" & malariabloodsmear==1
+		save visit_f_malaria, replace
+		merge 1:1 id_wide using visit_e_malaria
+		keep if _merge==3
+		rename _merge malariapos_ef
+		keep malariapos_ef id_wide visit
+		save efmalaria, replace
 
-sum repeatoffender if repeatoffender >1
-order repeat id_wide visit malariabloodsmear
-bysort city: sum repeatoffender if repeatoffender >1 
+	use malariatemp, clear
+		keep if visit == "g" & malariabloodsmear==1
+		save visit_g_malaria, replace
+		merge 1:1 id_wide using visit_f_malaria
+		keep if _merge==3
+		rename _merge malariapos_fg
+		keep malariapos_fg id_wide visit
+		save fgmalaria, replace
+
+	use malariatemp, clear
+		keep if visit == "h" & malariabloodsmear==1
+		save visit_h_malaria, replace
+		merge 1:1 id_wide using visit_h_malaria
+		keep if _merge==3
+		rename _merge malariapos_gh
+		keep malariapos_gh id_wide visit
+		save ghmalaria, replace
+
+use malariatemp, clear
+foreach dataset in ghmalaria fgmalaria efmalaria demalaria cdmalaria bcmalaria abmalaria{
+		merge 1:1 id_wide visit using "`dataset'"
+		capture drop _merge
+		save merged, replace
+		}
+		egen repeatoffender =rowtotal(malariapos_gh malariapos_fg malariapos_ef malariapos_de malariapos_cd malariapos_bc malariapos_ab)
+	bysort city: sum repeatoffender if repeatoffender >1 
 
 
 foreach var in datesamplecollected_ {
@@ -105,7 +174,7 @@ gen interviewyear =year(interviewdate)
 
 gen season = . 
 replace season =1 if interviewmonth >=1 & interviewmonth <=3 & season ==.
-*label define 1 "hot no rain from mid december"
+*label define 1 "hot no rain"
 replace season =2 if interviewmonth >=4 & interviewmonth <=6 & season ==.
 *label define 2 "long rains"
 replace season =3 if interviewmonth >=7 & interviewmonth <=10 & season ==.
@@ -194,5 +263,8 @@ replace city = "Chulaimbo" if city =="c"
 replace city = "Kisumu" if city =="u"
 replace city = "Ukunda" if city =="k"
 
+*check with david to make sure this is true...
+replace malariaresults=bsresults if malariaresults==.
+drop bsresults 
 save denvchikvmalariagps, replace
 outsheet using "denvchikvmalariagps.csv", comma names replace
