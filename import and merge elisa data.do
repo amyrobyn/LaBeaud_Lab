@@ -9,6 +9,7 @@ set more 1
 insheet using "chulaimbo aic.csv", comma clear names
 capture drop *od* 
 dropmiss, force
+rename stforddenvigg_a stanforddenvigg_a 
 save "chulaimbo_aic", replace
 insheet using "chulaimbo hcc.csv", comma clear names
 capture drop *od* 
@@ -153,4 +154,27 @@ replace city ="c" if city =="r"
 					replace city = "" if city =="?"
 bysort VISIT : replace  stanfordchikvigg_= stanfordchikvigg2_a if  stanfordchikvigg_ =="" 
 drop stanfordchikvigg2_a stanfordchikvod_ stanforddenvod_ stanforddenviggod_
+
+*clean results
+rename v38 chikv_igg_od_d
+
+ds, has(type string)
+	foreach var of var `r(varlist)'{
+		replace `var' =trim(itrim(lower(`var')))
+		rename `var', lower
+	}	
+
+replace chikvigg_ = chikv_igg_od_d if chikvigg_ ==""
+	
+		foreach var of varlist stanford* *igm* *igg* { 
+			tostring `var', replace
+			replace `var' =trim(itrim(lower(`var')))
+			gen `var'_result =""
+			replace `var'_result = "neg" if strpos(`var', "neg")
+			replace `var'_result = "pos" if strpos(`var', "pos") 
+			drop `var'
+			rename `var'_result `var'
+			tab `var'
+		}
+rename visit VISIT 
 save elisas, replace
