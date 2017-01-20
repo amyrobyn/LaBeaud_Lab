@@ -430,6 +430,10 @@ tempfile merged
 save merged, replace
 
 
+*make sure this doesn't create duplicates. also make the same changes to the demographic data.
+				replace studyid= subinstr(studyid, "cmb", "hf",.) 
+
+				
 *take visit out of id
 						forval i = 1/3 { 
 							gen id`i' = substr(studyid, `i', 1) 
@@ -472,6 +476,7 @@ replace agemonths = round(agemonths)
 drop site
 rename id_city city
 replace city ="c" if city =="r" 
+replace city ="c" if city =="h" 
 
 	   					replace city  = "Chulaimbo" if city == "c"
 						replace city  = "Msambweni" if city == "m"

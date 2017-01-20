@@ -6,8 +6,27 @@ log using "malaria  data.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
-cd "C:\Users\amykr\Google Drive\labeaud\malaria prelim data dec 29 2016"
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016"
+
 insheet using "AIC Ukunda malaria data April 2016.csv", comma name clear
+gen dataset = "AIC Ukunda malaria data April 2016"
+foreach var in date{
+	capture gen `var'1 = date(`var', "MDY" ,2050)
+	capture  format %td `var'1 
+	capture drop `var'
+	capture rename `var'1 `var'
+	capture recast int `var'
+}
+
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
+
+rename *, lower
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
 	replace `v' = lower(`v') 
@@ -32,6 +51,9 @@ capture tostring studyid2, replace
 save Ukunda, replace
 
 insheet using "AICA Msambweni Malaria Data2016.csv", comma name clear
+gen dataset = "AICA Msambweni Malaria Data2016"
+
+rename *, lower
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
 	replace `v' = lower(`v') 
@@ -62,10 +84,26 @@ drop countul*
 
 capture tostring studyid2, replace
 
+foreach var in date{
+	capture gen `var'1 = date(`var', "MDY" ,2050)
+	capture  format %td `var'1 
+	capture drop `var'
+	capture rename `var'1 `var'
+	capture recast int `var'
+}
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
 save Msambweni, replace
 
 foreach dataset in "AIC CHULAIMBO MALARIA" "AIC OBAMA MALARIA" "Mbaka Oromo" "HCC Kisumu" "HCC Chulaimbo"{
-import excel "C:\Users\amykr\Google Drive\labeaud\malaria prelim data dec 29 2016\Malaria Parasitemia Data.xls", sheet(`dataset') firstrow clear
+import excel "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016\Malaria Parasitemia Data.xls", sheet(`dataset') firstrow clear
+gen dataset ="`dataset'"
+rename *, lower
 
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
@@ -74,13 +112,21 @@ foreach v of varlist `r(varlist)' {
 
 capture replace pf200= subinstr(pf200, ",", "",.)
 
-foreach var in Date{
-capture gen `var'1 = date(`var', "MDY" ,2050)
-capture  format %td `var'1 
-capture drop `var'
-capture rename `var'1 `var'
-capture recast int `var'
+foreach var in date{
+	capture gen `var'1 = date(`var', "MDY" ,2050)
+	capture  format %td `var'1 
+	capture drop `var'
+	capture rename `var'1 `var'
+	capture recast int `var'
 }
+
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
 
 destring _all, replace
 ds, has(type string) 
@@ -94,16 +140,39 @@ capture tostring studyid2, replace
 save "`dataset'", replace
 }
 
+foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
+	import excel "West HCC_Malaria Parasitemia Data_07oct2016.xlsx", sheet(`dataset') firstrow clear
+	gen dataset ="`dataset'"
+	rename *, lower
+	destring _all, replace
+	ds, has(type string) 
 
-insheet using "West HCC_Malaria Parasitemia Data_07oct2016.csv", comma name clear
-destring _all, replace
-ds, has(type string) 
-foreach v of varlist `r(varlist)' { 
-	replace `v' = lower(`v') 
+	foreach v of varlist `r(varlist)' { 
+			replace `v' = lower(`v') 
+		}
+	dropmiss, force
+	
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "MDY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
+
+save `dataset', replace
 }
-dropmiss, force
-save west, replace
-append using "Parasitemia" "Ukunda" "Msambweni" "AIC CHULAIMBO MALARIA" "AIC OBAMA MALARIA" "Mbaka Oromo" "HCC Kisumu" "HCC Chulaimbo"
+
+
+
+append using "Parasitemia" "Ukunda" "Msambweni" "AIC CHULAIMBO MALARIA" "AIC OBAMA MALARIA" "Mbaka Oromo" "HCC Kisumu" "HCC Chulaimbo" "westinitial" "1st_FU" "2nd_FU", gen(append)
 
 encode gender, gen(sex)
 drop gender
@@ -115,8 +184,10 @@ rename sex gender
 replace clientno = subinstr(clientno," ","",1) 
 replace studyid = studyid1 if studyid =="" & studyid1 !=""
 replace studyid =  clientno if studyid =="" & clientno !=""
-replace studyid =   ChildID if studyid =="" & ChildID !=""
-replace studyid =  ClientNo if studyid =="" & ClientNo !=""
+replace studyid =   childid if studyid =="" & childid !=""
+replace studyid =  clientno if studyid =="" & clientno !=""
+replace studyid = subinstr(studyid, "/", "",.)
+
  
  
 						forval i = 1/3 { 
@@ -147,17 +218,39 @@ replace studyid =  ClientNo if studyid =="" & ClientNo !=""
 	drop if id_wide ==""
 	isid id_wide visit_int
 
-foreach var in today dob{
+foreach var in dob{
 gen `var'1 = date(`var', "MDY" ,2050)
 format %td `var'1 
 drop `var'
 rename `var'1 `var'
 recast int `var'
 }
+
+	foreach var in today date{
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
+
 order *200
 egen malariapositive = rowtotal( pf200 - none200)
 gen  malariapositive_dum = .
 replace malariapositive_dum = 0 if malariapositive==0
 replace malariapositive_dum  = 1 if malariapositive >0 & malariapositive <. 
 
+gen species_cat = "" 
+replace species_cat = "pf" if pf200 >0 & pf200 <.
+replace species_cat = "pm" if pm200  >0 & pm200 <.
+replace species_cat = "po" if po200 >0 & po200 <.
+replace species_cat = "pv" if pv200 >0 & pv200 <.
+replace species_cat = "ni" if ni200 >0 & ni200 <.
+replace species_cat = "none" if none200 >0 & none200 <.
+
+order pf200 pm200 po200 pv200 ni200 none200 
+egen parasite_count= rowtotal(pf200 pm200 po200 pv200 ni200 none200 ) 
+
+replace id_cohort = "f" if id_cohort =="m"
+replace id_wide= subinstr(id_wide, "/", "",.)
 save malaria, replace
