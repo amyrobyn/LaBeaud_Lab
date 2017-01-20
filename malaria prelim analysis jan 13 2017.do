@@ -461,8 +461,8 @@ replace hemoglobin = v259  if hemoglobin ==.
 sum hb
 
 rename fevertemp tempover38 
-replace tempover38 = 1 if temperature >=38 & temperature <.
-replace tempover38  = 0 if temperature <38
+replace tempover38 = 1 if temperature >38 & temperature !=.
+replace tempover38  = 0 if temperature <=38 !=.
 tab tempover38 , m
 
 foreach var in heartrate diastolicbp systolicbp resprate pulseoximetry{ 
@@ -473,7 +473,7 @@ sum `var'
 
 preserve
 keep if cohort =="aic"
-table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ pcr_denv  cat\ pcr_chikv cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ tempover38 bin \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ pcr_denv  cat\ pcr_chikv cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ cbin \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
 restore
 
 preserve
