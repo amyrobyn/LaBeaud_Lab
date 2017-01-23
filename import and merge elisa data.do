@@ -8,106 +8,110 @@ set more 1
 *import csv's
 import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CQ680) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 *rename stforddenvigg_a stanforddenvigg_a 
 gen dataset = "chulaimbo_aic" 
 save "chulaimbo_aic" , replace
 
 import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ1913) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "chulaimbo_hcc"
 save "chulaimbo_hcc", replace
 
 import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "kisuma_aic"
 save "kisuma_aic", replace
 
 import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU HCC") cellrange(A4:BF829) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "kisumu_hcc"
 save "kisumu_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A7:BW649) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "milalani_hcc"
 save "milalani_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BG1609) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "msambweni_aic"
 save "msambweni_aic", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A8:BW319) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "nganja_hcc"
 save "nganja_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ3375) firstrow clear 
 capture drop *od* 
-dropmiss, force
+dropmiss, force obs
+dropmiss, force 
 gen dataset = "ukunda_aic"
 save "ukunda_aic", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda HCC") cellrange(A4:BL1128) firstrow clear
 capture drop *od* 
-dropmiss, force
+dropmiss, force 
+dropmiss, force obs
 gen dataset = "ukunda_hcc"
 save "ukunda_hcc", replace
 clear
 
 foreach dataset in "kisumu_hcc.dta"  "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta"   "ukunda_aic.dta" "ukunda_hcc.dta" {
 use `dataset', clear
-dropmiss, force
+rename *, lower
+dropmiss, force obs
+dropmiss, force 
 capture drop villhouse_a
 capture destring personid_a, replace
 
-capture replace Datesamplecollected_a ="." if Datesamplecollected_a=="N/A"
-capture destring Datesamplecollected_a, replace
-capture recast int Datesamplecollected_a
+capture replace datesamplecollected_a ="." if datesamplecollected_a=="n/a"
+capture destring datesamplecollected_a, replace
+capture recast int datesamplecollected_a
 
-			foreach var in ChikVIgGOD_a DenVIgGOD_a DenVIgGOD_a  DenVIgGOD_b ChikVIgGOD_b ChikVIgGOD_c DenVIgGOD_c DenVIgGOD_e DenVIgGOD_f StanfordChikVOD_d StanfordChikVOD_d N Datesamplecollected StanfordDenVOD_a P S U W AB stanforddenvigg_f stanfordchikvod_a {
+			foreach var in chikviggod_a denviggod_a denviggod_a  denviggod_b chikviggod_b chikviggod_c denviggod_c denviggod_e denviggod_f stanfordchikvod_d stanfordchikvod_d n datesamplecollected stanforddenvod_a p s u w ab stanforddenvigg_f stanfordchikvod_a  stanfordchikvod_b  chikvigg_e  denvigg_e followupaliquotid_f  antigenused_d chikvigg_d  chikviggod_d chikvigg_f chikviggod_f stanfordchikvigg_d  stanforddenvigg_d antigenused_e initialaliquotid_e chikvpcr_e{
 			capture tostring `var', replace force
 			}
 
 
-	foreach var in Datesamplecollected_a Datesamplecollected_f Datesamplecollected_b Datesamplerun_a datesamplecollected_{
-		capture gen `var'1 = date(`var', "MDY" ,2050)
+	foreach var in datesamplecollected_a datesamplecollected_f datesamplecollected_b datesamplerun_a datesamplecollected_{
+		capture gen `var'1 = date(`var', "mdy" ,2050)
 		capture  format %td `var'1 
 		capture drop `var'
 		capture rename `var'1 `var'
 		capture recast int `var'
-			capture drop DenVIgGOD_a 
+			capture drop denviggod_a 
 	}
 
-		capture tostring  DenVIgG_f  StudyID_a, replace force
+		capture tostring  denvigg_f  studyid_a, replace force
 
 		ds, has(type string) 
 				foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
 				} 
-rename *, lower
-
 save `dataset', replace
 }
 
 
 
 append using "kisumu_hcc.dta"  "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta"   "ukunda_aic.dta" 
-
 save temp, replace
-dropmiss
-
-*drop denvigg_e 
-drop if studyid_a =="example"
-drop if studyid_a =="EXAMPLE"
-drop if studyid_a =="Example"
+dropmiss, force obs
+ 
 save appended_september20.dta, replace
 
 				replace studyid_a = followupid_b if studyid_a ==""
@@ -119,6 +123,12 @@ save appended_september20.dta, replace
 				replace studyid_a = followupaliquotid_f if studyid_a ==""
 				replace studyid_a = followupaliquotid_g if studyid_a ==""
 				replace studyid_a = followupaliquotid_h if studyid_a ==""
+				replace studyid_a =  studyid_e if studyid_a ==""
+				replace studyid_a = chikvpcr_e  if studyid_a ==""
+				replace studyid_a = studyid if studyid_a ==""
+				replace studyid_a = followupaliquotid if studyid_a ==""
+
+
 				
 				drop studyid_c 
 				drop followupaliquotid_*
@@ -127,8 +137,9 @@ save appended_september20.dta, replace
 				replace studyid_a= subinstr(studyid_a, ".", "",.) 
 				replace studyid_a= subinstr(studyid_a, "/", "",.)
 				replace studyid_a= subinstr(studyid_a, " ", "",.)
+				list if studyid_a==""
 				drop if studyid_a==""
-
+ 
 *make sure this doesn't create duplicates. also make the same changes to the demographic data.
 				replace studyid_a= subinstr(studyid_a, "cmb", "hf",.) 
 
@@ -168,6 +179,15 @@ save merged, replace
 
 	order id_cohort city id_visit id_childnumber studyid_a
 	egen id_wide = concat(city id_cohort id_childnum)
+drop if id_visit =="?"
+levelsof id_visit, local(levels) 
+
+foreach l of local levels {
+egen "studyid_`l'2" = concat(city id_cohort id_visit  id_childnum) if id_visit == "`l'"
+replace  studyid_`l' = "studyid_`l'2" if "studyid_`l'" =="" 
+if "`l'" != "a" rename studyid_`l'2 studyid_`l'
+}
+drop  studyid_a2
 
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
@@ -180,13 +200,11 @@ save wide, replace
 		keep if dup2 >1
 		*export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
-/*	gen dupkey = "dup" if dup2 >1
-	egen id_widedup = concat(id_wide dupkey dup2) if dup2 >1
-*/
-
 tostring stanfordchikvod_a  stanforddenvigg_f chikviggod_e chikviggod_g chikviggod_h denviggod_d denviggod_g denviggod_h stanfordchikvigg_e stanfordchikvigg_f stanforddenviggod_c stanforddenviggod_f antigenused_b_f antigenused_e , replace force
+	list if dup2>1
 	drop if dup2>1
-	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaliquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
+	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
+
 	tempfile long
 	save long, replace
 	
@@ -235,6 +253,9 @@ ds, has(type string)
 rename visit VISIT 
 save pcr, replace
 drop *pcr*
+dropmiss, force obs
+dropmiss, force
+isid studyid_
 save elisas, replace
 
 use  pcr, clear
@@ -250,4 +271,5 @@ order `var'_dum
 }
 
 collapse (mean)  denvpcr__dum chikvpcr__dum, by(id_wide id_visit)
+rename id_visit visit
 save PCR_googledoc, replace

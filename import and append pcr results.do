@@ -70,15 +70,14 @@ collapse (mean)   chikvpcrresults_dum denvpcrresults_dum, by(studyid)
 				
 				gen id_childnumber = ""
 				replace id_childnumber = substr(studyid, +4, .)
-				destring id_childnumber , replace 
-				gen newid_childnumber = string(real(id_childnumber) ,"%04.0f")
-				drop id_childnumber 
-				rename newid_childnumber id_childnumber 
+				gen newid_childnumber = string(real(id_childnumber) ,"%04.0f") if inrange(length(id_childnumber),0,4)
+				replace newid_childnumber = string(real(id_childnumber) ,"%07.0f") if inrange(length(id_childnumber),5,7)
+				replace id_childnumber 	= newid_childnumber 		
 				order cohort id_city visit id_childnumber studyid
 				egen id_wide = concat(id_city cohort id_childnum)
 save PCR_box, replace
 
-merge 1:1 studyid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\jan 19 2017\PCR_googledoc"
+merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\jan 19 2017\PCR_googledoc"
 save allpcr, replace
 replace denvpcrresults_dum = denvpcr__dum if denvpcrresults_dum  ==. 
 replace chikvpcrresults_dum = chikvpcr__dum if chikvpcrresults_dum  ==. 

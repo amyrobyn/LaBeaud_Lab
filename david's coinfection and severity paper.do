@@ -13,6 +13,7 @@ cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs no
 
 **************david's severity models*************	
 use denvchikvmalariagps, clear
+keep if cohort =="aic"
 gen davidcoinfection =.
 		foreach studyid in kfa0247 cfa00161 kfa00242 kfa00247 kfa00248 kfa00261 kfa00275 kfa00298 cfa00303 cfc00305 kfa00291 cfa00325 cfc00272 cfa00119 cfa00169 cfa00342 cfa00151 cfa00187 cfa00275 cfa00296 cfa00006 cfa00201 cfa00241 cfa00247 kfa00189 kfa00204 kfa00337 cfa00196 cfa00205 cfa00211 cfa00246 cfa00248 cfa00256 cfa00257 cfa00265 cfa00273 cfa00313 cfa00340 rfa00496 cfa00193 cfa00200 cfa00210 cfa00236 cfa00243 cfa00268 cfa00271 cfa00300 cfa00348 cfa00385 kfa00185 kfa00202 kfa00342 cfa00010 kfa00009 rfa00460 cfa00326 cfa00362 cfa00364 rfa00475 cfa00349 cmba0408 rfa00462 cfa00135 cfa00245 cfa00383 kfa00217 kfa00277 kfc00184 rfa00469 kfa0247 cfa0161 kfa0242 kfa0247 kfa0248 kfa0261 kfa0275 kfa0298 cfa0303 cfc0305 kfa0291 cfa0325 cfc0272 cfa0119 cfa0169 cfa0342 cfa0151 cfa0187 cfa0275 cfa0296 cfa006 cfa0201 cfa0241 cfa0247 kfa0189 kfa0204 kfa0337 cfa0196 cfa0205 cfa0211 cfa0246 cfa0248 cfa0256 cfa0257 cfa0265 cfa0273 cfa0313 cfa0340 rfa0496 cfa0193 cfa020 cfa0210 cfa0236 cfa0243 cfa0268 cfa0271 cfa030 cfa0348 cfa0385 kfa0185 kfa0202 kfa0342 cfa0010 kfa009 rfa0460 cfa0326 cfa0362 cfa0364 rfa0475 cfa0349 cmba0408 rfa0462 cfa0135 cfa0245 cfa0383 kfa0217 kfa0277 kfc0184 rfa0469 {
 			replace davidcoinfection = 1 if studyid=="`studyid'"
@@ -181,19 +182,18 @@ egen symptomcount = rowtotal(all_symptoms_*)
 
 
 gen dmcoinf = .
-replace dmcoinf = 1 if malariapositive_dum==1 & denvpcr_encode3==1
+replace dmcoinf = 1 if malariapositive_dum==1 & denvpcrresults_dum==1
 
-foreach var in malariapositive_dum denvpcr_encode3 dmcoinf{
+foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 	bysort  `var': sum all_symptoms_*
 }
 
 gen group = .
-replace group = 0 if malariapositive_dum==0 & denvpcr_encode3 ==0
+replace group = 0 if malariapositive_dum==0 & denvpcrresults_dum ==0
 replace group = 1 if malariapositive_dum==1
-replace group = 2 if denvpcr_encode3 ==1
+replace group = 2 if denvpcrresults_dum==1
 replace group = 3 if dmcoinf==1
 tab davidcoinfection group, m
-stop
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 bysort group: tab symptomcount outcomehospitalized , chi2      
@@ -201,9 +201,9 @@ bysort group: sum symptomcount outcomehospitalized , detail
 
 
 gen selected = .
-replace selected = 0 if malariapositive_dum==0 & denvpcr_encode3 ==0
+replace selected = 0 if malariapositive_dum==0 & denvpcrresults_dum==0
 replace selected = 1 if malariapositive_dum==1
-replace selected = 1 if denvpcr_encode3 ==1
+replace selected = 1 if denvpcrresults_dum==1
 replace selected = 1 if dmcoinf==1
 
 dropmiss, force
@@ -215,9 +215,7 @@ graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
 graph export symptmsbygroup.tif,  width(4000) replace
 
 * clean age
-replace Age =. if Age <0 | Age>18
-replace age = Age if age ==.
-drop Age
+replace age =. if age <0 | age>18
 
 *temperature
 replace temperature = 38.5 if temperature ==385
@@ -230,13 +228,13 @@ table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \
 replace outcomehospitalized  = . if outcomehospitalized ==8
 bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
-rename repeatoffender repeatmalaria
-bysort group: sum malariapositive_dum ovaparasites repeatmalaria outcomehospitalized durationhospitalized1 durationhospitalized2 numhospitalized 
-table1 , vars( \malariapositive_dum cat \ ovaparasites bin \ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\ ) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
+rename numbermalaria~s  repeatmalaria
+bysort group: sum malariapositive_dum ovaparasites repeatmalaria outcomehospitalized durationhospitalized1 durationhospitalized2 numhospitalized   consecutivemalariapos 
+table1 , vars( \malariapositive_dum cat \ ovaparasites bin \ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
 *repeatmalaria bin \ 
-tab gametocytes group
+tab gametocytes3 group
 
-bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
+bysort group: sum gametocytes3 ovaparasites repeatmalaria outcomehospitalized 
 outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
 
 foreach result in malariaresults rdtresults bsresults{
@@ -280,4 +278,3 @@ logit outcomehospitalized group age gender i.city_s all_symptoms_anaemia all_sym
 logit selected age gender i.city_s, or
 heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
 *mumeduclevel everhospitalised childtravel
-

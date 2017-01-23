@@ -18,8 +18,8 @@ ds, has(type string)
 			foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
 			}
-tostring id_childnumber  study_id, replace
-merge 1:1 id_wide VISIT using elisas.dta
+tostring id_childnumber  studyid, replace
+merge 1:1 studyid using elisas.dta
 
 		ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
@@ -224,9 +224,10 @@ destring _all, replace
 sum malaria* Stanford*
 bysort city: sum malaria* Stanford*
 bysort city: tab malariapositive_dum
-isid id_wide visit
 list if id_wide == "" | visit == ""
 drop if id_wide == "" | visit == ""
+isid id_wide visit
+
 drop _merge
 save malariatemp, replace
 
@@ -264,7 +265,7 @@ save visit_h_malaria, replace
 
 append using visit_a_malaria visit_b_malaria visit_c_malaria visit_d_malaria visit_e_malaria visit_f_malaria 
 collapse (sum) malariapositive_dum, by (id_wide)
-rename malariapositive_dum repeatoffender
+rename malariapositive_dum numbermalariainfections
 save repeatoffender, replace
 
 
@@ -280,11 +281,13 @@ keep id_wide max visit_s
 save maxvisit, replace
 
 merge m:m id_wide using repeatoffender
-replace repeatoffender = . if max!=visit_s
+replace numbermalariainfections = . if max!=visit_s
 drop _merge
 save repeatoffender, replace
 
 merge 1:1 id_wide visit_s using malariatemp
+drop _merge
+save malariatemp, replace
 
 ** add in the consecutive malariapos again
 use malariatemp, clear
@@ -412,16 +415,16 @@ tab `var'  malariapositive_dum if  malariapositive_dum==1, m
 }
 *repeat offenders
 foreach var in interviewdate age{
-sum `var'  malariapositive_dum if  malariapositive_dum==1 & repeatoffender >1
-sum `var'  malariapositive_dum if  malariapositive_dum==1 & repeatoffender >1
+sum `var'  malariapositive_dum if  malariapositive_dum==1 & numbermalariainfections >1
+sum `var'  malariapositive_dum if  malariapositive_dum==1 & numbermalariainfections >1
 }
 
 foreach var in gender hospitalsite age city { 
-tab `var'  malariapositive_dum if  malariapositive_dum ==1 & repeatoffender >1, m
+tab `var'  malariapositive_dum if  malariapositive_dum ==1 & numbermalariainfections >1, m
 }
 
-tab repeatoffender malariapositive_dum
-order malaria* city gender hospitalsite interviewdate* age* repeatoffender 
+tab numbermalariainfections malariapositive_dum
+order malaria* city gender hospitalsite interviewdate* age* numbermalariainfections 
 save mergedjan42016, replace
 
 tab malariapositive_dum
@@ -534,7 +537,7 @@ replace `var'= . if `var'==999
 sum `var'
 }
 
-label var repeatoffender ""
+label var numbermalariainfections ""
 
 *take visit out of id
 
@@ -552,15 +555,15 @@ replace cohort ="aic" if cohort =="f"
 replace city ="chulaimbo" if city =="c"
 replace city ="chulaimbo" if city =="r"
 replace city =" msambweni" if city =="m"
-
+ 
 preserve
 keep if cohort =="aic"
-table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ numbermalariainfections cat \ consecutivemalariapos cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
 restore
 
 preserve
 keep if cohort =="hcc"
-table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 cat \ ) by(malariapositive_dum) saving("malariatable1_hcc.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ numbermalariainfections cat \ consecutivemalariapos cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 cat \ ) by(malariapositive_dum) saving("malariatable1_hcc.xls", replace ) missing test 
 restore
 
 save denvchikvmalariagps, replace
