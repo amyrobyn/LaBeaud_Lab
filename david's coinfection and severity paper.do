@@ -13,6 +13,12 @@ cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs no
 
 **************david's severity models*************	
 use denvchikvmalariagps, clear
+gen davidcoinfection =.
+		foreach studyid in kfa0247 cfa00161 kfa00242 kfa00247 kfa00248 kfa00261 kfa00275 kfa00298 cfa00303 cfc00305 kfa00291 cfa00325 cfc00272 cfa00119 cfa00169 cfa00342 cfa00151 cfa00187 cfa00275 cfa00296 cfa00006 cfa00201 cfa00241 cfa00247 kfa00189 kfa00204 kfa00337 cfa00196 cfa00205 cfa00211 cfa00246 cfa00248 cfa00256 cfa00257 cfa00265 cfa00273 cfa00313 cfa00340 rfa00496 cfa00193 cfa00200 cfa00210 cfa00236 cfa00243 cfa00268 cfa00271 cfa00300 cfa00348 cfa00385 kfa00185 kfa00202 kfa00342 cfa00010 kfa00009 rfa00460 cfa00326 cfa00362 cfa00364 rfa00475 cfa00349 cmba0408 rfa00462 cfa00135 cfa00245 cfa00383 kfa00217 kfa00277 kfc00184 rfa00469 kfa0247 cfa0161 kfa0242 kfa0247 kfa0248 kfa0261 kfa0275 kfa0298 cfa0303 cfc0305 kfa0291 cfa0325 cfc0272 cfa0119 cfa0169 cfa0342 cfa0151 cfa0187 cfa0275 cfa0296 cfa006 cfa0201 cfa0241 cfa0247 kfa0189 kfa0204 kfa0337 cfa0196 cfa0205 cfa0211 cfa0246 cfa0248 cfa0256 cfa0257 cfa0265 cfa0273 cfa0313 cfa0340 rfa0496 cfa0193 cfa020 cfa0210 cfa0236 cfa0243 cfa0268 cfa0271 cfa030 cfa0348 cfa0385 kfa0185 kfa0202 kfa0342 cfa0010 kfa009 rfa0460 cfa0326 cfa0362 cfa0364 rfa0475 cfa0349 cmba0408 rfa0462 cfa0135 cfa0245 cfa0383 kfa0217 kfa0277 kfc0184 rfa0469 {
+			replace davidcoinfection = 1 if studyid=="`studyid'"
+		}
+
+
 *outsheet using " malariamergedjan192017.csv", comma names replace
 
  rename currentsymptoms symptms
@@ -173,13 +179,6 @@ drop all_symptoms_ache all_symptoms_pain
 
 egen symptomcount = rowtotal(all_symptoms_*)
 
-*clean cohort
-replace id_cohort = "AIC" if id_cohort =="f" 
-replace id_cohort = "HCC" if id_cohort =="c" 
-replace id_cohort = "AIC" if id_cohort =="aic" 
-replace id_cohort = "HCC" if id_cohort =="hcc" 
-drop cohort
-rename id_cohort cohort
 
 gen dmcoinf = .
 replace dmcoinf = 1 if malariapositive_dum==1 & denvpcr_encode3==1
@@ -193,6 +192,8 @@ replace group = 0 if malariapositive_dum==0 & denvpcr_encode3 ==0
 replace group = 1 if malariapositive_dum==1
 replace group = 2 if denvpcr_encode3 ==1
 replace group = 3 if dmcoinf==1
+tab davidcoinfection group, m
+stop
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 bysort group: tab symptomcount outcomehospitalized , chi2      

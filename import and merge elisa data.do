@@ -6,50 +6,59 @@ set scrollbufsize 100000
 set more 1
 
 *import csv's
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CQ681) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CQ680) firstrow clear
 capture drop *od* 
 dropmiss, force
 *rename stforddenvigg_a stanforddenvigg_a 
-save "chulaimbo_aic", replace
+gen dataset = "chulaimbo_aic" 
+save "chulaimbo_aic" , replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ1913) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ1913) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "chulaimbo_hcc"
 save "chulaimbo_hcc", replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "kisuma_aic"
 save "kisuma_aic", replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx", sheet("KISUMU HCC") cellrange(A8:BF829) clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU HCC") cellrange(A4:BF829) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "kisumu_hcc"
 save "kisumu_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A7:BW649) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "milalani_hcc"
 save "milalani_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BG1609) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "msambweni_aic"
 save "msambweni_aic", replace
 
-	import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A8:BW319) firstrow clear
-	capture drop *od* 
-	dropmiss, force
-	save "nganja_hcc", replace
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A8:BW319) firstrow clear
+capture drop *od* 
+dropmiss, force
+gen dataset = "nganja_hcc"
+save "nganja_hcc", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ3375) firstrow clear 
 capture drop *od* 
 dropmiss, force
+gen dataset = "ukunda_aic"
 save "ukunda_aic", replace
 
 import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda HCC") cellrange(A4:BL1128) firstrow clear
 capture drop *od* 
 dropmiss, force
+gen dataset = "ukunda_hcc"
 save "ukunda_hcc", replace
 clear
 
@@ -63,9 +72,10 @@ capture replace Datesamplecollected_a ="." if Datesamplecollected_a=="N/A"
 capture destring Datesamplecollected_a, replace
 capture recast int Datesamplecollected_a
 
-			foreach var in ChikVIgGOD_a DenVIgGOD_a DenVIgGOD_a  DenVIgGOD_b ChikVIgGOD_b ChikVIgGOD_c DenVIgGOD_c DenVIgGOD_e DenVIgGOD_f StanfordChikVOD_d StanfordChikVOD_d N Datesamplecollected StanfordDenVOD_a P S U W AB stanforddenvigg_f{
+			foreach var in ChikVIgGOD_a DenVIgGOD_a DenVIgGOD_a  DenVIgGOD_b ChikVIgGOD_b ChikVIgGOD_c DenVIgGOD_c DenVIgGOD_e DenVIgGOD_f StanfordChikVOD_d StanfordChikVOD_d N Datesamplecollected StanfordDenVOD_a P S U W AB stanforddenvigg_f stanfordchikvod_a {
 			capture tostring `var', replace force
 			}
+
 
 	foreach var in Datesamplecollected_a Datesamplecollected_f Datesamplecollected_b Datesamplerun_a datesamplecollected_{
 		capture gen `var'1 = date(`var', "MDY" ,2050)
@@ -86,6 +96,8 @@ rename *, lower
 
 save `dataset', replace
 }
+
+
 
 append using "kisumu_hcc.dta"  "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta"   "ukunda_aic.dta" 
 
@@ -150,6 +162,10 @@ save merged, replace
 	
 	gen id_childnumber = ""
 	replace id_childnumber = substr(studyid_a, +4, .)
+	gen newid_childnumber = string(real(id_childnumber) ,"%04.0f") if inrange(length(id_childnumber),0,4)
+	replace newid_childnumber = string(real(id_childnumber) ,"%07.0f") if inrange(length(id_childnumber),5,7)
+	replace id_childnumber 	= newid_childnumber 		
+
 	order id_cohort city id_visit id_childnumber studyid_a
 	egen id_wide = concat(city id_cohort id_childnum)
 
@@ -167,10 +183,8 @@ use wide.dta, clear
 /*	gen dupkey = "dup" if dup2 >1
 	egen id_widedup = concat(id_wide dupkey dup2) if dup2 >1
 */
-rename chikvigg_ chikvigg_x
-rename denvigg_ denvigg_x 
-rename datesamplecollected_ datesamplecollected_x
-tostring stanforddenvigg_f chikviggod_e chikviggod_g chikviggod_h denviggod_d denviggod_g denviggod_h stanfordchikvigg_e stanfordchikvigg_f stanforddenviggod_c stanforddenviggod_f antigenused_b_f antigenused_e , replace force
+
+tostring stanfordchikvod_a  stanforddenvigg_f chikviggod_e chikviggod_g chikviggod_h denviggod_d denviggod_g denviggod_h stanfordchikvigg_e stanfordchikvigg_f stanforddenviggod_c stanforddenviggod_f antigenused_b_f antigenused_e , replace force
 	drop if dup2>1
 	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaliquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
 	tempfile long
@@ -201,15 +215,12 @@ bysort VISIT : replace  stanfordchikvigg_= stanfordchikvigg2_a if  stanfordchikv
 drop stanfordchikvigg2_a stanfordchikvod_ stanforddenvod_ stanforddenviggod_
 
 *clean results
-rename v38 chikv_igg_od_d
 
 ds, has(type string)
 	foreach var of var `r(varlist)'{
 		replace `var' =trim(itrim(lower(`var')))
 		rename `var', lower
 	}	
-
-replace chikvigg_ = chikv_igg_od_d if chikvigg_ ==""
 	
 		foreach var of varlist stanford* *igm* *igg* { 
 			tostring `var', replace
@@ -222,4 +233,21 @@ replace chikvigg_ = chikv_igg_od_d if chikvigg_ ==""
 			tab `var'
 		}
 rename visit VISIT 
+save pcr, replace
+drop *pcr*
 save elisas, replace
+
+use  pcr, clear
+keep id_wide id_visit VISIT studyid *pcr* dataset
+
+foreach var in   chikvpcr_ denvpcr_{
+tab `var'
+gen `var'_dum = .
+replace `var'_dum = 1 if strpos(`var', "pos")
+replace `var'_dum = 0 if strpos(`var', "neg")
+drop `var'
+order `var'_dum 
+}
+
+collapse (mean)  denvpcr__dum chikvpcr__dum, by(id_wide id_visit)
+save PCR_googledoc, replace

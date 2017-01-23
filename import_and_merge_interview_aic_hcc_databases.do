@@ -492,4 +492,14 @@ replace city ="c" if city =="h"
 tab id_visit visit, m
 replace visit = id_visit if visit ==""
 tostring visit, replace
+
+gen studyid_all =""
+order studyid_all 
+foreach id in studyid studyid_copy studyid1 studyid2{
+	replace studyid_all= `id' if studyid_all ==""
+	drop `id'
+}
+rename studyid_all studyid
+replace studyid = subinstr(studyid, "/", "",.)
+
 save all_interviews, replace

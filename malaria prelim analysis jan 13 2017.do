@@ -20,6 +20,7 @@ ds, has(type string)
 			}
 tostring id_childnumber  study_id, replace
 merge 1:1 id_wide VISIT using elisas.dta
+
 		ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
@@ -52,7 +53,13 @@ merge 1:1 id_wide VISIT using elisas.dta
 		restore
 
 		capture drop _merge
+		save elisas_RDT, replace
+		
+	*add in the pcr data from box and from googledoc. 
+		merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
+		replace denvpcrresults_dum = 1 if denvpcrresults_dum>0&denvpcrresults_dum<1
 		save elisas_PCR_RDT, replace
+	
 
 		*******declare data as panel data***********
 		encode id_wide, gen(id)
@@ -88,11 +95,14 @@ ds, has(type string)
 			foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
 			}
+			
+
+
 merge 1:1 id_wide visit using lab.dta
 *there are some lab visits that don't have a follow up in the interview data. those can be dropped if the don't have lab data. 
-	drop if stanforddenvigg_ =="" & stanfordchikvigg_ =="" & chikvpcr_ =="" & denvpcr_=="" & rdt==. & _merge==2 
+	drop if stanforddenvigg_ =="" & stanfordchikvigg_ =="" &  chikvpcrresults_dum ==. & denvpcrresults_dum==. & rdt==. & _merge==2 
 	
-foreach var in nsi denvpcr_ chikvpcr{
+foreach var in nsi denvpcrresults_dum{
 			tab `var', gen(`var'encode)
 }
 
@@ -168,13 +178,11 @@ save prevalent, replace
 *denv prevlanece
 use prevalent, clear
 
-rename denvpcr_ pcr_denv
-rename chikvpcr_ pcr_chikv
 rename denvigg_ igg_kenya_denv
 rename chikvigg_ igg_kenya_chikv
 rename dengue_igg_sammy igg_sammy_denv
 
-foreach var in igg_kenya_chikv igg_kenya_denv pcr_chikv pcr_denv igg_sammy_denv{
+foreach var in igg_kenya_chikv igg_kenya_denv igg_sammy_denv{
 capture drop dos`var'
 encode `var', gen(dos`var')
 drop `var'
@@ -193,7 +201,7 @@ save  prevalent, replace
 
 gen studyid_all =""
 order studyid_all 
-foreach id in studyid_copy studyid1 studyid2 duplicateid_a followupid studyid studyid_ {
+foreach id in studyid studyid_ {
 	replace studyid_all= `id' if studyid_all ==""
 	drop `id'
 }
@@ -217,11 +225,69 @@ sum malaria* Stanford*
 bysort city: sum malaria* Stanford*
 bysort city: tab malariapositive_dum
 isid id_wide visit
+list if id_wide == "" | visit == ""
+drop if id_wide == "" | visit == ""
 drop _merge
 save malariatemp, replace
 
 *malaria repeat offenders by bloodsmear
-	use malariatemp, clear
+
+
+use malariatemp, clear
+keep if visit == "a" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_a_malaria, replace
+		
+use malariatemp, clear
+keep if visit == "b" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_b_malaria, replace
+		
+use malariatemp, clear
+keep if visit == "c" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_c_malaria, replace
+		
+use malariatemp, clear
+keep if visit == "d" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_d_malaria, replace
+
+use malariatemp, clear
+keep if visit == "e" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_e_malaria, replace
+		
+use malariatemp, clear
+keep if visit == "f" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_g_malaria, replace
+		
+use malariatemp, clear
+keep if visit == "h" & malariapositive_dum >0 & malariapositive_dum <.
+save visit_h_malaria, replace
+		
+
+append using visit_a_malaria visit_b_malaria visit_c_malaria visit_d_malaria visit_e_malaria visit_f_malaria 
+collapse (sum) malariapositive_dum, by (id_wide)
+rename malariapositive_dum repeatoffender
+save repeatoffender, replace
+
+
+use malariatemp, clear
+replace visit_s = 1 if visit =="a" & visit_s ==.
+replace visit_s = 2 if visit =="b" & visit_s ==.
+replace visit_s = 3 if visit =="c" & visit_s ==.
+replace visit_s = 4 if visit =="d" & visit_s ==.
+save malariatemp, replace
+keep if malariapositive_dum >0 & malariapositive_dum<. 
+egen max = max(visit_s), by(id_wide) 
+keep id_wide max visit_s
+save maxvisit, replace
+
+merge m:m id_wide using repeatoffender
+replace repeatoffender = . if max!=visit_s
+drop _merge
+save repeatoffender, replace
+
+merge 1:1 id_wide visit_s using malariatemp
+
+** add in the consecutive malariapos again
+use malariatemp, clear
 		keep if visit == "a" & malariapositive_dum >0 & malariapositive_dum <.
 		save visit_a_malaria, replace
 
@@ -298,8 +364,15 @@ foreach dataset in ghmalaria fgmalaria efmalaria demalaria cdmalaria bcmalaria a
 		capture drop _merge
 		save merged, replace
 		}
-		egen repeatoffender =rowtotal(malariapos_gh malariapos_fg malariapos_ef malariapos_de malariapos_cd malariapos_bc malariapos_ab)
-	bysort city: sum repeatoffender if repeatoffender >1 
+		foreach var in  malariapos_gh malariapos_fg malariapos_ef malariapos_de malariapos_cd malariapos_bc malariapos_ab{
+		replace `var' = 1 if `var' >1 & `var'<.
+		}
+
+		egen consecutivemalariapos=rowtotal(malariapos_gh malariapos_fg malariapos_ef malariapos_de malariapos_cd malariapos_bc malariapos_ab)
+
+		tab city consecutivemalariapos
+
+
 
 
 foreach var in datesamplecollected_ {
@@ -384,12 +457,12 @@ order studyid houseid villageid
 
 destring houseid villageid, replace force
 *replace these when i get the villgae id's
-tostring StudyID, replace
+
 rename gametocytes gametocytes3
 rename parasitelevel parasitelevel2
 rename studyid studyid3
 
-drop StudyID Parasitelevel Gametocytes 
+drop Parasitelevel Gametocytes 
 rename *, lower
 save malariadenguemerged, replace
 
@@ -417,7 +490,7 @@ save denvchikvmalariagps, replace
 *clean symptoms
 gen studyid_all =""
 order studyid_all 
-foreach id in  studyid3 studyid1 studyid2 clientno {
+foreach id in studyid3 clientno {
 	replace studyid_all= `id' if studyid_all ==""
 	drop `id'
 }
@@ -440,15 +513,6 @@ replace id_cohort ="aic" if id_cohort =="m"
 replace id_cohort ="hcc" if id_cohort =="c"
 drop cohort
 rename id_cohort cohort
-_strip_labels pcr_chikv 
-replace pcr_chikv = . if pcr_chikv ==2
-replace pcr_chikv = pcr_chikv -1 
-
-
-_strip_labels pcr_denv 
-replace pcr_denv = . if pcr_denv ==2
-replace pcr_denv = 2 if pcr_denv ==3
-replace pcr_denv = pcr_denv -1 
 
 
 gen childweight_kg = childweight
@@ -470,15 +534,33 @@ replace `var'= . if `var'==999
 sum `var'
 }
 
+label var repeatoffender ""
+
+*take visit out of id
+
+									drop id1 id2 id3
+									forval i = 1/3 { 
+
+										gen id`i' = substr(studyid, `i', 1) if city ==""|cohort ==""
+									}
+			*gen id_wid without visit						 
+				replace city  = id1 if city ==""
+				replace cohort = id2 if cohort==""
+				replace visit = id3 if visit ==""
+				
+replace cohort ="aic" if cohort =="f"
+replace city ="chulaimbo" if city =="c"
+replace city ="chulaimbo" if city =="r"
+replace city =" msambweni" if city =="m"
 
 preserve
 keep if cohort =="aic"
-table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ pcr_denv  cat\ pcr_chikv cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ cbin \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("malariatable1_aic.xls", replace ) missing test 
 restore
 
 preserve
 keep if cohort =="hcc"
-table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ pcr_denv  cat\ pcr_chikv cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 bin \ ) by(malariapositive_dum) saving("malariatable1_hcc.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ repeatoffender cat \ malariapastmedhist cat \ stanford_chikv_igg cat\ stanford_denv_igg cat\ chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 cat \ ) by(malariapositive_dum) saving("malariatable1_hcc.xls", replace ) missing test 
 restore
 
 save denvchikvmalariagps, replace

@@ -253,4 +253,21 @@ egen parasite_count= rowtotal(pf200 pm200 po200 pv200 ni200 none200 )
 
 replace id_cohort = "f" if id_cohort =="m"
 replace id_wide= subinstr(id_wide, "/", "",.)
+
+gen studyid_all =""
+order studyid_all 
+foreach id in studyid StudyID studyid1 studyid2{
+	replace studyid_all= `id' if studyid_all ==""
+	drop `id'
+}
+rename studyid_all studyid
+
+replace studyid= subinstr(id_wide, "/", "",.)
+replace studyid= subinstr(id_wide, " ", "",.)
+
+foreach studyid in cfa00161 kfa00242 kfa00247 kfa00248 kfa00261 kfa00275 kfa00298 cfa00303 cfc00305 kfa00291 cfa00325 cfc00272 cfa00119 cfa00169 cfa00342 cfa00151 cfa00187 cfa00275 cfa00296 cfa00006 cfa00201 cfa00241 cfa00247 kfa00189 kfa00204 kfa00337 cfa00196 cfa00205 cfa00211 cfa00246 cfa00248 cfa00256 cfa00257 cfa00265 cfa00273 cfa00313 cfa00340 rfa00496 cfa00193 cfa00200 cfa00210 cfa00236 cfa00243 cfa00268 cfa00271 cfa00300 cfa00348 cfa00385 kfa00185 kfa00202 kfa00342 cfa00010 kfa00009 rfa00460 cfa00326 cfa00362 cfa00364 rfa00475 cfa00349 cmba0408 rfa00462 cfa00135 cfa00245 cfa00383 kfa00217 kfa00277 kfc00184 rfa00469 {
+list studyid malariapositive_dum if studyid =="`studyid'"
+}
+
+
 save malaria, replace
