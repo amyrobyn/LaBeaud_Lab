@@ -10,7 +10,8 @@ import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
-*rename stforddenvigg_a stanforddenvigg_a 
+rename *, lower
+rename stford* stanford*
 gen dataset = "chulaimbo_aic" 
 save "chulaimbo_aic" , replace
 
@@ -35,7 +36,7 @@ dropmiss, force
 gen dataset = "kisumu_hcc"
 save "kisumu_hcc", replace
 
-import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A7:BW649) firstrow clear
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A8:BW649) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
@@ -114,6 +115,8 @@ dropmiss, force obs
  
 save appended_september20.dta, replace
 
+use appended_september20.dta, clear
+
 				replace studyid_a = followupid_b if studyid_a ==""
 				replace studyid_a = followupid_c if studyid_a ==""
 				replace studyid_a = followupaliquotid_b if studyid_a ==""
@@ -125,11 +128,7 @@ save appended_september20.dta, replace
 				replace studyid_a = followupaliquotid_h if studyid_a ==""
 				replace studyid_a =  studyid_e if studyid_a ==""
 				replace studyid_a = chikvpcr_e  if studyid_a ==""
-				replace studyid_a = studyid if studyid_a ==""
-				replace studyid_a = followupaliquotid if studyid_a ==""
-
-
-				
+					
 				drop studyid_c 
 				drop followupaliquotid_*
 
@@ -171,23 +170,24 @@ save merged, replace
 	rename id2 id_cohort  
 	rename id3 id_visit 
 	
-	gen id_childnumber = ""
-	replace id_childnumber = substr(studyid_a, +4, .)
-	gen newid_childnumber = string(real(id_childnumber) ,"%04.0f") if inrange(length(id_childnumber),0,4)
-	replace newid_childnumber = string(real(id_childnumber) ,"%07.0f") if inrange(length(id_childnumber),5,7)
-	replace id_childnumber 	= newid_childnumber 		
+	gen id_childnumber  = ""
+	replace id_childnumber  = substr(studyid_a, +4, .)
 
+gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
+tab notnumeric	/*==1 where nonnumeric characters*/
+list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
+
+gen suffix = "" 	
+local suffix a 
+foreach suffix in a b c d e f g h {
+	replace suffix = "`suffix'" if strpos(id_childnumber, "`suffix'")
+	replace id_childnumber = subinstr(id_childnumber, "`suffix'","", .)
+	}
+destring id_childnumber, replace 	 
 	order id_cohort city id_visit id_childnumber studyid_a
-	egen id_wide = concat(city id_cohort id_childnum)
+	egen id_wide = concat(city id_cohort id_childnum suffix)
+drop suffix
 drop if id_visit =="?"
-levelsof id_visit, local(levels) 
-
-foreach l of local levels {
-egen "studyid_`l'2" = concat(city id_cohort id_visit  id_childnum) if id_visit == "`l'"
-replace  studyid_`l' = "studyid_`l'2" if "studyid_`l'" =="" 
-if "`l'" != "a" rename studyid_`l'2 studyid_`l'
-}
-drop  studyid_a2
 
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
@@ -200,17 +200,18 @@ save wide, replace
 		keep if dup2 >1
 		*export excel using "dup2", firstrow(variables) replace
 use wide.dta, clear
-tostring stanfordchikvod_a  stanforddenvigg_f chikviggod_e chikviggod_g chikviggod_h denviggod_d denviggod_g denviggod_h stanfordchikvigg_e stanfordchikvigg_f stanforddenviggod_c stanforddenviggod_f antigenused_b_f antigenused_e , replace force
+tostring stanfordchikvod_a  stanforddenvigg_f chikviggod_e chikviggod_g chikviggod_h denviggod_d denviggod_g denviggod_h stanfordchikvigg_e stanfordchikvigg_f stanforddenviggod_c stanforddenviggod_f antigenused_b_f antigenused_e stanforddenvigg_e , replace force
 	list if dup2>1
 	drop if dup2>1
-	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
+	dropmiss, force
+	dropmiss, force obs
 
+	reshape long chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
 	tempfile long
 	save long, replace
 	
 use long.dta, clear
 count if id_wide==""
-	
 capture drop _merge
 
 *clean var city
@@ -255,7 +256,14 @@ save pcr, replace
 drop *pcr*
 dropmiss, force obs
 dropmiss, force
-isid studyid_
+isid id_wide VISIT
+
+		ds, has(type string) 
+			foreach v of varlist `r(varlist)' { 
+				replace `v' = lower(`v') 
+			}
+		rename VISIT visit		
+destring id_childnumber  , replace
 save elisas, replace
 
 use  pcr, clear
@@ -272,4 +280,8 @@ order `var'_dum
 
 collapse (mean)  denvpcr__dum chikvpcr__dum, by(id_wide id_visit)
 rename id_visit visit
+dropmiss, force obs
+dropmiss, force
+
+keep if denvpcr__dum !=. & chikvpcr__dum !=. 
 save PCR_googledoc, replace

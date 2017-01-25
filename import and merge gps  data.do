@@ -1,12 +1,12 @@
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Msambweni_coordinates complete Nov 21 2016.xls", sheet("Sheet1") firstrow clear
-
+gen dataset = "Msambweni_demography"
 tostring Villhouse , replace
-save xy2, replace
 save xy1, replace
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Ukunda demography_coordinates August 2016.xls", sheet("demo") firstrow clear
+gen dataset = "ukunda_demography"
 encode keep_livestock , gen(keep_livestock_int)
 drop keep_livestock 
 rename keep_livestock_int keep_livestock 
@@ -26,6 +26,7 @@ rename domestic_workerint domestic_worker
 save xy2, replace
 
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest/West Demography Database", sheet("Sheet1") firstrow clear
+gen dataset = "west_demography"
 save xy3, replace
 
 tostring toilet_latrine latrine_location latrine_distance , replace 
@@ -58,4 +59,9 @@ replace `var'int=8 if `var'=="ref"
 drop `var'
 rename `var'int `var'
 }
+
+gen site = ""
+replace site = "west" if dataset =="west_demography"
+replace site = "coast" if dataset =="ukunda_demography"
+replace site = "coast" if dataset =="Msambweni_demography"
 save xy, replace

@@ -55,4 +55,44 @@ rename visit VISIT
 bysort id_wide VISIT: gen dup =_n
 drop if dup>1
 drop dup
-save sammy
+
+save sammy, replace
+
+destring _all, replace
+ds, has(type string) 
+			foreach v of varlist `r(varlist)' { 
+				replace `v' = lower(`v') 
+			}
+
+		ds, has(type string) 
+			foreach v of varlist `r(varlist)' { 
+				replace `v' = lower(`v') 
+			}
+
+		rename VISIT visit
+save sammy, replace
+
+merge 1:1 id_wide VISIT using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\jan 19 2017\elisas.dta"
+		drop id_visit
+		preserve
+			keep if _merge ==1 
+			export excel using "sammyonly", firstrow(variables) replace
+		restore
+
+		
+		preserve
+			keep if _merge ==1 |_merge ==3
+			keep studyid  nsi stanforddenvigg_ denvigg_ dengueigm_sammy dengue_igg_sammy visit _merge 
+			export excel using "sammy_comparison", firstrow(variables) replace
+
+			keep if _merge ==3
+			
+			ds, has(type string) 
+			foreach v of varlist `r(varlist)' { 
+				replace `v' = lower(`v') 
+			}
+
+			
+			save sammy_jael, replace
+		restore
+

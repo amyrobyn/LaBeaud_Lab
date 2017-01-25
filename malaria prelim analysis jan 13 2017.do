@@ -1,110 +1,24 @@
 /**************************************************************
  *amy krystosik                  							  *
- *R01 results and discrepencies by strata (lab, antigen, test)*
+ *malaria, eliza, and pcr merged results											  *
  *lebeaud lab               				        		  *
- *last updated Jan 5, 2016  							  *
+ *last updated Jan 23, 2017  							  *
  **************************************************************/ 
 capture log close 
 log using "R01_nov2_16.smcl", text replace 
 set scrollbufsize 100000
 set more 1
-
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
-
-*merge elisas with rdt and pcr from sammy
-use sammy, clear
-destring _all, replace
-ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-tostring id_childnumber  studyid, replace
-merge 1:1 id_wide  VISIT using elisas.dta
-
-		ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-
-		rename VISIT visit
-		drop id_visit
-		preserve
-			keep if _merge ==1 
-			export excel using "sammyonly", firstrow(variables) replace
-		restore
-
-		bysort dengueigm_sammy visit: tab stanforddenvigg_
-		bysort dengueigm_sammy visit: tab denvigg_
-
-		preserve
-			keep if _merge ==1 |_merge ==3
-			keep studyid  nsi stanforddenvigg_ denvigg_ dengueigm_sammy dengue_igg_sammy visit _merge 
-			export excel using "sammy_comparison", firstrow(variables) replace
-
-			keep if _merge ==3
-			
-			ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-
-			
-			save sammy_jael, replace
-		restore
-
-		capture drop _merge
-		save elisas_RDT, replace
-		
-	*add in the pcr data from box and from googledoc. 
-		merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
+use all_interviews, clear
+*merge with elisa data
+merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\jan 19 2017\elisas.dta"
+rename _merge interview_elisa_match
+drop if rdtresults ==. & chikvigg_ =="" & denvigg_ =="" & stanforddenvigg ==""  & stanfordchikvigg =="" & interview_elisa_match ==1|interview_elisa_match ==2
+*add in the pcr data from box and from googledoc. 
+merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
 		replace denvpcrresults_dum = 1 if denvpcrresults_dum>0&denvpcrresults_dum<1
-		save elisas_PCR_RDT, replace
-	
-
-		*******declare data as panel data***********
-		encode id_wide, gen(id)
-		encode visit, gen(visit_s)
-		xtset id visit_s	
-		save longitudinal.dta, replace
-
-		*simple prevalence/incidence by visit
-			save temp, replace
-			destring id visit_s, replace
-			sort id visit_s
-
-			capture drop _merge
-
-		*	drop visit
-		*	rename visit_s visit
-			capture drop dup_merged
-			drop v28
-
-		count if visit_s ==2 
-		count if visit_s >4
-			
-			ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-
-save lab, replace
-
-use all_interviews.dta, clear
-destring _all, replace
-ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-			
-
-
-merge 1:1 id_wide visit using lab.dta
-*there are some lab visits that don't have a follow up in the interview data. those can be dropped if the don't have lab data. 
-	drop if stanforddenvigg_ =="" & stanfordchikvigg_ =="" &  chikvpcrresults_dum ==. & denvpcrresults_dum==. & rdt==. & _merge==2 
-	
-foreach var in nsi denvpcrresults_dum{
-			tab `var', gen(`var'encode)
-}
+		save elisas_PCR_RDT, replace	
+		rename _merge interview_elisa_pcr_match
 
 gen prevalentchikv = .
 gen prevalentdenv = .
@@ -126,10 +40,10 @@ replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
 		replace id_cohort = "AIC" if id_cohort == "f"|id_cohort == "m" 
 		capture drop cohort
 		
-		encode id_cohort, gen(cohort)
+encode id_cohort, gen(cohort)
 		
 bysort cohort  city: sum Stanford_DENV_IGG Stanford_CHIKV_IGG
-drop _merge
+
 
 replace city = "Chulaimbo" if city =="c"
 replace city = "Kisumu" if city =="u"
@@ -180,9 +94,9 @@ use prevalent, clear
 
 rename denvigg_ igg_kenya_denv
 rename chikvigg_ igg_kenya_chikv
-rename dengue_igg_sammy igg_sammy_denv
 
-foreach var in igg_kenya_chikv igg_kenya_denv igg_sammy_denv{
+	
+foreach var in igg_kenya_chikv igg_kenya_denv {
 capture drop dos`var'
 encode `var', gen(dos`var')
 drop `var'
@@ -222,6 +136,20 @@ drop if id_wide == "" | visit == ""
 isid id_wide visit
 
 drop _merge
+destring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+
+	foreach var in datesamplecollected_ {
+		capture gen `var'1 = date(`var', "DMY" ,2050)
+		capture format %td `var'1 
+		capture drop `var'
+		capture rename `var'1 `var'
+		capture recast int `var'
+	}
+
+	
 save malariatemp, replace
 
 *malaria repeat offenders by bloodsmear
@@ -229,56 +157,76 @@ save malariatemp, replace
 
 use malariatemp, clear
 keep if visit == "a" & malariapositive_dum >0 & malariapositive_dum <.
+tostring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+capture drop coloandjequal
 save visit_a_malaria, replace
 		
 use malariatemp, clear
 keep if visit == "b" & malariapositive_dum >0 & malariapositive_dum <.
+tostring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+capture drop coloandjequal
 save visit_b_malaria, replace
 		
 use malariatemp, clear
 keep if visit == "c" & malariapositive_dum >0 & malariapositive_dum <.
+tostring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+capture drop coloandjequal
 save visit_c_malaria, replace
 		
 use malariatemp, clear
 keep if visit == "d" & malariapositive_dum >0 & malariapositive_dum <.
+tostring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+capture drop coloandjequal
 save visit_d_malaria, replace
 
 use malariatemp, clear
 keep if visit == "e" & malariapositive_dum >0 & malariapositive_dum <.
+tostring adbtenderness, replace
+dropmiss, force obs
+dropmiss, force
+capture drop coliandmequal 
+capture drop coloandjequal
 save visit_e_malaria, replace
-		
-use malariatemp, clear
-keep if visit == "f" & malariapositive_dum >0 & malariapositive_dum <.
-save visit_g_malaria, replace
-		
-use malariatemp, clear
-keep if visit == "h" & malariapositive_dum >0 & malariapositive_dum <.
-save visit_h_malaria, replace
-		
 
-append using visit_a_malaria visit_b_malaria visit_c_malaria visit_d_malaria visit_e_malaria visit_f_malaria 
+foreach dataset in visit_a_malaria visit_b_malaria visit_c_malaria visit_d_malaria visit_e_malaria {
+use "`dataset'", clear
+desc id_childnumber
+display "`dataset'"
+}
+
+append using visit_a_malaria visit_b_malaria visit_c_malaria visit_d_malaria visit_e_malaria 
+
 collapse (sum) malariapositive_dum, by (id_wide)
 rename malariapositive_dum numbermalariainfections
 save repeatoffender, replace
 
-
 use malariatemp, clear
-replace visit_s = 1 if visit =="a" & visit_s ==.
-replace visit_s = 2 if visit =="b" & visit_s ==.
-replace visit_s = 3 if visit =="c" & visit_s ==.
-replace visit_s = 4 if visit =="d" & visit_s ==.
-save malariatemp, replace
 keep if malariapositive_dum >0 & malariapositive_dum<. 
-egen min = min(visit_s), by(id_wide) 
-keep id_wide min visit_s
+egen min = min(visit_int), by(id_wide) 
+keep id_wide min visit* 
 save minvisit, replace
 
-merge m:m id_wide using repeatoffender
-replace numbermalariainfections = . if min!=visit_s
+merge m:1 id_wide using repeatoffender
+replace numbermalariainfections = . if min!=visit_int
 drop _merge
 save repeatoffender, replace
 
-merge 1:1 id_wide visit_s using malariatemp
+bysort  id_wide visit_int : gen dup = _n
+drop if dup >1
+
+merge m:m id_wide visit_int using malariatemp
 drop _merge
 save malariatemp, replace
 
@@ -372,17 +320,6 @@ foreach dataset in ghmalaria fgmalaria efmalaria demalaria cdmalaria bcmalaria a
 		egen consecutivemalariapos=rowtotal(malariapos_gh malariapos_fg malariapos_ef malariapos_de malariapos_cd malariapos_bc malariapos_ab)
 		tab city consecutivemalariapos
 
-foreach var in datesamplecollected_ {
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
-
-
-replace interviewdate = datesamplecollected_ if interviewdate ==.
-
 
 gen interviewmonth =month(interviewdate)
 gen interviewyear =year(interviewdate)
@@ -459,21 +396,21 @@ rename gametocytes gametocytes3
 rename parasitelevel parasitelevel2
 rename studyid studyid3
 
-drop Parasitelevel Gametocytes 
 rename *, lower
 save malariadenguemerged, replace
-
+stop 
 *****************merge with gis points
 /*
 use xy, clear
-rename *, lower
+dropmiss, force
+dropmiss, force obs
 destring _all, replace
 ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
 			}
 tostring windows, replace
-merge m:m villageid houseid using malariadenguemerged
+merge m:m site villageid houseid using malariadenguemerged
 drop if _merge ==1
 
 replace city = "Chulaimbo" if city =="c"
@@ -487,7 +424,7 @@ save denvchikvmalariagps, replace
 *clean symptoms
 gen studyid_all =""
 order studyid_all 
-foreach id in studyid3 clientno {
+foreach id in studyid3 studyid_ {
 	replace studyid_all= `id' if studyid_all ==""
 	drop `id'
 }
@@ -534,8 +471,6 @@ sum `var'
 label var numbermalariainfections ""
 
 *take visit out of id
-
-									drop id1 id2 id3
 									forval i = 1/3 { 
 
 										gen id`i' = substr(studyid, `i', 1) if city ==""|cohort ==""
