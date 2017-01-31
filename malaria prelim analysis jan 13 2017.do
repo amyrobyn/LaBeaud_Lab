@@ -2,7 +2,7 @@
  *amy krystosik                  							  *
  *malaria, eliza, and pcr merged results											  *
  *lebeaud lab               				        		  *
- *last updated Jan 23, 2017  							  *
+ *last updated Jan 26, 2017  							  *
  **************************************************************/ 
 capture log close 
 log using "R01_nov2_16.smcl", text replace 
@@ -363,13 +363,15 @@ save malariadenguemerged, replace
 
 ***
 **create village and house id so we can merge with gis points
+
 gen villageid=""
 replace villageid = substr(id_wide, +1, 1)
 replace villageid = "1" if villageid =="c"
+replace villageid = "1" if villageid =="r"
+
 replace villageid = "2" if villageid =="k"
 
-replace villageid = "1" if villageid =="u"
-replace villageid = "2" if villageid =="u"
+replace villageid = "?" if villageid =="u"
 
 replace villageid = "3" if villageid =="g"
 replace villageid = "4" if villageid =="l"
@@ -398,24 +400,23 @@ rename studyid studyid3
 
 rename *, lower
 save malariadenguemerged, replace
-stop 
+ 
 *****************merge with gis points
-/*
+
 use xy, clear
-dropmiss, force
-dropmiss, force obs
+replace gps_house_latitude = y if gps_house_latitude==.
+replace gps_house_latitude = x if gps_house_longitude==.
+keep if gps_house_latitude!=. & gps_house_longitude!=.
+
+collapse (firstnm) gps_house_longitude  gps_house_latitude, by(site villageid houseid)
 destring _all, replace
-ds, has(type string) 
-			foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
-			}
-tostring windows, replace
+outsheet using "xy.csv", comma names replace
 merge m:m site villageid houseid using malariadenguemerged
-drop if _merge ==1
+rename _merge housegps
 
 replace city = "Chulaimbo" if city =="c"
-replace city = "Kisumu" if city =="u"
-replace city = "Ukunda" if city =="k"
+replace city = "Kisumu" if city =="k"
+replace city = "Ukunda" if city =="u"
 
 *check with david to make sure this is true...
 save denvchikvmalariagps, replace
@@ -526,3 +527,7 @@ restore
 
 save denvchikvmalariagps, replace
 outsheet using " melisa_malriajan2017.csv", comma names replace
+order housegps gps_house_latitude gps_house_longitude
+encode childvillage, gen(childvillage_int)
+drop childvillage
+outsheet using "gps jan 26.csv", comma replace

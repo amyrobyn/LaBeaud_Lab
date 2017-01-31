@@ -2,10 +2,12 @@ cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs no
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Msambweni_coordinates complete Nov 21 2016.xls", sheet("Sheet1") firstrow clear
 gen dataset = "Msambweni_demography"
-tostring Villhouse , replace
+rename *, lower
+tostring villhouse , replace
 save xy1, replace
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Ukunda demography_coordinates August 2016.xls", sheet("demo") firstrow clear
+rename *, lower
 gen dataset = "ukunda_demography"
 encode keep_livestock , gen(keep_livestock_int)
 drop keep_livestock 
@@ -26,6 +28,7 @@ rename domestic_workerint domestic_worker
 save xy2, replace
 
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest/West Demography Database", sheet("Sheet1") firstrow clear
+rename *, lower
 gen dataset = "west_demography"
 save xy3, replace
 
@@ -34,14 +37,14 @@ tostring toilet_latrine latrine_location latrine_distance , replace
 append using xy1 xy2
 save xy, replace
 
-gen houseid  = House
+gen houseid  = house
 replace houseid = house_number if houseid==. & house_number!=.
 gen houseidstring = string(houseid ,"%04.0f")
-drop houseid House house_number
+drop houseid house house_number
 rename houseidstring  houseid
 order houseid
 
-rename Village villageid
+rename village villageid
 order houseid villageid
 drop if villageid ==.
 bysort villageid houseid : gen dup =_n
@@ -60,8 +63,8 @@ drop `var'
 rename `var'int `var'
 }
 
-gen site = ""
-replace site = "west" if dataset =="west_demography"
-replace site = "coast" if dataset =="ukunda_demography"
-replace site = "coast" if dataset =="Msambweni_demography"
+gen site = .
+replace site = 2 if dataset =="west_demography"
+replace site = 3 if dataset =="ukunda_demography"
+replace site = 3 if dataset =="Msambweni_demography"
 save xy, replace

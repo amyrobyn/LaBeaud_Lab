@@ -53,8 +53,6 @@ destring *, replace
 		replace otherhneck = "0" if otherhneck==""
 		destring otherhneck , replace 
 destring *, replace	
-tab neuroabnormal 
-
 	save "Coast_AIC_Init-Katherine", replace
 
 	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\Coastal Data-Katherine aug_4_2016.xls", sheet("FILE1   4 coast_aicfu_18apr16") firstrow clear
@@ -64,7 +62,6 @@ tab neuroabnormal
 		tostring heartexamcoded stageofdiseasecoded childvillage antibiotic, replace
 		dropmiss, force
 		dropmiss, force obs
-
 	save "coast_aicfu_18apr16" , replace
 
 	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\Coastal Data-Katherine aug_4_2016.xls", sheet("FILE2  AIC Ukunda Malaria") firstrow clear
@@ -109,16 +106,19 @@ import excel "`importcoasthcc'Msambweni HCC Initial 30Nov16.xls", sheet("#LN0002
 		rename `var'1 `var'
 		recast int `var'
 		}
-		destring childoccupation childvillage educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever durationsymptom , replace		
 
-foreach var in childtravel childvillage density gametocytes childoccupation{
-destring `var', replace
+
+foreach var in hospitalname2 {
+replace `var'="1" if strpos(`var', "obama")	
+replace `var'="2" if strpos(`var', "chulaimbo")	
+replace `var'="3" if strpos(`var', "Msambweni")	
+replace `var'="4" if strpos(`var', "ukunda")	
+replace `var'="5" if `var'!="" & `var'!="1" & `var'!="2" & `var'!="3" & `var'!="4"  & `var'!="9"
 }
-foreach var in childtravel durationhospitalized2{ 
+destring *, replace
+foreach var in durationhospitalized2 childvillage{ 
 tostring `var', replace
 }
-destring educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever numillnessfever durationsymptom  numhosp , replace
-
 save "Msambweni HCC Initial 06Nov16", replace
 
 import excel "`importcoasthcc'Msambweni HCC Follow one 30Nov16.xls", sheet("#LN00025") firstrow clear
@@ -144,15 +144,9 @@ import excel "`importcoasthcc'Msambweni HCC Follow one 30Nov16.xls", sheet("#LN0
 		recast int `var'
 		}
 		
-		foreach var in childtravel childvillage density gametocytes childoccupation{
-destring `var', replace
-}
-foreach var in childtravel { 
+foreach var in  childvillage{ 
 tostring `var', replace
 }
-
-
-destring educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever numillnessfever durationsymptom seekmedcare medtype wheremedseek numhosp , replace
 
 save "Msambweni HCC Follow one 06Nov16", replace
 
@@ -177,6 +171,7 @@ import excel "`importcoasthcc'Msambweni HCC Follow two 30Nov16.xls", sheet("#LN0
 			recast int `var'
 			}
 		
+tostring childvillage, replace
 
 save "Msambweni HCC Follow two 06Nov16", replace
 
@@ -204,6 +199,8 @@ import excel "`importcoasthcc'Msambweni HCC Follow three 30Nov16.xls", sheet("#L
 			dropmiss, force
 			dropmiss, force obs
 drop phonenumber
+tostring childvillage, replace
+
 save "Msambweni HCC Follow three 06Nov16", replace
 
 *ukunda
@@ -212,8 +209,6 @@ save "Msambweni HCC Follow three 06Nov16", replace
 	destring *, replace
 		gen dataset = "Ukunda HCC Initial 30Nov16"
 		rename *, lower	
-			destring childtravel nightaway fevertoday everhospitalised  childheight childweight hospitalname1 durationhospitalized1 childvillage childoccupation educlevel mumeduclevel numillnessfever durationsymptom , replace
-			
 			dropmiss, force
 			dropmiss, force obs
 
@@ -224,13 +219,14 @@ save "Msambweni HCC Follow three 06Nov16", replace
 				rename `var'1 `var'
 				recast int `var'
 				}			
+				tostring childvillage, replace
+				
 	save "Ukunda HCC Initial 30Nov16" , replace
 
 	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow one  06Nov16.xls", sheet("#LN00060") firstrow clear
 	destring *, replace
 		gen dataset = "coast_hcc_Ukunda_Follow_one _06Nov16"
 		rename *, lower 
-		destring childvillage houseid childindividualid childheight childweight childoccupation educlevel mumeduclevel, replace
 		destring *, replace
 
 				foreach var in start dob today {
@@ -242,7 +238,7 @@ save "Msambweni HCC Follow three 06Nov16", replace
 				}
 		dropmiss, force
 		dropmiss, force obs
-		tostring phonenumber, replace
+		tostring childvillage phonenumber, replace
 		drop phonenumber
 	save "coast_hcc_Ukunda_Follow_one _06Nov16" , replace
 
@@ -259,7 +255,7 @@ save "Msambweni HCC Follow three 06Nov16", replace
 				rename `var'1 `var'
 				recast int `var'
 				}
-
+tostring childvillage, replace
 	save "coast_hcc_Ukunda HCC Follow two  06Nov16" , replace
 
 	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow three  06Nov16.xls", sheet("#LN00056") firstrow clear
@@ -277,6 +273,7 @@ save "Msambweni HCC Follow three 06Nov16", replace
 				rename `var'1 `var'
 				recast int `var'
 				}
+				tostring childvillage, replace
 	save "coast_hcc_Ukunda_Follow_three_06Nov16" , replace
 
 
@@ -297,6 +294,7 @@ import excel "`importwesthcc'west_HCC_Initial.xlsx", sheet("Sheet1") firstrow cl
 drop end
 dropmiss, force
 dropmiss, force obs
+tostring childvillage, replace
 save "west_HCC_Initial", replace
 
 import excel "`importwesthcc'west_HCC_1st Followup.xlsx", sheet("Sheet1") firstrow clear
@@ -319,10 +317,7 @@ import excel "`importwesthcc'west_HCC_1st Followup.xlsx", sheet("Sheet1") firstr
 		rename `var'1 `var'
 		recast int `var'
 		}
-		foreach var in childtravel childvillage childoccupation{
-destring `var', replace
-}
-foreach var in childtravel { 
+foreach var in childtravel childvillage{ 
 tostring `var', replace
 }
 destring educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever numillnessfever durationsymptom seekmedcare medtype wheremedseek numhosp , replace
@@ -343,13 +338,9 @@ import excel "`importwesthcc'west_HCC_2nd Followup.xlsx", sheet("Sheet1") firstr
 				}
 				
 rename end end_byte
-		foreach var in childtravel childvillage childoccupation{
-destring `var', replace
-}
-foreach var in childtravel { 
+foreach var in childvillage { 
 tostring `var', replace
 }
-destring educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever numillnessfever durationsymptom seekmedcare medtype wheremedseek , replace
 
 save "west_HCC_2nd Followup", replace
 
@@ -364,15 +355,10 @@ import excel "`importwesthcc'west_HCC_3rd Followup.xlsx", sheet("Sheet1") firstr
 			foreach var of var `r(varlist)'{
 			capture tostring `var', replace 
 			capture  replace `var'=lower(`var')
-				}	
-				
-		foreach var in childvillage {
-		destring `var', replace
-		}
-		foreach var in childtravel { 
+				}					
+		foreach var in childvillage{ 
 		tostring `var', replace
 		}
-		destring educlevel mumeduclevel childtravel nightaway everhospitalised hospitalname1 durationhospitalized1 houseid childindividualid phonenumber fevertoday numillnessfever numillnessfever durationsymptom seekmedcare medtype wheremedseek numhosp , replace
 rename end end_byte
 save "west_HCC_3rd Followup", replace
 
@@ -391,14 +377,18 @@ import excel "`importwesthcc'west_HCC_4th Followup.xls", sheet("Sheet1") firstro
 rename end end_byte
 dropmiss, force
 dropmiss, force obs
-tostring othmumeduclevel, replace
-
+tostring othmumeduclevel childvillage, replace
 save "west_HCC_4th Followup", replace
 
 *west aic
-insheet using "`importwestaic'AICInitialVersionOdk_DATA_2017-01-24_1054.csv", comma clear
+insheet using "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest\AICInitialVersionOdk_DATA_2017-01-30_1041_west.csv", comma clear
 destring *, replace
-					gen dataset = "west_AICInitialVersionOdk_DATA_2017-01-24_1054"
+					gen dataset = "AICInitialVersionOdk_DATA_west"
+					 
+					replace jointabnormal = "1" if jointabnormal =="1 1"
+					replace nodeabnormal = "1" if nodeabnormal =="1 1"
+					replace neuroabnormal ="0" if neuroabnormal =="0"
+					replace neuroabnormal ="1" if neuroabnormal !="" & neuroabnormal !="0"  
 				dropmiss, force
 				foreach var of varlist _all{
 					capture rename `var', lower
@@ -416,9 +406,28 @@ destring *, replace
 				foreach var in childoccupation educlevel mumeduclevel {
 				destring `var', replace
 				}
-				tab malariabloods~r
+				tab hospitalsite 
 				
+		foreach var in datesurgery interviewdate  datehospitalized datehospitalized1 datehospitalized2 datehospitalized3 datehospitalized4  {
+			gen `var'b = date(`var', "MDY" ,2050)
+			format %td `var'b 
+			drop `var'
+			rename `var'b `var'
+			recast int `var'
+		}
+				replace abdominalpain = "." if abdominalpain =="`"
+				replace chills= "." if chills=="`"
+				replace cough= "." if cough=="`" 
+				drop maltestordered
+				replace otherhneck = "1" if otherhneck!=""
+				replace otherhneck = "0" if otherhneck==""
+				replace locationhospital= "1" if locationhospital=="obama"
+				replace locationhospital= "9" if locationhospital=="n/a"
+				replace secondarydiag  = "2" if secondarydiag =="chik"
+				replace secondarydiag  = "0" if secondarydiag =="same_as_primary"
 				
+				replace rdtresults = "0" if rdtresults =="negative"
+				replace rdtresults = "1" if rdtresults =="positive"
 				foreach var in start end today{
 				gen `var'1 = date(`var', "MDY" ,2050)
 				format %td `var'1 
@@ -426,20 +435,47 @@ destring *, replace
 				rename `var'1 `var'
 				recast int `var'
 				}
-				tab hospitalsite
-replace hospitalsite = "1" if hospitalsite== "obama" 
-replace hccparticipant = "0" if hccparticipant == "no" 
+	
 
-destring *, replace
-tab hccparticipant
-desc hccparticipant
-stop 
-		save "west_AICInitialVersionOdk_DATA_2017-01-24_1054", replace
+foreach var in hospitalname1 {
+replace `var'="1" if strpos(`var', "obama")	
+replace `var'="2" if strpos(`var', "chulaimbo")	
+replace `var'="3" if strpos(`var', "Msambweni")	
+replace `var'="4" if strpos(`var', "ukunda")	
+replace `var'="5" if `var'!="" & `var'!="1" & `var'!="2" & `var'!="3" & `var'!="4"  & `var'!="9"
+}
 
-insheet using "`importwestaic'AICFollowUpVersion15_DATA_2017-01-24_1119.csv", comma clear
+
+foreach var in antimalarial ibuprofen paracetamol urinalysisresult stoolovacyst {
+	replace `var'="0" if `var'=="ceftriaxone0"					
+		replace `var'="0" if `var'=="ceftriaxone01"					
+		replace `var'="0" if `var'=="normal"
+		replace `var'="0" if `var'=="wbcs"
+		replace `var'="0" if `var'=="other"
+		replace `var'="1" if `var'=="ova_or_cysts"
+
+}
+
+foreach var in hospitalname2 hospitalname3 {
+replace `var'="1" if strpos(`var', "obama")	
+replace `var'="2" if strpos(`var', "chulaimbo")	
+replace `var'="3" if strpos(`var', "Msambweni")	
+replace `var'="4" if strpos(`var', "ukunda")	
+replace `var'="5" if `var'!="" & `var'!="1" & `var'!="2" & `var'!="3" & `var'!="4"  & `var'!="9"
+}
+
+destring *, replace 
+tostring heartexamcoded stageofdiseasecoded antibiotic, replace
+dropmiss, force
+dropmiss, force obs
+
+
+save "AICInitialVersionOdk_DATA_west", replace
+
+insheet using "`importwestaic'AICFollowUpVersion15_DATA_2017-01-30_1107_west.csv", comma clear
 				destring *, replace
 	
-	gen dataset = "west_AICFollowUpVersion15_DATA_2017-01-24_1119"
+	gen dataset = "AICFollowUpVersion15_DATA_west"
 				dropmiss, force
 				foreach var of varlist _all{
 					capture rename `var', lower
@@ -458,42 +494,55 @@ insheet using "`importwestaic'AICFollowUpVersion15_DATA_2017-01-24_1119.csv", co
 				recast int `var'
 				}
 				tostring otherhneck heartexamcoded nodeabnormal jointabnormal neuroabnormal , replace
-				destring adenopathy malariabloodsmear antimalarial antiparasitic ibuprofen paracetamol scleralicterus , replace
-				desc adenopathy 
-				tab malariabloods~r 
-		save "west_AICFollowUpVersion15_DATA_2017-01-24_1119", replace
+				
+replace hospitalsite = "1" if strpos(hospitalsite, "obama")
+replace hospitalsite = "2" if strpos(hospitalsite, "chulaimbo")
+replace hospitalsite = "5" if hospitalsite!="" & hospitalsite!="1" & hospitalsite!="2" & hospitalsite!="3" & hospitalsite!="4" & hospitalsite!="9" 
+replace gender = "0" if gender =="male"
+replace gender = "1" if gender =="female"
+tab outcome
+replace outcome = "1" if strpos(outcome, "sent_home")
 
-insheet using "`importwestaic'AICinitialsurveyv191_past_med_history_past_hospitalization_DATA_2017-01-24_1048.csv", comma clear
+replace informantrelation = "2" if informantrelation == "mother" 
+replace informantrelation = "3" if informantrelation == "father" 
+destring *, replace
+drop end
+tostring heartexamcoded antibiotic , replace
+dropmiss, force
+save "AICFollowUpVersion15_DATA_west", replace
+
+insheet using "`importwestaic'AICinitialsurveyv191_DATA_2017-01-30_1042.csv", comma clear
 			destring *, replace
-	gen dataset ="west_AICinitialsurveyv191_past_med_history_past_hospitalization_DATA"
-		save "AICinitialsurveyv191_past_med_history_past_hospitalization_DATA_2017-01-24_1048", replace
+	gen dataset ="AICinitialsurveyv191_DATA"
+	dropmiss, force
+save "AICinitialsurveyv191_DATA", replace
 
 clear
 use "Ukunda HCC Initial 30Nov16" 
-append using  "Msambweni HCC Follow two 06Nov16" "Msambweni HCC Follow three 06Nov16" 
-append using  "coast_hcc_Ukunda_Follow_one _06Nov16"  
-
-append using  "coast_hcc_Ukunda HCC Follow two  06Nov16"  
-append using  "coast_hcc_Ukunda_Follow_three_06Nov16"  
-append using  "west_HCC_Initial" 
-append using  "west_HCC_1st Followup" 
-append using  "west_HCC_2nd Followup" 
-append using  "west_HCC_3rd Followup" 
-append using  "west_HCC_4th Followup"  
-append using  "Msambweni HCC Initial 06Nov16" 
-append using  "Msambweni HCC Follow one 06Nov16"
+append using  "Msambweni HCC Follow two 06Nov16" 
+append using "Msambweni HCC Follow three 06Nov16" 
+append using "coast_hcc_Ukunda_Follow_one _06Nov16"   
+append using "coast_hcc_Ukunda HCC Follow two  06Nov16" 
+append using   "coast_hcc_Ukunda_Follow_three_06Nov16"  
+append using "west_HCC_Initial"  "west_HCC_1st Followup" 
+append using "west_HCC_2nd Followup" 
+append using "west_HCC_3rd Followup" 
+append using "west_HCC_4th Followup"  
+append using "Msambweni HCC Initial 06Nov16"
+append using "Msambweni HCC Follow one 06Nov16"
 save hcc, replace
+
 clear
 use "coast_aicfu_18apr16"  
-append using "AIC Ukunda Malaria"  
-append using "Coast_AIC_Init-Katherine"  
-append using "west_AICInitialVersionOdk_DATA_2017-01-24_1054"  
-append using "west_AICFollowUpVersion15_DATA_2017-01-24_1119" 
-append using "AICinitialsurveyv191_past_med_history_past_hospitalization_DATA_2017-01-24_1048"
+append using "AIC Ukunda Malaria" 
+append using  "Coast_AIC_Init-Katherine"   
+append using "AICInitialVersionOdk_DATA_west"  
+append using "AICFollowUpVersion15_DATA_west"  
+append using "AICinitialsurveyv191_DATA"
 save aic, replace
 
-clear 
-use hcc
+use hcc, clear
+drop end hospitalname2 durationhospitalized2 
 append using aic
 save all_interview, replace 
 
@@ -516,9 +565,12 @@ foreach var of varlist my*{
 			replace studyid = subinstr(studyid, "/", "",.)
 			replace studyid = subinstr(studyid, " ", "",.)
 			replace studyid = studyid_copy if studyid =="" & studyid_copy !=""
+			drop studyid_copy 
 			replace studyid = studyid1 if studyid =="" & studyid1 !=""
+			drop studyid1 
+			tostring studyid2 , replace
 			replace studyid = studyid2 if studyid =="" & studyid2 !=""
-			drop if studyid ==""
+			*drop if studyid ==""
 			
 	bysort  studyid: gen dup_merged = _n 
 	tab dup_merged
@@ -577,21 +629,13 @@ save temp, replace
 	rename siteint site
 
 *clean age variable
-foreach var in interviewdate2 {
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
 
 replace interviewdate = interviewdate2 if interviewdate ==.
 gen agecalc = (interviewdate-dob)/360
-replace age = age2 if age==.
-replace age = childage if age==.
-replace age = agecalc if age==.
-drop age2 childage agecalc
-replace age = round(age)
+replace childage = age2 if childage ==.
+replace childage = agecalc if childage ==.
+drop age2 agecalc
+replace childage = round(childage)
 replace agemonths = round(agemonths)
 
 *clean city and site vars
@@ -617,10 +661,15 @@ tostring visit, replace
 
 gen studyid_all =""
 order studyid_all 
-foreach id in studyid studyid_copy studyid1 studyid2{
+drop studyid2 
+order studyid id
+
+foreach id in i studyid id{
 	replace studyid_all= `id' if studyid_all ==""
+	replace studyid_all= `id' if studyid_all =="."
 	drop `id'
 }
+sort studyid_all
 rename studyid_all studyid
 replace studyid = subinstr(studyid, "/", "",.)
 
