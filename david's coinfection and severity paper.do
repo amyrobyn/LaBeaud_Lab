@@ -15,8 +15,10 @@ log using "R01_nov2_16.smcl", text replace
 set scrollbufsize 100000
 set more 1
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
-use all_interviews, clear
+use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
 *add in the pcr data from box and from googledoc. 
+bysort id_wide visit: gen dup = _n
+drop id_childnumber 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
 		replace denvpcrresults_dum = 1 if denvpcrresults_dum>0&denvpcrresults_dum<1
 		save elisas_PCR_RDT, replace	
@@ -24,12 +26,10 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\dav
 
 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016\malaria"
+replace cohort = id_cohort if cohort ==""
 keep if visit == "a" & cohort =="f"
 
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
-
 **************david's severity models*************	
-*use denvchikvmalariagps, clear
 gen davidcoinfection =.
 		foreach studyid in kfa0247 cfa00161 kfa00242 kfa00247 kfa00248 kfa00261 kfa00275 kfa00298 cfa00303 cfc00305 kfa00291 cfa00325 cfc00272 cfa00119 cfa00169 cfa00342 cfa00151 cfa00187 cfa00275 cfa00296 cfa00006 cfa00201 cfa00241 cfa00247 kfa00189 kfa00204 kfa00337 cfa00196 cfa00205 cfa00211 cfa00246 cfa00248 cfa00256 cfa00257 cfa00265 cfa00273 cfa00313 cfa00340 rfa00496 cfa00193 cfa00200 cfa00210 cfa00236 cfa00243 cfa00268 cfa00271 cfa00300 cfa00348 cfa00385 kfa00185 kfa00202 kfa00342 cfa00010 kfa00009 rfa00460 cfa00326 cfa00362 cfa00364 rfa00475 cfa00349 cmba0408 rfa00462 cfa00135 cfa00245 cfa00383 kfa00217 kfa00277 kfc00184 rfa00469 kfa0247 cfa0161 kfa0242 kfa0247 kfa0248 kfa0261 kfa0275 kfa0298 cfa0303 cfc0305 kfa0291 cfa0325 cfc0272 cfa0119 cfa0169 cfa0342 cfa0151 cfa0187 cfa0275 cfa0296 cfa006 cfa0201 cfa0241 cfa0247 kfa0189 kfa0204 kfa0337 cfa0196 cfa0205 cfa0211 cfa0246 cfa0248 cfa0256 cfa0257 cfa0265 cfa0273 cfa0313 cfa0340 rfa0496 cfa0193 cfa020 cfa0210 cfa0236 cfa0243 cfa0268 cfa0271 cfa030 cfa0348 cfa0385 kfa0185 kfa0202 kfa0342 cfa0010 kfa009 rfa0460 cfa0326 cfa0362 cfa0364 rfa0475 cfa0349 cmba0408 rfa0462 cfa0135 cfa0245 cfa0383 kfa0217 kfa0277 kfc0184 rfa0469 {
 			replace davidcoinfection = 1 if studyid=="`studyid'"
@@ -42,7 +42,7 @@ gen davidcoinfection =.
  rename othcurrentsymptoms othersymptms 
  rename feversymptoms fvrsymptms
  rename othfeversymptoms otherfvrsymptms
- egen all_symptoms = concat(symptms othersymptms fvrsymptms otherfvrsymptms) 
+ egen all_symptoms = concat(symptms othersymptms) 
 
 		foreach var of varlist all_symptoms { 			
 		replace `var'= subinstr(`var', " ", "_",.)
@@ -224,15 +224,12 @@ foreach studyid in "cf236" "kf337" "kf185" "cf256" "kfc184" "kf204" "kf202" "cf2
 replace davidcoinfection2 = 1 if id_wide== "`studyid'"
 }
 
-*preserve 
-keep davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
-order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
+preserve 
+		keep davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
+		order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
+		sort davidcoinfection2
+restore
 
-sort davidcoinfection2
-
-stop 
-
-*restore
 replace outcomehospitalized = . if outcomehospitalized ==8
 bysort group: tab symptomcount outcomehospitalized , chi2      
 bysort group: sum symptomcount outcomehospitalized , detail
@@ -253,6 +250,11 @@ graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
 graph export symptmsbygroup.tif,  width(4000) replace
 
 * clean age
+replace age_calc = round(age_calc)
+replace childage = age_calc if childage ==.
+replace childage = age_months/12 if childage ==.
+drop age_calc
+rename childage age
 replace age =. if age <0 | age>18
 
 *temperature
@@ -311,8 +313,7 @@ estout m1 m2 m3, eform cells(b(star fmt(3)) se(par fmt(2)))   ///
 
 encode city, gen(city_s)
 *two step models. assuming you are malaria or dengue positive, are you hospitalized
-dropmiss, force
-logit outcomehospitalized group age gender i.city_s all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever all_symptoms_seizure all_symptoms_itchiness all_symptoms_bloody_urine all_symptoms_bloody_stool all_symptoms_bloody_vomit all_symptoms_bleeding_gums all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_red_eyes all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_bruises all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_runny_nose all_symptoms_other all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain, or
-logit selected age gender i.city_s, or
-heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
-*mumeduclevel everhospitalised childtravel
+	dropmiss, force
+	logit outcomehospitalized group age gender i.city_s all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever all_symptoms_seizure all_symptoms_itchiness all_symptoms_bloody_urine all_symptoms_bloody_stool all_symptoms_bloody_vomit all_symptoms_bleeding_gums all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_red_eyes all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_bruises all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_runny_nose all_symptoms_other all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain, or
+	logit selected age gender i.city_s, or
+	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
