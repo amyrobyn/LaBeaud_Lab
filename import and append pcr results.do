@@ -1,6 +1,5 @@
 cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper"
-import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\West_PCR_Database and Summaries_jan_23_2017.xls", sheet("West PCR Database") firstrow clear
-
+import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\PCR Database_01Feb2017.xlsx", sheet("Sheet1") firstrow clear
 /*
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR database 05-27-16.xlsx", sheet("Kenya Site PCR Results") cellrange(A2:H2941) firstrow clear
 gen dataset = "05-27-16 Kenya Site PCR Results"

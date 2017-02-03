@@ -2,14 +2,16 @@
  *amy krystosik                  					*
  *coastalcities*
  *lebeaud lab               				        *
- *last updated august 8, 2016  						*
+ *last updated feb 2, 2017							*
  ***************************************************/
-cd "C:\Users\Amy\Downloads\elysse coastal village map\elysse coastal village map"
+*here is where your data is stored and your output is sent
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\elysse coastal village map"
 capture log close 
 log using "use coastal_9_8_16.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
+*import merged datafile. 
 use coastal, clear
 replace Age = age if Age ==.
 
@@ -158,6 +160,34 @@ restore
 table1, vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages_total.xls", replace) test missing
 table1, by(rvfvelisa) vars(age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillages.xls", replace) test missing
 
+
 export excel using "coastal villages", firstrow(variables) replace
 
-tabout  ses_index_sum_pct mosq_index_sum_pct yf educ_int gender tribe_int village_elisa using rowpercent.xls,  replace c(freq row) show(all)
+*tabout  ses_index_sum_pct mosq_index_sum_pct yf educ_int gender tribe_int village_elisa using rowpercent.xls,  replace c(freq row) show(all)
+
+*paper edits feb 2
+
+gen adult = .
+replace adult = 0 if age <18
+replace adult = 1 if age >=18
+
+gen female = . 
+replace female =1 if sex=="female"
+replace female =0 if sex=="male"
+encode village, gen(villagestring)
+
+rename land_index ownland2
+rename sesindexmotorvehicle  ownmoterbike
+
+destring *, replace
+
+*here are two options for your logistic regression
+logit rvfvelisa ownland2 ownmoterbike i.villagestring female adult, or 
+outreg2 using logit1.xls, replace
+
+logit rvfvelisa  i.villagestring female age ses_index_sum_pct mosq_index_sum_pct educ_int , or
+outreg2 using logit1.xls, append
+
+*here is your table 1
+table1, by(rvfvelisa) vars(ownland2 cat \ ownmoterbike cat \ villagestring cat \ female cat \ adult cat \age conts \ses_index_sum_pct cate \mosq_index_sum_pct cate \yf cate \educ_int cate \gender cate \tribe_int cate \) saving("table1_coastalvillagesfeb2.xls", replace) test missing
+

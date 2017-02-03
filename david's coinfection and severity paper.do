@@ -244,10 +244,10 @@ replace selected = 1 if dmcoinf==1
 dropmiss, force
 bysort group: sum  all_symptoms*
 
-table1, vars(all_symptoms_anaemia cat \ all_symptoms_seizure cat \ all_symptoms_itchiness cat \ all_symptoms_bloody_urine cat \ all_symptoms_bloody_stool cat \ all_symptoms_bloody_vomit cat \ all_symptoms_bleeding_gums cat \ all_symptoms_sore_throat cat \ all_symptoms_sens_eyes cat \ all_symptoms_earache cat \ all_symptoms_red_eyes cat \ all_symptoms_funny_taste cat \ all_symptoms_imp_mental cat \ all_symptoms_bruises cat \ all_symptoms_bloody_nose cat \ all_symptoms_rash cat \ all_symptoms_dysuria cat \ all_symptoms_runny_nose cat \ all_symptoms_other cat \ all_symptoms_loss_of_appetite cat \ all_symptoms_nausea cat \ all_symptoms_cough cat \ all_symptoms_pain_behind_eyes cat \ all_symptoms_bone_pains cat \ all_symptoms_body_aches cat \ all_symptoms_abdominal_pain cat \ all_symptoms_feeling_sick cat \ all_symptoms_muscle_pains cat \ all_symptoms_joint_pains cat \ all_symptoms_diarrhea cat \ all_symptoms_vomiting cat \ all_symptoms_headache cat \ all_symptoms_fever cat \) by(group) saving("table1_symptoms_by_group.xls", replace ) missing test
+table1, vars(all_symptoms_anaemia cat \ all_symptoms_seizure cat \ all_symptoms_itchiness cat \ all_symptoms_bloody_urine cat \ all_symptoms_bloody_stool cat \ all_symptoms_bloody_vomit cat \ all_symptoms_bleeding_gums cat \ all_symptoms_sore_throat bin\ all_symptoms_sens_eyes cat \ all_symptoms_earache cat \ all_symptoms_red_eyes cat \ all_symptoms_funny_taste cat \ all_symptoms_imp_mental cat \ all_symptoms_bruises cat \ all_symptoms_bloody_nose cat \ all_symptoms_rash bin\ all_symptoms_dysuria cat \ all_symptoms_runny_nose bin\ all_symptoms_other cat \ all_symptoms_loss_of_appetite bin\ all_symptoms_nausea bin\ all_symptoms_cough bin\ all_symptoms_pain_behind_eyes cat \ all_symptoms_bone_pains cat \ all_symptoms_body_aches bin\ all_symptoms_abdominal_pain bin\ all_symptoms_feeling_sick bin\ all_symptoms_muscle_pains bin\ all_symptoms_joint_pains bin\ all_symptoms_diarrhea bin\ all_symptoms_vomiting bin\ all_symptoms_headache bin\ all_symptoms_fever bin\) by(group) saving("table1_symptoms_by_group.xls", replace ) missing test
 order all_symptoms_*
-graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
-graph export symptmsbygroup.tif,  width(4000) replace
+*graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
+*graph export symptmsbygroup.tif,  width(4000) replace
 
 * clean age
 replace age_calc = round(age_calc)
@@ -262,28 +262,25 @@ replace temperature = 38.5 if temperature ==385
 
 replace scleralicterus = sclerallcterus if scleralicterus  ==.
 
-table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ season cat \ heartrate conts \ scleralicterus bin \ splenomegaly  bin \ all_symptoms_joint_pains  bin \ all_symptoms_altms bin \) by(group) saving("table2_by_group.xls", replace ) missing test 
+table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heartrate conts \ scleralicterus cat \ splenomegaly  cat \ all_symptoms_joint_pains  cat\ all_symptoms_altms cat\) by(group) saving("table2_by_group.xls", replace ) missing test 
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
 bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
-rename numbermalaria~s  repeatmalaria
-bysort group: sum malariapositive_dum ovaparasites repeatmalaria outcomehospitalized durationhospitalized1 durationhospitalized2 numhospitalized   consecutivemalariapos 
-table1 , vars( \malariapositive_dum cat \ ovaparasites bin \ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
-*repeatmalaria bin \ 
-tab gametocytes3 group
 
-bysort group: sum gametocytes3 ovaparasites repeatmalaria outcomehospitalized 
+*table1 , vars( \malariapositive_dum cat \ ovaparasites cat\ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
+*repeatmalaria bin \ 
+tab gametocytes group
+
+*bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
 outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
 
 foreach result in malariaresults rdtresults bsresults{
 tab `result' malariapositive_dum, m
 }
-tab labtests malariabloodsmear 
-rename malariabloodsmear malariabloodsmeardone2
-replace malariabloodsmeardone = malariabloodsmeardone2 if malariabloodsmeardone ==.  
 
+tab labtests malariabloodsmear 
 sum malariapositive malariapositive_dum 
 
 *logit model for severity
@@ -316,4 +313,4 @@ encode city, gen(city_s)
 	dropmiss, force
 	logit outcomehospitalized group age gender i.city_s all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever all_symptoms_seizure all_symptoms_itchiness all_symptoms_bloody_urine all_symptoms_bloody_stool all_symptoms_bloody_vomit all_symptoms_bleeding_gums all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_red_eyes all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_bruises all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_runny_nose all_symptoms_other all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain, or
 	logit selected age gender i.city_s, or
-	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
+*	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )

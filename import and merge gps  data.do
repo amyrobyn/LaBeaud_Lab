@@ -1,4 +1,4 @@
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography"
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Msambweni_coordinates complete Nov 21 2016.xls", sheet("Sheet1") firstrow clear
 gen dataset = "Msambweni_demography"
@@ -35,7 +35,6 @@ save xy3, replace
 tostring toilet_latrine latrine_location latrine_distance , replace 
 
 append using xy1 xy2
-save xy, replace
 
 gen houseid  = house
 replace houseid = house_number if houseid==. & house_number!=.

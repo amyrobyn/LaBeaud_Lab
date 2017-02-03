@@ -1,14 +1,18 @@
+/**************************************************************
+ *amy krystosik                  							  *
+ *malaria data import and clean*
+ *lebeaud lab               				        		  *
+ *last updated feb2, 2017  							  		  *
+ **************************************************************/ 
+
+log using "malaria  data.smcl", text replace 
 capture log close 
 set scrollbufsize 100000
 set more 1
 
-log using "malaria  data.smcl", text replace 
-set scrollbufsize 100000
-set more 1
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016"
 
-cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016"
-
-insheet using "AIC Ukunda malaria data April 2016.csv", comma name clear
+import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\AIC Ukunda malaria data April 2016.xls", sheet("Ukunda") firstrow clear
 		gen dataset = "AIC Ukunda malaria data April 2016"
 		rename *, lower
 		ds, has(type string) 
@@ -38,8 +42,8 @@ insheet using "AIC Ukunda malaria data April 2016.csv", comma name clear
 		reshape wide  countul1, j(spp1) i(studyid1) string
 		reshape wide  countul2, j(spp2) i(studyid1) string
 
-		replace countul1ni= subinstr(countul1ni, ",", "",.)
-		replace countul1none = subinstr(countul1none , ",", "",.)
+		*replace countul1ni= subinstr(countul1ni, ",", "",.)
+		*replace countul1none = subinstr(countul1none , ",", "",.)
 		destring _all, replace
 		egen pf200 = rowtotal(countul1pf countul2pf)
 		egen pm200 = rowtotal(countul1pm )
@@ -53,7 +57,7 @@ insheet using "AIC Ukunda malaria data April 2016.csv", comma name clear
 		rename studyid1 studyid
 save Ukunda, replace
 
-insheet using "AICA Msambweni Malaria Data2016.csv", comma name clear
+import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\AICA Msambweni Malaria Data2016.xls", sheet("Msambweni data") firstrow clear
 		gen dataset = "AICA Msambweni Malaria Data2016"
 		rename *, lower
 		ds, has(type string) 
@@ -69,11 +73,11 @@ insheet using "AICA Msambweni Malaria Data2016.csv", comma name clear
 		replace spp2= subinstr(spp2, "/", "_",.)
 		reshape wide  countul2, j(spp2) i(studyid1) string
 
-		replace countul1ni= subinstr(countul1ni, ",", "",.)
-		replace countul1none = subinstr(countul1none , ",", "",.)
-		replace countul1pf = subinstr(countul1pf  , ",", "",.)
-		replace countul2pf = subinstr(countul2pf  , ",", "",.)
-		replace countul1po = subinstr(countul1po , ",", "",.)
+		*replace countul1ni= subinstr(countul1ni, ",", "",.)
+		*replace countul1none = subinstr(countul1none , ",", "",.)
+*		replace countul1pf = subinstr(countul1pf  , ",", "",.)
+*		replace countul2pf = subinstr(countul2pf  , ",", "",.)
+*		replace countul1po = subinstr(countul1po , ",", "",.)
 
 		destring _all, replace
 		egen pf200 = rowtotal(countul1pf countul2pf)
@@ -106,8 +110,8 @@ insheet using "AICA Msambweni Malaria Data2016.csv", comma name clear
 
 save Msambweni, replace
 
-foreach dataset in "AIC CHULAIMBO MALARIA" "AIC OBAMA MALARIA" "Mbaka Oromo" "HCC Kisumu" "HCC Chulaimbo"{
-		import excel "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016\Malaria Parasitemia Data.xls", sheet(`dataset') firstrow clear
+foreach dataset in "Obama" "Chulaimbo-Mbaka_Oromo"{
+		import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\west\West AIC Malaria Parasitemia Data.xls", sheet(`dataset') firstrow clear
 		gen dataset ="`dataset'"
 
 		rename *, lower
@@ -150,7 +154,7 @@ save "`dataset'", replace
 }
 
 foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
-		import excel "West HCC_Malaria Parasitemia Data_07oct2016.xlsx", sheet(`dataset') firstrow clear
+		import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\west\West HCC_Malaria Parasitemia Data_07oct2016.xlsx", sheet(`dataset') firstrow clear
 		gen dataset ="`dataset'"
 
 		rename *, lower
@@ -181,7 +185,7 @@ save `dataset', replace
 }
  
 
-append using "Ukunda" "Msambweni" "AIC CHULAIMBO MALARIA" "AIC OBAMA MALARIA" "Mbaka Oromo" "HCC Kisumu" "HCC Chulaimbo" "1stFU" "2ndFU" "Initial" , gen(append)
+append using "Ukunda" "Msambweni" "1stFU" "2ndFU" "Initial" , gen(append)
 
 encode gender, gen(sex)
 drop gender
@@ -288,4 +292,5 @@ replace studyid = subinstr(studyid, "*", "",.)
 replace studyid = subinstr(studyid, "-", "",.)
 
 drop if studyid =="" & id_wide ==""
+drop id_childnumber
 save malaria, replace

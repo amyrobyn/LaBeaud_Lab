@@ -720,8 +720,9 @@ foreach id in studyid id{
 rename studyid_all studyid
 
 bysort studyid: gen dup = _n
+*outsheet using dup.csv if dup>1, comma replace names
+
 drop if dup>1
-stop 
 merge 1:1 studyid using "AIC Ukunda Malaria" 
 save aic, replace
 
@@ -830,10 +831,9 @@ replace city ="c" if city =="h"
 						replace city  = "Ukunda" if city == "u"
 						replace city  = "Milani" if city == "l"
 						replace city  = "Nganja" if city == "g"
-					gen westcoast= "." 
-						replace westcoast = "Coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
-						replace westcoast = "West" if city =="Chulaimbo"|city =="Kisumu"
-					encode westcoast, gen(site)			
+					gen site= "." 
+						replace site= "coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
+						replace westcoast = "west" if city =="Chulaimbo"|city =="Kisumu"	
 
 tab id_visit visit, m
 replace visit = id_visit if visit ==""
@@ -847,4 +847,35 @@ ds, has(type string)
 				replace `v' = lower(`v') 
 			}
 drop dup _merge
+
+		
+		replace hivresult = "0" if hivresult =="non_reactive"
+		
+		gen hivtest = . 
+		replace hivtest =1 if strpos(labtests, "hiv") & hivtest ==.
+		replace hivtest =1 if strpos(labtestsother, "hiv") & hivtest ==.
+		replace hivtest =1 if strpos(othlabtests, "hiv") & hivtest ==.
+
+		gen hivpastmedhist = .
+		replace hivpastmedhist= 1 if strpos(pastmedhist, "hiv") 
+		
+
+		egen meds = concat(medsprescribe meds_prescribed meds_prescribed_other othcurrentmeds)
+
+		gen hivmeds = .
+		replace hivmeds= 1 if strpos(meds , "anti-retrovirals") 
+		replace hivmeds= 1 if strpos(meds , "arvs") 
+		replace hivmeds = 1 if strpos(meds , "arv") & hivresult ==""
+
+		gen pcpdrugs = . 
+		replace pcpdrugs=  1 if strpos(meds , "cotrimoxazole")  
+		replace pcpdrugs=  1 if strpos(meds , "bactrim") & hivresult ==""
+		replace pcpdrugs=  1 if strpos(meds , "septrin") & hivresult ==""
+	
+
+		sum pcpdrugs hivmeds hivpastmedhist hivtest hivresult 
+		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
+		tab `v'
+		}
+
 save all_interviews, replace
