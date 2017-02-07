@@ -174,7 +174,9 @@ replace adult = 1 if age >=18
 gen female = . 
 replace female =1 if sex=="female"
 replace female =0 if sex=="male"
+
 encode village, gen(villagestring)
+bysort rvfvelisa: tab village villagestring , nolab
 
 rename land_index ownland2
 rename sesindexmotorvehicle  ownmoterbike

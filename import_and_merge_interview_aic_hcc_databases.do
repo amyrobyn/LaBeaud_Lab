@@ -810,8 +810,19 @@ save temp, replace
 	rename siteint site
 
 *clean age variable
-
+foreach var in interview_date {
+				gen `var'1 = date(`var', "MDY" ,2050)
+				format %td `var'1 
+				drop `var'
+				rename `var'1 `var'
+				recast int `var'
+				}
+				
 replace interviewdate = interviewdate2 if interviewdate ==.
+replace interviewdate = interview_date if interviewdate ==.
+replace interviewdate = today if interviewdate ==.
+
+
 gen agecalc = (interviewdate-dob)/360
 replace childage = age2 if childage ==.
 replace childage = agecalc if childage ==.
@@ -833,7 +844,7 @@ replace city ="c" if city =="h"
 						replace city  = "Nganja" if city == "g"
 					gen site= "." 
 						replace site= "coast" if city =="Msambweni"|city =="Ukunda"|city =="Milani"|city =="Nganja"
-						replace westcoast = "west" if city =="Chulaimbo"|city =="Kisumu"	
+						replace site = "west" if city =="Chulaimbo"|city =="Kisumu"	
 
 tab id_visit visit, m
 replace visit = id_visit if visit ==""

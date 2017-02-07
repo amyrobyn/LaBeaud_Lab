@@ -62,8 +62,8 @@ drop `var'
 rename `var'int `var'
 }
 
-gen site = .
-replace site = 2 if dataset =="west_demography"
-replace site = 3 if dataset =="ukunda_demography"
-replace site = 3 if dataset =="Msambweni_demography"
+gen site = ""
+replace site = "West" if dataset =="west_demography"
+replace site = "Coast" if dataset =="ukunda_demography"
+replace site = "Coast" if dataset =="Msambweni_demography"
 save xy, replace
