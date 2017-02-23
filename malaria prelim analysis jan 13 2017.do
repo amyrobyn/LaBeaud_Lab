@@ -10,9 +10,15 @@ set scrollbufsize 100000
 set more 1
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016"
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
+tab city, m
+tab visit , m
+
 *merge with elisa data
 drop id_childnumber
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\feb1 2017\elisas.dta"
+tab city, m
+tab visit , m
+
 rename _merge interview_elisa_match
 drop if rdtresults ==. & chikvigg_ =="" & denvigg_ =="" & stanforddenvigg ==""  & stanfordchikvigg =="" & interview_elisa_match ==1|interview_elisa_match ==2
 *add in the pcr data from box and from googledoc. 
@@ -22,14 +28,7 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\dav
 		rename _merge interview_elisa_pcr_match
 
 
-
-*outsheet using " mergedjan42017.csv", comma names replace
-
 ***merge with lab malaria data
-
-
-*drop bs* malaria* rdt species
-
 destring _all, replace
 ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
@@ -40,9 +39,27 @@ dropmiss, force
 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
 order malaria*
-
 destring _all, replace 
 sum malaria* stanford*
+
+*take visit out of id
+									forval i = 1/3 { 
+
+										gen id`i' = substr(studyid, `i', 1) if city ==""|cohort ==""
+									}
+			*gen id_wid without visit						 
+				replace city  = id1 if city ==""
+				replace cohort = id2 if cohort==""
+				replace visit = id3 if visit ==""
+
+				
+replace city = "chulaimbo" if city =="r"
+replace city = "chulaimbo" if city =="c"
+replace city = "kisumu" if city =="k"
+replace city = "ukunda" if city =="u"
+replace city ="msambweni" if city =="m" 
+replace city ="msambweni" if city ==" msambweni" 
+
 bysort city: sum malaria* stanford*
 bysort city: tab malariapositive_dum
 list if id_wide == "" | visit == ""
@@ -272,7 +289,7 @@ save malariadenguemerged, replace
 
 ***
 **create village and house id so we can merge with gis points
-
+/*
 gen villageid=""
 replace villageid = substr(id_wide, +1, 1)
 replace villageid = "1" if villageid =="c"
@@ -280,34 +297,45 @@ replace villageid = "1" if villageid =="r"
 
 replace villageid = "2" if villageid =="k"
 
-replace villageid = "?" if villageid =="u"
+replace villageid = "4" if villageid =="u"
 
 replace villageid = "3" if villageid =="g"
 replace villageid = "4" if villageid =="l"
 destring villageid, replace
+*/
 
 replace cohort = id_cohort if cohort ==""
+
 gen houseid2 = ""
-replace houseid2 = substr(id_wide, -6, 3) if cohort =="c"
-destring houseid2 , replace force
+replace houseid2 = substr(id_wide, 3, . ) 
+destring houseid2 , replace force 
+tostring houseid2, replace
+replace houseid2= reverse(houseid2)
+replace houseid2 = substr(houseid2, 4, . ) 
+replace houseid2= reverse(houseid2)
+destring houseid2, replace 
+list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=.
+count if houseid2 != houseid & houseid!=.
+
+order studyid houseid houseid2 city
+destring houseid houseid2  city, replace 
 replace houseid = houseid2 if houseid==. & houseid2!=.
+order studyid houseid city
+tab houseid, m
 
 destring houseid, replace
 gen houseidstring = string(houseid ,"%04.0f")
 drop houseid houseid2
 rename houseidstring  houseid
 order houseid
-
-order studyid houseid villageid
-
-destring houseid villageid, replace force
-*replace these when i get the villgae id's
-
+destring houseid , replace force
 rename gametocytes gametocytes3
 rename parasitelevel parasitelevel2
 rename studyid studyid3
 
 rename *, lower
+tab city
+replace city ="msambweni" if city =="m" 
 save malariadenguemerged, replace
  
 *****************merge with gis points
@@ -315,17 +343,19 @@ save malariadenguemerged, replace
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\xy", clear
 replace gps_house_latitude = y if gps_house_latitude==.
 replace gps_house_latitude = x if gps_house_longitude==.
-keep if gps_house_latitude!=. & gps_house_longitude!=.
 
-collapse (firstnm) gps_house_longitude  gps_house_latitude, by(site villageid houseid)
+collapse (firstnm) gps_house_longitude  gps_house_latitude, by(city houseid)
 destring _all, replace
 outsheet using "xy.csv", comma names replace
-merge m:m site villageid houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malariadenguemerged"
-rename _merge housegps
 
-replace city = "Chulaimbo" if city =="c"
-replace city = "Kisumu" if city =="k"
-replace city = "Ukunda" if city =="u"
+merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malariadenguemerged"
+rename _merge housegps
+drop if housegps ==1
+tab housegps cohort
+
+replace city = "chulaimbo" if city =="c"
+replace city = "kisumu" if city =="k"
+replace city = "ukunda" if city =="u"
 
 *check with david to make sure this is true...
 save denvchikvmalariagps, replace
@@ -346,10 +376,8 @@ ds, has(type string)
 		rename `var', lower
 	}		
 	
-replace city = "chulaimbo" if city =="r"
-replace city = "chulaimbo" if city =="c"
-replace city = "kisumu" if city =="k"
-replace city = "ukunda" if city =="w"
+
+
 replace city = "chulaimbo" if studyid =="cca0430005"|studyid=="cca0723003"
 
 replace id_cohort ="aic" if id_cohort =="f"
@@ -378,6 +406,7 @@ sum `var'
 label var numbermalariainfections ""
 
 *take visit out of id
+drop id1 id2 id3
 									forval i = 1/3 { 
 
 										gen id`i' = substr(studyid, `i', 1) if city ==""|cohort ==""
@@ -387,10 +416,18 @@ label var numbermalariainfections ""
 				replace cohort = id2 if cohort==""
 				replace visit = id3 if visit ==""
 				
+replace city = "chulaimbo" if city =="r"
+replace city = "chulaimbo" if city =="c"
+replace city = "kisumu" if city =="k"
+replace city = "ukunda" if city =="w"
+replace city = "ukunda" if city =="u"
+
 replace cohort ="aic" if cohort =="f"
 replace city ="chulaimbo" if city =="c"
 replace city ="chulaimbo" if city =="r"
-replace city =" msambweni" if city =="m" 
+replace city ="msambweni" if city =="m" 
+
+
 
 foreach var in anobmalaria malariapos_ab malariapos_bc malariapos_cd malariapos_de malariapos_ef malariapos_fg malariapos_gh{
 label var `var' ""
@@ -405,8 +442,11 @@ tab `var'
 
 replace gender = gender - 1 if dataset =="aica msambweni malaria data2016"
 replace gender = gender - 1 if dataset =="aic ukunda malaria data april 2016"
+tab dataset gender
 
+stop 
 replace city = "kisumu" if city =="k"
+
 replace city =trim(city)
 
  *ab positive
@@ -417,7 +457,7 @@ table1 , vars( cohort cat \ gender cat\ childage conts\ city cat \  malariaposit
 restore
 
 
- *ab positive
+*ab positive
 preserve
 keep if malariapos_ab ==1
 table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_abpos_malaria.xls", replace ) missing test 
@@ -431,13 +471,11 @@ restore
 
 *aic a visit
 preserve
+egen malariapositive_dum_city = concat(malariapositive_dum city)
 keep if cohort =="aic"
 keep if visit =="a"
 table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("table1_aic_a_malaria.xls", replace ) missing test 
-
-keep if malariapositive_dum==1
-*table1 , vars( malariapositive_dum  cat\ gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ ) by(outcomehospitalized) saving("table1_aic_a_outcomehospitalized.xls", replace ) missing test 
-*table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\) by(outcomehospitalized) saving("table1_aic_a_outcomehospitalized_malariapos.xls", replace ) missing test 
+table1 , vars( gender cat\ childage conts\ malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum_city ) saving("table1_aic_a_malaria_bycity.xls", replace ) missing test 
 restore
 
 *hcc a visit

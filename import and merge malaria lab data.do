@@ -4,9 +4,8 @@
  *lebeaud lab               				        		  *
  *last updated feb2, 2017  							  		  *
  **************************************************************/ 
-
-log using "malaria  data.smcl", text replace 
 capture log close 
+log using "malaria  data.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
@@ -185,7 +184,7 @@ save `dataset', replace
 }
  
 
-append using "Ukunda" "Msambweni" "1stFU" "2ndFU" "Initial" , gen(append)
+append using "Ukunda" "Msambweni" "1stFU" "2ndFU" "Initial" "Obama" "Chulaimbo-Mbaka_Oromo", gen(append)
 
 encode gender, gen(sex)
 drop gender
@@ -205,6 +204,7 @@ replace studyid = subinstr(studyid, "*", "",.)
 						}
 *gen id_wid without visit						 
 	rename id1 city  
+	tab city
 	rename id2 id_cohort 
 	rename id3 visit
 	tab visit
@@ -223,10 +223,11 @@ gen suffix = ""
 	replace suffix = "b" if strpos(id_childnumber, "b")
 	replace id_childnumber = subinstr(id_childnumber, "b","", .)
 
-destring id_childnumber, replace 	
+destring id_childnumber, replace 
 
 	order id_cohort city visit id_childnumber studyid
 	egen id_wide = concat(city id_cohort id_childnum suffix)
+	
 drop suffix
 
 	
@@ -293,4 +294,13 @@ replace studyid = subinstr(studyid, "-", "",.)
 
 drop if studyid =="" & id_wide ==""
 drop id_childnumber
+tab city
+
+
+replace city ="chulaimbo" if city =="c"
+replace city = "kisumu" if city =="k"
+replace city ="msambweni" if city =="m" 
+replace city = "ukunda" if city =="w"
+replace city = "ukunda" if city =="u"
+
 save malaria, replace

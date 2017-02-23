@@ -1,9 +1,9 @@
-/**************************************************************
- *amy krystosik                  							  *
- *R01 results and discrepencies by strata (lab, antigen, test)*
- *lebeaud lab               				        		  *
- *last updated Jan 5, 2016  							  *
- **************************************************************/ 
+/********************************************************************
+ *amy krystosik                  							  		*
+ *david coinfection by denv pcr and malaria microscopy, AIC visit A	*
+ *lebeaud lab               				        		  		*
+ *last updated feb 21, 2017  							  			*
+ ********************************************************************/ 
 capture log close 
 log using "david_coinfection_severity.smcl", text replace 
 set scrollbufsize 100000
@@ -20,23 +20,102 @@ use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interv
 bysort id_wide visit: gen dup = _n
 drop id_childnumber 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
-		replace denvpcrresults_dum = 1 if denvpcrresults_dum>0&denvpcrresults_dum<1
+		*replace denvpcrresults_dum = 1 if denvpcrresults_dum>0 & denvpcrresults_dum<.
 		save elisas_PCR_RDT, replace	
 		rename _merge interview_elisa_pcr_match
 
 
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\malaria prelim data dec 29 2016\malaria"
+merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
 replace cohort = id_cohort if cohort ==""
 keep if visit == "a" & cohort =="f"
 
+drop _merge
+replace hb = hb_result if hb==.
+drop hb_result 
+
+
+gen sex = "sex"
+gen age = "age"
+replace childage  = age_calc if childage ==.
+replace childage = round(childage)
+egen agegender = concat(age childage sex gender)
+count if strpos(agegender, ".")
+drop if strpos(agegender, ".")
+merge m:1 agegender using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\normal_population_aic_b"
+drop if childage>18
+
+drop heart_rate 
+rename heartrate heart_rate 
+replace childheight = child_height if childheight ==.
+drop child_height 
+replace childweight = child_weight if childweight ==.
+drop child_weight 
+
+replace headcircum  = head_circumference if headcircum  ==.
+drop head_circumference 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate { 
+		replace `var'= . if `var'==999
+		gen z`var'=.
+}
+
+foreach var in childweight childheight hb headcirc{ 
+		replace `var'= . if `var'==999
+		replace `var'= . if `var'==0		
+}
+
+*ask david about these
+replace systolicbp = systolicbp/10 if systolicbp >200
+replace temperature = temperature/10 if temperature >50
+replace childheight = childheight/10 if childheight >500
+replace childheight = childheight *10 if childheight <20
+replace childweight=childweight/10 if childweight>200
+
+
+	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+		replace `var'=. if `var'==0
+	}
+
+	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+		replace `var'=. if `var'<15
+	}
+	
+levelsof agegender, local(levels) 
+foreach l of local levels {
+	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+	replace z`var' = (`var' - median`var'`l')/sd`var'`l' if agegender=="`l'"  
+	}
+}
+sum z*
+sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight childheight  resprate hb  headcircum  
+sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight childheight  resprate hb  headcircum  , d
+sum z*, d
+
+
+*add in doctor visit bs and rdt result
+gen malariapositive_dum2 = malariapositive_dum  
+replace malariapositive_dum2 =1 if bsresult > 0 & bsresult <. & malariapositive_dum2 ==.
+replace malariapositive_dum2 =1 if rdtresult > 0 & rdtresult <. & malariapositive_dum2  ==.
+tab malariapositive_dum2 malariapositive_dum, m 
+
+tab denvpcrresults_dum malariapositive_dum, m 
+tab denvpcrresults_dum malariapositive_dum2, m 
+
+gsort -denvpcrresults_dum 
+
+bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malariapositive_dum2 ==1 |denvpcrresults_dum ==1, clean
+
 **************david's severity models*************	
 gen davidcoinfection =.
-		foreach studyid in kfa0247 cfa00161 kfa00242 kfa00247 kfa00248 kfa00261 kfa00275 kfa00298 cfa00303 cfc00305 kfa00291 cfa00325 cfc00272 cfa00119 cfa00169 cfa00342 cfa00151 cfa00187 cfa00275 cfa00296 cfa00006 cfa00201 cfa00241 cfa00247 kfa00189 kfa00204 kfa00337 cfa00196 cfa00205 cfa00211 cfa00246 cfa00248 cfa00256 cfa00257 cfa00265 cfa00273 cfa00313 cfa00340 rfa00496 cfa00193 cfa00200 cfa00210 cfa00236 cfa00243 cfa00268 cfa00271 cfa00300 cfa00348 cfa00385 kfa00185 kfa00202 kfa00342 cfa00010 kfa00009 rfa00460 cfa00326 cfa00362 cfa00364 rfa00475 cfa00349 cmba0408 rfa00462 cfa00135 cfa00245 cfa00383 kfa00217 kfa00277 kfc00184 rfa00469 kfa0247 cfa0161 kfa0242 kfa0247 kfa0248 kfa0261 kfa0275 kfa0298 cfa0303 cfc0305 kfa0291 cfa0325 cfc0272 cfa0119 cfa0169 cfa0342 cfa0151 cfa0187 cfa0275 cfa0296 cfa006 cfa0201 cfa0241 cfa0247 kfa0189 kfa0204 kfa0337 cfa0196 cfa0205 cfa0211 cfa0246 cfa0248 cfa0256 cfa0257 cfa0265 cfa0273 cfa0313 cfa0340 rfa0496 cfa0193 cfa020 cfa0210 cfa0236 cfa0243 cfa0268 cfa0271 cfa030 cfa0348 cfa0385 kfa0185 kfa0202 kfa0342 cfa0010 kfa009 rfa0460 cfa0326 cfa0362 cfa0364 rfa0475 cfa0349 cmba0408 rfa0462 cfa0135 cfa0245 cfa0383 kfa0217 kfa0277 kfc0184 rfa0469 {
-			replace davidcoinfection = 1 if studyid=="`studyid'"
+		foreach id_wide in cf201 cf241 cf247 kf189 kf204 kf337 cf196 cf205 cf211 cf246 cf248 cf256 cf257 cf265 cf273 cf313 cf340 rf496 cf193 cf200 cf210 cf236 cf243 cf268 cf271 cf300 cf348 cf385 kf185 kf202 kf342 cf245 kf184 {
+					replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="a"
 		}
 
+		foreach id_wide in cf305 cf272 kf184{
+			replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="c"
+		}
 
-*outsheet using " malariamergedjan192017.csv", comma names replace
+tab denvpcrresults_dum  davidcoinfection 
+tab malariapositive_dum davidcoinfection 
 
  rename currentsymptoms symptms
  rename othcurrentsymptoms othersymptms 
@@ -53,7 +132,7 @@ gen davidcoinfection =.
 		replace `var'= subinstr(`var', "none" ,"" ,.)
 		replace `var'= subinstr(`var', "dizziness" ,"nausea",.)
 		replace `var'= subinstr(`var', "sick_feeling" ,"feeling_sick" ,.)
-		replace `var'= subinstr(`var', "impaired_mental_status","imp_mental" ,.)
+		replace `var'= subinstr(`var', "impaired_mental_status","altms" ,.)
 		replace `var'= subinstr(`var', 	"shortness_of_breath","short_breath" ,.)
 		replace `var'= subinstr(`var', "eyes_sensitive_to_light" ,"sens_eyes"  ,.)
 		replace `var'= subinstr(`var', "aneamia" ,"anaemia"  ,.)
@@ -66,6 +145,7 @@ gen davidcoinfection =.
 		replace all_symptoms= subinstr(all_symptoms, "thrush" ,"enanthem"  ,.)
 		replace all_symptoms= subinstr(all_symptoms, "oral_lesion" ,"enanthem"  ,.)
 		replace all_symptoms= subinstr(all_symptoms, "mouth_sore" ,"enanthem",.)
+		replace all_symptoms= subinstr(all_symptoms, "enanthem" ,"rash",.)
 		
 		replace all_symptoms= subinstr(all_symptoms, "convulsions" ,"seizure"  ,.)
 		replace all_symptoms= subinstr(all_symptoms, "convulsion" ,"seizure"  ,.)
@@ -90,10 +170,32 @@ gen davidcoinfection =.
 		
 		replace all_symptoms= subinstr(all_symptoms, "post_inflammation_skin_lesions" ,"rash",.)
 
+		replace all_symptoms= subinstr(all_symptoms, "bloody_urine" ,"bleeding_symptom",.)
+		replace all_symptoms= subinstr(all_symptoms, "bloody_stool" ,"bleeding_symptom",.)
+		replace all_symptoms= subinstr(all_symptoms, "bloody_vomit" ,"bleeding_symptom",.)
+		replace all_symptoms= subinstr(all_symptoms, "bleeding_gums" ,"bleeding_symptom",.)
+		replace all_symptoms= subinstr(all_symptoms, "bloody_nose" ,"bleeding_symptom",.)
+
+		replace all_symptoms= subinstr(all_symptoms, "bone_pains" ,"aches_pains",.)
+		replace all_symptoms= subinstr(all_symptoms, "body_aches" ,"aches_pains",.)
+		replace all_symptoms= subinstr(all_symptoms, "joint_pains" ,"aches_pains",.)
+		replace all_symptoms= subinstr(all_symptoms, "muscle_pains" ,"aches_pains",.)
+		replace all_symptoms= subinstr(all_symptoms, "neck_pain" ,"aches_pains",.)
+
+		replace all_symptoms= subinstr(all_symptoms, "bruises" , "mucosal_bleed_brs",.)
+		replace all_symptoms= subinstr(all_symptoms, "cough"  , "respiratory",.)
+		
+		replace all_symptoms= subinstr(all_symptoms, "headache" ,"headache/eye_pain",.)
+
+		replace all_symptoms= subinstr(all_symptoms, "loss_of_appetite" ,"appetite_change",.)
+		replace all_symptoms= subinstr(all_symptoms, "red_eyes" ,"eye_symptom",.)
+		replace all_symptoms= subinstr(all_symptoms, "sens_eyes" ,"eye_symptom",.)
+
+		replace all_symptoms= subinstr(all_symptoms, "runny_nose" ,"respiratory",.)
 
 		}
 			foreach var of varlist all_symptoms  { 			
-			foreach symptom in "fever" "chiils" "headache" "vomiting" "diarrhea" "joint_pains" "muscle_pains" "feeling_sick" "abdominal_pain" "body_aches" "bone_pains" "pain_behind_eyes" "cough" "nausea" "loss_of_appetite" "other" "runny_nose" "dysuria" "rash" "bloody_nose" "bruises" "imp_mental" "funny_taste" "red_eyes" "earache" "sens_eyes" "sore_throat" "bleeding_gums" "bloody_vomit" "bloody_stool" "bloody_urine" "itchiness" "seizure" "anaemia" "dysphrea" "ache" "neck_pain" "dysphagia" "pain" "enanthem"{
+			foreach symptom in "eye_symptom" "fever" "chiils"  "vomiting" "diarrhea" "abdominal_pain" "aches_pains"  "respiratory" "nausea" "other" "dysuria" "rash" "bloody_nose" "mucosal_bleed_brs" "imp_mental" "funny_taste" "earache" "sens_eyes" "sore_throat" "bleeding_symptom" "itchiness" "seizure" "anaemia" "dysphrea" "ache"  "dysphagia" "pain" {
 						tostring `var', replace
 						replace `var'=trim(itrim(lower(`var')))
 						moss `var', match(`symptom') prefix(`symptom')
@@ -133,6 +235,7 @@ tab all_symptoms
 
 		replace all_symptoms= subinstr(all_symptoms, "fast_ing" ,"decreased_appetite",.)
 		replace all_symptoms= subinstr(all_symptoms, "fast_ig" ,"decreased_appetite",.)
+		replace all_symptoms= subinstr(all_symptoms, "decreased_appetite" ,"appetite_change",.)
 		
 		replace all_symptoms= subinstr(all_symptoms, "flu" ,"other2",.)
 		
@@ -157,13 +260,20 @@ tab all_symptoms
 		replace all_symptoms= subinstr(all_symptoms, "mouth_odour" ,"halitosis",.)
 		replace all_symptoms= subinstr(all_symptoms, "strong_foul_smell_from_the_mouth" ,"halitosis",.)
 
+		replace all_symptoms= subinstr(all_symptoms, "chills" ,"constitutional",.)
+		replace all_symptoms= subinstr(all_symptoms, "feeling_sick" ,"constitutional",.)
+
+		replace all_symptoms= subinstr(all_symptoms, "pain_behind_eyes" ,"headache/eye_pain",.)
+
+
+
 replace all_symptoms= subinstr(all_symptoms, "," ,"",.)
 
 foreach symptom in "body_rushes" "boggy_pus_discharging_swelling_on_butt" "chicken_box" "chicken_pox" "constipation" "difficulty_in_urination" "dry_lips" "ear_discharge" "eye_discharge" "_flue"  "_flu," "_flu"  "_foul_smelly_stool" "_ful_micturation" "_fungal_skin_infection" "_infra_auricular_sweling" "_jiggers" "_kidney_problem" "_measles" "_neckswelling" "_pus_ear_discharge" "_restless" "_ringworms" "_running_nose" "_sickle_cell" "_sickler" "_small_pox" "_sores_on_the_neck" "_sprained_wrist" "_strutles" "_swollen_inguinal_lymhnodes" "_tearing_eyes" "_tinea_corporis" "_urine_retention" "_whitish_eye_discharge" "_worms_in_his_stool" "body_rushes" "chicken_pox" "eye_discharge" "_tooth_" "boils" "burn"  "_worms"  "_wound" {		
 				replace all_symptoms = subinstr(all_symptoms, "`symptom'", "other2",.)
 			}
 			
-foreach symptom in "lethergy" "asthma" "chills" "jaundice" "abnormal_gums" "altms" "behavior_change" "constipation" "decreased_appetite" "edema" "halitosis" "other2" {
+foreach symptom in "lethergy" "asthma" "constitutional" "jaundice" "abnormal_gums" "altms" "behavior_change" "constipation" "appetite_change" "edema" "halitosis" "other2" {
 						tostring all_symptoms, replace
 						replace all_symptoms=trim(itrim(lower(all_symptoms)))
 						moss all_symptoms, match(`symptom') prefix(`symptom')
@@ -183,33 +293,34 @@ egen all_symptoms_other3 = rowtotal(all_symptoms_other  all_symptoms_other2)
 drop all_symptoms_other2 all_symptoms_other
 rename all_symptoms_other3 all_symptoms_other
 
-order all_symptoms_chills all_symptoms_chiils
-egen all_symptoms_chills3 = rowtotal(all_symptoms_chills all_symptoms_chiils)
-drop all_symptoms_chills all_symptoms_chiils
-rename all_symptoms_chills3 all_symptoms_chills 
-
-
-order all_symptoms_ache all_symptoms_pain
-egen all_symptoms_general_pain= rowtotal(all_symptoms_ache all_symptoms_pain)
-drop all_symptoms_ache all_symptoms_pain
-
 
 egen symptomcount = rowtotal(all_symptoms_*)
 
-
 gen dmcoinf = .
 replace dmcoinf = 1 if malariapositive_dum==1 & denvpcrresults_dum==1
+gen dmcoinf2 = .
+replace dmcoinf2 = 1 if malariapositive_dum2==1 & denvpcrresults_dum==1
 
 foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 	bysort  `var': sum all_symptoms_*
 }
 
 gen group = .
-replace group = 0 if malariapositive_dum==0 & denvpcrresults_dum ==0
+replace group = 0 if malariapositive_dum ==0 & denvpcrresults_dum ==0
 replace group = 1 if malariapositive_dum==1
 replace group = 2 if denvpcrresults_dum==1
 replace group = 3 if dmcoinf==1
 tab davidcoinfection group, m
+
+gen group2 = .
+replace group2 = 0 if malariapositive_dum2 ==0 & denvpcrresults_dum ==0
+replace group2 = 1 if malariapositive_dum2==1
+replace group2 = 2 if denvpcrresults_dum==1
+replace group2 = 3 if dmcoinf2==1
+tab davidcoinfection group2, m
+
+outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection group group2 using coinfection.xls, replace
+
 
 foreach studyid in "cfa236" "kfa00337" "kfa00185" "cfa00256" "kfc00184" "kfa00204" "kfa00202" "cfa00205" "cfa00385" "cfa00211" "cfa00201" "cfa00273" "kfa00189" "cfa00348" "cfa00300" "cfa00248" "cfa00313" "cfa00257" "rfa00496" "cfa00196" "cfa00246" "cfa00200" "cfa00243" "cfa00268" "kfa00342" "cfa00265" "cfa00247" "cfa00241" "cfa00340" "cfa00271" "cfa00193" "cfa00245" "cfa00210"{
 list if studyid == "`studyid'"
@@ -224,11 +335,14 @@ foreach studyid in "cf236" "kf337" "kf185" "cf256" "kfc184" "kf204" "kf202" "cf2
 replace davidcoinfection2 = 1 if id_wide== "`studyid'"
 }
 
+outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection davidcoinfection2  group  using coinfection2.xls, replace
+
 preserve 
 		keep davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
 		order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
 		sort davidcoinfection2
 restore
+
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 bysort group: tab symptomcount outcomehospitalized , chi2      
@@ -244,7 +358,8 @@ replace selected = 1 if dmcoinf==1
 dropmiss, force
 bysort group: sum  all_symptoms*
 
-table1, vars(all_symptoms_anaemia cat \ all_symptoms_seizure cat \ all_symptoms_itchiness cat \ all_symptoms_bloody_urine cat \ all_symptoms_bloody_stool cat \ all_symptoms_bloody_vomit cat \ all_symptoms_bleeding_gums cat \ all_symptoms_sore_throat bin\ all_symptoms_sens_eyes cat \ all_symptoms_earache cat \ all_symptoms_red_eyes cat \ all_symptoms_funny_taste cat \ all_symptoms_imp_mental cat \ all_symptoms_bruises cat \ all_symptoms_bloody_nose cat \ all_symptoms_rash bin\ all_symptoms_dysuria cat \ all_symptoms_runny_nose bin\ all_symptoms_other cat \ all_symptoms_loss_of_appetite bin\ all_symptoms_nausea bin\ all_symptoms_cough bin\ all_symptoms_pain_behind_eyes cat \ all_symptoms_bone_pains cat \ all_symptoms_body_aches bin\ all_symptoms_abdominal_pain bin\ all_symptoms_feeling_sick bin\ all_symptoms_muscle_pains bin\ all_symptoms_joint_pains bin\ all_symptoms_diarrhea bin\ all_symptoms_vomiting bin\ all_symptoms_headache bin\ all_symptoms_fever bin\) by(group) saving("table1_symptoms_by_group.xls", replace ) missing test
+table1, vars(all_symptoms_halitosis cat \  all_symptoms_edema cat \  all_symptoms_appetite_change cat \  all_symptoms_constipation cat \  all_symptoms_behavior_change cat \  all_symptoms_altms cat \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional cat \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia cat \  all_symptoms_dysphrea cat \  all_symptoms_anaemia cat \  all_symptoms_seizure cat \  all_symptoms_itchiness cat \  all_symptoms_bleeding_symptom cat \  all_symptoms_sore_throat cat \  all_symptoms_sens_eyes cat \  all_symptoms_earache cat \  all_symptoms_funny_taste cat \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs cat \  all_symptoms_bloody_nose cat \  all_symptoms_rash cat \  all_symptoms_dysuria cat \  all_symptoms_nausea cat \  all_symptoms_respiratory cat \  all_symptoms_aches_pains cat \  all_symptoms_abdominal_pain cat \  all_symptoms_diarrhea cat \  all_symptoms_vomiting cat \  all_symptoms_chiils cat \  all_symptoms_fever cat \  all_symptoms_eye_symptom cat \  all_symptoms_other cat \  ) by(group) saving("table1_symptoms_by_group.xls", replace ) missing test
+
 order all_symptoms_*
 *graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
 *graph export symptmsbygroup.tif,  width(4000) replace
@@ -253,29 +368,46 @@ order all_symptoms_*
 replace age_calc = round(age_calc)
 replace childage = age_calc if childage ==.
 replace childage = age_months/12 if childage ==.
-drop age_calc
+drop age_calc age
 rename childage age
-replace age =. if age <0 | age>18
 
-*temperature
-replace temperature = 38.5 if temperature ==385
-
+replace interviewdate = interviewdate2 if interviewdate ==.
+replace interviewdate = interview_date if interviewdate ==. 
+drop interviewdate2 interview_date 
 replace scleralicterus = sclerallcterus if scleralicterus  ==.
+drop sclerallcterus interviewdate 
+replace currently_sick  = "0" if currently_sick =="no"
+replace currently_sick  = "1" if currently_sick =="yes"
+destring currently_sick  , replace
+replace currentsick = currently_sick if currentsick ==.
+drop currently_sick 
+replace temperature = temp if temperature ==.
+drop temp
 
-table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heartrate conts \ scleralicterus cat \ splenomegaly  cat \ all_symptoms_joint_pains  cat\ all_symptoms_altms cat\) by(group) saving("table2_by_group.xls", replace ) missing test 
+foreach var in date_of_birth  {
+				gen `var'1 = date(`var', "MDY" ,2050)
+				format %td `var'1 
+				drop `var'
+				rename `var'1 `var'
+				recast int `var'
+				}
+table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heart_rate conts \ scleralicterus cat \ splenomegaly  cat \) by(group) saving("table2_by_group.xls", replace ) missing test 
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
+
 bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
 
 *table1 , vars( \malariapositive_dum cat \ ovaparasites cat\ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
 *repeatmalaria bin \ 
-tab gametocytes group
+
+bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 group group2
+save priyankamalariaaicvisita, replace
 
 *bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
 outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
-
+stop
 foreach result in malariaresults rdtresults bsresults{
 tab `result' malariapositive_dum, m
 }
@@ -285,8 +417,8 @@ sum malariapositive malariapositive_dum
 
 *logit model for severity
 	
-	global predictors  "group all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bloody_urine all_symptoms_bloody_stool all_symptoms_bloody_vomit all_symptoms_bleeding_gums all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_red_eyes all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_bruises all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_runny_nose all_symptoms_other all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache  all_symptoms_fever"
-	global factors  "all_symptoms_bleeding_gums all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever"
+	global predictors  " all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
+	global factors " all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
 	factor outcomehospitalized ${factors}, pcf
 	rotate
 	pca outcomehospitalized ${predictors}
@@ -311,6 +443,6 @@ estout m1 m2 m3, eform cells(b(star fmt(3)) se(par fmt(2)))   ///
 encode city, gen(city_s)
 *two step models. assuming you are malaria or dengue positive, are you hospitalized
 	dropmiss, force
-	logit outcomehospitalized group age gender i.city_s all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever all_symptoms_seizure all_symptoms_itchiness all_symptoms_bloody_urine all_symptoms_bloody_stool all_symptoms_bloody_vomit all_symptoms_bleeding_gums all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_red_eyes all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_bruises all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_runny_nose all_symptoms_other all_symptoms_loss_of_appetite all_symptoms_nausea all_symptoms_cough all_symptoms_pain_behind_eyes all_symptoms_bone_pains all_symptoms_body_aches all_symptoms_abdominal_pain, or
+	logit outcomehospitalized group age gender i.city_s   all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other, or
 	logit selected age gender i.city_s, or
 *	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )

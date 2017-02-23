@@ -267,8 +267,7 @@ ds, has(type string)
 save "Msambweni HCC Follow three 06Nov16", replace
 
 *ukunda
-
-	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Initial 30Nov16.xls", sheet("#LN00059") firstrow clear
+import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Initial 30Nov16.xls", sheet("#LN00059") firstrow clear
 	dropmiss, force obs
 	dropmiss, force 
 	destring *, replace
@@ -290,7 +289,11 @@ save "Msambweni HCC Follow three 06Nov16", replace
 			capture tostring `var', replace 
 			capture  replace `var'=lower(`var')
 }	
-			
+gen houseid2 = substr(studyid, 4, .)			
+order houseid*
+rename houseid oldhouseid
+rename houseid2 houseid 
+duplicates drop
 	save "Ukunda HCC Initial 30Nov16" , replace
 
 	import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow one  06Nov16.xls", sheet("#LN00060") firstrow clear
@@ -676,6 +679,7 @@ save "AICinitialsurveyv191_DATA", replace
 
 clear
 use 		 "Ukunda HCC Initial 30Nov16" 
+destring houseid, replace
 append using "Msambweni HCC Follow two 06Nov16" 
 append using "Msambweni HCC Follow three 06Nov16" 
 append using "coast_hcc_Ukunda_Follow_one _06Nov16"   
@@ -732,20 +736,9 @@ append using aic
 save all_interview, replace 
 
 gen fevertemp =.
-replace fevertemp = 1 if temperature >= 38
-replace fevertemp = 0 if temperature < 38
+replace fevertemp = 1 if temperature >= 38 & temperature !=. 
+replace fevertemp = 0 if temperature < 38 & temperature !=.	
 
-foreach var of varlist *date*{
-		capture gen double my`var'= date(`var',"DMY")
-		capture format my`var' %td
-		*drop `var'
-}
-foreach var of varlist my*{
-	gen `var'_year = year(`var')
-	gen `var'_month = month(`var')
-	gen `var'_day = day(`var')
-
-}
 			replace studyid = subinstr(studyid, ".", "",.) 
 			replace studyid = subinstr(studyid, "/", "",.)
 			replace studyid = subinstr(studyid, " ", "",.)
@@ -797,11 +790,12 @@ gen suffix = ""
 	replace suffix = "b" if strpos(id_childnumber, "b")
 	replace id_childnumber = subinstr(id_childnumber, "b","", .)
  
-destring id_childnumber, replace 	
-
+destring id_childnumber, replace force	
+order id_childnumber
 
 	order id_cohort id_city id_visit id_childnumber studyid
 	egen id_wide = concat(id_city id_cohort id_childnum suffix)
+	order id_wide  
 drop suffix
 save temp, replace
 	
@@ -878,15 +872,37 @@ drop dup _merge
 		replace hivmeds= 1 if strpos(meds , "arvs") 
 		replace hivmeds = 1 if strpos(meds , "arv") & hivresult ==""
 
-		gen pcpdrugs = . 
+		gen pcpdrugs = 0 
 		replace pcpdrugs=  1 if strpos(meds , "cotrimoxazole")  
 		replace pcpdrugs=  1 if strpos(meds , "bactrim") & hivresult ==""
 		replace pcpdrugs=  1 if strpos(meds , "septrin") & hivresult ==""
-	
-
-		sum pcpdrugs hivmeds hivpastmedhist hivtest hivresult 
-		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
-		tab `v'
+		
+		
+		foreach var in pcpdrugs hivmeds hivpastmedhist hivtest hivresult{
+			bysort site: tab pcpdrugs  
+			bysort site: tab hivmeds 
+			
 		}
+
+		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
+		bysort site: tab `v'
+		}
+
+egen labtests_all = concat(labtests labtestsother labslabs_ordered othlabtests othlabresults other_labs_ordered)
+
+egen diagnosis_all = concat(primarydiag othprimarydiag secondarydiag othsecondarydiag primary_diagnosis primary_diagnosis_other secondary_diagnosis secondary_diagnosis_other)
+
+		foreach var in primarydiag othprimarydiag secondarydiag othsecondarydiag primary_diagnosis primary_diagnosis_other secondary_diagnosis secondary_diagnosis_other{
+		tostring `var', replace
+		tab `var'
+		*list if  strpos(`var', "hiv") 
+		*list if  strpos(`var', "uti") 
+		count if  strpos(`var', "hiv") 
+		count if  strpos(`var', "uti") 
+		count if  strpos(`var', "urinary") 
+		}
+order diagnosis_all meds labtests_all pcpdrugs hivmeds hivpastmedhist hivtest hivresult 
+destring _all, replace		
+outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\hiv.csv" if pcpdrugs ==1 | hivmeds ==1 | hivpastmedhist == 1| hivtest !=. | hivresult != .  , comma names replace
 
 save all_interviews, replace
