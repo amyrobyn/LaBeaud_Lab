@@ -86,6 +86,7 @@ foreach l of local levels {
 	}
 }
 sum z*
+
 sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight childheight  resprate hb  headcircum  
 sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight childheight  resprate hb  headcircum  , d
 sum z*, d
@@ -406,8 +407,53 @@ bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 group g
 save priyankamalariaaicvisita, replace
 
 *bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
-outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
+drop _merge
+
 stop
+egen heightz= zanthro(height,chart,version) [if] [in], xvar(varname) gender(varname) gencode(male=code, female=code) [ageunit(unit) gestage(varname) nocutoff]
+egen [type] newvar = zbmicat(varname) [if] [in], xvar(varname) gender(varname) gencode(male=code, female=code) [ageunit(unit)]
+
+save pre_z, replace
+preserve
+		replace gender = gender +1
+		gen agemons = age*12
+		rename childweight weight 
+		rename childheight height
+		rename headcircum head	
+
+		foreach var in gender agemons {
+		keep if `var'!=.
+		}
+
+		keep if height >= 45 & height <= 109
+		keep if weight >0.9 & weight < 58
+		keep if head >25 & head <64
+		keep if agemons <= 60
+
+		dropmiss, force
+		dropmiss, obs force
+
+		gen region = site
+		gen measure = "h"
+		gen oedema = "n"
+
+		rename gender GENDER
+		rename weight WEIGHT
+		rename height HEIGHT
+		rename head HEAD
+
+		outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
+restore
+stop
+
+insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\who anthro\MySurvey_z_st.csv", clear 
+save z_scores, replace
+
+use pre_z
+merge 1:1 studyid using z_scores
+
+sum  zlen zwei zwfl zbmi zhc 
+
 foreach result in malariaresults rdtresults bsresults{
 tab `result' malariapositive_dum, m
 }

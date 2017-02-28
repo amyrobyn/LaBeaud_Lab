@@ -1,3 +1,8 @@
+capture log close 
+set scrollbufsize 100000
+set more 1
+log using "demography.smcl", text replace 
+
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography"
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Msambweni_coordinates complete Nov 21 2016.xls", sheet("Sheet1") firstrow clear
@@ -22,7 +27,64 @@ dropmiss, force obs
 rename *, lower
 egen houseid  = concat(villhouse person2)
 
+duplicates examples houseid
+duplicates tag houseid, generate(dup)
 order houseid
+rename head_of_household* hh*
+
+rename habits_which_livestock_livestock habits_which_livestock
+rename habits_which_livestock_livestoc1 habits_which_livestock1
+rename habits_attend_livestock_attend_l habits_attend_livestock1
+rename habits_attend_livestock_attend_0 habits_attend_livestock0
+rename habits_livestock_contact_livesto habits_livestock_contact
+rename habits_livestock_contact_livest0 habits_livestock_contact0
+*renvars, trim(20)
+
+ds, has(type numeric)
+foreach var of var `r(varlist)'{
+		gen ne`var' = .
+		sort houseid `var'
+		by houseid (`var'), sort: gen df`var' = `var'[1] != `var'[_N] if `var'[1] != . & `var'[_N]!=.  
+        list houseid  `var' if df`var'  
+		*replace ne`var' = 1 if df`var'  
+	}
+
+ds, has(type string)
+foreach var of var `r(varlist)'{
+		gen ne`var' = .
+		sort houseid `var'
+		by houseid  (`var'), sort: gen df`var' = `var'[1] != `var'[_N] if `var'[1] != "" & `var'[_N]!=""  
+        list houseid  `var' if df`var'  
+		replace ne`var' = 1 if df`var'  
+	}
+
+egen count_row_different = rowtotal(df*)
+order count_row_different  studyid gps*
+gsort -count_row_different studyid
+outsheet using duphouseid_gps_different_by_row.csv if dup>=1 & count_row_different >0, name comma replace 
+lookfor date
+recast int interviewdate 
+drop dup
+duplicates tag houseid, generate(dup)
+
+outsheet dup gps* interviewdate houseid using duphouseid_gps.csv if dup>=1 & count_row_different >0, name comma replace 
+keep if dup>=1 & count_row_different >0
+keep dup gps* interviewdate houseid 
+save gps, replace
+drop dup
+bysort houseid: gen dup =_n
+rename gps_house_latitude lat 
+rename gps_house_longitude lon
+reshape wide  gps_compound_latitude gps_compound_longitude gps_compound_altitude gps_compound_accuracy lat lon gps_house_altitude gps_house_accuracy interviewdate , i(houseid) j(dup)
+
+* save type1 and type2 observation separately
+geodist lat1 lon1 lat2 lon2, gen(distance_km1)
+geodist lat1 lon1 lat3 lon3, gen(distance_km2)
+geodist lat2 lon2 lat3 lon3, gen(distance_km3)
+sum d* 
+
+outsheet houseid d* using dupsgps.csv, comma names replace
+stop
 collapse (first) studyid - gps_house_accuracy, by(houseid)
 
 

@@ -856,18 +856,18 @@ drop dup _merge
 		
 		replace hivresult = "0" if hivresult =="non_reactive"
 		
-		gen hivtest = . 
+		gen hivtest = 0 
 		replace hivtest =1 if strpos(labtests, "hiv") & hivtest ==.
 		replace hivtest =1 if strpos(labtestsother, "hiv") & hivtest ==.
 		replace hivtest =1 if strpos(othlabtests, "hiv") & hivtest ==.
 
-		gen hivpastmedhist = .
+		gen hivpastmedhist = 0
 		replace hivpastmedhist= 1 if strpos(pastmedhist, "hiv") 
 		
 
 		egen meds = concat(medsprescribe meds_prescribed meds_prescribed_other othcurrentmeds)
 
-		gen hivmeds = .
+		gen hivmeds = 0
 		replace hivmeds= 1 if strpos(meds , "anti-retrovirals") 
 		replace hivmeds= 1 if strpos(meds , "arvs") 
 		replace hivmeds = 1 if strpos(meds , "arv") & hivresult ==""
@@ -884,10 +884,15 @@ drop dup _merge
 			
 		}
 
-		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
-		bysort site: tab `v'
-		}
+replace site = "west" if strpos(dataset, "aic ukunda malaria") & site =="." 	
+replace site = "coast" if strpos(dataset, "aicfollowupversion15_") & site =="." 	
 
+bysort site: sum pcpdrugs hivmeds hivpastmedhist hivtest hivresult 
+
+		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
+			tab `v' site
+		}
+stop 
 egen labtests_all = concat(labtests labtestsother labslabs_ordered othlabtests othlabresults other_labs_ordered)
 
 egen diagnosis_all = concat(primarydiag othprimarydiag secondarydiag othsecondarydiag primary_diagnosis primary_diagnosis_other secondary_diagnosis secondary_diagnosis_other)
