@@ -4,17 +4,22 @@
  *lebeaud lab               				        		  		*
  *last updated feb 21, 2017  							  			*
  ********************************************************************/ 
-
 capture log close 
 log using "david_coinfection_severity.smcl", text replace 
 set scrollbufsize 100000
 set more 1
-cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\data"
+
+
+capture log close 
+log using "R01_nov2_16.smcl", text replace 
+set scrollbufsize 100000
+set more 1
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
 *add in the pcr data from box and from googledoc. 
 bysort id_wide visit: gen dup = _n
 drop id_childnumber 
-merge 1:1 id_wide visit using "allpcr"
+merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\allpcr"
 		*replace denvpcrresults_dum = 1 if denvpcrresults_dum>0 & denvpcrresults_dum<.
 		save elisas_PCR_RDT, replace	
 		rename _merge interview_elisa_pcr_match
@@ -29,20 +34,22 @@ replace hb = hb_result if hb==.
 drop hb_result 
 
 
-gen sexlabel = "sex"
-gen agelabel = "age"
-egen agegender = concat(agelabel age sexlabel gender)
+gen sex = "sex"
+gen age = "age"
+replace childage  = age_calc if childage ==.
+replace childage = round(childage)
+egen agegender = concat(age childage sex gender)
 count if strpos(agegender, ".")
 drop if strpos(agegender, ".")
 merge m:1 agegender using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\normal_population_aic_b"
-drop if age>18
+drop if childage>18
 
 drop heart_rate 
 rename heartrate heart_rate 
-*replace childheight = child_height if childheight ==.
-*drop child_height 
-*replace childweight = child_weight if childweight ==.
-*drop child_weight 
+replace childheight = child_height if childheight ==.
+drop child_height 
+replace childweight = child_weight if childweight ==.
+drop child_weight 
 
 replace headcircum  = head_circumference if headcircum  ==.
 drop head_circumference 
@@ -358,6 +365,12 @@ order all_symptoms_*
 *graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
 *graph export symptmsbygroup.tif,  width(4000) replace
 
+* clean age
+replace age_calc = round(age_calc)
+replace childage = age_calc if childage ==.
+replace childage = age_months/12 if childage ==.
+drop age_calc age
+rename childage age
 
 replace interviewdate = interviewdate2 if interviewdate ==.
 replace interviewdate = interview_date if interviewdate ==. 
@@ -391,21 +404,14 @@ bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 du
 *repeatmalaria bin \ 
 
 bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 group group2
+save priyankamalariaaicvisita, replace
 
 *bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
 drop _merge
 
-/*
-net get  dm0004_1.pkg
-egen zhcaukwho = zanthro(headcircum,hca,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zwtukwho = zanthro(childweight,wa,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zbmiukwho = zanthro(childbmi , ba ,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-*/
-outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
-table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
-outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
-sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
+stop
+egen heightz= zanthro(height,chart,version) [if] [in], xvar(varname) gender(varname) gencode(male=code, female=code) [ageunit(unit) gestage(varname) nocutoff]
+egen [type] newvar = zbmicat(varname) [if] [in], xvar(varname) gender(varname) gencode(male=code, female=code) [ageunit(unit)]
 
 save pre_z, replace
 preserve
@@ -438,13 +444,15 @@ preserve
 
 		outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
 restore
+stop
 
 insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\who anthro\MySurvey_z_st.csv", clear 
 save z_scores, replace
+
 use pre_z
 merge 1:1 studyid using z_scores
-sum  zlen zwei zwfl zbmi zhc 
 
+sum  zlen zwei zwfl zbmi zhc 
 
 foreach result in malariaresults rdtresults bsresults{
 tab `result' malariapositive_dum, m
@@ -452,23 +460,14 @@ tab `result' malariapositive_dum, m
 
 tab labtests malariabloodsmear 
 sum malariapositive malariapositive_dum 
-encode city, gen(city_s)
 
-outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
 *logit model for severity
 	
 	global predictors  " all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
-	global factors "all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_behavior_change all_symptoms_altms all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_earache all_symptoms_funny_taste all_symptoms_mucosal_bleed_brs all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
-	*all_symptoms_constipation all_symptoms_abnormal_gums all_symptoms_anaemia all_symptoms_sens_eyes all_symptoms_bloody_nose all_symptoms_imp_mental 
-	sum ${factors}
+	global factors " all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
 	factor outcomehospitalized ${factors}, pcf
 	rotate
-	screeplot
 	pca outcomehospitalized ${predictors}
-	screeplot, yline(1) ci(het)
-	predict pc1 pc2 pc3 pc4 pc5 pc6 pc7 pc8 pc9 pc10 pc11 pc12, score
-	
-	logit outcomehospitalized group age gender i.city_s   pc1 - pc12
 corr ${predictors}
  
 logit outcomehospitalized ${factors}, or
@@ -487,10 +486,9 @@ estout m1 m2 m3, eform cells(b(star fmt(3)) se(par fmt(2)))   ///
    legend label varlabels(_cons constant)               ///
    stats(r2 df_r bic, fmt(3 0 1) label(R-sqr dfres BIC))
 
+encode city, gen(city_s)
 *two step models. assuming you are malaria or dengue positive, are you hospitalized
 	dropmiss, force
 	logit outcomehospitalized group age gender i.city_s   all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other, or
 	logit selected age gender i.city_s, or
 *	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
-
-outsheet using david_severity_final.csv, replace comma names

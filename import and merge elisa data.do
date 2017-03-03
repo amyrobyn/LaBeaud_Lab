@@ -1,4 +1,4 @@
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 2017"
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\feb1 2017"
 
 capture log close 
 log using "elisa_import_merge_clean.smcl", text replace 
@@ -6,7 +6,7 @@ set scrollbufsize 100000
 set more 1
 
 *import csv's
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
@@ -15,56 +15,56 @@ rename stford* stanford*
 gen dataset = "chulaimbo_aic" 
 save "chulaimbo_aic" , replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "chulaimbo_hcc"
 save "chulaimbo_hcc", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisuma_aic"
 save "kisuma_aic", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("KISUMU HCC") cellrange(A4:BJ829) firstrow clear
+import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU HCC") cellrange(A4:BJ829) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisumu_hcc"
 save "kisumu_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "milalani_hcc"
 save "milalani_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "msambweni_aic"
 save "msambweni_aic", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "nganja_hcc"
 save "nganja_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
 capture drop *od* 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "ukunda_aic"
 save "ukunda_aic", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda HCC") cellrange(A4:BI1128) firstrow clear
+import excel "UPDATED DATABASE 04 May 2016.xls.xlsx", sheet("Ukunda HCC") cellrange(A4:BI1128) firstrow clear
 capture drop *od* 
 dropmiss, force 
 dropmiss, force obs
