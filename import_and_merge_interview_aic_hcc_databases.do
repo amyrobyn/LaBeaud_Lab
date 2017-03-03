@@ -892,7 +892,7 @@ bysort site: sum pcpdrugs hivmeds hivpastmedhist hivtest hivresult
 		foreach v in pcpdrugs hivmeds hivpastmedhist hivtest hivresult {
 			tab `v' site
 		}
-stop 
+ 
 egen labtests_all = concat(labtests labtestsother labslabs_ordered othlabtests othlabresults other_labs_ordered)
 
 egen diagnosis_all = concat(primarydiag othprimarydiag secondarydiag othsecondarydiag primary_diagnosis primary_diagnosis_other secondary_diagnosis secondary_diagnosis_other)
@@ -909,5 +909,45 @@ egen diagnosis_all = concat(primarydiag othprimarydiag secondarydiag othsecondar
 order diagnosis_all meds labtests_all pcpdrugs hivmeds hivpastmedhist hivtest hivresult 
 destring _all, replace		
 outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\hiv.csv" if pcpdrugs ==1 | hivmeds ==1 | hivpastmedhist == 1| hivtest !=. | hivresult != .  , comma names replace
+replace childage  = age_calc if childage ==.
+replace childage = round(childage)
+rename childage age
+drop age_calc
+
+replace childheight = child_height  if childheight ==.
+drop child_height 
+
+replace childweight = child_weight if childweight ==.
+drop child_weight 
+
+
+foreach var in childheight childweight {
+	replace `var' = . if `var' ==999
+	replace `var' = . if `var' ==99
+	gen round`var' = round(`var')
+	tab round`var' , m
+	drop round`var' 
+}
+
+gen childheight_m = childheight/100
+gen childheight_m2 = childheight_m*childheight_m 
+gen childbmi = childweight/childheight_m2
+net get  dm0004_1.pkg
+egen zhcaukwho = zanthro(headcircum,hca,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
+egen zwtukwho = zanthro(childweight,wa,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
+egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
+egen zbmiukwho = zanthro(childbmi , ba ,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
+
+foreach var in zbmiukwho zhtukwho zwtukwho zhcaukwho{
+	gen round`var' = round(`var')
+	tab round`var' , m
+	drop round`var' 
+}
+list zbmiukwho  age gender childbmi childheight childweight if zbmiukwho ==.
+outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
+table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(site) saving("anthrozscores.xls", replace ) missing test
+outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
+sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
+
 
 save all_interviews, replace

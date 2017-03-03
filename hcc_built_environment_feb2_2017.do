@@ -223,7 +223,11 @@ tab `var'
 		tab mosquitobitefreq_int
 		drop mosqbitefreq mosquitobitefreq
 **mosquito exposure index
-egen mosquito_exposure_index = rowtotal(windows sleep_window childbitten mosqbitedaytime mosqbitenight mosquitobites mosquitoday mosquitonight mosquitobitef~t  )
+foreach var in windows sleep_window childbitten mosqbitedaytime mosqbitenight mosquitobites mosquitoday mosquitonight mosquitobitef{
+replace `var' = . if `var' ==8
+}
+sum windows sleep_window childbitten mosqbitedaytime mosqbitenight mosquitobites mosquitoday mosquitonight mosquitobitefreq_int
+egen mosquito_exposure_index = rowtotal(windows sleep_window childbitten mosqbitedaytime mosqbitenight mosquitobites mosquitoday mosquitonight mosquitobitef)
 
 
 *mosquito prevention index
@@ -236,6 +240,11 @@ egen mosquito_exposure_index = rowtotal(windows sleep_window childbitten mosqbit
 	gen naturalmosqrepel= . 
 	replace naturalmosqrepel= 1 if strpos(head_of_household_mosquito_contr , "herbs") 
 	drop mosquitocoil  wearinsectrep head_of_household_mosquito_contr 
+
+foreach var in naturalmosqrepel screens own_bednet usemosqcoil  usenetfreq  number_bednet sleep_bednet kids_sleep_bed avoidmosquitoes userepellant sleepbednet {
+replace `var' = . if `var' ==8
+}
+sum naturalmosqrepel screens own_bednet usemosqcoil  usenetfreq  number_bednet sleep_bednet kids_sleep_bed avoidmosquitoes userepellant sleepbednet 
 
 egen mosq_prevention_index = rowtotal( naturalmosqrepel screens own_bednet usemosqcoil  usenetfreq  number_bednet sleep_bednet kids_sleep_bed avoidmosquitoes userepellant sleepbednet )
 
@@ -320,11 +329,6 @@ egen village_elisa = concat(village group)
 
 
 outsheet using "built environemnt.csv", comma names replace
-replace childage  = age if childage ==.
-replace childage =. if childage >=18
-tab childage 
-drop age age_calc
-rename childage age
 
 gen adult = .
 replace adult = 0 if age <18
@@ -345,21 +349,22 @@ replace land_index = "3own" if land_index =="own"
 
 encode land_index, gen(ownland2)
 encode  city, gen(city_int)
-*here are two options for your logistic regression
 
+*here are two options for your logistic regression
 bysort group: sum age ses_index_sum_pct educ gender tribe_int 
 table1, by(group) vars(age conts \ses_index_sum_pct cat \educ cat \gender cat \tribe_int cat \) saving("table1a.xls", replace) test missing
 table1, vars(age conts \ses_index_sum_pct cate \educ cate \gender cate \tribe_int cate \) saving("table1b.xls", replace) test missing
 table1, by(group) vars(age contn \ses_index_sum_pct cat \educ cat \gender cat \tribe_int cat \) saving("table1c.xls", replace) test missing
 
 replace group2 = 1 if group2 == 2
+
 *ownland2 ownmoterbike keep_livestock  aedesaegyptitotal   rainfallanomalies temprangeanomalies tempdewptdiffanomalies tempanomalies rhanomalies rhtempanomalies  
 bysort group: sum group2 female adult  water_cotainers  mosquito_exposure_index  mosq_prevention_index  ses_index_sum
 
 logit group2 group2 city_int female adult  water_cotainers  mosquito_exposure_index  mosq_prevention_index  ses_index_sum, or
 bysort group2: sum windows ownland2 ownmoterbike i.city_int female adult keep_livestock   water_cotainers  mosquito_exposure_index  mosq_prevention_index  aedesaegyptitotal  rainfallanomalies temprangeanomalies tempdewptdiffanomalies tempanomalies rhanomalies rhtempanomalies  ses_index_sum
 
-table1, by(group) vars(windows conts \ownland2 cat \ ownmoterbike cat\  city_int cat\ female cat\ adult cat\ keep_livestock   cat\ water_cotainers  cat\ mosquito_exposure_index  conts \ mosq_prevention_index  contn \ aedesaegyptitotal  contn \ rainfallanomalies contn \ temprangeanomalies contn \ tempdewptdiffanomalies contn \ tempanomalies contn \ rhanomalies contn \ rhtempanomalies  contn \ ses_index_sum contn \) 
+table1, by(group) vars(windows conts \ownland2 cat \ ownmoterbike cat\  city_int cat\ female cat\ adult cat\ keep_livestock   cat\ water_cotainers  cat\ mosquito_exposure_index  conts \ mosq_prevention_index  contn \ aedesaegyptitotal  contn \ rainfallanomalies contn \ temprangeanomalies contn \ tempdewptdiffanomalies contn \ tempanomalies contn \ rhanomalies contn \ rhtempanomalies  contn \ ses_index_sum contn \) saving("table1.xls", replace) test missing
 
 logit group2 windows ownland2 ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum, or 
 bysort group: sum windows ownland2 ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum
@@ -369,5 +374,5 @@ outreg2 using logit1.xls, replace
 logit group2  i.city_int ses_index_sum_pct  educ childage , or
 outreg2 using logit2.xls, append
 
-*here is your table 1
-table1, by(group) vars(ownland2 cat \ ownmoterbike cat \ villagestring cat \ female cat \ adult cat \childage  conts \ses_index_sum_pct cate \educ cate \gender cate \tribe_int cate \) saving("table1_coastalvillagesfeb2.xls", replace) test missing
+*table 1
+table1, by(group) vars(ownland2 cat \ ownmoterbike cat \ villagestring cat \ female cat \ adult cat \childage  conts \ses_index_sum_pct cate \educ cate \gender cate \tribe_int cate \) saving("table2.xls", replace) test missing
