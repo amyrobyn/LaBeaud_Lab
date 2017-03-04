@@ -1,70 +1,69 @@
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 2017"
-
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\july 2016"
 capture log close 
-log using "elisa_import_merge_clean.smcl", text replace 
+log using "elisa_import_merge_clean_july2016.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-*import csv's
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-rename *, lower
-rename stford* stanford*
-gen dataset = "chulaimbo_aic" 
+local west "July 1 2016 - Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xls"
+local coast "July 1 2016 - Coast (Msambweni, Ukunda) AIC ELISA.Common Sheet.xls"
+
+import excel "`west'", describe
+import excel "`coast'", describe
+
+import excel "`west'", sheet("CHULAIMBO AIC") cellrange(A8:AF1003) firstrow clear  
+	dropmiss, force obs
+	dropmiss, force 
+	rename *, lower
+	rename stford* stanford*
+	gen dataset = "chulaimbo_aic" 
 save "chulaimbo_aic" , replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
+import excel "`west'", sheet("CHULAIMBO HCC") cellrange(A3:BA1010) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "chulaimbo_hcc"
 save "chulaimbo_hcc", replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+import excel "`west'", sheet("KISUMU AIC") cellrange(A8:AI1003) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisuma_aic"
 save "kisuma_aic", replace
 
-import excel "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet.xlsx", sheet("KISUMU HCC") cellrange(A8:BN833) firstrow clear
+import excel "`west'", sheet("KISUMU HCC") cellrange(A3:AY1001) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisumu_hcc"
 save "kisumu_hcc", replace
 
-import excel "COAST ELISA DATABASE.xls.xlsx", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
+import excel "`coast'", sheet("MILALANI HCC") cellrange(A3:AY1001) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "milalani_hcc"
 save "milalani_hcc", replace
 
-import excel "COAST ELISA DATABASE.xls.xlsx", sheet("Msambweni  AIC") cellrange(A9:BG1580) firstrow clear
+import excel "`coast'", sheet("Msambweni  AIC") cellrange(A9:AI1228) firstrow clear
 dropmiss, force obs
 dropmiss, force 
-egen ChikVIgGOD_db = concat(ChikVIgGOD_d  AK)
-drop ChikVIgGOD_d  AK
-rename ChikVIgGOD_db ChikVIgGOD_d 
 gen dataset = "msambweni_aic"
 save "msambweni_aic", replace
 
-import excel "COAST ELISA DATABASE.xls.xlsx", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
+import excel "`coast'", sheet("NGANJA HCC") cellrange(A3:AY1001) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "nganja_hcc"
 save "nganja_hcc", replace
 
-import excel "COAST ELISA DATABASE.xls.xlsx", sheet("Ukunda AIC") cellrange(A9:AZ1622) firstrow clear 
+import excel "`coast'", sheet("Ukunda AIC") cellrange(A8:AK1330) firstrow clear 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "ukunda_aic"
 save "ukunda_aic", replace
 
-import excel "COAST ELISA DATABASE.xls.xlsx", sheet("Ukunda HCC") cellrange(A8:BI1164) firstrow clear
+import excel "`coast'", sheet("Ukunda HCC") cellrange(A3:BE1139) firstrow clear
 dropmiss, force 
 dropmiss, force obs
 gen dataset = "ukunda_hcc"
-rename *, lower
-rename stanfordchikigg_a stanfordchikvigg_a 
 save "ukunda_hcc", replace
 clear
 
@@ -87,17 +86,12 @@ capture  tostring chikviggod_*, replace force
 						capture tostring `var', replace 
 						
 						}
-
-			foreach var in chikviggod_a denviggod_b {
-			capture drop `var'
-			}
 				foreach var in datesamplecollected_a datesamplecollected_f datesamplecollected_b datesamplerun_a datesamplecollected_{
 					capture gen `var'1 = date(`var', "mdy" ,2050)
 					capture  format %td `var'1 
 					capture drop `var'
 					capture rename `var'1 `var'
 					capture recast int `var'
-						capture drop denviggod_a 
 				}
 
 					ds, has(type string) 
@@ -105,39 +99,54 @@ capture  tostring chikviggod_*, replace force
 							replace `v' = lower(`v') 
 							} 
 
+
+foreach var in stanforddenvigg_b denvigg_a chikvigg_a denvigg_a stanforddenvigg_b chikvigg_a {
+	capture tostring `var', replace force
+}
+
 capture rename stanfordchikigg_a   stanfordchikvigg_a
 capture rename stanfordchikviggresult_a stanfordchikvigg_a
 capture rename stanfordchikviggresult_b stanfordchikvigg_b
 capture rename stforddenvigg_a stanforddenvigg_a
 capture rename stfrddenvigg_b stanforddenvigg_b
-capture rename igg_kenya_denv denvigg_ 
+capture rename igg_kenya_denv* denvigg_* 
 capture rename chikviggresult_a  chikvigg_a 
-capture rename igg_kenya_chikv chikvigg_ 
+capture rename igg_kenya_chikv* chikvigg_* 
 
 
  capture rename stanforddenvreading_* stanforddenvigg_* 
- lookfor chikviggod_ denviggod_
-  foreach visit in a b c d e f g h i{
-	 capture egen chikvigg_od`visit' = concat(chikvigg_`visit' chikviggod_`visit')
+
+ foreach visit in a b c d e f g h i{
+	 capture egen chikvigg_od`visit' = concat(chikvigg_`visit' chikviggod_`visit'  )
 	 capture drop chikvigg_`visit' chikviggod_`visit'
 	 capture rename chikvigg_od`visit' chikvigg_`visit'   
  }
- 
+
  foreach visit in a b c d e f g h i{
-	 capture egen denvigg_od`visit' = concat(denvigg_`visit' denviggod_`visit')
+	 capture egen stanfordchikvigg_od`visit' = concat(stanfordchikvigg_`visit' stanfordchikvod_`visit')
+	 capture drop stanfordchikvigg_`visit' stanfordchikvod_`visit'
+	 capture rename stanfordchikvigg_od`visit' stanfordchikvigg_`visit'  
+ }
+
+  foreach visit in a b c d e f g h i{
+	 capture egen stanforddenvigg_od`visit' = concat(stanforddenvigg_`visit' stanforddenvod_`visit' stanforddenviggod_`visit')
+	 capture drop stanforddenvigg_`visit' 
+	 capture drop stanforddenvod_`visit' 
+	 capture drop stanforddenviggod_`visit'
+	 capture renamestanforddenvigg_od`visit' stanforddenvigg_`visit'   
+ }
+  
+ foreach visit in a b c d e f g h i{
+	capture egen denvigg_od`visit' = concat(denvigg_`visit' denviggod_`visit')
 	 capture drop denvigg_`visit' denviggod_`visit'
 	 capture rename denvigg_od`visit' denvigg_`visit'   
  }
-
  capture rename igg_kenya_chikv* chikvigg_*  
  capture rename igg_kenya_denv* denvigg_* 
  capture rename kenyachikvreading_a chikvigg_a  
  capture rename kenyadenvreading_a denvigg_a 
-							
 save `dataset', replace
 }
-
-
 
 append using "kisumu_hcc.dta"  
 append using "kisuma_aic.dta" 
@@ -152,40 +161,11 @@ dropmiss, force obs
  
 save appended_september20.dta, replace
 
-save temp, replace
-	use temp, clear
-	preserve
-		tostring *, replace force
-		gen pos = 0
-		gen neg = 0
-			ds, has(type string) 
-				foreach var of varlist `r(varlist)' { 
-					count if strpos(`var', "pos")
-						replace pos = pos + r(N)
-						sum `var'
-
-					count if strpos(`var', "neg")
-						replace neg = neg + r(N)
-						sum  `var'
-				}
-			*36387  neg and 6792  pos
-restore
-
 use appended_september20.dta, clear
 
 				replace studyid_a = followupid_b if studyid_a ==""
 				replace studyid_a = followupid_c if studyid_a ==""
 				replace studyid_a = followupaliquotid_b if studyid_a ==""
-				replace studyid_a = followupaliquotid_c if studyid_a ==""
-				replace studyid_a = followupaliquotid_d if studyid_a ==""
-				replace studyid_a = followupaliquotid_e if studyid_a ==""
-				replace studyid_a = followupaliquotid_f if studyid_a ==""
-				replace studyid_a = followupaliquotid_g if studyid_a ==""
-				replace studyid_a = followupaliquotid_h if studyid_a ==""
-				replace studyid_a =  studyid_e if studyid_a ==""
-				replace studyid_a = chikvpcr_e  if studyid_a ==""
-					
-				drop studyid_c 
 				drop followupaliquotid_*
 
 				replace studyid_a =lower(studyid_a)
@@ -258,10 +238,7 @@ save wide, replace
 use wide.dta, clear
 	dropmiss, force
 	dropmiss, force obs
-foreach var in chikviggod_* stanfordchikvod_a  stanforddenvigg_f   stanforddenviggod_c antigenused_e  {
-tostring `var', replace 
-}
-tostring chikviggod_* , replace force
+
 	list if dup2>1
 	drop if dup2>1
 	dropmiss, force
@@ -270,34 +247,10 @@ tostring chikviggod_* , replace force
 	capture tostring stanforddenviggod_e , replace
 	capture tostring chikviggod_e, replace
 capture tostring stanforddenviggod_f , replace force
-
 	
+reshape long stanforddenvreading_ kenyachikvreading_ kenyadenvreading_  collectiondate_ dateofcollection_ datesamplewascollected_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
 
-reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
-
-egen stanfordchikvigg_all = concat(stanfordchikvigg2_ stanfordchikvigg_ stanfordchikvod_ )
-drop stanfordchikvigg2_  stanfordchikvigg_
-rename stanfordchikvigg_all stanfordchikvigg_
-order stanfordchikvigg_
-outsheet using stanfordchikvigg_discordat.xls if strpos(stanfordchikvigg_, "negpos")| strpos(stanfordchikvigg_, "posneg") , replace
-
-order  chikvigg_ denvigg_ stanforddenvigg_ chikviggod_ denviggod_ stanfordchikvigg_ stanforddenviggod_ 
- 
-egen chikvigg_all = concat(chikviggod_ chikvigg_ )
-drop chikviggod_ chikvigg_ 
-rename chikvigg_all chikvigg_ 
-
-egen stanforddenviggall = concat(stanforddenvigg_ stanforddenviggod_ stanforddenvod_ )
-drop stanforddenvigg_ stanforddenviggod_ stanforddenvod_ 
-rename stanforddenviggall stanforddenvigg_ 
-
-egen denviggall = concat(denvigg_ denviggod_)
-drop denvigg_ denviggod_
-rename denviggall  denvigg_ 
-order denvigg_ 
-
-
-	foreach var in stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ {
+foreach var in stanforddenvigg_ stanfordchikvigg_ chikviggod_ chikvigg_ denvigg_ stanforddenvreading_ kenyachikvreading_ kenyadenvreading_{
 	gen `var'b=.
 	tostring `var', replace force
 	replace `var'b =  0 if strpos(`var', "neg")
@@ -306,10 +259,13 @@ order denvigg_
 	drop `var'
 	rename `var'b `var'
 }
+
+replace  stanforddenvigg_ = stanforddenvreading_ if stanforddenvigg_ ==.
+drop stanforddenvreading_ chikviggod_ kenyachikvreading_ kenyadenvreading_
+sum   stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
 order stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
-sum stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
-	tempfile long
-	save long, replace
+
+save long, replace
 	
 use long.dta, clear
 count if id_wide==""
@@ -339,9 +295,8 @@ ds, has(type string)
 		rename `var', lower
 	}	
 	
-/*
-		foreach var of varlist stanford* *igm* *igg* { 
-			tostring `var', replace
+/*		foreach var of varlist stanford* *igm* *igg* { 
+			tostring `var', replace 
 			replace `var' =trim(itrim(lower(`var')))
 			gen `var'_result =""
 			replace `var'_result = "neg" if strpos(`var', "neg")
@@ -350,7 +305,7 @@ ds, has(type string)
 			rename `var'_result `var'
 			tab `var'
 		}
-*/		
+		*/
 rename visit VISIT 
 save pcr, replace
 drop *pcr*
@@ -365,23 +320,30 @@ isid id_wide VISIT
 		rename VISIT visit		
 destring id_childnumber  , replace
 
-replace antigenused_  = antigenused if antigenused_  =="" 
-egen antigenused2  = concat(antigenused antigenused_) if antigenused_  !="" |antigenused_  =="."  & antigenused !="" | antigenused =="."
-gen and = " & "
-replace antigenused_  = antigenused2  if antigenused2  =="" 
-drop antigenused2   antigenused
+replace collectiondate_ = dateofcollection_ if collectiondate_ ==""
+drop dateofcollection_ 
+rename collectiondate_ datesamplecollected_
 
+*tostring datesamplecollected_, replace
+gen datesamplecollected_1 = date(datesamplecollected_, "DMY")
+					format %td datesamplecollected_1
+					drop datesamplecollected_
+					rename datesamplecollected_1 datesamplecollected_
+					recast int datesamplecollected_
+					
+
+
+format %td datesamplewascollected_ 
 format %td datesamplecollected_
-gen sampleyear=year( datesamplecollected_)
 
+gen sampleyear=year(datesamplecollected_)
 
 save elisas, replace
 
 		gen prevalentchikv = .
 		gen prevalentdenv = .
-		
-
-		replace prevalentdenv = 1 if  stanforddenvigg_==1 & visit =="a"
+ 
+		replace prevalentdenv = 1 if  stanforddenvigg_ ==1 & visit =="a"
 		replace prevalentchikv = 1 if  stanfordchikvigg_==1 & visit =="a"
 
 		replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
@@ -390,7 +352,7 @@ save elisas, replace
 				
 		encode id_cohort, gen(cohort)
 				
-		bysort cohort  city: sum stanforddenvigg_ stanfordchikvigg_ 
+		bysort cohort  city: sum stanfordchikvigg_ stanforddenvigg_ 
 
 
 		replace city = "Chulaimbo" if city =="c"
@@ -412,27 +374,27 @@ restore
 				replace `v' = lower(`v') 
 			}
 
-		keep if visit == "a" & stanfordchikvigg_ !=. 
+		keep if visit == "a" &  stanfordchikvigg_!=.
 		save visit_a_chikv, replace
 	use prevalent, clear
-		keep if visit == "b" & stanfordchikvigg_ !=.
+		keep if visit == "b" &  stanfordchikvigg_!=.
 		save visit_b_chikv, replace
 		merge 1:1 id_wide using visit_a_chikv
 		rename _merge abvisit
 		keep abvisit visit id_wide
 		merge 1:1 id_wide visit using prevalent
-		keep if abvisit ==3 & stanfordchikvigg_ !=.
+		keep if abvisit ==3 &  stanfordchikvigg_!=.
 		
-		keep studyid  id_wide site visit antigenused_ city stanforddenvigg_ stanfordchikvigg_  cohort datesamplecollected_ visit datesamplecol~_ 
+		keep studyid  id_wide site visit city  stanfordchikvigg_ cohort datesamplecollected_  stanfordchikvigg_  stanforddenvigg_ visit datesamplecol~_ 
 
 		export excel using "prevalent_visitab_chikv", firstrow(variables) replace
 	
 	*denv matched prevalence
 	use prevalent, clear
-		keep if visit == "a" & stanforddenvigg_ !=.
+		keep if visit == "a" &  stanforddenvigg_!=.
 		save visit_a_denv, replace
 	use prevalent, clear
-		keep if visit == "b" & stanforddenvigg_ !=.
+		keep if visit == "b" & stanforddenvigg_!=.
 		save visit_b_denv, replace
 
 		merge 1:1 id_wide using visit_a_denv
@@ -440,19 +402,18 @@ restore
 		keep abvisit id_wide visit
 		
 		merge 1:1 id_wide visit using prevalent		
-		keep if abvisit ==3 & stanforddenvigg_ !=.
-		keep studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
-		export excel using "prevalent_visitab_denv", firstrow(variables) replace
+		keep if abvisit ==3 & stanforddenvigg_!= .
+		keep studyid  id_wide site visit city stanforddenvigg_ cohort  datesamplecollected_   stanfordchikvigg_ visit datesamplecol~_
+		capture export excel using "prevalent_visitab_denv", firstrow(variables) replace
 		
-		*denv prevlanece
-use prevalent, clear			
-foreach var in stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ {
+*denv prevlanece
+use prevalent, clear
+foreach var in  stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_{
 	preserve
 		keep if `var'!=. 
-		rename `var' `var'march2017
-		order `var'march2017
-		tab `var'march2017
-		save "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\compare july 16 and marhc 17\prevalent`var'march2017", replace
+		rename `var' `var'july2016
+		order `var'july2016
+		tab `var'july2016
+		save "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\compare july 16 and marhc 17\prevalent`var'july2016", replace
 	restore
-}		
-save  prevalent, replace
+}

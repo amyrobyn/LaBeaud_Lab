@@ -27,6 +27,7 @@ replace gestational_age_cat = 0 if gestational_age_weekfrac  >=39 & gestational_
 replace gestational_age_cat = 1 if gestational_age_weekfrac  < 39
 replace gestational_age_cat = 2 if gestational_age_weekfrac  >=41 & gestational_age_weekfrac  <42
 replace gestational_age_cat = 3 if gestational_age_weekfrac  >=42 & gestational_age_weekfrac <.
+
 label variable gestational_age_cat "gestational_age_categories"
 label define gestational_age_cat  0 "full term" 1 "early term" 2 "late term" 3 "post term" , modify
 label values gestational_age_cat  gestational_age_categories
