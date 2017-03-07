@@ -70,6 +70,8 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Person
 drop _merge
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\compare july 16 and marhc 17\prevalentstanfordchikvigg_march2017"
 
+save prevalent_march2017, replace
+
 order stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017
 sum stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017
 keep if stanfordchikvigg_march2017 !=. | stanforddenvigg_march2017 !=. | chikvigg_march2017 !=. | denvigg_march2017!=. 
@@ -115,17 +117,53 @@ table1, vars(stanfordchikvigg_march2017 bin \ stanforddenvigg_march2017 bin \ ch
 
 tab datesamplerun_
 
+*list the pos and neg by  lab.
 list studyid stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017 if stanfordchikvigg_march2017 ==1 | stanforddenvigg_march2017 ==1 | chikvigg_march2017 ==1 | denvigg_march2017==1 
+*list the pos and neg studyid
 list studyid stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017 if studyid =="ufa1214"
 
-*2137 pos, 11940 neg
-*2488 pos, 21591  neg 
-*6792  pos, 36387  neg 
-*total number of pos = 2137 and negative = 11940
+*count number of pos and neg in sample.
 count if stanfordchikvigg_march2017 ==1 | stanforddenvigg_march2017 ==1 | chikvigg_march2017 ==1 | denvigg_march2017==1 
 count if stanfordchikvigg_march2017 ==0 | stanforddenvigg_march2017 ==0 | chikvigg_march2017 ==0 | denvigg_march2017==0 
-
-*stanfordchikvigg_march2017 pos = 186, neg = 7,530; stanforddenvigg_march2017 neg =  9,129  , pos = 227 ; chikvigg_march2017 pos = 812, neg =  2,139  ; denvigg_march2017 pos = 1,263, neg = 2,791   
 foreach var in stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017 {
 tab `var'
 }
+
+
+use prevalent_march2017, clear
+	keep if visit =="a"
+	keep id_wide visit stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017
+	order visit id_wide
+	list if id_wide =="cc105004"
+	reshape wide stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017, i(id_wide) j(visit) s
+	save visita.dta, replace
+
+use prevalent_march2017, clear
+	keep if visit =="b"
+	keep id_wide visit stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017
+	order visit id_wide
+	list if id_wide =="cc105004"
+	reshape wide stanfordchikvigg_march2017 stanforddenvigg_march2017 chikvigg_march2017 denvigg_march2017, i(id_wide) j(visit) s
+	save visitb.dta, replace
+use visita, clear
+mer 1:1 id_wide using visitb.dta
+drop _merge
+*denv_ab
+preserve
+	keep if  stanforddenvigg_march2017a !=. & stanforddenvigg_march2017b !=. 
+	table1, vars(stanforddenvigg_march2017a contn \ stanforddenvigg_march2017b  contn \ ) saving(stanforddenvigg_march2017_ab.xls, replace)
+restore
+sum stanforddenvigg_march2017a stanforddenvigg_march2017b if  stanforddenvigg_march2017a !=. & stanforddenvigg_march2017b !=. , 
+tab stanforddenvigg_march2017a stanforddenvigg_march2017b 
+*save discordants
+outsheet id_wide stanforddenvigg_march2017a stanforddenvigg_march2017b using discordantstanforddenvigg_march2017.xls if stanforddenvigg_march2017a !=stanforddenvigg_march2017b & stanforddenvigg_march2017a != . & stanforddenvigg_march2017b != . , replace
+
+*chikv_ab
+preserve
+	keep if  stanfordchikvigg_march2017a !=. & stanfordchikvigg_march2017b !=. 
+	table1, vars(stanfordchikvigg_march2017a contn \  stanfordchikvigg_march2017b contn \ ) saving(stanfordchikvigg_march2017b_ab.xls, replace)
+restore
+sum stanfordchikvigg_march2017a stanfordchikvigg_march2017b if  stanfordchikvigg_march2017a !=. & stanfordchikvigg_march2017b !=. 
+tab stanfordchikvigg_march2017a stanfordchikvigg_march2017b 
+*save discordants
+outsheet id_wide stanfordchikvigg_march2017a stanfordchikvigg_march2017b  using discordantstanfordchikvigg_march2017.xls if stanfordchikvigg_march2017a !=stanfordchikvigg_march2017b & stanfordchikvigg_march2017a  != . & stanfordchikvigg_march2017b != . , replace
