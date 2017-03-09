@@ -23,7 +23,7 @@ library(zoo)
 library(ggplot2)
 
 # Data
-setwd("~/Desktop/Summer 2016/Created Data Sets") # Always set working directory
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
 
 Climate <- read_excel("ChulaimboMonthlyClimateData.xls", sheet = 1)
 

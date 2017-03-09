@@ -71,6 +71,9 @@ replace adult = 99 if strpos(traptype, "?")
 
 tab adult, m
 tab adult chikv_result
+tab adult denv_result
+bysort adult: tab chikv_result denv_result, m
+ 
 order bigpoolnumber adult *_result
 order bigpoolnumber adult  chikv_result denv_result zika_result
 
@@ -79,5 +82,5 @@ foreach number in 355 356 357 361 340 750 754 755 417 740 744 748 {
 	replace claire_chikvpos_adult = 1 if bigpoolnumber == `number'
 }
 gen amy_chikvpos_adult = 1 if adult ==1 & chikv_result ==1
-
+outsheet bigpoolnumber chikv_result denv_result denvct chikvct village genus sex date_month date_year noofindividualsinpool traptype notes adult amy_chikvpos_adult  claire_chikvpos_adult  using positive_pools_march7.xls, replace
 export excel using "mergedpools_march72017.xls", firstrow(variables) replace
