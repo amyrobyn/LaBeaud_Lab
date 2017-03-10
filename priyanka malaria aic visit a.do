@@ -2,7 +2,7 @@
  *amy krystosik                  							  		*
  *priyanka malaria microscopy, AIC all visits						*
  *lebeaud lab               				        		  		*
- *last updated feb 21, 2017  							  			*
+ *last updated march 9, 2017  							  			*
  ********************************************************************/ 
 capture log close 
 log using "priyankamalariaaicvisita.smcl", text replace 
@@ -92,6 +92,8 @@ tab malariapositive_dum2 malariapositive_dum, m
 
 tab denvpcrresults_dum malariapositive_dum, m 
 tab denvpcrresults_dum malariapositive_dum2, m 
+
+keep if malariapositive_dum ==1 
 
 gsort -denvpcrresults_dum 
 
@@ -262,7 +264,7 @@ tab all_symptoms
 
 replace all_symptoms= subinstr(all_symptoms, "," ,"",.)
 
-foreach symptom in "body_rushes" "boggy_pus_discharging_swelling_on_butt" "chicken_box" "chicken_pox" "constipation" "difficulty_in_urination" "dry_lips" "ear_discharge" "eye_discharge" "_flue"  "_flu," "_flu"  "_foul_smelly_stool" "_ful_micturation" "_fungal_skin_infection" "_infra_auricular_sweling" "_jiggers" "_kidney_problem" "_measles" "_neckswelling" "_pus_ear_discharge" "_restless" "_ringworms" "_running_nose" "_sickle_cell" "_sickler" "_small_pox" "_sores_on_the_neck" "_sprained_wrist" "_strutles" "...(line truncated)...
+foreach symptom in "body_rushes" "boggy_pus_discharging_swelling_on_butt" "chicken_box" "chicken_pox" "constipation" "difficulty_in_urination" "dry_lips" "ear_discharge" "eye_discharge" "_flue"  "_flu," "_flu"  "_foul_smelly_stool" "_ful_micturation" "_fungal_skin_infection" "_infra_auricular_sweling" "_jiggers" "_kidney_problem" "_measles" "_neckswelling" "_pus_ear_discharge" "_restless" "_ringworms" "_running_nose" "_sickle_cell" "_sickler" "_small_pox" "_sores_on_the_neck" "_sprained_wrist" "_strutles" "_swollen_inguinal_lymhnodes" "_tearing_eyes" "_tinea_corporis" "_urine_retention" "_whitish_eye_discharge" "_worms_in_his_stool" "body_rushes" "chicken_pox" "eye_discharge" "_tooth_" "boils" "burn"  "_worms"  "_wound" {		
 				replace all_symptoms = subinstr(all_symptoms, "`symptom'", "other2",.)
 			}
 			
@@ -298,64 +300,18 @@ foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 	bysort  `var': sum all_symptoms_*
 }
 
-gen group = .
-replace group = 0 if malariapositive_dum ==0 & denvpcrresults_dum ==0
-replace group = 1 if malariapositive_dum==1
-replace group = 2 if denvpcrresults_dum==1
-replace group = 3 if dmcoinf==1
-tab davidcoinfection group, m
-
-gen group2 = .
-replace group2 = 0 if malariapositive_dum2 ==0 & denvpcrresults_dum ==0
-replace group2 = 1 if malariapositive_dum2==1
-replace group2 = 2 if denvpcrresults_dum==1
-replace group2 = 3 if dmcoinf2==1
-tab davidcoinfection group2, m
-
-outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection group group2 using coinfection.xls, replace
-
-
-foreach studyid in "cfa236" "kfa00337" "kfa00185" "cfa00256" "kfc00184" "kfa00204" "kfa00202" "cfa00205" "cfa00385" "cfa00211" "cfa00201" "cfa00273" "kfa00189" "cfa00348" "cfa00300" "cfa00248" "cfa00313" "cfa00257" "rfa00496" "cfa00196" "cfa00246" "cfa00200" "cfa00243" "cfa00268" "kfa00342" "cfa00265" "cfa00247" "cfa00241" "cfa00340" "cfa00271" "cfa00193" "cfa00245" "cfa00210"{
-list if studyid == "`studyid'"
-}
-
-foreach studyid in "cfa236" "kfa337" "kfa185" "cfa256" "kfc184" "kfa204" "kfa202" "cfa205" "cfa385" "cfa211" "cfa201" "cfa273" "kfa189" "cfa348" "cfa3" "cfa248" "cfa313" "cfa257" "rfa496" "cfa196" "cfa246" "cfa2" "cfa243" "cfa268" "kfa342" "cfa265" "cfa247" "cfa241" "cfa340" "cfa271" "cfa193" "cfa245" "cfa210"{
-list if studyid == "`studyid'"
-}
-
-gen davidcoinfection2 =.
-foreach studyid in "cf236" "kf337" "kf185" "cf256" "kfc184" "kf204" "kf202" "cf205" "cf385" "cf211" "cf201" "cf273" "kf189" "cf348" "cf3" "cf248" "cf313" "cf257" "rf496" "cf196" "cf246" "cf2" "cf243" "cf268" "kf342" "cf265" "cf247" "cf241" "cf340" "cf271" "cf193" "cf245" "cf210"{
-replace davidcoinfection2 = 1 if id_wide== "`studyid'"
-}
-
-outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection davidcoinfection2  group  using coinfection2.xls, replace
-
-preserve 
-		keep davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
-		order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
-		sort davidcoinfection2
-restore
-
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 bysort group: tab symptomcount outcomehospitalized , chi2      
 bysort group: sum symptomcount outcomehospitalized , detail
 
 
-gen selected = .
-replace selected = 0 if malariapositive_dum==0 & denvpcrresults_dum==0
-replace selected = 1 if malariapositive_dum==1
-replace selected = 1 if denvpcrresults_dum==1
-replace selected = 1 if dmcoinf==1
-
 dropmiss, force
 bysort group: sum  all_symptoms*
 
-table1, vars(all_symptoms_halitosis cat \  all_symptoms_edema cat \  all_symptoms_appetite_change cat \  all_symptoms_constipation cat \  all_symptoms_behavior_change cat \  all_symptoms_altms cat \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional cat \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia cat \  all_symptoms_dysphrea cat \  all_symptoms_anaemia cat \  all_symptoms_seizure cat \  all_symptoms_itchiness cat \  all_symptoms_...(line truncated)...
+table1, vars(all_symptoms_halitosis cat \  all_symptoms_edema cat \  all_symptoms_appetite_change cat \  all_symptoms_constipation cat \  all_symptoms_behavior_change cat \  all_symptoms_altms cat \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional cat \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia cat \  all_symptoms_dysphrea cat \  all_symptoms_anaemia cat \  all_symptoms_seizure cat \  all_symptoms_itchiness cat \  all_symptoms_bleeding_symptom cat \  all_symptoms_sore_throat cat \  all_symptoms_sens_eyes cat \  all_symptoms_earache cat \  all_symptoms_funny_taste cat \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs cat \  all_symptoms_bloody_nose cat \  all_symptoms_rash cat \  all_symptoms_dysuria cat \  all_symptoms_nausea cat \  all_symptoms_respiratory cat \  all_symptoms_aches_pains cat \  all_symptoms_abdominal_pain cat \  all_symptoms_diarrhea cat \  all_symptoms_vomiting cat \  all_symptoms_chiils cat \  all_symptoms_fever cat \  all_symptoms_eye_symptom cat \  all_symptoms_other cat \  ) saving("table1_symptoms_by_group.xls", replace ) missing test
 
 order all_symptoms_*
-*graph bar    all_symptoms_halitosis - all_symptoms_general_pain, over(group)
-*graph export symptmsbygroup.tif,  width(4000) replace
 
 
 replace interviewdate = interviewdate2 if interviewdate ==.
@@ -378,29 +334,16 @@ foreach var in date_of_birth  {
 				rename `var'1 `var'
 				recast int `var'
 				}
-table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heart_rate conts \ scleralicterus cat \ splenomegaly  cat \) by(group) saving("table2_by_group.xls", replace ) missing test 
+table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heart_rate conts \ scleralicterus cat \ splenomegaly  cat \) saving("table2_by_group.xls", replace ) missing test 
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
 
 bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
-
-*table1 , vars( \malariapositive_dum cat \ ovaparasites cat\ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
-*repeatmalaria bin \ 
-
-bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 group group2
-
-*bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
+bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 
 drop _merge
 
-/*
-net get  dm0004_1.pkg
-egen zhcaukwho = zanthro(headcircum,hca,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zwtukwho = zanthro(childweight,wa,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zbmiukwho = zanthro(childbmi , ba ,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-*/
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
 table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
@@ -435,7 +378,7 @@ preserve
 		rename height HEIGHT
 		rename head HEAD
 
-		outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
+outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "denvchikvmalariagps_symptoms.csv", comma names replace
 restore
 
 insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\who anthro\MySurvey_z_st.csv", clear 
@@ -464,12 +407,13 @@ local exams hivtest cliniciannoteshneck abdlocation othnodeexam cliniciannotesno
 local vitals calculated_fever headcircum resp_rate systolic_pressure diastolic_pressure pulse_ox can_visual_acuity  head_neck_exam chest_examchest heart_examheart abd_abdomen node_examnodes jointsjoints jointsjoint_location skin_examskin neuro_examneuro tourniquet_test mal_test malaria_results labslabs_ordered primary_diagnosis secondary_diagnosis health_impacts health_impacts_other meds_prescribed meds_prescribed_other nearestpoint spp1 countul1 gametocytes1 treatment1 spp2 countul2 treatment2 temperature ...(line truncated)...
 local infection_groups chikvpcrresults_dum denvpcrresults_dum  malariapositive malariapositive_dum malariapositive_dum2  species_cat  pf200 pm200 po200 pv200 ni200 none200 parasitelevel   group group2  
 
-order `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  
+/*order `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  
 outsheet `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  using priyanka_aic_visita.xls, replace
 
 foreach group in `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  {
 	sum `group'
 }
+*/
 
 tab outcome
 
@@ -486,10 +430,17 @@ replace outcomehospitalized_all = 1 if outcomehospitalized == 1
 
 gen severemalaria = .
 keep if temperature >=38
-
 replace severemalaria = 0 if malariapositive_dum == 1 & outcomehospitalized_all ==0
 replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all ==1
 tab severemalaria visit
+
+replace malariapositive_dum =. if malariapositive_dum ==99 
+replace outcome= . if outcome==99
+egen severemalaria_ord = concat(malariapositive_dum outcome) if outcome!=.
+tab severemalaria_ord  
+list severemalaria_ord malariapositive_dum outcome  
+tab outcome
+list othoutcome if outcome ==6
 
 bysort id_wide : gen dupmalaria_a = _n if malariapositive_dum==1 & visit =="a"
 replace dupmalaria_a = 0 if dupmalaria_a ==.
@@ -658,6 +609,53 @@ bysort severemalaria: sum  pmhother_resp pmhsickle_cell pmhpneumonia pmhintestin
 *past medical history- break out
 ********stop medical history***
 
+*mosquito
+		replace mosquitobitefreq = "1daily" if mosquitobitefreq == "daily"
+		replace mosquitobitefreq = "2every_other_day " if mosquitobitefreq == "every_other_day"
+		replace mosquitobitefreq = "3weekly" if mosquitobitefreq == "weekly"
+		replace mosquitobitefreq = "4monthly" if mosquitobitefreq == "monthly"
+		replace mosquitobitefreq = "5every_other_month" if mosquitobitefreq == "every_other_month"
+		replace mosquitobitefreq = "" if mosquitobitefreq == "refused"
+		encode mosquitobitefreq, gen(mosquitobitefreq_int)
+		tab mosquitobitefreq_int
+		drop mosqbitefreq mosquitobitefreq
+
+
+**mosquito exposure index
+foreach var in mosquitobites outdooractivity  {
+replace `var' = . if `var' ==8
+}
+sum mosquitobites 
+egen mosquito_exposure_index = rowtotal(mosquitobites outdooractivity )
+
+*mosquito prevention index
+foreach var in mosquitocoil {
+replace `var' = . if `var' ==8
+}
+
+gen windows_protect = . 
+replace windows_protect= 1 if strpos(windows, "air_conditioning")
+replace windows_protect= 0 if strpos(windows, "no_windows")
+replace windows_protect= 0 if strpos(windows, "no-windows")
+replace windows_protect= 1 if strpos(windows, "windows_with_screens")
+replace windows_protect= 0 if strpos(windows, "windows_with_screens windows_without_sc")
+replace windows_protect = 0 if strpos(windows, "windows_without_screens")
+replace windows_protect= 1 if strpos(windows, "windows_without_screens air_conditionin")
+replace windows_protect= 0 if strpos(windows, "windows_without_screens no-windows")
+
+gen sleepbednet_dum = . 
+replace sleepbednet_dum = 0 if sleepbednet ==4
+replace sleepbednet_dum = 1 if sleepbednet ==3
+replace sleepbednet_dum = 2 if sleepbednet ==2
+replace sleepbednet_dum = 3 if sleepbednet ==1
+
+foreach var in mosquitocoil sleepbednet_dum windows_protect {
+replace `var' = . if `var' ==8
+}
+sum mosquitocoil sleepbednet_dum windows_protect  
+egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_protect)
+********stop mosquito***
+
 replace childvillage = village if childvillage ==""
 drop village
 encode city, gen(city_int)
@@ -666,15 +664,18 @@ encode childvillage, gen(village_int)
 
 tabout childvillage using village.xls , replace
 
-table1 , vars( splenomegaly  bin\ age contn \ gender bin\city cat \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\) by(severemalaria) saving("severmalaria.xls", replace ) mis...(line truncated)...
-
-table1, vars( parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushto...(line truncated)...
-
+*binary
+table1 , vars(splenomegaly  bin\ age contn \ gender bin\city cat \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\) by(severemalaria) saving("severmalaria.xls", replace ) missing test
+table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ childvillage cat \ ) by(severemalaria) saving("table2_by_group.xls", replace ) missing test
 logit severemalaria parasite_count age gender pastmedhist_dum  hivmeds zbmiukwho zhtukwho zwtukwho zhcaukwho mom_educ i.city_int i.site_int urban wealthindex hygieneindex , or
 outreg using logit2.doc, replace
 
 logit severemalaria parasite_count age gender pastmedhist_dum  hivmeds zbmiukwho zhcaukwho mom_educ i.city_int wealthindex hygieneindex , or
 outreg using logit1.doc, replace
 
-outsheet using "finaldataset.csv", comma names replace
+*ordinal
+table1 , vars(splenomegaly  bin\ age contn \ gender bin\city cat \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\) by(severemalaria_ord) saving("severmalaria_ord.xls", replace ) missing test
+table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ childvillage cat \ ) by(severemalaria_ord) saving("table2_by_group_ord.xls", replace ) missing test
 
+*data export
+outsheet using "finaldataset.csv", comma names replace
