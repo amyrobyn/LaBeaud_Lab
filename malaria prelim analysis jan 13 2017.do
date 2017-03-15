@@ -84,8 +84,6 @@ capture drop coliandmequal
 save malariatemp, replace
 
 *malaria repeat offenders by bloodsmear
-
-
 use malariatemp, clear
 keep if visit == "a" & malariapositive_dum >0 & malariapositive_dum <.
 tostring adbtenderness, replace
@@ -261,27 +259,27 @@ replace season =4 if interviewmonth >=11 & interviewmonth <=12 & season ==.
 *label define 4 "short rains"
 
 *malaria positives
-foreach var in interviewdate childage{
+foreach var in interviewdate age{
 sum `var'  malariapositive_dum if  malariapositive_dum==1 
 sum `var'  malariapositive_dum if  malariapositive_dum==1 
 }
 
 
-foreach var in gender hospitalsite childage city { 
+foreach var in gender hospitalsite age city { 
 tab `var'  malariapositive_dum if  malariapositive_dum==1, m
 }
 *repeat offenders
-foreach var in interviewdate childage{
+foreach var in interviewdate age{
 sum `var'  malariapositive_dum if  malariapositive_dum==1 & numbermalariainfections >1
 sum `var'  malariapositive_dum if  malariapositive_dum==1 & numbermalariainfections >1
 }
 
-foreach var in gender hospitalsite childage city { 
+foreach var in gender hospitalsite age city { 
 tab `var'  malariapositive_dum if  malariapositive_dum ==1 & numbermalariainfections >1, m
 }
 
 tab numbermalariainfections malariapositive_dum
-order malaria* city gender hospitalsite interviewdate* childage numbermalariainfections 
+order malaria* city gender hospitalsite interviewdate* age numbermalariainfections 
 save mergedjan42016, replace
 
 tab malariapositive_dum
@@ -436,15 +434,12 @@ tab `var'
 }
  
 
- replace childage = age_calc if childage==.
- replace childage = round(childage)
- tab childage, m
 
 replace gender = gender - 1 if dataset =="aica msambweni malaria data2016"
 replace gender = gender - 1 if dataset =="aic ukunda malaria data april 2016"
 tab dataset gender
 
-stop 
+ 
 replace city = "kisumu" if city =="k"
 
 replace city =trim(city)
@@ -453,20 +448,20 @@ replace city =trim(city)
  
 preserve
 keep if numbermalariainfections >1
-table1 , vars( cohort cat \ gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_multi-infections_malaria.xls", replace ) missing test 
+table1 , vars( cohort cat \ gender cat\ age conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_multi-infections_malaria.xls", replace ) missing test 
 restore
 
 
 *ab positive
 preserve
 keep if malariapos_ab ==1
-table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_abpos_malaria.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_abpos_malaria.xls", replace ) missing test 
 restore
 
 *a no b pos
 preserve
 keep if anobmalaria==2
-table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_a_pos_b_neg_malaria.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_a_pos_b_neg_malaria.xls", replace ) missing test 
 restore
 
 *aic a visit
@@ -474,15 +469,15 @@ preserve
 egen malariapositive_dum_city = concat(malariapositive_dum city)
 keep if cohort =="aic"
 keep if visit =="a"
-table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("table1_aic_a_malaria.xls", replace ) missing test 
-table1 , vars( gender cat\ childage conts\ malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum_city ) saving("table1_aic_a_malaria_bycity.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum) saving("table1_aic_a_malaria.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(malariapositive_dum_city ) saving("table1_aic_a_malaria_bycity.xls", replace ) missing test 
 restore
 
 *hcc a visit
 preserve
 keep if cohort =="hcc"
 keep if visit =="a"
-table1 , vars( gender cat\ childage conts\ city cat \  malariapositive conts\ numbermalariainfections cat \ consecutivemalariapos cat \ malariapastmedhist cat \ stanfordchikvigg_ cat\ stanforddenvigg_ cat\   chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 cat \ ) by(malariapositive_dum) saving("table1_hcc_a_malaria.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  malariapositive conts\ numbermalariainfections cat \ consecutivemalariapos cat \ malariapastmedhist cat \ stanfordchikvigg_ cat\ stanforddenvigg_ cat\   chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ bmi conts \ tempover38 cat \ ) by(malariapositive_dum) saving("table1_hcc_a_malaria.xls", replace ) missing test 
 restore
 
 save denvchikvmalariagps, replace

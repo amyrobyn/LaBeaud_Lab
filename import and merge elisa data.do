@@ -1,42 +1,44 @@
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 2017"
+local output "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 2017"
+local input "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest"
+cd "`input'"
 
 capture log close 
-log using "elisa_import_merge_clean.smcl", text replace 
+log using "`output'elisa_import_merge_clean.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
 *import csv's
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
+import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 rename *, lower
 rename stford* stanford*
 gen dataset = "chulaimbo_aic" 
-save "chulaimbo_aic" , replace
+save "`output'chulaimbo_aic" , replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
+import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "chulaimbo_hcc"
-save "chulaimbo_hcc", replace
+save "`output'chulaimbo_hcc", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisuma_aic"
-save "kisuma_aic", replace
+save "`output'kisuma_aic", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xls", sheet("KISUMU HCC") cellrange(A4:BJ829) firstrow clear
+import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("KISUMU HCC") cellrange(A4:BJ829) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisumu_hcc"
-save "kisumu_hcc", replace
+save "`output'kisumu_hcc", replace
 
 import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "milalani_hcc"
-save "milalani_hcc", replace
+save "`output'milalani_hcc", replace
 
 import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
 dropmiss, force obs
@@ -45,29 +47,30 @@ egen ChikVIgGOD_db = concat(ChikVIgGOD_d  AK)
 drop ChikVIgGOD_d  AK
 rename ChikVIgGOD_db ChikVIgGOD_d 
 gen dataset = "msambweni_aic"
-save "msambweni_aic", replace
+save "`output'msambweni_aic", replace
 
 import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "nganja_hcc"
-save "nganja_hcc", replace
+save "`output'nganja_hcc", replace
 
 import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "ukunda_aic"
-save "ukunda_aic", replace
+save "`output'ukunda_aic", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda HCC") cellrange(A4:BI1128) firstrow clear
+import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda HCC") cellrange(A8:BI1128) firstrow clear
 dropmiss, force 
 dropmiss, force obs
 gen dataset = "ukunda_hcc"
 rename *, lower
 rename stanfordchikigg_a stanfordchikvigg_a 
-save "ukunda_hcc", replace
+save "`output'ukunda_hcc", replace
 clear
 
+cd "`output'"
 foreach dataset in "kisumu_hcc.dta"  "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta" {
 			use `dataset', clear
 			rename *, lower
@@ -455,4 +458,23 @@ foreach var in stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ {
 		save "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\compare july 16 and marhc 17\prevalent`var'march2017", replace
 	restore
 }		
+
+replace city = "msambweni" if city =="milani"
+replace city = "msambweni" if city =="nganja"
+
 save  prevalent, replace
+
+keep studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
+keep if stanforddenvigg_	!= .|stanfordchikvigg_	!= .|chikvigg_	!= .|denvigg_!= .
+encode city, gen(city_int)
+
+by city, sort : ci stanforddenvigg_, binomial 
+by city, sort : ci stanfordchikvigg_, binomial 
+
+
+by cohort, sort : ci stanforddenvigg_, binomial 
+by cohort, sort : ci stanfordchikvigg_, binomial 
+
+cd "`input'"
+save elisa_merged, replace
+outsheet studyid id_wide visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace

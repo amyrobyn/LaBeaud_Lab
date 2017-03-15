@@ -108,4 +108,5 @@ ds, has(type string)
 			foreach v of varlist `r(varlist)' { 
 				replace `v' = lower(`v') 
 }
-save allpcr, replace
+
+save "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\allpcr", replace

@@ -1,17 +1,23 @@
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16"
-use "prevalent.dta", clear
-collapse (sum) Stanford_CHIKV_IGG Stanford_DENV_IGG , by(id_wide city)
+local output "C:\Users\amykr\Box Sync\U24 Project\data\"
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest"
+use elisa_merged, clear
+collapse (sum)  stanforddenvigg_ stanfordchikvigg_, by(id_wide city)
 gen denvexposed = . 
 gen chikvexposed = . 
-bysort id_wide: replace chikvexposed = 1 if Stanford_CHIKV_IGG >0 &Stanford_CHIKV_IGG<.
-bysort id_wide: replace chikvexposed = 0 if Stanford_CHIKV_IGG ==0 
-bysort id_wide: replace denvexposed  = 1 if Stanford_DENV_IGG >0 & Stanford_DENV_IGG<.
-bysort id_wide: replace denvexposed  = 0 if Stanford_DENV_IGG ==0 
+bysort id_wide: replace chikvexposed = 1 if stanfordchikvigg_ > 0 & stanfordchikvigg_<.
+bysort id_wide: replace chikvexposed = 0 if stanfordchikvigg_ == 0 
+bysort id_wide: replace denvexposed  = 1 if stanforddenvigg_ >0 & stanforddenvigg_<.
+bysort id_wide: replace denvexposed  = 0 if stanforddenvigg_ ==0 
+
+replace city = "msambweni" if city =="milani"
+replace city = "msambweni" if city =="nganja"
 
 tab chikvexposed city, m
 tab denvexposed city, m
 
-export excel using "nov29_exposed", firstrow(variables) replace
+export excel using "`output'exposed", firstrow(variables) replace
+outsheet id_wide denvexposed city using "`output'denv_igg_msambweni.csv" if city =="msambweni" & denvexposed==1 |city =="ukunda" & denvexposed==1, replace comma names
+outsheet id_wide chikvexposed city using "`output'chikv_igg_msambweni.csv" if city =="msambweni" & chikvexposed ==1|city =="ukunda" & chikvexposed ==1,  replace comma names
 
-export excel id_wide denvexposed city using "denv_igg_msambweni" if city =="Msambweni" & denvexposed==1 |city =="Ukunda" & denvexposed==1, firstrow(variables) replace
-export excel id_wide chikvexposed city using "chikv_igg_msambweni" if city =="Msambweni" & chikvexposed ==1|city =="Ukunda" & chikvexposed ==1, firstrow(variables) replace
+ci denvexposed, bin
+ci chikvexposed, bin

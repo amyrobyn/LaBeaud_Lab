@@ -302,13 +302,7 @@ foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 
 
 replace outcomehospitalized = . if outcomehospitalized ==8
-bysort group: tab symptomcount outcomehospitalized , chi2      
-bysort group: sum symptomcount outcomehospitalized , detail
-
-
 dropmiss, force
-bysort group: sum  all_symptoms*
-
 table1, vars(all_symptoms_halitosis cat \  all_symptoms_edema cat \  all_symptoms_appetite_change cat \  all_symptoms_constipation cat \  all_symptoms_behavior_change cat \  all_symptoms_altms cat \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional cat \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia cat \  all_symptoms_dysphrea cat \  all_symptoms_anaemia cat \  all_symptoms_seizure cat \  all_symptoms_itchiness cat \  all_symptoms_bleeding_symptom cat \  all_symptoms_sore_throat cat \  all_symptoms_sens_eyes cat \  all_symptoms_earache cat \  all_symptoms_funny_taste cat \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs cat \  all_symptoms_bloody_nose cat \  all_symptoms_rash cat \  all_symptoms_dysuria cat \  all_symptoms_nausea cat \  all_symptoms_respiratory cat \  all_symptoms_aches_pains cat \  all_symptoms_abdominal_pain cat \  all_symptoms_diarrhea cat \  all_symptoms_vomiting cat \  all_symptoms_chiils cat \  all_symptoms_fever cat \  all_symptoms_eye_symptom cat \  all_symptoms_other cat \  ) saving("table1_symptoms_by_group.xls", replace ) missing test
 
 order all_symptoms_*
@@ -339,13 +333,12 @@ table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
 
-bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
 bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 
 drop _merge
 
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
-table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
+table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  saving("anthrozscores.xls", replace ) missing test
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
 sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
 
@@ -405,7 +398,7 @@ local medical_history childcontact eversurgery reasonsurgery datesurgery gestati
 local meds currenttakingmeds currentmeds meds  othcurrentmeds hivmeds pcpdrugs antibiotic antimalarial antiparasitic ibuprofen paracetamol 
 local exams hivtest cliniciannoteshneck abdlocation othnodeexam cliniciannotesnode urinalysisresult stoolovacyst othoutcome datehospitalized2 hospitalname2 durationhospitalized2 reasonhospitalized3 datehospitalized3 hospitalname3 durationhospitalized3 reasonhospitalized4 datehospitalized4 hospitalname4 durationhospitalized4 reasonhospitalized5 datehospitalized5 hospitalname5 durationhospitalized5 malariapastmedhist pneumoniapastmedhist paracetamolcurrentmeds redeyes bleedingums  adbtenderness hepatomegaly deviceid setofpast_med_historypast_hospit dateyellowfever cliniciannoteschest cliniciannotesheart cliniciannotesjoint cliniciannotesneuro hivresult othstoolovacyst sicklecellresult secondarybacterialdx   
 local vitals calculated_fever headcircum resp_rate systolic_pressure diastolic_pressure pulse_ox can_visual_acuity  head_neck_exam chest_examchest heart_examheart abd_abdomen node_examnodes jointsjoints jointsjoint_location skin_examskin neuro_examneuro tourniquet_test mal_test malaria_results labslabs_ordered primary_diagnosis secondary_diagnosis health_impacts health_impacts_other meds_prescribed meds_prescribed_other nearestpoint spp1 countul1 gametocytes1 treatment1 spp2 countul2 treatment2 temperature ...(line truncated)...
-local infection_groups chikvpcrresults_dum denvpcrresults_dum  malariapositive malariapositive_dum malariapositive_dum2  species_cat  pf200 pm200 po200 pv200 ni200 none200 parasitelevel   group group2  
+local infection_groups chikvpcrresults_dum denvpcrresults_dum  malariapositive malariapositive_dum malariapositive_dum2  species_cat  pf200 pm200 po200 pv200 ni200 none200 parasitelevel
 
 /*order `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  
 outsheet `infection_groups' `severity' `demograhpics' `symptoms' `onset'  `medical_history'  `meds' `exams' `vitals'  using priyanka_aic_visita.xls, replace
@@ -414,13 +407,22 @@ foreach group in `infection_groups' `severity' `demograhpics' `symptoms' `onset'
 	sum `group'
 }
 */
+replace outcomehospitalized = . if outcomehospitalized ==8
+replace outcome= . if outcome==99|outcome==6
 
 tab outcome
 
-gen othoutcome_dum = 0
+*ordinal 
+gen othoutcome_dum = .
+replace othoutcome_dum  = 3 if othoutcome!=""
+replace othoutcome_dum  = 1 if strpos(othoutcome, "nutritional")
+replace outcome = othoutcome_dum  if outcome ==.
+drop othoutcome_dum
+
+*binary
+gen othoutcome_dum = .
 replace othoutcome_dum  = 1 if othoutcome!=""
 replace othoutcome_dum  = 0 if strpos(othoutcome, "nutritional")
-
 gen outcomehospitalized_all = 0
 replace outcomehospitalized_all = 1 if outcome == 3
 replace outcomehospitalized_all = 1 if outcome == 4
@@ -485,12 +487,7 @@ replace systolicbp70 = 0 if  systolicbp >= 70 & systolicbp <.
 		replace improvedwater_index =3 if watersource == 4|watersource == 5|watersource == 6
 
 		destring light, replace
-		
-		replace light = 2 if strpos(othlightsource, "paraffin") 
-		replace light = 2 if strpos(othlightsource, "candles") 
-		replace light = 8  if strpos(othlightsource, "torch") 
-		replace light = 8  if strpos(othlightsource, "electric rechargable lamp") 
-		
+				
 		gen improvedlight_index = .
 		replace improvedlight_index = 0 if light==4
 		replace improvedlight_index = 1 if light==5| light==2
@@ -498,8 +495,6 @@ replace systolicbp70 = 0 if  systolicbp >= 70 & systolicbp <.
 		replace improvedlight_index = 3 if light==3| light==1| light==6
 
 destring latrinetype , replace
-replace latrinetype = 0  if strpos(othlatrinetype , "neighbors") 
-replace latrinetype = 3  if strpos(othlatrinetype , "have both pit latrine and flas") 
 gen ownflushtoilet = .
 replace ownflushtoilet = 0 if latrinetype  == 0
 replace ownflushtoilet = 1 if latrinetype  == 3
@@ -608,17 +603,6 @@ rename asthmacount  asthmacount_old
 bysort severemalaria: sum  pmhother_resp pmhsickle_cell pmhpneumonia pmhintestinal_worms pmhmalaria pmhdiarrhea pmhdiabetes pmhseizure_disorder pmhhiv pmhmeningitis pmhtuberculosis pmhcardio_illness pmhasthma
 *past medical history- break out
 ********stop medical history***
-
-*mosquito
-		replace mosquitobitefreq = "1daily" if mosquitobitefreq == "daily"
-		replace mosquitobitefreq = "2every_other_day " if mosquitobitefreq == "every_other_day"
-		replace mosquitobitefreq = "3weekly" if mosquitobitefreq == "weekly"
-		replace mosquitobitefreq = "4monthly" if mosquitobitefreq == "monthly"
-		replace mosquitobitefreq = "5every_other_month" if mosquitobitefreq == "every_other_month"
-		replace mosquitobitefreq = "" if mosquitobitefreq == "refused"
-		encode mosquitobitefreq, gen(mosquitobitefreq_int)
-		tab mosquitobitefreq_int
-		drop mosqbitefreq mosquitobitefreq
 
 
 **mosquito exposure index

@@ -43,6 +43,11 @@ gen preg_chikvpos = .
 replace preg_chikvpos = 1 if pregnant ==1 
 replace preg_chikvpos = 0 if pregnant == 0 | ever_had_chikv ==0
 tab preg_chikvpos 
+drop if trimester ==. & preg_chikvpos ==1
+gen chikv_preg_non =. 
+replace chikv_preg_non = 0 if ever_had_chikv ==1 & pregnant == 0
+replace chikv_preg_non = 1 if ever_had_chikv ==1 & pregnant == 1
+
 label define gestational_age_cat  0 "full-term" 1 "pre-term" 2 "post-term" , modify 
 tabout trimester gestational_age_cat if smoking ==0 using trimeste_vs_gestational_agecat.xls , stats(chi2) replace h1("trimeste vs gestational agecat(row %)") h2( "|full-term | pre-term | post-term | Total" ) h3("Didn't Smoke") lines(none)
 tabout trimester gestational_age_cat if smoking ==1 using trimeste_vs_gestational_agecat.xls , stats(chi2) append h1("Smoked") h2(nil) h3(nil)
@@ -69,8 +74,12 @@ replace mom_age =. if mom_age <15
 
 replace mode_of_delivery = mode_of_delivery -1
 bysort preg_chikvpos:sum smoking_amount marijuana_amount opioid_amount 
-*table1, vars(pregnancy_illness bin \ birth_time cat \ gestational_age_cat cat \ alcohol bin \ smoking bin \ drugs bin \ marijuana cat \ meth cat \ heroine cat \ cocaine cat \ opioids bin\ mode_of_delivery bin\ complications bin\ birthing_experience cat \ labour_duration conts \ after_birth_problems bin\ first_few_months_illness bin\ disabilities cat \ race cat \ education cat \ mom_age contn \ monthly_income cat \ symptoms___1 bin\ symptoms___2 bin\ symptoms___3 bin\ symptoms___4 bin\ symptoms___5 bin\ symptoms___6 bin\ symptoms___7 bin\ symptoms___8 bin\ symptoms___9 bin\ symptoms___10 bin\ symptoms___11 bin\ symptoms___12 bin\ symptoms___13 bin\ symptoms___14 cat \ symptoms___15 bin\ symptoms___16 bin\ symptoms___17 cat \ symptoms___18 bin\ symptoms___19 bin\ symptoms___20 cat \ symptoms___21 bin\ symptoms___22 bin\ symptoms___23 bin\ symptoms___24 bin\ symptoms___25 bin\ symptoms___26 cat \ symptoms___27 cat \ symptoms___28 cat \ symptoms___29 cat \ symptoms___30 cat \ symptoms___31 cat \ symptoms___32 cat \ symptoms___33 cat \ symptoms___34 bin\ opioid_amount conts \ gestational_age_weekfrac contn \ symptom_duration contn \ alcohol_amount contn \ medical_conditions___10 bin\ medical_conditions___6 bin \  marrital_status bin)  by(preg_chikvpos) saving(table2.xls, replace)
+
 sum reason_hospitalized when_hospitalized duration_hospitalized hospitalized_dengue hospitalized_ever
+
+gen hospitalized_pregnancy = 0 
+replace participant_id =lower(participant_id) 
+replace hospitalized_pregnancy = 1 if participant_id=="sg0005"| participant_id=="gb0007"| participant_id=="gb0006"|participant_id=="gb0023"
 
 foreach var in list_pregnancy_illness specify_complications  specify_after_birth_problems specify_first_few_months  specify_disabilities caesarean{
 	tabout `var' using tocategorize\tab`var'.xls, replace
@@ -86,14 +95,17 @@ foreach var of varlist specify_after_birth_problems {
 		replace `var'= subinstr(`var', " ", "_",.)
 }
 
+*remove these
+*replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "draft_in_his_eye" ,"unknown" ,.)
+*replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "required_flush" ,"unknown" ,.)
+
+*
 replace specify_after_birth_problems = lower(specify_after_birth_problems)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "mucus_on_chest" ,"respiratory" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "breathing_problems" ,"respiratory" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "cartilage_in_trachea_did_not_develop_properly" ,"malformation" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "club_foot" ,"malformation" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "chikungunya" ,"chikv" ,.)
-replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "draft_in_his_eye" ,"unknown" ,.)
-replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "required_flush" ,"unknown" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "fever" ,"sepsis" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "ear_infection" ,"sepsis" ,.)
 replace specify_after_birth_problems= subinstr(specify_after_birth_problems, "head_cold" ,"viral" ,.)
@@ -127,10 +139,13 @@ tab specify_complications
 replace specify_complications= subinstr(specify_complications, "alot_of_blood" ,"hemorrhage" ,.)
 replace specify_complications= subinstr(specify_complications, "breached" ,"breach" ,.)
 replace specify_complications= subinstr(specify_complications, "cervical_tearing" ,"tear" ,.)
-replace specify_complications= subinstr(specify_complications, "chikv_pain" ,"tear" ,.)
-replace specify_complications= subinstr(specify_complications, "child_on_posterior" ,"" ,.)
 replace specify_complications= subinstr(specify_complications, "placenta_previa" ,"prolonged_labour" ,.)
-replace specify_complications= subinstr(specify_complications, "swekling_on_baby_head" ,"swollen" ,.)
+
+*remove these
+*replace specify_complications= subinstr(specify_complications, "swekling_on_baby_head" ,"swollen" ,.)
+*replace specify_complications= subinstr(specify_complications, "chikv_pain" ,"tear" ,.)
+*replace specify_complications= subinstr(specify_complications, "child_on_posterior" ,"" ,.)
+
 
 rename specify_complications lab_complic
 foreach var of varlist lab_complic{ 			
@@ -147,6 +162,9 @@ foreach symptom in  "hemorrhage" "breach" "tear" "chikv_pain" "cord_around_neck"
 }
 }	
 
+*add these into the labor complications from pregnancy illness
+*replace `var' = subinstr(`var' , "rupture_if_placenta" ,"placental_abruption" ,.)
+*replace `var' = subinstr(`var' , "the_baby_was_breached" ,"breach" ,.)
 
 foreach var of varlist specify_first_few_months { 			
 		replace `var'= subinstr(`var', " ", "_",.)
@@ -181,21 +199,23 @@ foreach var of varlist list_pregnancy_illness{
 		replace `var'= subinstr(`var', " ", "_",.)
 		replace `var' = lower(`var')
 tab `var' 
-
-replace `var' = subinstr(`var' , "chick_v" ,"chikv" ,.)
 replace `var' = subinstr(`var' , "chikungunya" ,"chikv" ,.)
+replace `var' = subinstr(`var' , "chikungunya" ,"chikv" ,.)
+replace `var' = subinstr(`var' , "chick_v" ,"chikv" ,.)
 replace `var' = subinstr(`var' , "diabetic" ,"gest_diab" ,.)
 replace `var' = subinstr(`var' , "extreme_morning_sickness" ,"hyperemesis_gr" ,.)
 replace `var' = subinstr(`var' , "high_blood_pressure" ,"hypert" ,.)
-replace `var' = subinstr(`var' , "rupture_if_placenta" ,"placental_abruption" ,.)
 replace `var' = subinstr(`var' , "spotting_blood" ,"pv_bleed" ,.)
-replace `var' = subinstr(`var' , "the_baby_was_breached" ,"breach" ,.)
 replace `var' = subinstr(`var' , "vomiting,_diarrhea,_cramps" ,"breach" ,.)
 rename `var' preg_ill
 }
+gen lab_complic_placental_abruption = .
+order lab_complic_placental_abruption 
+replace  lab_complic_placental_abruption= 1 if preg_ill== "rupture_if_placenta"
+replace  lab_complic_breach = 1 if preg_ill== "the_baby_was_breached"
 
 foreach var of varlist preg_ill{ 			
-foreach symptom in  "anemia" "breach" "acid_reflux " "chikv"  "placental_abruption" "sickle_cell" "pv_bleed" "syphillis" "uti" "gastroenteritis" "hyperemesis_gr" "gest_diab" "hypert"{
+foreach symptom in  "anemia" "breach" "acid_reflux" "chikv" "placental_abruption" "sickle_cell" "pv_bleed" "syphillis" "uti" "gastroenteritis" "hyperemesis_gr" "gest_diab" "hypert"{
 						tostring `var', replace
 						replace `var'=trim(itrim(lower(`var')))
 						moss `var', match(`symptom') prefix(preg_ill`symptom')
@@ -218,4 +238,24 @@ egen count_baby_health= rowtotal(baby_health_*)
 egen count_lab_complic= rowtotal(lab_complic_*)
 egen count_abp= rowtotal(abp_*)
 
-table1, vars(count_abp cat\ count_lab_complic cat\ count_baby_health cat\ count_preg_ill cat\ related_caesarean  cat \ preg_ill_gest_diab  cat \ preg_ill_hyperemesis_gr  cat \ preg_ill_gastroenteritis  cat \ preg_ill_uti  cat \ preg_ill_syphillis  cat \ preg_ill_pv_bleed  cat \ preg_ill_sickle_cell  cat \ preg_ill_placental_abruption  cat \ \ preg_ill_acid_reflux  cat \ preg_ill_breach  cat \ preg_ill_anemia  cat \ baby_health_sickle_cell  cat \ baby_health_respiratory  cat \ baby_health_jaundice  cat \ baby_health_nicu  cat \ baby_health_murmur  cat \ baby_health_chikv  cat \ baby_health_anemia  cat \ baby_health_allergies  cat \ lab_complic_swollen  cat \ lab_complic_prolonged_labour  cat \ lab_complic_placenta_previa  cat \ lab_complic_cord_around_neck  cat \ lab_complic_chikv_pain  cat \ lab_complic_tear  cat \ lab_complic_breach  cat \ lab_complic_hemorrhage  cat \ abp_rash  cat \ abp_eczema  cat \ abp_allergies  cat \ abp_sickle_cell  cat \ abp_sinus  cat \ abp_swelling  cat \ abp_seizures  cat \ abp_jaundice  cat \ abp_viral  cat \ abp_sepsis  cat \ abp_unknown  cat \ abp_malformation  cat \ abp_respiratory  cat \ abp_chikv cat \) by(preg_chikvpos) saving(table3.xls, replace) test missing
+order preg_chikvpos 
+
+outsheet using final_data.csv, replace comma names
+
+tab  hospitalized_pregnancy  preg_chikvpos , chi2
+
+*tables
+*demographic tables
+table1, vars(race cat \ mom_age contn \ education cate \ marrital_status bine \ monthly_income cate \  medical_conditions___6 bine \ medical_conditions___10 bine\ alcohol  bine \ smoking bine \ ) by(preg_chikvpos) saving(demographics_bygroups.xls, replace) test missing
+
+*pregnancy outcomes table
+table1, vars(birth_time cate \ mode_of_delivery bine\ gestational_age_weekfrac conts \ count_abp cate\ count_lab_complic cate\ count_preg_ill cate\ count_baby_health cate\ ) by(preg_chikvpos) saving(pregnancy_bygroups.xls, replace) test missing
+
+*symptoms table
+table1, vars(symptoms___1 bine\ symptoms___2 bine\ symptoms___3 bine\ symptoms___4 bine\ symptoms___5 bine\ symptoms___6 bine\ symptoms___7 bine\ symptoms___8 bine\ symptoms___9 bine\ symptoms___10 bine\ symptoms___11 bine\ symptoms___12 bine\ symptoms___13 bine\ symptoms___14 cate \ symptoms___15 bine\ symptoms___16 bine\ symptoms___17 cate \ symptoms___18 bine\ symptoms___19 bine\ symptoms___20 cate \ symptoms___21 bine\ symptoms___22 bine\ symptoms___23 bine\ symptoms___24 bine\ symptoms___25 bine\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 bine)  by(preg_chikvpos) saving(symptoms_group.xls, replace) test missing
+
+*symptoms table by chikv during or not during preg
+table1, vars(symptoms___1 cate\ symptoms___2 cate\ symptoms___3 cate\ symptoms___4 cate\ symptoms___5 cate\ symptoms___6 cate\ symptoms___7 cate\ symptoms___8 cate\ symptoms___9 cate\ symptoms___10 cate\ symptoms___11 cate\ symptoms___12 cate\ symptoms___13 cate\ symptoms___14 cate \ symptoms___15 cate\ symptoms___16 cate\ symptoms___17 cate \ symptoms___18 cate\ symptoms___19 cate\ symptoms___20 cate \ symptoms___21 cate\ symptoms___22 cate\ symptoms___23 cate\ symptoms___24 cate\ symptoms___25 cate\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 cate \ symptom_duration conts)  by(chikv_preg_non) saving(symptoms_chikv_preg_non.xls, replace) test missing
+
+*breakdown_of_pregnancy_outcomes 
+table1, vars(count_abp cate\ count_lab_complic cate\ count_baby_health cate\ count_preg_ill cate\ related_caesarean  cate \ preg_ill_gest_diab  cate \ preg_ill_hyperemesis_gr  cate \ preg_ill_gastroenteritis  cate \ preg_ill_uti  cate \ preg_ill_syphillis  cate \ preg_ill_pv_bleed  cate \ preg_ill_sickle_cell  cate \ preg_ill_placental_abruption  cate \  preg_ill_acid_reflux  cate \ preg_ill_breach  cate \ preg_ill_anemia  cate \ baby_health_sickle_cell  cate \ baby_health_respiratory  cate \ baby_health_jaundice  cate \ baby_health_nicu  cate \ baby_health_murmur  cate \ baby_health_chikv  cate \ baby_health_anemia  cate \ baby_health_allergies  cate \ lab_complic_swollen  cate \ lab_complic_prolonged_labour  cate \ lab_complic_placenta_previa  cate \ lab_complic_cord_around_neck  cate \ lab_complic_chikv_pain  cate \ lab_complic_tear  cate \ lab_complic_breach  cate \ lab_complic_hemorrhage  cate \ abp_rash  cate \ abp_eczema  cate \ abp_allergies  cate \ abp_sickle_cell  cate \ abp_sinus  cate \ abp_swelling  cate \ abp_seizures  cate \ abp_jaundice  cate \ abp_viral  cate \ abp_sepsis  cate \ abp_unknown  cate \ abp_malformation  cate \ abp_respiratory  cate \ abp_chikv cate \) by(preg_chikvpos) saving(breakdown_of_pregnancy_outcomes.xls, replace) test missing

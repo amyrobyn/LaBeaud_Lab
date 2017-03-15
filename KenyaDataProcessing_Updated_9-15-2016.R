@@ -10,16 +10,16 @@
 #       2) the file names themselves, search read_excel 
 # Also, make sure that you select the correct sheet number when changing the excel files
 
-Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre7') # for 32-bit version
-
+#Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre7') # for 32-bit version
+Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7') # for 64-bit version
 install.packages(c("readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart"))
 install.packages(c("rJava", "WriteXLS", "xlsx"))
-install.packages("readxl")
 
 #if (Sys.getenv("JAVA_HOME")!="")
 #  Sys.setenv(JAVA_HOME="")
 ### Packages :
-library(rJava) # Writing Excel files
+library(rJava) 
+library(WriteXLS) # Writing Excel files
 library(readxl) # Excel file reading
 library(xlsx) # Writing Excel files
 library(plyr) # Data frame manipulation
@@ -453,8 +453,46 @@ Ovitrap1wide <- melt(Ovitrap1, c("date", "site", "species", "indoors"), "measure
 Ovitrap1wide<-cast(Ovitrap1wide, site + date + indoors ~ species)
 glimpse(Ovitrap1wide)
 
+Aedes_aegypti_Indoor <- Ovitrap1wide[ which(Ovitrap1wide$indoors ==1), c (1:2, 5) ] 
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
 
-## come back here tomorrow
+CulexsppIndoor <- Ovitrap1wide[ which(Ovitrap1wide$indoors ==1), c (1:2, 6) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Ovitrap1wide[ which(Ovitrap1wide$indoors ==0), c (1:2, 5) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Ovitrap1wide[ which(Ovitrap1wide$indoors ==0), c (1:2, 6) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Ovitrap1<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+
 # These variable names may need to be updated as more data is collected
 names(Ovitrap1)[1] <- "Site"; 
 names(Ovitrap1)[2] <- "Date"
@@ -465,15 +503,81 @@ names(Ovitrap1)[6] <- "Aedes aegypti, Outdoor"
 names(Ovitrap1)[7] <- "Culex spp., Outdoor"
 names(Ovitrap1)[8] <- "Outdoor Total"
 
+glimpse(Ovitrap1)
 # Removing excess columns and rows
 Ovitrap1 <- Ovitrap1[-1,]
 ind <- apply(Ovitrap1, 2, function(x) all(is.na(x)))
 Ovitrap1 <- Ovitrap1[,!ind]
-Ovitrap1 <- Ovitrap1[-(which(is.na(Ovitrap1$Date))),]
+#Ovitrap1b <- Ovitrap1[(-which(is.na(Ovitrap1$Date))),]
+glimpse(Ovitrap1)
 
 # Adjusting and including site names as well as variable names
 # These variable names may need to be updated as more data is collected
-names(Ovitrap2)[1] <- "Site"; names(Ovitrap2)[2] <- "Date"
+glimpse(Ovitrap2)
+
+#reshape to wide
+names(Ovitrap2) <- tolower(names(Ovitrap2))
+Ovitrap2$species[Ovitrap2$species=="Ae.aegypti/simpsoni"] <- "aedes spp"
+Ovitrap2$species[Ovitrap2$species=="Aedes"] <- "aedes spp"
+Ovitrap2$species[Ovitrap2$species=="Ae.aegypti"] <- "Aedes aegypti"
+Ovitrap2$species[Ovitrap2$species=="A.aegypti/simpsoni"] <- "aedes spp"
+Ovitrap2$species[Ovitrap2$species=="Aedes aegypti"] <- "Aedes aegypti"
+Ovitrap2$species[Ovitrap2$species=="Ae. Aegypti"] <- "Aedes aegypti"
+Ovitrap2$species[Ovitrap2$species=="none"] <- "N/A"
+Ovitrap2$species[Ovitrap2$species=="_"] <- "N/A"
+Ovitrap2$species[Ovitrap2$species=="None"] <- "N/A"
+Ovitrap2$species[Ovitrap2$species=="0.000000"] <- "N/A"
+table(Ovitrap2$species)
+
+library(reshape)
+Ovitrap2wide <- melt(Ovitrap2, c("date", "site", "species", "location"), "egg count")
+Ovitrap2wide<-cast(Ovitrap2wide, site + date + location ~ species)
+glimpse(Ovitrap2wide)
+
+Aedes_aegypti_Indoor <- Ovitrap2wide[ which(Ovitrap2wide$location =="Indoor"), c (1:2, 7) ] 
+glimpse(Aedes_aegypti_Indoor)
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+
+CulexsppIndoor <- Ovitrap2wide[ which(Ovitrap2wide$location =="Indoor"), c (1:2, 9) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Ovitrap2wide[ which(Ovitrap2wide$location =="Outdoor"), c (1:2, 7) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Ovitrap2wide[ which(Ovitrap2wide$location =="Outdoor"), c (1:2, 9) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Ovitrap2<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+glimpse(Ovitrap2)
+# These variable names may need to be updated as more data is collected
+names(Ovitrap2)[1] <- "Site"; 
+names(Ovitrap2)[2] <- "Date"
 names(Ovitrap2)[3] <- "Aedes aegypti, Indoor"
 names(Ovitrap2)[4] <- "Culex spp., Indoor"
 names(Ovitrap2)[5] <- "Indoor Total"
@@ -486,22 +590,125 @@ Ovitrap2 <- Ovitrap2[-1,]
 Ovitrap2 <- Ovitrap2[-dim(Ovitrap2)[1], -dim(Ovitrap2)[2]] # last one is totals which we don't really need
 
 # Adjusting dates
-Ovitrap1$Date <- as.yearmon(as.Date(as.numeric(Ovitrap1$Date), origin = "1900-01-01"))
-Ovitrap2$Date <- as.yearmon(as.Date(as.numeric(Ovitrap2$Date), origin = "1900-01-01"))
+Ovitrap1$Date <- as.yearmon(as.Date(as.POSIXct(Ovitrap1$Date), origin = "1900-01-01"))
+Ovitrap2$Date <- as.yearmon(as.Date(as.POSIXct(Ovitrap2$Date), origin = "1900-01-01"))
 
   # Double checking everything was processed okay
   head(Ovitrap1)
   head(Ovitrap2)
-  
+
+Ovitrap2$Site[Ovitrap2$Site=="nganja"] <- "Msambweni"
+Ovitrap2$Site[Ovitrap2$Site=="Nganja"] <- "Msambweni"
+Ovitrap2$Site[Ovitrap2$Site=="MILALANI"] <- "Msambweni"
+Ovitrap2$Site[Ovitrap2$Site=="Milalani"] <- "Msambweni"
+Ovitrap2$Site[Ovitrap2$Site=="mwamambi A"] <- "Ukunda"
+Ovitrap2$Site[Ovitrap2$Site=="Mwamambi A"] <- "Ukunda"
+Ovitrap2$Site[Ovitrap2$Site=="Mwamambi B"] <- "Ukunda"
+Ovitrap2$Site[Ovitrap2$Site=="mwamambi B"] <- "Ukunda"
+table(Ovitrap2$Site)
 # Separating data into site specific data sets
 OvitrapC <- Ovitrap1[which(Ovitrap1[,1] == "Chulaimbo"),]
 OvitrapK <- Ovitrap1[-which(Ovitrap1[,1] == "Chulaimbo"),]
+
 OvitrapM <- Ovitrap2[which(Ovitrap2[,1] == "Msambweni"),]
-OvitrapU <- Ovitrap2[-which(Ovitrap2[,1] == "Msambweni"),]
+OvitrapU <- Ovitrap2[which(Ovitrap2[,1] == "Ukunda"),]
+
 
 # Larval 
 
 # Removing excess columns and rows
+# Larval
+
+# Adjusting and including site names as well as variable names
+for(i in 1:(dim(Larval2)[1])){
+  if(is.na(Larval2[i,1])){
+    Larval2[i,1] = Larval2[(i - 1),1]
+  }
+}
+glimpse(Larval2)
+table(Larval2$SpeciesL)
+names(Larval2)[names(Larval2)=="SpeciesL"] <- "species"
+Larval2$measure <- rowSums(Larval2[15:16])
+names(Larval2) <- tolower(names(Larval2))
+Larval2$species <- tolower(Larval2$species)
+
+#reshape to wide
+library(reshape)
+glimpse(Larval2wide)
+Larval2$species[Larval2$species=="ae.simp"] <- "ae.simpsoni"
+Larval2$species[Larval2$species=="toxorhynchite"] <- "toxo"
+Larval2$species[Larval2$species=="ae.simpsoni"] <- "aedes spp"
+Larval2$species[Larval2$species=="aedes"] <- "aedes spp"
+table(Larval2$species)
+
+Larval2wide <- melt(Larval2, c("date", "site", "species", "location"), "measure")
+Larval2wide<-cast(Larval2wide, site + date + location ~ species)
+glimpse(Larval2wide)
+names(Larval2wide)[names(Larval2wide)=="location"] <- "indoors"
+Larval2wide$indoors[Larval2wide$indoors=="indoor"] <- "1"
+Larval2wide$indoors[Larval2wide$indoors=="outdoor"] <- "0"
+Larval2wide$indoors[Larval2wide$indoors=="Indoor"] <- "1"
+Larval2wide$indoors[Larval2wide$indoors=="Outdoor"] <- "0"
+
+Aedes_aegypti_Indoor <- Larval2wide[ which(Larval2wide$indoors ==1), c (1:2, 5) ] 
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+
+CulexsppIndoor <- Larval2wide[ which(Larval2wide$indoors ==1), c (1:2, 7) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Larval2wide[ which(Larval2wide$indoors ==0), c (1:2, 5) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Larval2wide[ which(Larval2wide$indoors ==0), c (1:2, 7) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Larval2<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+glimpse(Larval2)
+# These variable names may need to be updated as more data is collected
+names(Larval2)[1] <- "Site"; 
+names(Larval2)[2] <- "Date"
+names(Larval2)[3] <- "Aedes aegypti, Indoor"
+names(Larval2)[4] <- "Culex spp., Indoor"
+names(Larval2)[5] <- "Indoor Total"
+names(Larval2)[6] <- "Aedes aegypti, Outdoor"
+names(Larval2)[7] <- "Culex spp., Outdoor"
+names(Larval2)[8] <- "Outdoor Total"
+
+glimpse(Larval2)
+# Removing excess columns and rows
+Larval2 <- Larval2[-1,]
+ind <- apply(Larval2, 2, function(x) all(is.na(x)))
+Larval2 <- Larval2[,!ind]
+#Larval2b <- Larval2[(-which(is.na(Larval2$Date))),]
+glimpse(Larval2)
+
+
 Larval2 <- Larval2[-1,]
 Larval2 <- Larval2[-dim(Larval2)[1],] 
 i2 <- sapply(Larval2,function(x) all(is.na(x)))
@@ -514,45 +721,92 @@ for(i in 1:(dim(Larval1)[1])){
     Larval1[i,1] = Larval1[(i - 1),1]
   }
 }
+glimpse(Larval1)
+table(Larval1$Species)
+Larval1$measure <- rowSums(Larval1[13:14])
+names(Larval1) <- tolower(names(Larval1))
+Larval1$species <- tolower(Larval1$species)
+names(Larval1)[8] <- "indoors" 
+Larval1$indoors[Larval1$indoors=="indoors"] <- "1"
+Larval1$indoors[Larval1$indoors=="outdoors"] <- "0"
+Larval1$indoors[Larval1$indoors=="Indoors"] <- "1"
+Larval1$indoors[Larval1$indoors=="Outdoors"] <- "0"
 
+#reshape to wide
+library(reshape)
+Larval1wide <- melt(Larval1, c("date", "site", "species", "indoors"), "measure")
+Larval1wide<-cast(Larval1wide, site + date + indoors ~ species)
+glimpse(Larval1wide)
+
+Aedes_aegypti_Indoor <- Larval1wide[ which(Larval1wide$indoors ==1), c (1:2, 5) ] 
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+
+CulexsppIndoor <- Larval1wide[ which(Larval1wide$indoors ==1), c (1:2, 7) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Larval1wide[ which(Larval1wide$indoors ==0), c (1:2, 5) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Larval1wide[ which(Larval1wide$indoors ==0), c (1:2, 7) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Larval1<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+glimpse(Larval1)
 # These variable names may need to be updated as more data is collected
-names(Larval1)[1] <- "Site"; names(Larval1)[2] <- "Date"
+names(Larval1)[1] <- "Site"; 
+names(Larval1)[2] <- "Date"
 names(Larval1)[3] <- "Aedes aegypti, Indoor"
 names(Larval1)[4] <- "Culex spp., Indoor"
 names(Larval1)[5] <- "Indoor Total"
 names(Larval1)[6] <- "Aedes aegypti, Outdoor"
-names(Larval1)[7] <- "Anopheles, Outdoor"
-names(Larval1)[8] <- "Culex, Outdoor"
-names(Larval1)[9] <- "Toxorhynchites, Outdoor"
-names(Larval1)[10] <- "Outdoor Total"
+names(Larval1)[7] <- "Culex spp., Outdoor"
+names(Larval1)[8] <- "Outdoor Total"
 
-# Adjusting and including site names as well as variable names
-# These variable names may need to be updated as more data is collected
-names(Larval2)[1] <- "Site"; names(Larval2)[2] <- "Date"
-names(Larval2)[3] <- "Aedes aegypti, Indoor"
-names(Larval2)[4] <- "Aedes simpsoni, Indoor"
-names(Larval2)[5] <- "Anopheles, Indoor"
-names(Larval2)[6] <- "Culex spp., Indoor"
-names(Larval2)[7] <- "Indoor Total"
-names(Larval2)[8] <- "Aedes aegypti, Outdoor"
-names(Larval2)[9] <- "Aedes simpsoni, Outdoor"
-names(Larval2)[10] <- "Anopheles spp, Outdoor"
-names(Larval2)[11] <- "Culex spp., Outdoor"
-names(Larval2)[12] <- "Toxorhynchites, Outdoor"
-names(Larval2)[13] <- "Outdoor Total"
-
+glimpse(Larval1)
 # Removing excess columns and rows
 Larval1 <- Larval1[-1,]
 ind <- apply(Larval1, 2, function(x) all(is.na(x)))
 Larval1 <- Larval1[,!ind]
+#Larval1b <- Larval1[(-which(is.na(Larval1$Date))),]
+glimpse(Larval1)
 
 # Adjusting dates
-Larval1$Date <- as.yearmon(as.Date(as.numeric(Larval1$Date), origin = "1900-01-01"))
-Larval2$Date <- as.yearmon(as.Date(as.numeric(Larval2$Date), origin = "1900-01-01"))
+Larval1$Date <- as.yearmon(as.Date(as.POSIXct(Larval1$Date), origin = "1900-01-01"))
+Larval2$Date <- as.yearmon(as.Date(as.POSIXct(Larval2$Date), origin = "1900-01-01"))
+
 
   # Double checking everything was processed correctly
   head(Larval1)
   head(Larval2)
+Larval2$Site[Larval2$Site=="Milalani"] <- "Msambweni"
+Larval2$Site[Larval2$Site=="Nganja"] <- "Msambweni"
+table(Larval2$Site)
 
 LarvalC <- Larval1[which(Larval1[,1] == "Chulaimbo"),]
 LarvalK <- Larval1[-which(Larval1[,1] == "Chulaimbo"),]
@@ -579,7 +833,7 @@ for(i in 1:(dim(Pupae2)[1])){
     Pupae2[i,1] = Pupae2[(i - 1),1]
   }
 }
-
+glimpse(Pupae1)
 Pupae1<-Pupae1[c("Site", "Date", "Pupae", "Species")]
 #reshape to wide
 attach(Pupae1)
@@ -599,9 +853,8 @@ Pupae2$SpeciesL <- tolower(Pupae2$SpeciesL)
 Pupae2$SpeciesL[Pupae2$SpeciesL=="ae.simp"] <- "aedes"
 
 pupae2wide <- melt(Pupae2, c("Date", "Site", "SpeciesL"), "Pupae")
-Pupae2<-cast(pupae2b, Site + Date ~ SpeciesL)
-Pupae2<-Pupae2[c("Site", "Date", "aedes", "an.gambiae", "culex", "toxo")]
-
+Pupae2<-cast(pupae2wide, Site + Date ~ SpeciesL)
+glimpse(Pupae2)
 # These variable names may need to be updated as more data is collected
 names(Pupae1)[1] <- "Site"; 
 names(Pupae1)[2] <- "Date"
@@ -629,21 +882,27 @@ Pupae2[is.na(Pupae2)] <- 0
   # Double checking everything is processed correctly
 head(Pupae1)
 head(Pupae2)
-  
+
 # Separation into site specific data sets
+
+Pupae2$Site[Pupae2$Site=="Milalani"] <- "Msambweni"
+Pupae2$Site[Pupae2$Site=="Nganja"] <- "Msambweni"
+
+
 Pupae2$Site[Pupae2$Site=="Diani A"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="Diani B"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="DianiA"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="DianiB"] <- "Diani"
 
-PupaeC <- Pupae1[which(Pupae2[,1] == "Chulaimbo"),]
-PupaeK <- Pupae1[-which(Pupae2[,1] == "Chulaimbo"),]
+table(Pupae1$Site)
+
+PupaeC <- Pupae1[which(Pupae1[,1] == "Chulaimbo"),]
+PupaeK <- Pupae1[-which(Pupae1[,1] == "Chulaimbo"),]
 
 PupaeM <- Pupae2[which(Pupae2[,1] == "Msambweni"),]
 PupaeU <- Pupae2[-which(Pupae2[,1] == "Msambweni"),]
 
 # Prokopack
-
 # Adjusting and including site names as well as variable names
 for(i in 1:(dim(Prokopack1)[1])){
   if(is.na(Prokopack1[i,1])){
@@ -651,21 +910,332 @@ for(i in 1:(dim(Prokopack1)[1])){
   }
 }
 
-# These variable names may need to be updated as more data is collected
-names(Prokopack1)[1] <- "Site"; names(Prokopack1)[2] <- "Date"
-names(Prokopack1)[3] <- "Aedes aegypti, Indoor"
-names(Prokopack1)[4] <- "Anopheles gambiae, Indoor"
-names(Prokopack1)[5] <- "Anopheles funestus, Indoor"
-names(Prokopack1)[6] <- "Culex spp., Indoor"
-names(Prokopack1)[7] <- "Aedes aegypti, Outdoor"
-names(Prokopack1)[8] <- "Anopheles gambiae, Outdoor"
-names(Prokopack1)[9] <- "Anopheles funestus, Outdoor"
-names(Prokopack1)[10] <- "Culex spp., Outdoor"
+glimpse(Prokopack1)
+INDOOR<-Prokopack1[1:38]
+INDOOR<-INDOOR[c(19:38, 1:18)]
+glimpse(INDOOR)
+names(INDOOR)[28] <- "Indoor" 
+INDOOR$`Bushes around the house` <-"NA"
+INDOOR$`Bushes around the house` <-"NA"
 
-# Removing excess rows and colunmns
+OUTDODOR<-Prokopack1[ c (1:7, 39:61) ]
+OUTDODOR<-OUTDODOR[c(11:30, 1:10)]
+glimpse(OUTDODOR)
+names(OUTDODOR)[28] <- "Indoor" 
+#add the other variables so we can bind.
+OUTDODOR$ `House wall` <-"NA"
+OUTDODOR$`House roof` <-"NA"
+OUTDODOR$`Rooms with ceilings` <-"NA"
+OUTDODOR$`Eaves open` <-"NA"
+OUTDODOR$`Bed net present` <-"NA"
+OUTDODOR$`Mosquito coil burn` <-"NA"
+OUTDODOR$`Insecticide sprayed` <-"NA"
+OUTDODOR$`No. of sleeper` <-"NA"
+OUTDODOR$`Firewood use in the house` <-"NA"
+OUTDODOR$`No. of rooms`<-"NA"
+
+
+  
+OUTDODOR$Indoor[OUTDODOR$Indoor == 2] <- 0
+Prokopack1<-rbind.fill(OUTDODOR, INDOOR)
+glimpse(Prokopack1)
+
+gather<-gather(Prokopack1, keycol, valuecol, 1:20)
+glimpse(gather)
+names(Prokopack1)[names(Prokopack1)=="Aedes-Blood fed"] <- "Aedes-Bloodfed"
+names(Prokopack1)[names(Prokopack1)=="Aedes-Half gravid"] <- "Aedes.Halfgravid"
+names(Prokopack1)[names(Prokopack1)=="Aedes-Half gravid"] <- "Aedes.Halfgravid"
+names(Prokopack1)[names(Prokopack1)=="Aedes-Male"] <- "Aedes.Male"
+names(Prokopack1)[names(Prokopack1)=="Aedes-unfed"] <- "Aedes.unfed"
+names(Prokopack1)[names(Prokopack1)=="Aedes -Gravid"] <- "Aedes.Gravid"
+names(Prokopack1)[names(Prokopack1)=="Cu-Bloodfed"] <- "Cu.Bloodfed"
+names(Prokopack1)[names(Prokopack1)=="Cu-gravid"] <- "Cu.gravid"    
+names(Prokopack1)[names(Prokopack1)=="Cu-Half gravid"] <- "Cu.Halfgravid"    
+names(Prokopack1)[names(Prokopack1)=="Cu-Male"] <- "Cu.Male"    
+names(Prokopack1)[names(Prokopack1)=="Cu-Unfed"] <- "Cu.Unfed"    
+names(Prokopack1)[names(Prokopack1)=="Fu- gravid"] <- "Fu.gravid"    
+names(Prokopack1)[names(Prokopack1)=="Fu- Half gravid"] <- "Fu.Halfgravid"    
+names(Prokopack1)[names(Prokopack1)=="Fu-Blood fed"] <- "Fu.Bloodfed"    
+names(Prokopack1)[names(Prokopack1)=="Fu-Male"] <- "Fu.Male"    
+names(Prokopack1)[names(Prokopack1)=="Fu-Unfed"] <- "Fu.Unfed"    
+names(Prokopack1)[names(Prokopack1)=="Ga- Bloodfed"] <- "Ga.Bloodfed"    
+names(Prokopack1)[names(Prokopack1)=="Ga- Half gravid"] <- "Ga.Halfgravid"    
+names(Prokopack1)[names(Prokopack1)=="Ga-gravid"] <- "Ga.gravid"    
+names(Prokopack1)[names(Prokopack1)=="Ga-Male"] <- "Ga.Male"    
+names(Prokopack1)[names(Prokopack1)=="Ga-Unfed"] <- "Ga.Unfed"    
+names(Prokopack1) <- tolower(names(Prokopack1))
+
+Prokopack1_s<-Prokopack1[c(1:21,25)]
+glimpse(Prokopack1)
+
+Prokopack1_long<-reshape(Prokopack1, direction='long', 
+        varying= c("aedes.male", "aedes.unfed", "aedes-bloodfed", "aedes.halfgravid", "aedes.gravid", "ga.male", "ga.unfed", "ga.bloodfed", "ga.halfgravid", "ga.gravid", "fu.male", "fu.unfed", "fu.bloodfed", "fu.halfgravid", "fu.gravid", "cu.male", "cu.unfed", "cu.bloodfed", "cu.halfgravid", "cu.gravid"),
+        timevar='species',
+        times=c("aedes", "cu", "fu", "ga"),
+        v.names=c("male", "unfed", "bloodfed", "gravid", "halfgravid"),
+        idvar=c('date', 'site', 'indoor', 'time', 'house id'))
+
+
+Prokopack1_long$measure <- rowSums(Prokopack1_long[23:26])
+names(Prokopack1_long) <- tolower(names(Prokopack1_long))
+Prokopack1_long$species <- tolower(Prokopack1_long$species)
+
+#reshape to wide
+library(reshape)
+Prokopack1wide <- melt(Prokopack1_long, c("date", "site", "species", "indoor"), "measure")
+Prokopack1wide<-cast(Prokopack1wide, site + date + indoor ~ species)
+glimpse(Prokopack1wide)
+
+Aedes_aegypti_Indoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==1), c (1:2, 4) ] 
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+
+CulexsppIndoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==1), c (1:2, 5) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==0), c (1:2, 4) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==0), c (1:2, 5) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Prokopack1<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+glimpse(Prokopack1)
+# These variable names may need to be updated as more data is collected
+names(Prokopack1)[1] <- "Site"; 
+names(Prokopack1)[2] <- "Date"
+names(Prokopack1)[3] <- "Aedes aegypti, Indoor"
+names(Prokopack1)[4] <- "Culex spp., Indoor"
+names(Prokopack1)[5] <- "Indoor Total"
+names(Prokopack1)[6] <- "Aedes aegypti, Outdoor"
+names(Prokopack1)[7] <- "Culex spp., Outdoor"
+names(Prokopack1)[8] <- "Outdoor Total"
+
+glimpse(Prokopack1)
+# Removing excess columns and rows
 Prokopack1 <- Prokopack1[-1,]
 ind <- apply(Prokopack1, 2, function(x) all(is.na(x)))
 Prokopack1 <- Prokopack1[,!ind]
+#Prokopack1b <- Prokopack1[(-which(is.na(Prokopack1$Date))),]
+glimpse(Prokopack1)
+
+
+
+# Adjusting dates
+Prokopack1$Date <- as.yearmon(as.Date(as.POSIXct(Prokopack1$Date), origin = "1900-01-01"))
+
+# Taking care of NA's
+Prokopack1[is.na(Prokopack1)] <- 0
+
+# Double checking everything is processed correctly
+head(Prokopack1)
+
+# Separation into site specific data sets
+Prokopack1$Site[Prokopack1$Site=="Milalani"] <- "Msambweni"
+Prokopack1$Site[Prokopack1$Site=="Nganja"] <- "Msambweni"
+
+Prokopack1$Site[Prokopack1$Site=="Diani A"] <- "Diani"
+Prokopack1$Site[Prokopack1$Site=="Diani B"] <- "Diani"
+Prokopack1$Site[Prokopack1$Site=="DianiA"] <- "Diani"
+Prokopack1$Site[Prokopack1$Site=="DianiB"] <- "Diani"
+
+table(Prokopack1$Site)
+
+ProkopackC <- Prokopack1[which(Prokopack1[,1] == "Chulaimbo"),]
+ProkopackK <- Prokopack1[-which(Prokopack1[,1] == "Chulaimbo"),]
+
+# these data don't make sense. asked desiree, francics, bryson, ngenga, joel, etc. dan's data was more organized.
+# Prokopack2
+# Adjusting and including site names as well as variable names
+for(i in 1:(dim(Prokopack2)[1])){
+  if(is.na(Prokopack2[i,1])){
+    Prokopack2[i,1] = Prokopack2[(i - 1),1]
+  }
+}
+
+glimpse(Prokopack2)
+INDOOR<-Prokopack2[1:38]
+INDOOR<-INDOOR[c(19:38, 1:18)]
+glimpse(INDOOR)
+names(INDOOR)[28] <- "Indoor" 
+INDOOR$`Bushes around the house` <-"NA"
+INDOOR$`Bushes around the house` <-"NA"
+
+OUTDODOR<-Prokopack2[ c (1:7, 39:61) ]
+OUTDODOR<-OUTDODOR[c(11:30, 1:10)]
+glimpse(OUTDODOR)
+names(OUTDODOR)[28] <- "Indoor" 
+#add the other variables so we can bind.
+OUTDODOR$ `House wall` <-"NA"
+OUTDODOR$`House roof` <-"NA"
+OUTDODOR$`Rooms with ceilings` <-"NA"
+OUTDODOR$`Eaves open` <-"NA"
+OUTDODOR$`Bed net present` <-"NA"
+OUTDODOR$`Mosquito coil burn` <-"NA"
+OUTDODOR$`Insecticide sprayed` <-"NA"
+OUTDODOR$`No. of sleeper` <-"NA"
+OUTDODOR$`Firewood use in the house` <-"NA"
+OUTDODOR$`No. of rooms`<-"NA"
+
+
+
+OUTDODOR$Indoor[OUTDODOR$Indoor == 2] <- 0
+Prokopack2<-rbind.fill(OUTDODOR, INDOOR)
+glimpse(Prokopack2)
+
+gather<-gather(Prokopack2, keycol, valuecol, 1:20)
+glimpse(gather)
+names(Prokopack2)[names(Prokopack2)=="Aedes-Blood fed"] <- "Aedes-Bloodfed"
+names(Prokopack2)[names(Prokopack2)=="Aedes-Half gravid"] <- "Aedes.Halfgravid"
+names(Prokopack2)[names(Prokopack2)=="Aedes-Half gravid"] <- "Aedes.Halfgravid"
+names(Prokopack2)[names(Prokopack2)=="Aedes-Male"] <- "Aedes.Male"
+names(Prokopack2)[names(Prokopack2)=="Aedes-unfed"] <- "Aedes.unfed"
+names(Prokopack2)[names(Prokopack2)=="Aedes -Gravid"] <- "Aedes.Gravid"
+names(Prokopack2)[names(Prokopack2)=="Cu-Bloodfed"] <- "Cu.Bloodfed"
+names(Prokopack2)[names(Prokopack2)=="Cu-gravid"] <- "Cu.gravid"    
+names(Prokopack2)[names(Prokopack2)=="Cu-Half gravid"] <- "Cu.Halfgravid"    
+names(Prokopack2)[names(Prokopack2)=="Cu-Male"] <- "Cu.Male"    
+names(Prokopack2)[names(Prokopack2)=="Cu-Unfed"] <- "Cu.Unfed"    
+names(Prokopack2)[names(Prokopack2)=="Fu- gravid"] <- "Fu.gravid"    
+names(Prokopack2)[names(Prokopack2)=="Fu- Half gravid"] <- "Fu.Halfgravid"    
+names(Prokopack2)[names(Prokopack2)=="Fu-Blood fed"] <- "Fu.Bloodfed"    
+names(Prokopack2)[names(Prokopack2)=="Fu-Male"] <- "Fu.Male"    
+names(Prokopack2)[names(Prokopack2)=="Fu-Unfed"] <- "Fu.Unfed"    
+names(Prokopack2)[names(Prokopack2)=="Ga- Bloodfed"] <- "Ga.Bloodfed"    
+names(Prokopack2)[names(Prokopack2)=="Ga- Half gravid"] <- "Ga.Halfgravid"    
+names(Prokopack2)[names(Prokopack2)=="Ga-gravid"] <- "Ga.gravid"    
+names(Prokopack2)[names(Prokopack2)=="Ga-Male"] <- "Ga.Male"    
+names(Prokopack2)[names(Prokopack2)=="Ga-Unfed"] <- "Ga.Unfed"    
+names(Prokopack2) <- tolower(names(Prokopack2))
+
+Prokopack2_s<-Prokopack2[c(1:21,25)]
+glimpse(Prokopack2)
+
+Prokopack2_long<-reshape(Prokopack2, direction='long', 
+                         varying= c("aedes.male", "aedes.unfed", "aedes-bloodfed", "aedes.halfgravid", "aedes.gravid", "ga.male", "ga.unfed", "ga.bloodfed", "ga.halfgravid", "ga.gravid", "fu.male", "fu.unfed", "fu.bloodfed", "fu.halfgravid", "fu.gravid", "cu.male", "cu.unfed", "cu.bloodfed", "cu.halfgravid", "cu.gravid"),
+                         timevar='species',
+                         times=c("aedes", "cu", "fu", "ga"),
+                         v.names=c("male", "unfed", "bloodfed", "gravid", "halfgravid"),
+                         idvar=c('date', 'site', 'indoor', 'time', 'house id'))
+
+
+Prokopack2_long$measure <- rowSums(Prokopack2_long[23:26])
+names(Prokopack2_long) <- tolower(names(Prokopack2_long))
+Prokopack2_long$species <- tolower(Prokopack2_long$species)
+
+#reshape to wide
+library(reshape)
+Prokopack2wide <- melt(Prokopack2_long, c("date", "site", "species", "indoor"), "measure")
+Prokopack2wide<-cast(Prokopack2wide, site + date + indoor ~ species)
+glimpse(Prokopack2wide)
+
+Aedes_aegypti_Indoor <- Prokopack2wide[ which(Prokopack2wide$indoor ==1), c (1:2, 4) ] 
+names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+
+CulexsppIndoor <- Prokopack2wide[ which(Prokopack2wide$indoor ==1), c (1:2, 5) ] 
+names(CulexsppIndoor)[3] <- "Indoor" 
+
+Aedes_aegypti_outdoor <- Prokopack2wide[ which(Prokopack2wide$indoor ==0), c (1:2, 4) ] 
+names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
+
+Culexsppoutdoor <- Prokopack2wide[ which(Prokopack2wide$indoor ==0), c (1:2, 5) ] 
+names(Culexsppoutdoor)[3] <- "outdoor" 
+
+Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
+Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
+names(Indoor_Total)[3] <- "Indoor Total" 
+
+outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
+outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
+names(outdoor_Total)[3] <- "Outdoor Total" 
+
+#names
+names(Aedes_aegypti_Indoor)[3] <- "Aedes aegypti, Indoor" 
+glimpse(Aedes_aegypti_Indoor)
+names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
+glimpse(CulexsppIndoor)
+names(Aedes_aegypti_outdoor)[3] <- "Aedes aegypti, Outdoor" 
+glimpse(Aedes_aegypti_outdoor)
+names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
+glimpse(Culexsppoutdoor)
+
+glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+
+# merge two data frames by ID and Country
+total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
+total <- merge(total, outdoor_Total, by=c("date","site"))
+total <- merge(total, Indoor_Total, by=c("date","site"))
+total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
+total <- merge(total, CulexsppIndoor, by=c("date","site"))
+Prokopack2<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+glimpse(Prokopack2)
+# These variable names may need to be updated as more data is collected
+names(Prokopack2)[1] <- "Site"; 
+names(Prokopack2)[2] <- "Date"
+names(Prokopack2)[3] <- "Aedes aegypti, Indoor"
+names(Prokopack2)[4] <- "Culex spp., Indoor"
+names(Prokopack2)[5] <- "Indoor Total"
+names(Prokopack2)[6] <- "Aedes aegypti, Outdoor"
+names(Prokopack2)[7] <- "Culex spp., Outdoor"
+names(Prokopack2)[8] <- "Outdoor Total"
+
+glimpse(Prokopack2)
+# Removing excess columns and rows
+Prokopack2 <- Prokopack2[-1,]
+ind <- apply(Prokopack2, 2, function(x) all(is.na(x)))
+Prokopack2 <- Prokopack2[,!ind]
+#Prokopack2b <- Prokopack2[(-which(is.na(Prokopack2$Date))),]
+glimpse(Prokopack2)
+
+
+
+# Adjusting dates
+Prokopack2$Date <- as.yearmon(as.Date(as.POSIXct(Prokopack2$Date), origin = "1900-01-01"))
+
+# Taking care of NA's
+Prokopack2[is.na(Prokopack2)] <- 0
+
+# Double checking everything is processed correctly
+head(Prokopack2)
+
+# Separation into site specific data sets
+Prokopack2$Site[Prokopack2$Site=="Milalani"] <- "Msambweni"
+Prokopack2$Site[Prokopack2$Site=="Nganja"] <- "Msambweni"
+
+Prokopack2$Site[Prokopack2$Site=="Diani A"] <- "Diani"
+Prokopack2$Site[Prokopack2$Site=="Diani B"] <- "Diani"
+Prokopack2$Site[Prokopack2$Site=="DianiA"] <- "Diani"
+Prokopack2$Site[Prokopack2$Site=="DianiB"] <- "Diani"
+
+table(Prokopack2$Site)
+
+ProkopackC <- Prokopack2[which(Prokopack2[,1] == "Chulaimbo"),]
+ProkopackK <- Prokopack2[-which(Prokopack2[,1] == "Chulaimbo"),]
 
 # Adjusting and including site names as well as variable names
 # These variable names may need to be updated as more data is collected
@@ -706,14 +1276,14 @@ ProkopackM <- Prokopack2[which(Prokopack2[,1] == "Msambweni"),]
 ProkopackU <- Prokopack2[-which(Prokopack2[,1] == "Msambweni"),]
 
 # Sentinel Trap
-
 # Adjusting and including site names as well as variable names
 for(i in 1:(dim(SentinelTrap1)[1])){
   if(is.na(SentinelTrap1[i,1])){
     SentinelTrap1[i,1] = SentinelTrap1[(i - 1),1]
   }
 }
-
+glimpse(SentinelTrap1)
+#come back here
 names(SentinelTrap1)[1] <- "Site"; names(SentinelTrap1)[2] <- "Date"
 names(SentinelTrap1)[3] <- "Aedes aegypti"
 names(SentinelTrap1)[4] <- "Anopheles gambiae"
@@ -930,7 +1500,5 @@ DENV <- DENV[, c("city","Date", "DENV PCR Results")]
 # Save the now cleaned data sets as an Excel file
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
 f <- "DENVData.xls"
-require(xlsx)
-require(rJava)
 write.xlsx(as.data.frame(DENV), f, sheetName = "Chulaimbo", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
