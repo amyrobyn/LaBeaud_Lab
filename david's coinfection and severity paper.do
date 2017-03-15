@@ -488,6 +488,11 @@ replace othoutcome_dum  = 3 if othoutcome!=""
 replace othoutcome_dum  = 1 if strpos(othoutcome, "nutritional")
 replace outcome = othoutcome_dum  if outcome ==.
 tab outcome outcomehospitalized , m
+gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==2 & outcomehospitalized ==1
+preserve
+	keep if discordantoutcome ==1
+	outsheet studyid id_wide visit discordantoutcome outcome outcomehospitalized dataset using discordantoutcomes.csv, names comma replace 
+restore
 
 bysort group: tab symptomcount outcomehospitalized , chi2      
 bysort group: sum symptomcount outcomehospitalized , detail

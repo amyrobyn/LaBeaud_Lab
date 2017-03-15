@@ -36,8 +36,8 @@ drop id_childnumber2  studyid2
 outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
 
 *fix temperature
-replace temp = temperature if temp ==.
-drop temperature
+replace temperature = temp if temperature ==.
+drop temp
 
 rename stanforddenvigg_ sdenvigg
 rename stanfordchikvigg_ schikvigg
@@ -98,12 +98,18 @@ preserve
 restore 
 merge 1:1 id_wide visit using secondvisitpos`outcome'
 drop _merge
+
 preserve
 	by id_wide: carryforward secondvisitpos`outcome', gen(secondvisitpos`outcome'_all)
 	sum secondvisitpos`outcome' firstvisitneg`outcome' firstvisitpos`outcome'
 	gen apparent`outcome' = . 
 	replace apparent`outcome'= 1 if secondvisitpos`outcome' == 1 | firstvisitpos`outcome'==1
 	bysort id_wide: carryforward apparent`outcome', gen(apparent`outcome'_subj)
+save temp2, replace
+		keep apparent`outcome' id_wide visit 
+		keep if apparent`outcome'== 1 
+		save visit_apparent`outcome', replace
+use temp2, clear	
 	collapse(mean) apparent`outcome', by (id_wide)
 	bysort id_wide: replace apparent`outcome' = 0 if apparent`outcome'==.
 	tab apparent`outcome'
@@ -112,8 +118,7 @@ save apparent`outcome', replace
 restore
 }
 
-
-	*merge the apparent with full data
+*merge the apparent with full data
 	use apparentsdenvigg, clear
 	merge m:1 id_wide using apparentschikvigg
 	capture drop _merge
@@ -156,11 +161,19 @@ restore
 capture drop _merge
 merge 1:1 id_wide visit using firstvisitneg`outcome'
 capture drop _merge
+
 preserve
 	by id_wide: carryforward firstvisitneg`outcome', gen(firstvisitneg_all`outcome')
 	sum secondvisitpos`outcome' firstvisitneg`outcome' 
 	gen inapparent`outcome' = . 
 	replace inapparent`outcome'= 1 if secondvisitpos`outcome' == 1
+	
+save temp2, replace
+		keep inapparent`outcome' id_wide visit 
+		keep if inapparent`outcome' == 1 
+		save visit_inapparent`outcome', replace
+use temp2, clear
+	
 	bysort id_wide: carryforward inapparent`outcome', gen(inapparent`outcome'_subj)
 	collapse(mean) inapparent`outcome', by (id_wide)
 	bysort id_wide: replace inapparent`outcome' = 0 if inapparent`outcome'==.
@@ -182,17 +195,39 @@ capture drop _merge
 merge m:1 id_wide using apparent
 save fulldataset, replace
 
+foreach var in visit_inapparentsdenvigg visit_inapparentschikvigg visit_apparentschikvigg visit_apparentsdenvigg{
+	use `var', clear
+	gen `var' = visit 
+	save `var', replace
+
+	use fulldataset, clear
+	drop _merge
+	merge 1:1 id_wide visit using `var'
+	encode `var', gen(`var'_dum)
+	replace `var'_dum = 1 if `var'_dum!=.
+	replace `var'_dum = 0 if `var'_dum==.
+	save fulldataset, replace
+}
+
+sum visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
+foreach var in visit_inapparentsdenvigg visit_inapparentschikvigg visit_apparentschikvigg visit_apparentsdenvigg{
+tab `var'
+}
 
 	replace temp = 38.5 if temp ==385
 	replace fevertemp =1 if temp>=38  & temp !=.
-	
+
 	tab numillnessfever
 	
-	foreach disease in inapparentsdenvigg inapparentschikvigg{
-	gen `disease'_w_fever = . 
-	replace `disease'_w_fever = 1 if numillnessfever > 0 & numillnessfever != . & `disease' == 1
+	foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
+	gen `disease'_f = . 
+	replace `disease'_f = 1 if numillnessfever > 0 & numillnessfever != . & `disease' >= 1 & `disease' !=.
 	}
-	
+
+list studyid id_wide visit inapparentsdenvigg inapparentschikvigg visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum numillnessfever  if visit_inapparentsdenvigg_dum !=.| visit_inapparentschikvigg_dum !=.
+count if visit_inapparentsdenvigg_dum_f ==1
+count if visit_inapparentschikvigg_dum_f ==1
+
 replace hb = hb_result if hb==.
 drop hb_result 
 
@@ -220,25 +255,23 @@ foreach var in childweight childheight hb headcirc{
 
 *ask david about these
 replace systolicbp = systolicbp/10 if systolicbp >200
-rename temp temperature
 replace temperature = temperature/10 if temperature >50
 replace childheight = childheight/10 if childheight >500
 replace childheight = childheight *10 if childheight <20
 replace childweight=childweight/10 if childweight>200
 
-
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'==0
-	}
+}
 
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'<15
-	}
+}
 	
 levelsof agegender, local(levels) 
 foreach l of local levels {
 	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry resprate{ 
-	replace z`var' = (`var' - median`var'`l')/sd`var'`l' if agegender=="`l'"  
+		replace z`var' = (`var' - median`var'`l')/sd`var'`l' if agegender=="`l'"  
 	}
 }
 sum z*
@@ -248,9 +281,7 @@ sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight ch
 sum z*, d
 
 
-*add in doctor visit bs and rdt result
-**************david's severity models*************	
-
+**symptoms
  rename currentsymptoms symptms
  rename othcurrentsymptoms othersymptms 
  rename feversymptoms fvrsymptms
@@ -430,19 +461,13 @@ rename all_symptoms_other3 all_symptoms_other
 
 egen symptomcount = rowtotal(all_symptoms_*)
 
+**end symptoms**
 
 /*
- apparentsdenvigg 1
- apparentschikvigg  2
- inapparentsdenvigg  3
- inapparentschikvigg 4
-
- */
-gen group = .
-replace group = 1 if  apparentsdenvigg ==1
-replace group = 2 if   apparentschikvigg  ==1
-replace group = 3 if    inapparentsdenvigg  ==1
-replace group = 4 if     inapparentschikvigg ==1
+all possible combinations of visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
+four digits with 0 as neg and 1 as positive
+  */
+egen group = concat(visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum)
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 replace outcome= . if outcome==99|outcome==6
@@ -476,14 +501,13 @@ drop currently_sick
 replace temperature = temp if temperature ==.
 drop temp
 
-foreach var in date_of_birth  {
+foreach var in date_of_birth{
 				gen `var'1 = date(`var', "MDY" ,2050)
 				format %td `var'1 
 				drop `var'
 				rename `var'1 `var'
 				recast int `var'
-				}
-
+}
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
@@ -535,10 +559,12 @@ sum  zlen zwei zwfl zbmi zhc
 
 encode city, gen(city_s)
 *tables
-
 table1 , vars(age contn \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(group) saving("`figures'table2_by_group.xls", replace ) missing test 
 table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(group) saving("`figures'symptoms_by_group.xls", replace) missing test
 outsheet using "`data'rawdata.csv", comma names replace
 
 save "`data'data", replace
-outsheet all_symptoms* inapparentsdenvigg_w_fever inapparentschikvigg_w_fever using "`data'toreview.csv", names comma replace
+preserve
+keep if  visit_inapparentsdenvigg_dum_f ==1 |visit_inapparentschikvigg_dum_f ==1
+outsheet all_symptoms*  visit_inapparentsdenvigg_dum_f visit_inapparentschikvigg_dum_f using "`data'toreview.csv", names comma replace 
+restore
