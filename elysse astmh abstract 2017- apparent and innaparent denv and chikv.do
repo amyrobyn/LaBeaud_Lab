@@ -218,10 +218,13 @@ tab `var'
 	replace fevertemp =1 if temp>=38  & temp !=.
 
 	tab numillnessfever
-	
+gen fever_6ms =. 
+replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
+replace fever_6ms=1 if 	fevertoday == 1 
+
 	foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
 	gen `disease'_f = . 
-	replace `disease'_f = 1 if numillnessfever > 0 & numillnessfever != . & `disease' >= 1 & `disease' !=.
+	replace `disease'_f = 1 if fever_6ms ==1 & `disease' >= 1 & `disease' !=.
 	}
 
 list studyid id_wide visit inapparentsdenvigg inapparentschikvigg visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum numillnessfever  if visit_inapparentsdenvigg_dum !=.| visit_inapparentschikvigg_dum !=.
@@ -286,8 +289,9 @@ sum z*, d
  rename othcurrentsymptoms othersymptms 
  rename feversymptoms fvrsymptms
  rename othfeversymptoms otherfvrsymptms
- egen all_symptoms = concat(symptms othersymptms) 
-
+ egen all_symptoms = concat(symptms othersymptms fvrsymptms otherfvrsymptms) 
+ 
+gen symptomstoreview = all_symptoms
 		foreach var of varlist all_symptoms { 			
 		replace `var'= subinstr(`var', " ", "_",.)
 		}
@@ -372,7 +376,6 @@ sum z*, d
 						tab `var'_`symptom'
 						}
 			}	
-drop symptms othersymptms fvrsymptms otherfvrsymptms 
 
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
@@ -460,8 +463,146 @@ rename all_symptoms_other3 all_symptoms_other
 
 
 egen symptomcount = rowtotal(all_symptoms_*)
-
 **end symptoms**
+
+*medsprescribe to dummies
+egen all_meds = concat(medsprescribe othmedsprescribe) 
+gen medstoreview = all_meds 
+replace all_meds=lower(all_meds)
+replace all_meds=trim(itrim(all_meds))
+		foreach var of varlist all_meds { 			
+		replace `var'= subinstr(`var', " ", "_",.)
+		}
+		foreach var of varlist all_meds  { 			
+		foreach antibiotic in  "chloramphenicol" "teo" "t.e.o" "flagyl" "flaggyl" "ciproxin" "augumentin" "cefxime" "ciproxin" "chlamphenicol" "cefixime" "ciproxin" "ciprofloxin" "intravenous_metronidazole" "nitrofurantion" "ciprofloxacin" "flagyla"  "gentamicin" "metronidazole" "floxapen" "flucloxacill" "trinidazole" "vedrox" "ampiclox" "cloxacillin" "ampicillin" "albendaxole" "albedazole" "tinidazole" "tetracycline" "augmentin" "amoxicillin" "ceftriaxone" "penicillian" "septrin" "antibiotic" "ceftrizin" "cotrimoxazole" "cefuroxime" "erythromycin" "gentamycin" "cipro"{
+		replace all_meds= subinstr(all_meds, "`antibiotic'" ,"antibacterial",.)
+		}
+
+		foreach item in "im_quinine" "artesunate" "artesun" "sp" "quinine" "coartem" "quinnie" "atersunate" "quinnine" "paludrin" "quinnie" "duocotecxin" "pheramine" "artsun" "atesunate" "atesa" "artesinate" "doxycline"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"antimalarial",.)
+		}
+
+		replace all_meds= subinstr(all_meds, "albendazole" ,"antihelmenthic",.)
+		replace all_meds= subinstr(all_meds, "abz" ,"antihelmenthic",.)
+		replace all_meds= subinstr(all_meds, "mebendazole" ,"antihelmenthic",.)
+
+		foreach item in "guaifenesin" "xpen" "expectants" "expectant" "tricoff" "expectant" "expectants" "expectant" "expectant"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"expectorant",.)
+		}
+
+		foreach item in "syrup" "unibrolcoldcap" "unibrol" "tricohist" "trichohist" "cold_cap" "ascoril"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"cough",.)
+		} 
+		
+		foreach item in "cetrizine hydrochloride" "chlorepheramine" "chlore" "hydrocrt" "hydrocortisone" "cetrizine" "piriton" "priton" "hydroctisone_cream" "hydroctisone" "hydroctione" "cpm" "pitriton" "probeta-n" {
+		replace all_meds= subinstr(all_meds, "`item'" ,"allergy",.)
+		}
+
+		foreach item in "calamine_lotion" "cream" "lotion" "eye_ointment"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"topical",.)
+		}
+
+		foreach item in "zinc_tablet" "vitamin" "vit" "zinc" "multisupplement" "supplement" "ranferon" "ferrous_sulphate" "mult" "folic_acid" "folic" "ferrous" "haemoton"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"supplement",.)
+		}
+
+		foreach item in "paracentamol" "paracetamol" "ibuprofen" "diclofenac" "calpol"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"antipyretic",.)
+		}
+
+		foreach item in "ketoconazole" "griseofulvin" "clotrimazole" "clotrimazone" "grisofluvin" "graeofulvin" "graseofulvin" "greseofulvin" "nystatin_oral_mouth_paint"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"antifungal",.)
+		}
+
+		foreach item in "other" {
+		replace all_meds= subinstr(all_meds, "`item'" ,"othermed",.)
+		}
+
+
+		foreach item in "admission" "admitted" "admit" {
+		replace all_meds= subinstr(all_meds, "`item'" ,"admit",.)
+		}
+		
+		foreach item in "iv" "i.v." "ivs"  "i.v.s." "i.v"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"iv",.)
+		}
+
+		foreach item in "ors"  "o.r.s"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"ors",.)
+		}
+		
+		foreach item in "sulphate" {
+		replace all_meds= subinstr(all_meds, "`item'" ,"sulphate",.)
+		}
+
+
+		foreach item in "voline_gel" "voltaren" "dinac" "duclofenac"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"painmed",.)
+		}
+
+		foreach item in "ventolin" "ventoli" "sabutanol" "salbutamol" "albutol"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"bronchospasm",.)
+		}
+
+		
+		foreach item in "plasil"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"gerd",.)
+		}
+
+		foreach item in "none"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"none",.)
+		}
+
+		foreach item in "diloxanide"{
+		replace all_meds= subinstr(all_meds, "`item'" ,"antiamoeba",.)
+		}
+
+		}
+
+
+		foreach var of varlist all_meds{ 			
+			foreach med in "antibacterial" "antimalarial" "antipyretic"  "antihelmenthic" "expectorant" "allergy" "supplement"  "antifungal" "othermed" "admit" "ors" "iv" "cough" "sulphate" "painmed" "bronchospasm" "topical" "gerd" "none" "antiamoeba"{ 
+						tostring `var', replace
+						replace `var'=trim(itrim(lower(`var')))
+						moss `var', match(`med') prefix(`med')
+
+						gen `var'_`med'=0
+						replace `var'_`med'= 1 if strpos(`var', "`med'")
+						replace `var'= subinstr(`var', "`med'", "",.)
+						order `var'_`med'
+						tab `var'_`med'
+						}
+			}	
+
+replace all_meds= subinstr(all_meds, "inj", "",.)
+replace all_meds= subinstr(all_meds, "for", "",.)
+replace all_meds= subinstr(all_meds, ".", "",.)
+replace all_meds= subinstr(all_meds, "'", "",.)
+replace all_meds= subinstr(all_meds, "__", "_",.)
+replace all_meds= subinstr(all_meds, "__", "_",.)
+replace all_meds= subinstr(all_meds, "__", "_",.)
+replace all_meds= subinstr(all_meds, "__", "_",.)
+replace all_meds= subinstr(all_meds, "_", "",.)
+replace all_meds= subinstr(all_meds, "_", "",.)
+replace all_meds= subinstr(all_meds, ",", "",.)
+replace all_meds= subinstr(all_meds, ",", "",.)
+replace all_meds= subinstr(all_meds, ",", "",.)
+replace all_meds= subinstr(all_meds, "+", "",.)
+replace all_meds= subinstr(all_meds, "and", "",.)
+replace all_meds= subinstr(all_meds, "intravenous", "",.)
+replace all_meds= subinstr(all_meds, "im", "",.)
+replace all_meds= subinstr(all_meds, "s", "",.)
+replace all_meds  = "" if all_meds =="_"
+replace all_meds  = "" if all_meds =="_"
+replace all_meds  = "" if strlen(all_meds) <3
+tab all_meds 			
+preserve
+keep if all_meds !=""
+rename all_meds TOCATEGORIZE
+outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using allmeds.xls, replace 
+restore
+drop medsprescribe othmedsprescribe 
+*end meds
 
 /*
 all possible combinations of visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
@@ -561,10 +702,16 @@ encode city, gen(city_s)
 *tables
 table1 , vars(age contn \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(group) saving("`figures'table2_by_group.xls", replace ) missing test 
 table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(group) saving("`figures'symptoms_by_group.xls", replace) missing test
+table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(group) saving("`figures'meds_by_group.xls", replace) missing test
 outsheet using "`data'rawdata.csv", comma names replace
 
 save "`data'data", replace
+
+local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\"
 preserve
-keep if  visit_inapparentsdenvigg_dum_f ==1 |visit_inapparentschikvigg_dum_f ==1
-outsheet all_symptoms*  visit_inapparentsdenvigg_dum_f visit_inapparentschikvigg_dum_f using "`data'toreview.csv", names comma replace 
+	keep if  visit_inapparentsdenvigg_dum_f ==1 |visit_inapparentschikvigg_dum_f ==1
+	outsheet studyid id_wide visit visit_inapparentsdenvigg_dum_f visit_inapparentschikvigg_dum_f  fevertoday numillnessfever fever_6ms  symptomstoreview  medstoreview durationsymptom everhospitali reasonhospita* othhospitalna* seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospi* hospitalname* datehospitali* numhospitalized outcome outcomehospitalized all_symptoms*  using "`data'toreview.csv", names comma replace 
 restore
+
+
+
