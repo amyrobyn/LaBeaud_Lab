@@ -444,8 +444,7 @@ replace city = "kisumu" if city =="k"
 
 replace city =trim(city)
 
- *ab positive
- 
+ *ab positive 
 preserve
 keep if numbermalariainfections >1
 table1 , vars( cohort cat \ gender cat\ age conts\ city cat \  malariapositive conts\ consecutivemalariapos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ bmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_multi-infections_malaria.xls", replace ) missing test 

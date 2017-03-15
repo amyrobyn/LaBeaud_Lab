@@ -778,7 +778,7 @@ save merged, replace
 	tab id_visit 
 	gen id_childnumber = ""
 	replace id_childnumber = substr(studyid, +4, .)
-	
+
 gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
 tab notnumeric	/*==1 where nonnumeric characters*/
 list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
@@ -826,7 +826,7 @@ replace agemonths = round(agemonths)
 
 *clean city and site vars
 drop site
-rename id_city city
+gen city = id_city
 replace city ="c" if city =="r" 
 replace city ="c" if city =="h" 
 
@@ -932,7 +932,7 @@ foreach var in childheight childweight {
 gen childheight_m = childheight/100
 gen childheight_m2 = childheight_m*childheight_m 
 gen childbmi = childweight/childheight_m2
-net get  dm0004_1.pkg
+capture net get  dm0004_1.pkg
 egen zhcaukwho = zanthro(headcircum,hca,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
 egen zwtukwho = zanthro(childweight,wa,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
 egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 

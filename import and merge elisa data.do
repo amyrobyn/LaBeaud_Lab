@@ -219,16 +219,15 @@ restore
 	
 save merged, replace
 
-
 *take visit out of id
 						forval i = 1/3 { 
 							gen id`i' = substr(studyid_a, `i', 1) 
 						}
 *gen id_wid without visit						 
-	rename id1 city  
+	rename id1 id_city 
 	rename id2 id_cohort  
 	rename id3 id_visit 
-	
+	gen city = id_city  
 	gen id_childnumber  = ""
 	replace id_childnumber  = substr(studyid_a, +4, .)
 
@@ -277,6 +276,10 @@ capture tostring stanforddenviggod_f , replace force
 	
 
 reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
+encode id_wide, gen(id_wide_int)
+encode VISIT, gen(visit_int)
+xtset id_wide_int visit_int
+by id_wide_int : carryforward id_childnumber id_cohort id_city city, replace
 
 egen stanfordchikvigg_all = concat(stanfordchikvigg2_ stanfordchikvigg_ stanfordchikvod_ )
 drop stanfordchikvigg2_  stanfordchikvigg_
@@ -386,13 +389,13 @@ save elisas, replace
 
 		replace prevalentdenv = 1 if  stanforddenvigg_==1 & visit =="a"
 		replace prevalentchikv = 1 if  stanfordchikvigg_==1 & visit =="a"
-
-		replace id_cohort = "HCC" if id_cohort == "c"|id_cohort == "d"
-				replace id_cohort = "AIC" if id_cohort == "f"|id_cohort == "m" 
-				capture drop cohort
+		gen cohort = id_cohort
+		replace cohort= "HCC" if id_cohort == "c"|cohort== "d"
+		replace cohort= "AIC" if cohort== "f"|cohort== "m" 
 				
-		encode id_cohort, gen(cohort)
-				
+		encode cohort, gen(cohort_s)
+		drop cohort
+		rename cohort_s cohort				
 		bysort cohort  city: sum stanforddenvigg_ stanfordchikvigg_ 
 
 
@@ -426,7 +429,7 @@ restore
 		merge 1:1 id_wide visit using prevalent
 		keep if abvisit ==3 & stanfordchikvigg_ !=.
 		
-		keep studyid  id_wide site visit antigenused_ city stanforddenvigg_ stanfordchikvigg_  cohort datesamplecollected_ visit datesamplecol~_ 
+		keep studyid  id_wide site visit id_visit antigenused_ id_city city stanforddenvigg_ stanfordchikvigg_  cohort id_cohort datesamplecollected_ datesamplecol~_ 
 
 		export excel using "prevalent_visitab_chikv", firstrow(variables) replace
 	
@@ -444,7 +447,7 @@ restore
 		
 		merge 1:1 id_wide visit using prevalent		
 		keep if abvisit ==3 & stanforddenvigg_ !=.
-		keep studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
+		keep id_visit id_cohort id_city studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
 		export excel using "prevalent_visitab_denv", firstrow(variables) replace
 		
 		*denv prevlanece
@@ -464,7 +467,7 @@ replace city = "msambweni" if city =="nganja"
 
 save  prevalent, replace
 
-keep studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
+keep id_city id_cohort id_visit studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
 keep if stanforddenvigg_	!= .|stanfordchikvigg_	!= .|chikvigg_	!= .|denvigg_!= .
 encode city, gen(city_int)
 

@@ -3,7 +3,8 @@ set more 1
 set scrollbufsize 100000
 
 cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1"
-local outcome "stanforddenvigg"
+foreach outcome in stanfordchikvigg_ stanforddenvigg_{ 
+local outcome `outcome'
 local data "data"
 
 use `data', clear
@@ -169,41 +170,40 @@ rename heart_rate heartrate
  *ab positive 
 preserve
 keep if number`outcome' >1
-table1 , vars( cohort cat \ gender cat\ age conts\ city cat \ consecutive`outcome'pos cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\ zbmi contn\) saving("table1_aic_hcc_multi-infections_`outcome'.xls", replace ) missing test 
+table1 , vars( cohort cat \ gender cat\ age conts\ city cat \ consecutive`outcome'pos cat \malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\ zbmi contn\) saving("table1_aic_hcc_multi-infections_`outcome'.xls", replace ) missing test 
 restore
 
 
 *ab positive
 preserve
 keep if `outcome'pos_ab ==1
-table1 , vars( gender cat\ age conts\ city cat \ consecutive`outcome'pos cat \ `outcome'pastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_abpos_`outcome'.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \ consecutive`outcome'pos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_abpos_`outcome'.xls", replace ) missing test 
 restore
 
 *a no b pos
 preserve
 keep if anob`outcome'==2
-table1 , vars( gender cat\ age conts\ city cat \  consecutive`outcome'pos cat \ `outcome'pastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_a_pos_b_neg_`outcome'.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  consecutive`outcome'pos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\  chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_hcc_a_pos_b_neg_`outcome'.xls", replace ) missing test 
 restore
 
 *aic a visit
 preserve
-egen `outcome'positive_dum_city = concat(`outcome'positive_dum city)
-keep if cohort =="aic"
+keep if cohort ==1
 keep if visit =="a"
-table1 , vars( gender cat\ age conts\ city cat \  consecutive`outcome'pos cat \ `outcome'pastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(`outcome'positive_dum) saving("table1_aic_a_`outcome'.xls", replace ) missing test 
-table1 , vars( gender cat\ age conts\ consecutive`outcome'pos cat \ `outcome'pastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) by(`outcome'positive_dum_city ) saving("table1_aic_a_`outcome'_bycity.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  consecutive`outcome'pos cat \ malariapastmedhist cat \stanfordchikvigg_ cat\ stanforddenvigg_ cat\    chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts\ hb conts \ hemoglobin cat \ zbmi conts \  temperature conts \ heartrate conts\ diastolicbp conts\ systolicbp conts\ resprate  conts\ pulseoximetry conts\ outcomehospitalized cat\) saving("table1_aic_a_`outcome'.xls", replace ) missing test 
 restore
 
 *hcc a visit
 preserve
-keep if cohort =="hcc"
+keep if cohort ==2
 keep if visit =="a"
-table1 , vars( gender cat\ age conts\ city cat \  number`outcome' cat \ consecutive`outcome'pos cat \ `outcome'pastmedhist cat \ stanfordchikvigg_ cat\ stanforddenvigg_ cat\   chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ zbmi conts \ tempover38 cat \ ) by(`outcome'positive_dum) saving("table1_hcc_a_`outcome'.xls", replace ) missing test 
+table1 , vars( gender cat\ age conts\ city cat \  number`outcome' cat \ consecutive`outcome'pos cat \ malariapastmedhist cat \ stanfordchikvigg_ cat\ stanforddenvigg_ cat\   chikvpcrresults_dum cat\ denvpcrresults_dum cat\ species_cat cat season cat\ parasite_count conts \ zbmi conts \ ) saving("table1_hcc_a_`outcome'.xls", replace ) missing test 
 restore
 
 save denvchikv`outcome'gps, replace
 outsheet using " melisa_malriajan2017.csv", comma names replace
-order housegps gps_house_latitude gps_house_longitude
+
 encode childvillage, gen(childvillage_int)
 drop childvillage
-outsheet using "gps jan 26.csv", comma replace
+outsheet using `outcome'.csv, comma replace names 
+}
