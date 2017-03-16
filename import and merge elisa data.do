@@ -478,6 +478,8 @@ by city, sort : ci stanfordchikvigg_, binomial
 by cohort, sort : ci stanforddenvigg_, binomial 
 by cohort, sort : ci stanfordchikvigg_, binomial 
 
+bysort id_wide: carryforward id_wide, gen(id_wide2)
+
 cd "`input'"
 save elisa_merged, replace
-outsheet studyid id_wide visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace
+outsheet id* studyid id_wide visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace

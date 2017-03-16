@@ -222,10 +222,10 @@ gen fever_6ms =.
 replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
 replace fever_6ms=1 if 	fevertoday == 1 
 
-	foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
+foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
 	gen `disease'_f = . 
 	replace `disease'_f = 1 if fever_6ms ==1 & `disease' >= 1 & `disease' !=.
-	}
+}
 
 list studyid id_wide visit inapparentsdenvigg inapparentschikvigg visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum numillnessfever  if visit_inapparentsdenvigg_dum !=.| visit_inapparentschikvigg_dum !=.
 count if visit_inapparentsdenvigg_dum_f ==1
