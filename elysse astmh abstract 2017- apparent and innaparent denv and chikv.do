@@ -38,204 +38,62 @@ outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'
 *fix temperature
 replace temperature = temp if temperature ==.
 drop temp
+replace temp = 38.5 if temp ==385
+replace fevertemp =1 if temp>=38  & temp !=.
+replace fevertemp =0 if temperature <38
 
+gen fever_6ms =. 
+replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
+replace fever_6ms=1 if 	fevertoday == 1 
+
+replace fever_6ms=0 if 	numillnessfever == 0 
+replace fever_6ms=1 if 	fevertoday == 0
+
+*cohort
+replace cohort =2 if id_cohort == "c"
+replace cohort = 1 if id_cohort == "f"
+
+*shorten outcomes
 rename stanforddenvigg_ sdenvigg
 rename stanfordchikvigg_ schikvigg
 save temp, replace
-*survival analysis
+
+
+*generate fail events
+*apparent is aic cohort: first febrile episode + fever- take everyone that fails
+*innapparent is hcc cohort: seroconversion with no fever- take only the failures after the first visit (incident, not prevalent)
+*third group is hcc cohort: seroconversion with fever- take only the failures after the first visit (incident, not prevalent)
+
+gen groups= . 
+replace groups= 1 if cohort == 1 & fevertemp ==1
+replace groups= 2 if cohort == 2 & fever_6ms ==0
+replace groups= 3 if cohort == 2 & fever_6ms ==1
+tab groups
+
 gen visits = visit
-encode id_wide, gen(id)
-tsset id visit_int
-stset visit_int, failure( schikvigg) id(id_wide)
-stsum, by(id_cohort)
-sts list, by(cohort) 
+
+*survival analysis
+foreach outcome in schikvigg sdenvigg{
+stset visit_int, failure(`outcome') id(id_wide)
+stsum, by(groups)
+sts list, by(groups) 
+ltable visit_int `outcome', survival hazard intervals(180) 
+}
 
 stop 
+**panel data
+encode id_wide, gen(id)
+tsset id visit_int
+
 **reshape to wide********
 *keep studyid id_wide visits visit_int sdenvigg schikvigg  symptoms symptoms_other durationsymptom feversymptoms othfeversymptoms currentsymptoms othcurrentsymptoms date_symptom_onset numillnessfever fevertoday durationsymptom medsprescribe othmedsprescribe everhospitali reasonhospita* othhospitalna* seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospi* hospitalname* datehospitali* numhospitalized outcome outcomehospitalized   
 *reshape wide fevertoday numillnessfever feversymptoms othfeversymptoms durationsymptom everhospitalised reasonhospitalized1 othhospitalname1 reasonhospitalized2 seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospitalized1 hospitalname1 datehospitalized1 numhospitalized currentsymptoms othcurrentsymptoms medsprescribe othmedsprescribe outcome outcomehospitalized datehospitalized datehospitalized2 hospitalname2 durationhospitalized2 reasonhospitalized3 datehospitalized3 hospitalname3 durationhospitalized3 reasonhospitalized4 datehospitalized4 hospitalname4 durationhospitalized4 reasonhospitalized5 datehospitalized5 hospitalname5 durationhospitalized5 othhospitalname2 date_symptom_onset symptoms symptoms_other sdenvigg schikvigg , i(id_wide) j(visits) s 
-
-gen seroconvert= . 
-replace seroconvert 1 if sdenvigg 
-
-foreach outcome in sdenvigg schikvigg{
-use temp, replace
-
-*`outcome' pos at first
-preserve
-	keep if cohort ==1
-	keep if  `outcome' ==1 & temp >=38
-	sort visit
-	bysort id_wide: gen visit`outcome' = _n
-	keep id_wide visit visit`outcome' `outcome' temp 
-	gen firstvisitpos`outcome' = 1 if visit`outcome' ==1
-	tab visit firstvisitpos`outcome'
-	sum
-	keep id_wide visit firstvisitpos`outcome'
-	keep if firstvisitpos`outcome'==1
-	save firstvisitpos`outcome', replace 
-restore 
-capture drop _merge
-merge 1:1 id_wide visit using firstvisitpos`outcome'
-drop _merge 
-by id_wide: carryforward firstvisitpos`outcome', gen(all_firstvisitpos`outcome')
-
-*den neg at first
-preserve
-	keep if id_cohort =="f"
-	keep if  `outcome' ==0
-	sort visit
-	bysort id_wide: gen visit`outcome' = _n
-	keep id_wide visit visit`outcome' `outcome' temp 
-	gen firstvisitneg`outcome'= 1 if visit`outcome' ==1
-	tab visit firstvisitneg`outcome'
-	sum
-	keep id_wide visit firstvisitneg`outcome'
-	keep if firstvisitneg`outcome'==1
-	save firstvisitneg`outcome', replace 
-restore 
-merge 1:1 id_wide visit using firstvisitneg`outcome'
-drop _merge
-by id_wide : carryforward firstvisitneg`outcome', gen(firstvisitneg_all`outcome')
-
-*`outcome' neg at first and pos at 2nd
-preserve
-	keep if firstvisitneg_all`outcome'==1 & `outcome' ==1 & temp >=38 
-	sort visit
-	bysort id_wide: gen visit`outcome' = _n
-	keep id_wide visit visit`outcome' `outcome' temp firstvisitneg`outcome' firstvisitneg_all`outcome'
-	gen secondvisitpos`outcome'= 1 
-	tab visit secondvisitpos`outcome'
-	sum
-	keep id_wide visit secondvisitpos`outcome'
-	keep if secondvisitpos`outcome'==1
-	save secondvisitpos`outcome', replace 
-restore 
-merge 1:1 id_wide visit using secondvisitpos`outcome'
-drop _merge
-
-preserve
-	by id_wide: carryforward secondvisitpos`outcome', gen(secondvisitpos`outcome'_all)
-	sum secondvisitpos`outcome' firstvisitneg`outcome' firstvisitpos`outcome'
-	gen apparent`outcome' = . 
-	replace apparent`outcome'= 1 if secondvisitpos`outcome' == 1 | firstvisitpos`outcome'==1
-	bysort id_wide: carryforward apparent`outcome', gen(apparent`outcome'_subj)
-save temp2, replace
-		keep apparent`outcome' id_wide visit 
-		keep if apparent`outcome'== 1 
-		save visit_apparent`outcome', replace
-use temp2, clear	
-	collapse(mean) apparent`outcome', by (id_wide)
-	bysort id_wide: replace apparent`outcome' = 0 if apparent`outcome'==.
-	tab apparent`outcome'
-keep id_wide apparent`outcome'
-save apparent`outcome', replace
-restore
-}
-
-*merge the apparent with full data
-	use apparentsdenvigg, clear
-	merge m:1 id_wide using apparentschikvigg
-	capture drop _merge
-	save apparent, replace
-**start innaparent
-foreach outcome in sdenvigg schikvigg{
-use temp, replace
-
-*`outcome' neg at first and pos at 2nd
-*first positive visit
-preserve
-	keep if `outcome' ==1 & id_cohort =="c"
-	sort visit
-	bysort id_wide: gen visit`outcome' = _n
-	gen secondvisitpos`outcome'= 1 
-	tab visit secondvisitpos`outcome'
-	keep id_wide visit secondvisitpos`outcome' visit_int 
-	keep if secondvisitpos`outcome'==1
-	gen posvisit = visit_int 
-	save secondvisitpos`outcome', replace 
-restore 
-capture drop _merge
-merge 1:1 id_wide visit using secondvisitpos`outcome'
-capture drop _merge
-by id_wide : carryforward secondvisitpos`outcome', gen(secondvisitpos_all`outcome')
-
-
-*if ever positive, where they negative at previous visit 
-preserve
-	keep if  `outcome' ==0 & visit_int == posvisit -1
-	sort visit
-	bysort id_wide: gen visit`outcome' = _n
-	keep id_wide visit `outcome' temp 
-	gen firstvisitneg`outcome'= 1 
-	tab visit firstvisitneg`outcome'
-	keep id_wide visit firstvisitneg`outcome'
-	keep if firstvisitneg`outcome'==1
-	save firstvisitneg`outcome', replace 
-restore 
-capture drop _merge
-merge 1:1 id_wide visit using firstvisitneg`outcome'
-capture drop _merge
-
-preserve
-	by id_wide: carryforward firstvisitneg`outcome', gen(firstvisitneg_all`outcome')
-	sum secondvisitpos`outcome' firstvisitneg`outcome' 
-	gen inapparent`outcome' = . 
-	replace inapparent`outcome'= 1 if secondvisitpos`outcome' == 1
-	
-save temp2, replace
-		keep inapparent`outcome' id_wide visit 
-		keep if inapparent`outcome' == 1 
-		save visit_inapparent`outcome', replace
-use temp2, clear
-	
-	bysort id_wide: carryforward inapparent`outcome', gen(inapparent`outcome'_subj)
-	collapse(mean) inapparent`outcome', by (id_wide)
-	bysort id_wide: replace inapparent`outcome' = 0 if inapparent`outcome'==.
-	tab inapparent`outcome'
-keep id_wide inapparent`outcome'
-save inapparent`outcome', replace
-restore
-}
-	*merge the inapparent with full data
-	use temp, clear
-	capture drop _merge
-	merge m:1 id_wide using inapparentsdenvigg
-	capture drop _merge
-	merge m:1 id_wide using inapparentschikvigg
-	capture drop _merge
-	save inapparent, replace
-**end innaparent
-capture drop _merge
-merge m:1 id_wide using apparent
-save fulldataset, replace
-
-foreach var in visit_inapparentsdenvigg visit_inapparentschikvigg visit_apparentschikvigg visit_apparentsdenvigg{
-	use `var', clear
-	gen `var' = visit 
-	save `var', replace
-
-	use fulldataset, clear
-	drop _merge
-	merge 1:1 id_wide visit using `var'
-	encode `var', gen(`var'_dum)
-	replace `var'_dum = 1 if `var'_dum!=.
-	replace `var'_dum = 0 if `var'_dum==.
-	save fulldataset, replace
-}
 
 sum visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
 foreach var in visit_inapparentsdenvigg visit_inapparentschikvigg visit_apparentschikvigg visit_apparentsdenvigg{
 tab `var'
 }
 
-	replace temp = 38.5 if temp ==385
-	replace fevertemp =1 if temp>=38  & temp !=.
-
-	tab numillnessfever
-gen fever_6ms =. 
-replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
-replace fever_6ms=1 if 	fevertoday == 1 
 
 foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
 	gen `disease'_f = . 
