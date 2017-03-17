@@ -42,6 +42,21 @@ drop temp
 rename stanforddenvigg_ sdenvigg
 rename stanfordchikvigg_ schikvigg
 save temp, replace
+*survival analysis
+gen visits = visit
+encode id_wide, gen(id)
+tsset id visit_int
+stset visit_int, failure( schikvigg) id(id_wide)
+stsum, by(id_cohort)
+sts list, by(cohort) 
+
+stop 
+**reshape to wide********
+*keep studyid id_wide visits visit_int sdenvigg schikvigg  symptoms symptoms_other durationsymptom feversymptoms othfeversymptoms currentsymptoms othcurrentsymptoms date_symptom_onset numillnessfever fevertoday durationsymptom medsprescribe othmedsprescribe everhospitali reasonhospita* othhospitalna* seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospi* hospitalname* datehospitali* numhospitalized outcome outcomehospitalized   
+*reshape wide fevertoday numillnessfever feversymptoms othfeversymptoms durationsymptom everhospitalised reasonhospitalized1 othhospitalname1 reasonhospitalized2 seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospitalized1 hospitalname1 datehospitalized1 numhospitalized currentsymptoms othcurrentsymptoms medsprescribe othmedsprescribe outcome outcomehospitalized datehospitalized datehospitalized2 hospitalname2 durationhospitalized2 reasonhospitalized3 datehospitalized3 hospitalname3 durationhospitalized3 reasonhospitalized4 datehospitalized4 hospitalname4 durationhospitalized4 reasonhospitalized5 datehospitalized5 hospitalname5 durationhospitalized5 othhospitalname2 date_symptom_onset symptoms symptoms_other sdenvigg schikvigg , i(id_wide) j(visits) s 
+
+gen seroconvert= . 
+replace seroconvert 1 if sdenvigg 
 
 foreach outcome in sdenvigg schikvigg{
 use temp, replace
@@ -148,7 +163,7 @@ by id_wide : carryforward secondvisitpos`outcome', gen(secondvisitpos_all`outcom
 
 *if ever positive, where they negative at previous visit 
 preserve
-	keep if  `outcome' ==0 & secondvisitpos`outcome'==1 & visit_int == posvisit -1
+	keep if  `outcome' ==0 & visit_int == posvisit -1
 	sort visit
 	bysort id_wide: gen visit`outcome' = _n
 	keep id_wide visit `outcome' temp 
@@ -656,7 +671,7 @@ bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 du
 
 drop _merge
 
-table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
+*table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
 sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
 
 save pre_z, replace
@@ -699,12 +714,12 @@ merge 1:1 studyid using z_scores
 sum  zlen zwei zwfl zbmi zhc 
 
 encode city, gen(city_s)
-*tables
+/*tables
 table1 , vars(age contn \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(group) saving("`figures'table2_by_group.xls", replace ) missing test 
 table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(group) saving("`figures'symptoms_by_group.xls", replace) missing test
 table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(group) saving("`figures'meds_by_group.xls", replace) missing test
 outsheet using "`data'rawdata.csv", comma names replace
-
+*/
 save "`data'data", replace
 
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\"
