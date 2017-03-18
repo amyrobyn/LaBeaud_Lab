@@ -1,89 +1,133 @@
 /********************************************************************
  *amy krystosik                  							  		*
- *david coinfection by denv pcr and malaria microscopy, AIC visit A	*
+ *ellyse astmh abstract 2017- apprent and innaparent denv and chikv	*
  *lebeaud lab               				        		  		*
- *last updated feb 21, 2017  							  			*
+ *last updated march 14, 2017  							  			*
  ********************************************************************/ 
 capture log close 
-log using "LOG all linked and cleaned data.smcl", text replace 
-set scrollbufsize 100000
 set more 1
 set scrollbufsize 100000
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data"
-local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\draft_figures_tables/"
-local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+log using "elysse_tropmed2017_apparent_inapparent.smcl", text replace 
+cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent"
+local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\figures\"
+local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\"
 
-use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
-*add in the pcr data from box and from googledoc. 
-bysort id_wide visit: gen dup = _n
-drop id_childnumber 
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\allpcr"
-		*replace denvpcrresults_dum = 1 if denvpcrresults_dum>0 & denvpcrresults_dum<.
-		save "`data'elisas_PCR_RDT", replace	
-		rename _merge interview_elisa_pcr_match
+use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_data", replace
+*shorten outcomes
+rename stanforddenvigg_ sdenvigg
+rename stanfordchikvigg_ schikvigg
+save temp, replace
 
 
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
-replace cohort = id_cohort if cohort ==""
-drop _merge cohort
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
-drop _merge
+*generate fail events
+*apparent is aic cohort: first febrile episode + fever- take everyone that fails
+*innapparent is hcc cohort: seroconversion with no fever- take only the failures after the first visit (incident, not prevalent)
+*third group is hcc cohort: seroconversion with fever- take only the failures after the first visit (incident, not prevalent)
+
+gen apparent_groups= . 
+replace apparent_groups= 1 if cohort == 1 & fevertemp ==1
+replace apparent_groups= 2 if cohort == 2 & fever_6ms ==0
+replace apparent_groups= 3 if cohort == 2 & fever_6ms ==1
+tab apparent_groups
+
+gen visits = visit
+save temp, replace
+foreach outcome in sdenvigg{
+	*create right and left censoring times
+	preserve
+		keep if `outcome'!=.
+		egen firstvisit= min(visit_int), by(id_wide) 
+		save first, replace
+		tab firstvisit
+	restore
+
+	preserve
+		keep if `outcome'!=.
+		egen right = max(visit_int), by(id_wide) 
+		save right, replace
+		tab right 
+	restore
+
+	preserve
+		keep if `outcome'==1
+		egen posvisit= min(visit_int), by(id_wide) 
+		save posvisit, replace
+		tab posvisit 
+	restore
+
+
+	merge 1:1 id_wide visit using posvisit
+	drop _merge
+	merge 1:1 id_wide visit using first
+	drop _merge
+	merge 1:1 id_wide visit using right 
+	order id_wide visit_int firstvisit right 
+	tab `outcome' , m 
+
+	keep  firstvisit right  id_wide apparent_groups `outcome' fever fever_6ms posvisit
+	rename posvisit visit_int
+	collapse firstvisit (max) right  `outcome' (min) visit apparent_groupsfever fever_6ms , by(id_wide)
+	keep if `outcome' !=.
+	merge 1:1 id_wide visit using temp
+	bysort _merge: tab visit apparent_groups
+	gen fail_`outcome' = visit if _merge==3
+}
+
+
+*reshape wide prevalent firstvisit posvisit groups  schikvigg, i(id_wide) j(visit_int )
+
+*export to r
+*outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\elysse_survival.csv", names comma replace
+
+
+*survival analysis
+foreach outcome in sdenvigg{
+stset visit_int, failure(`outcome') id(id_wide)
+stsum, by(apparent_groups)
+sts list, by(apparent_groups) 
+ltable visit_int `outcome', survival hazard intervals(180) 
+}
+
+stop 
+**panel data
+encode id_wide, gen(id)
+tsset id visit_int
+
+**reshape to wide********
+*keep studyid id_wide visits visit_int sdenvigg schikvigg  symptoms symptoms_other durationsymptom feversymptoms othfeversymptoms currentsymptoms othcurrentsymptoms date_symptom_onset numillnessfever fevertoday durationsymptom medsprescribe othmedsprescribe everhospitali reasonhospita* othhospitalna* seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospi* hospitalname* datehospitali* numhospitalized outcome outcomehospitalized   
+*reshape wide fevertoday numillnessfever feversymptoms othfeversymptoms durationsymptom everhospitalised reasonhospitalized1 othhospitalname1 reasonhospitalized2 seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospitalized1 hospitalname1 datehospitalized1 numhospitalized currentsymptoms othcurrentsymptoms medsprescribe othmedsprescribe outcome outcomehospitalized datehospitalized datehospitalized2 hospitalname2 durationhospitalized2 reasonhospitalized3 datehospitalized3 hospitalname3 durationhospitalized3 reasonhospitalized4 datehospitalized4 hospitalname4 durationhospitalized4 reasonhospitalized5 datehospitalized5 hospitalname5 durationhospitalized5 othhospitalname2 date_symptom_onset symptoms symptoms_other sdenvigg schikvigg , i(id_wide) j(visits) s 
+
+sum visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
+foreach var in visit_inapparentsdenvigg visit_inapparentschikvigg visit_apparentschikvigg visit_apparentsdenvigg{
+tab `var'
+}
+
+
+foreach disease in visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum {
+	gen `disease'_f = . 
+	replace `disease'_f = 1 if fever_6ms ==1 & `disease' >= 1 & `disease' !=.
+}
+
+list studyid id_wide visit inapparentsdenvigg inapparentschikvigg visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum numillnessfever  if visit_inapparentsdenvigg_dum !=.| visit_inapparentschikvigg_dum !=.
+count if visit_inapparentsdenvigg_dum_f ==1
+count if visit_inapparentschikvigg_dum_f ==1
+
 replace hb = hb_result if hb==.
 drop hb_result 
-
-
-*fix the studyid's that are missing or wrong
-encode id_wide, gen(id_wide_int)
-drop visit_int
-encode visit, gen(visit_int)
-xtset id_wide_int visit_int
-by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
-by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
-order id_childnumber id_cohort id_city id_visit id_city studyid id_wide
-gen id_childnumber2 = substr(id_wide , +3, .) if studyid==""
-destring id_childnumber2 , replace force
-replace id_childnumber =id_childnumber2  if studyid==""
-
-egen studyid2 =concat(id_city id_cohort visit id_childnumber) if studyid ==""
-replace studyid =studyid2 if studyid ==""
-drop id_childnumber2  studyid2 
-*done fixing id's
-outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
-
-*fix temperature
-replace temperature = temp if temperature ==.
-drop temp
-replace temp = 38.5 if temp ==385
-replace fevertemp =1 if temp>=38  & temp !=.
-replace fevertemp =0 if temperature <38
-
-gen fever_6ms =. 
-replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
-replace fever_6ms=1 if 	fevertoday == 1 
-
-replace fever_6ms=0 if 	numillnessfever == 0 
-replace fever_6ms=1 if 	fevertoday == 0
-
-*cohort
-replace cohort =2 if id_cohort == "c"
-replace cohort = 1 if id_cohort == "f"
-
 
 gen sexlabel = "sex"
 gen agelabel = "age"
 egen agegender = concat(agelabel age sexlabel gender)
 drop if strpos(agegender, ".")
+drop _merge
 merge m:1 agegender using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\normal_population_aic_b"
 drop if age>18
 drop heart_rate 
 rename heartrate heart_rate 
-*replace childheight = child_height if childheight ==.
-*drop child_height 
-*replace childweight = child_weight if childweight ==.
-*drop child_weight
+
 replace headcircum  = head_circumference if headcircum  ==.
 drop head_circumference 
-foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate { 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temp resprate { 
 		replace `var'= . if `var'==999
 		gen z`var'=.
 }
@@ -100,19 +144,18 @@ replace childheight = childheight/10 if childheight >500
 replace childheight = childheight *10 if childheight <20
 replace childweight=childweight/10 if childweight>200
 
-
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'==0
-	}
+}
 
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'<15
-	}
+}
 	
 levelsof agegender, local(levels) 
 foreach l of local levels {
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
-	replace z`var' = (`var' - median`var'`l')/sd`var'`l' if agegender=="`l'"  
+	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry resprate{ 
+		replace z`var' = (`var' - median`var'`l')/sd`var'`l' if agegender=="`l'"  
 	}
 }
 sum z*
@@ -122,41 +165,14 @@ sum heart_rate systolicbp  diastolicbp  pulseoximetry temperature childweight ch
 sum z*, d
 
 
-*add in doctor visit bs and rdt result
-gen malariapositive_dum2 = malariapositive_dum  
-replace malariapositive_dum2 =1 if bsresult > 0 & bsresult <. & malariapositive_dum2 ==.
-replace malariapositive_dum2 =1 if rdtresult > 0 & rdtresult <. & malariapositive_dum2  ==.
-tab malariapositive_dum2 malariapositive_dum, m 
-
-tab malariapositive_dum malariapositive_dum2 
-
-tab denvpcrresults_dum malariapositive_dum, m 
-tab denvpcrresults_dum malariapositive_dum2, m 
-
-gsort -denvpcrresults_dum 
-
-bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malariapositive_dum2 ==1 |denvpcrresults_dum ==1, clean
-
-**************david's severity models*************	
-gen davidcoinfection =.
-		foreach id_wide in cf201 cf241 cf247 kf189 kf204 kf337 cf196 cf205 cf211 cf246 cf248 cf256 cf257 cf265 cf273 cf313 cf340 rf496 cf193 cf200 cf210 cf236 cf243 cf268 cf271 cf300 cf348 cf385 kf185 kf202 kf342 cf245 kf184 {
-					replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="a"
-		}
-
-		foreach id_wide in cf305 cf272 kf184{
-			replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="c"
-		}
-
-tab denvpcrresults_dum  davidcoinfection 
-tab malariapositive_dum davidcoinfection 
-
-*symptoms to dummies
+**symptoms
  rename currentsymptoms symptms
  rename othcurrentsymptoms othersymptms 
  rename feversymptoms fvrsymptms
  rename othfeversymptoms otherfvrsymptms
  egen all_symptoms = concat(symptms othersymptms fvrsymptms otherfvrsymptms) 
-
+ 
+gen symptomstoreview = all_symptoms
 		foreach var of varlist all_symptoms { 			
 		replace `var'= subinstr(`var', " ", "_",.)
 		}
@@ -241,7 +257,6 @@ tab malariapositive_dum davidcoinfection
 						tab `var'_`symptom'
 						}
 			}	
-drop symptms othersymptms fvrsymptms otherfvrsymptms 
 
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
@@ -329,10 +344,11 @@ rename all_symptoms_other3 all_symptoms_other
 
 
 egen symptomcount = rowtotal(all_symptoms_*)
-** *david medication
+**end symptoms**
+
 *medsprescribe to dummies
 egen all_meds = concat(medsprescribe othmedsprescribe) 
-
+gen medstoreview = all_meds 
 replace all_meds=lower(all_meds)
 replace all_meds=trim(itrim(all_meds))
 		foreach var of varlist all_meds { 			
@@ -464,58 +480,16 @@ tab all_meds
 preserve
 keep if all_meds !=""
 rename all_meds TOCATEGORIZE
-outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using "`data'allmeds.xls", replace 
+outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using allmeds.xls, replace 
 restore
 drop medsprescribe othmedsprescribe 
+*end meds
 
-gen dmcoinf = .
-replace dmcoinf = 1 if malariapositive_dum==1 & denvpcrresults_dum==1
-gen dmcoinf2 = .
-replace dmcoinf2 = 1 if malariapositive_dum2==1 & denvpcrresults_dum==1
-
-foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
-	bysort  `var': sum all_symptoms_*
-}
-
-*group 0 is neg; 1 is malaria pos; 2 is denv pos; 3 is coinfection. 
-gen group = .
-replace group = 0 if malariapositive_dum ==0 & denvpcrresults_dum ==0
-replace group = 1 if malariapositive_dum==1
-replace group = 2 if denvpcrresults_dum==1
-replace group = 3 if dmcoinf==1
-tab davidcoinfection group, m
-
-gen group2 = .
-replace group2 = 0 if malariapositive_dum2 ==0 & denvpcrresults_dum ==0
-replace group2 = 1 if malariapositive_dum2==1
-replace group2 = 2 if denvpcrresults_dum==1
-replace group2 = 3 if dmcoinf2==1
-tab davidcoinfection group2, m
-
-*outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection group group2 using coinfection.xls, replace
-
-
-foreach studyid in "cfa236" "kfa00337" "kfa00185" "cfa00256" "kfc00184" "kfa00204" "kfa00202" "cfa00205" "cfa00385" "cfa00211" "cfa00201" "cfa00273" "kfa00189" "cfa00348" "cfa00300" "cfa00248" "cfa00313" "cfa00257" "rfa00496" "cfa00196" "cfa00246" "cfa00200" "cfa00243" "cfa00268" "kfa00342" "cfa00265" "cfa00247" "cfa00241" "cfa00340" "cfa00271" "cfa00193" "cfa00245" "cfa00210"{
-list if studyid == "`studyid'"
-}
-
-foreach studyid in "cfa236" "kfa337" "kfa185" "cfa256" "kfc184" "kfa204" "kfa202" "cfa205" "cfa385" "cfa211" "cfa201" "cfa273" "kfa189" "cfa348" "cfa3" "cfa248" "cfa313" "cfa257" "rfa496" "cfa196" "cfa246" "cfa2" "cfa243" "cfa268" "kfa342" "cfa265" "cfa247" "cfa241" "cfa340" "cfa271" "cfa193" "cfa245" "cfa210"{
-list if studyid == "`studyid'"
-}
-
-gen davidcoinfection2 =.
-foreach studyid in "cf236" "kf337" "kf185" "cf256" "kfc184" "kf204" "kf202" "cf205" "cf385" "cf211" "cf201" "cf273" "kf189" "cf348" "cf3" "cf248" "cf313" "cf257" "rf496" "cf196" "cf246" "cf2" "cf243" "cf268" "kf342" "cf265" "cf247" "cf241" "cf340" "cf271" "cf193" "cf245" "cf210"{
-replace davidcoinfection2 = 1 if id_wide== "`studyid'"
-}
-
-*outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection davidcoinfection2  group  using coinfection2.xls, replace
-
-preserve 
-		keep davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
-		order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
-		sort davidcoinfection2
-restore
-
+/*
+all possible combinations of visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum
+four digits with 0 as neg and 1 as positive
+  */
+egen group = concat(visit_inapparentsdenvigg_dum visit_inapparentschikvigg_dum visit_apparentschikvigg_dum visit_apparentsdenvigg_dum)
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 replace outcome= . if outcome==99|outcome==6
@@ -525,21 +499,10 @@ replace othoutcome_dum  = 3 if othoutcome!=""
 replace othoutcome_dum  = 1 if strpos(othoutcome, "nutritional")
 replace outcome = othoutcome_dum  if outcome ==.
 tab outcome outcomehospitalized , m
-gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==2 & outcomehospitalized ==1
-preserve
-	keep if discordantoutcome ==1
-	outsheet studyid id_wide visit discordantoutcome outcome outcomehospitalized dataset using "`data'discordant_hospital_outcomes.csv", names comma replace 
-restore
 
 bysort group: tab symptomcount outcomehospitalized , chi2      
 bysort group: sum symptomcount outcomehospitalized , detail
 
-
-gen selected = .
-replace selected = 0 if malariapositive_dum==0 & denvpcrresults_dum==0
-replace selected = 1 if malariapositive_dum==1
-replace selected = 1 if denvpcrresults_dum==1
-replace selected = 1 if dmcoinf==1
 
 dropmiss, force
 bysort group: sum  all_symptoms*
@@ -560,42 +523,24 @@ drop currently_sick
 replace temperature = temp if temperature ==.
 drop temp
 
-foreach var in date_of_birth  {
+foreach var in date_of_birth{
 				gen `var'1 = date(`var', "MDY" ,2050)
 				format %td `var'1 
 				drop `var'
 				rename `var'1 `var'
 				recast int `var'
-				}
-
+}
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
-
 bysort group: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
 
-
-*table1 , vars( \malariapositive_dum cat \ ovaparasites cat\ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
-*repeatmalaria bin \ 
-
-bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 group group2
-
-*bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
 drop _merge
 
-/*
-net get  dm0004_1.pkg
-egen zhcaukwho = zanthro(headcircum,hca,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zwtukwho = zanthro(childweight,wa,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-egen zbmiukwho = zanthro(childbmi , ba ,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
-*/
-*outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
-table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("`figures'anthrozscores.xls", replace ) missing test
-*outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
+*table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(group) saving("anthrozscores.xls", replace ) missing test
 sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
 
-save "`data'pre_z", replace
+save pre_z, replace
 preserve
 		replace gender = gender +1
 		gen agemons = age*12
@@ -624,38 +569,27 @@ preserve
 		rename height HEIGHT
 		rename head HEAD
 
-*outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
 restore
 
-
 insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\who anthro\MySurvey_z_st.csv", clear 
-save "`data'z_scores", replace
+save z_scores, replace
 
-use "`data'pre_z"
-merge 1:1 studyid using "`data'z_scores"
-drop _merge
+use pre_z
+merge 1:1 studyid using z_scores
+
 sum  zlen zwei zwfl zbmi zhc 
 
-foreach result in malariaresults rdtresults bsresults{
-tab `result' malariapositive_dum, m
-}
-
-tab labtests malariabloodsmear 
-sum malariapositive malariapositive_dum 
-
 encode city, gen(city_s)
+/*tables
+table1 , vars(age contn \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(group) saving("`figures'table2_by_group.xls", replace ) missing test 
+table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(group) saving("`figures'symptoms_by_group.xls", replace) missing test
+table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(group) saving("`figures'meds_by_group.xls", replace) missing test
+outsheet using "`data'rawdata.csv", comma names replace
+*/
+save "`data'data", replace
 
-*outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
-*tables
-
-table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanforddenvigg_ ) saving("`figures'table1bystanforddenvigg.xls", replace ) missing test 
-table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanfordchikvigg_ ) saving("`figures'table1bystanforddenvigg.xls", replace ) missing test 
-
-table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(cohort) saving("`figures'table1bycohrt.xls", replace ) missing test 
-table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(site) saving("`figures'table1bysite.xls", replace ) missing test 
-
-table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(cohort) saving("`figures'symptoms_by_cohort.xls", replace) missing test
-table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(site) saving("`figures'meds_by_site.xls", replace) missing test
-
-outsheet using "`data'cleaned_merged_data_$S_DATE.csv", replace comma names
-save "`data'cleaned_merged_data", replace
+local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\"
+preserve
+	keep if  visit_inapparentsdenvigg_dum_f ==1 |visit_inapparentschikvigg_dum_f ==1
+	outsheet studyid id_wide visit visit_inapparentsdenvigg_dum_f visit_inapparentschikvigg_dum_f  fevertoday numillnessfever fever_6ms  symptomstoreview  medstoreview durationsymptom everhospitali reasonhospita* othhospitalna* seekmedcare medtype wheremedseek othwheremedseek counthosp durationhospi* hospitalname* datehospitali* numhospitalized outcome outcomehospitalized all_symptoms*  using "`data'toreview.csv", names comma replace 
+restore
