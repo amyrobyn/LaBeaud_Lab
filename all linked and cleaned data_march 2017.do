@@ -5,13 +5,13 @@
  *last updated feb 21, 2017  							  			*
  ********************************************************************/ 
 capture log close 
-log using "david_coinfection_severity.smcl", text replace 
+log using "all linked and cleaned data.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 set scrollbufsize 100000
-cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\data"
-local figures "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\draft_figures_tables\"
-local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\data\"
+cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data"
+local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\draft_figures_tables"
+local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
 *add in the pcr data from box and from googledoc. 
@@ -25,12 +25,49 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Da
 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
 replace cohort = id_cohort if cohort ==""
-keep if visit == "a" & cohort =="f"
 drop _merge cohort
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
 drop _merge
 replace hb = hb_result if hb==.
 drop hb_result 
+
+
+*fix the studyid's that are missing or wrong
+encode id_wide, gen(id_wide_int)
+drop visit_int
+encode visit, gen(visit_int)
+xtset id_wide_int visit_int
+by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
+by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
+order id_childnumber id_cohort id_city id_visit id_city studyid id_wide
+gen id_childnumber2 = substr(id_wide , +3, .) if studyid==""
+destring id_childnumber2 , replace force
+replace id_childnumber =id_childnumber2  if studyid==""
+
+egen studyid2 =concat(id_city id_cohort visit id_childnumber) if studyid ==""
+replace studyid =studyid2 if studyid ==""
+drop id_childnumber2  studyid2 
+*done fixing id's
+outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
+
+*fix temperature
+replace temperature = temp if temperature ==.
+drop temp
+replace temp = 38.5 if temp ==385
+replace fevertemp =1 if temp>=38  & temp !=.
+replace fevertemp =0 if temperature <38
+
+gen fever_6ms =. 
+replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
+replace fever_6ms=1 if 	fevertoday == 1 
+
+replace fever_6ms=0 if 	numillnessfever == 0 
+replace fever_6ms=1 if 	fevertoday == 0
+
+*cohort
+replace cohort =2 if id_cohort == "c"
+replace cohort = 1 if id_cohort == "f"
+
 
 gen sexlabel = "sex"
 gen agelabel = "age"
@@ -118,7 +155,7 @@ tab malariapositive_dum davidcoinfection
  rename othcurrentsymptoms othersymptms 
  rename feversymptoms fvrsymptms
  rename othfeversymptoms otherfvrsymptms
- egen all_symptoms = concat(symptms othersymptms) 
+ egen all_symptoms = concat(symptms othersymptms fvrsymptms otherfvrsymptms) 
 
 		foreach var of varlist all_symptoms { 			
 		replace `var'= subinstr(`var', " ", "_",.)
@@ -305,7 +342,7 @@ replace all_meds=trim(itrim(all_meds))
 		foreach antibiotic in  "chloramphenicol" "teo" "t.e.o" "flagyl" "flaggyl" "ciproxin" "augumentin" "cefxime" "ciproxin" "chlamphenicol" "cefixime" "ciproxin" "ciprofloxin" "intravenous_metronidazole" "nitrofurantion" "ciprofloxacin" "flagyla"  "gentamicin" "metronidazole" "floxapen" "flucloxacill" "trinidazole" "vedrox" "ampiclox" "cloxacillin" "ampicillin" "albendaxole" "albedazole" "tinidazole" "tetracycline" "augmentin" "amoxicillin" "ceftriaxone" "penicillian" "septrin" "antibiotic" "ceftrizin" "cotrimoxazole" "cefuroxime" "erythromycin" "gentamycin" "cipro"{
 		replace all_meds= subinstr(all_meds, "`antibiotic'" ,"antibacterial",.)
 		}
-		
+
 		foreach item in "im_quinine" "artesunate" "artesun" "sp" "quinine" "coartem" "quinnie" "atersunate" "quinnine" "paludrin" "quinnie" "duocotecxin" "pheramine" "artsun" "atesunate" "atesa" "artesinate" "doxycline"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"antimalarial",.)
 		}
@@ -317,11 +354,6 @@ replace all_meds=trim(itrim(all_meds))
 		foreach item in "guaifenesin" "xpen" "expectants" "expectant" "tricoff" "expectant" "expectants" "expectant" "expectant"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"expectorant",.)
 		}
-		
-		foreach item in "albendazole"  "abz" "mebendazole" "diloxanide"{
-		replace all_meds= subinstr(all_meds, "`item'" ,"benzimidazole",.)
-		}
-		
 
 		foreach item in "syrup" "unibrolcoldcap" "unibrol" "tricohist" "trichohist" "cold_cap" "ascoril"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"cough",.)
@@ -394,7 +426,7 @@ replace all_meds=trim(itrim(all_meds))
 
 
 		foreach var of varlist all_meds{ 			
-			foreach med in "benzimidazole" "antibacterial" "antimalarial" "antipyretic"  "antihelmenthic" "expectorant" "allergy" "supplement"  "antifungal" "othermed" "admit" "ors" "iv" "cough" "sulphate" "painmed" "bronchospasm" "topical" "gerd" "none" "antiamoeba"{ 
+			foreach med in "antibacterial" "antimalarial" "antipyretic"  "antihelmenthic" "expectorant" "allergy" "supplement"  "antifungal" "othermed" "admit" "ors" "iv" "cough" "sulphate" "painmed" "bronchospasm" "topical" "gerd" "none" "antiamoeba"{ 
 						tostring `var', replace
 						replace `var'=trim(itrim(lower(`var')))
 						moss `var', match(`med') prefix(`med')
@@ -436,13 +468,6 @@ outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using allmeds.xls, replace
 restore
 drop medsprescribe othmedsprescribe 
 
-
-gen antiparasite = .
-replace antiparasite =0 if all_meds_antimalarial ==0|all_meds_antihelmenthic==0| all_meds_benzimidazole ==0
-replace antiparasite = 1 if all_meds_antimalarial ==1|all_meds_antihelmenthic==1| all_meds_benzimidazole ==1
-
-gen bleeding = 1 if all_symptoms_bloody_nose==1|all_symptoms_mucosal_bleed_brs==1|all_symptoms_bleeding_symptom==1|all_symptoms_abnormal_gums
-		
 gen dmcoinf = .
 replace dmcoinf = 1 if malariapositive_dum==1 & denvpcrresults_dum==1
 gen dmcoinf2 = .
@@ -623,52 +648,13 @@ encode city, gen(city_s)
 *outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
 *tables
 
-table1 , vars(age contn \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \stanforddenvigg_ cat \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \ temperature conts \ hivmeds bin \ hivpastmedhist bin \) by(group) saving("`figures'table2_by_group.xls", replace ) missing test 
-table1, vars(bleeding bin \all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(group) saving("`figures'symptoms_by_group.xls", replace) missing test
-table1, vars(all_meds_antifungal cat \ all_meds_supplement cat \ all_meds_allergy cat \ all_meds_expectorant cat\ all_meds_antihelmenthic cat \ all_meds_antipyretic cat \ all_meds_antimalarial cat \ all_meds_antibacterial cat  \ all_meds_benzimidazole  cat \antiparasitic cat\ all_meds_bronchospasm cat \ all_meds_topical  cat \ all_meds_antiamoeba cat \    all_meds_none cat \   all_meds_gerd cat \   all_meds_painmed cat \ all_meds_sulphate cat \ all_meds_cough cat \ all_meds_iv cat \ all_meds_ors cat \ all_meds_admit cat \ all_meds_othermed cat \  ) by(group) saving("`figures'meds_by_group.xls", replace) missing test
-*logit model for severity
-	
-	global predictors  "all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other"
-	global factors "all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_behavior_change all_symptoms_altms all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_earache all_symptoms_funny_taste all_symptoms_mucosal_bleed_brs all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea"
-	global demographic "age gender "
-	global signs "heart_rate zhcaukwho zwtukwho zhtukwho zbmiukwho zheart_rate zsystolicbp zdiastolicbp zpulseoximetry zresprate scleralicterus splenomegaly  temperature hivmeds hivpastmedhist"
-	sum ${factors}
-	factor outcomehospitalized ${factors}, pcf
-	rotate
-	screeplot
-	pca outcomehospitalized ${predictors}
-	screeplot, yline(1) ci(het)
-	predict pc1 pc2 pc3 pc4 pc5 pc6 pc7 pc8 pc9 pc10 pc11 pc12, score
-	
-	*logit outcomehospitalized group age gender i.city_s   pc1 - pc12
-corr ${predictors}
+table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanforddenvigg_ ) saving("`figures'table1bystanforddenvigg.xls", replace ) missing test 
+table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanfordchikvigg_ ) saving("`figures'table1bystanforddenvigg.xls", replace ) missing test 
 
-*output to figures folder
-logit outcomehospitalized stanforddenvigg_ ${demographic} ${signs} ${factors} , or
-*outreg2 using "`figures'severitymodel_binary.xls", replace eform
-estimates store m1, title(Model 1 binary)
+table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(cohort) saving("`figures'table1bycohrt.xls", replace ) missing test 
+table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(site) saving("`figures'table1bysite.xls", replace ) missing test 
 
-ologit outcome stanforddenvigg_ ${demographic} ${signs} ${factors} , or
-*outreg2 using "`figures'severitymodel_ordinal.xls", replace eform
-estimates store m2, title(Model 1 ordinal)
+table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(cohort) saving("`figures'symptoms_by_cohort.xls", replace) missing test
+table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(site) saving("`figures'meds_by_site.xls", replace) missing test
 
-logit outcomehospitalized group stanforddenvigg_ ${demographic} ${signs} ${factors}, or
-*outreg2 using "`figures'severitymodel_binary.xls", replace eform
-estimates store m3, title(Model 1 binary diagnostic)
-
-/*ologit outcome group stanforddenvigg_  ${factors} ${signs} ${demographic}, or
-outreg2 using "`figures'severitymodel_ordinal.xls", replace eform
-estimates store m4, title(Model 1 ordinal diagnostic)
-*/
-estout m1 m2 m3 using "`figures'severity_models.xls", replace eform cells(b(star fmt(3)) se(par fmt(2)))   ///
-   legend label varlabels(_cons constant)               ///
-   stats(r2 df_r bic, fmt(3 0 1) label(R-sqr dfres BIC))
-
-
-*two step models. assuming you are malaria or dengue positive, are you hospitalized?
-	dropmiss, force
-	logit outcomehospitalized group age gender i.city_s   all_symptoms_halitosis all_symptoms_edema all_symptoms_appetite_change all_symptoms_constipation all_symptoms_behavior_change all_symptoms_altms all_symptoms_abnormal_gums all_symptoms_jaundice all_symptoms_constitutional all_symptoms_asthma all_symptoms_lethergy all_symptoms_dysphagia all_symptoms_dysphrea all_symptoms_anaemia all_symptoms_seizure all_symptoms_itchiness all_symptoms_bleeding_symptom all_symptoms_sore_throat all_symptoms_sens_eyes all_symptoms_earache all_symptoms_funny_taste all_symptoms_imp_mental all_symptoms_mucosal_bleed_brs all_symptoms_bloody_nose all_symptoms_rash all_symptoms_dysuria all_symptoms_nausea all_symptoms_respiratory all_symptoms_aches_pains all_symptoms_abdominal_pain all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_chiils all_symptoms_fever all_symptoms_eye_symptom all_symptoms_other, or
-	logit selected age gender i.city_s, or
-*	heckprob outcomehospitalized all_symptoms_anaemia all_symptoms_feeling_sick all_symptoms_muscle_pains all_symptoms_joint_pains all_symptoms_diarrhea all_symptoms_vomiting all_symptoms_headache all_symptoms_fever, select(selected= age gender i.city_s )
-
-outsheet using "`data'david_severity_final.csv", replace comma names
+outsheet using "`data'cleanedandmegeddata.csv", replace comma names

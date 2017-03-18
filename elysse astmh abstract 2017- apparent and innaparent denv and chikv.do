@@ -21,6 +21,7 @@ drop _merge
 *fix the studyid's that are missing or wrong
 encode id_wide, gen(id_wide_int)
 encode visit, gen(visit_int)
+ _strip_labels visit_int
 xtset id_wide_int visit_int
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
@@ -33,7 +34,6 @@ egen studyid2 =concat(id_city id_cohort visit id_childnumber) if studyid ==""
 replace studyid =studyid2 if studyid ==""
 drop id_childnumber2  studyid2 
 *done fixing id's
-outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
 
 *fix temperature
 replace temperature = temp if temperature ==.
@@ -71,6 +71,51 @@ replace groups= 3 if cohort == 2 & fever_6ms ==1
 tab groups
 
 gen visits = visit
+save temp, replace
+*create right and left censoring times
+preserve
+	keep if schikvigg!=.
+	egen firstvisit= min(visit_int), by(id_wide) 
+	save first, replace
+	tab firstvisit
+restore
+
+preserve
+	keep if schikvigg!=.
+	egen right = max(visit_int), by(id_wide) 
+	save right, replace
+	tab right 
+restore
+
+preserve
+	keep if schikvigg==1
+	egen posvisit= min(visit_int), by(id_wide) 
+	save posvisit, replace
+	tab posvisit 
+restore
+
+
+merge 1:1 id_wide visit using posvisit
+drop _merge
+merge 1:1 id_wide visit using first
+drop _merge
+merge 1:1 id_wide visit using right 
+order id_wide visit_int firstvisit right 
+tab schikvigg , m 
+
+keep  firstvisit right  id_wide groups  schikvigg fever fever_6ms posvisit
+rename posvisit visit_int
+collapse firstvisit (max) right  schikvigg (min) visit groups fever fever_6ms , by(id_wide)
+keep if schikvigg !=.
+merge 1:1 id_wide visit using temp
+bysort _merge: tab visit groups
+gen fail_chikv = visit if _merge==3
+
+*reshape wide prevalent firstvisit posvisit groups  schikvigg, i(id_wide) j(visit_int )
+
+*export to r
+*outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\elysse_survival.csv", names comma replace
+
 
 *survival analysis
 foreach outcome in schikvigg sdenvigg{
