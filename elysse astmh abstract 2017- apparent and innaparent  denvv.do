@@ -66,7 +66,7 @@ foreach outcome in sdenvigg{
 
 	keep  firstvisit right  id_wide apparent_groups `outcome' fever fever_6ms posvisit
 	rename posvisit visit_int
-	collapse firstvisit (max) right  `outcome' (min) visit apparent_groupsfever fever_6ms , by(id_wide)
+	collapse firstvisit (max) right  `outcome' (min) visit apparent_groups fever fever_6ms , by(id_wide)
 	keep if `outcome' !=.
 	merge 1:1 id_wide visit using temp
 	bysort _merge: tab visit apparent_groups
@@ -79,13 +79,13 @@ foreach outcome in sdenvigg{
 *export to r
 *outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\elysse_survival.csv", names comma replace
 
-
+local strata "apparent_groups  malariapositive_dum seasonyear sex agegroup"
 *survival analysis
 foreach outcome in sdenvigg{
 stset visit_int, failure(`outcome') id(id_wide)
-stsum, by(apparent_groups)
-sts list, by(apparent_groups) 
-ltable visit_int `outcome', survival hazard intervals(180) 
+stsum, by(`strata')
+sts list, by(`strata') 
+ltable visit_int `outcome', survival hazard intervals(180) by(`strata')
 }
 
 stop 
