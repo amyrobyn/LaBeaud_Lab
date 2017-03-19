@@ -423,7 +423,7 @@ drop othoutcome_dum
 gen othoutcome_dum = .
 replace othoutcome_dum  = 1 if othoutcome!=""
 replace othoutcome_dum  = 0 if strpos(othoutcome, "nutritional")
-gen outcomehospitalized_all = 0
+gen outcomehospitalized_all = .
 replace outcomehospitalized_all = 1 if outcome == 3
 replace outcomehospitalized_all = 1 if outcome == 4
 replace outcomehospitalized_all = 1 if outcome == 5

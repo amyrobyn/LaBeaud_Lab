@@ -801,7 +801,6 @@ restore
 **SES Index End
 merge 1:1 id_wide visit using aic_sesindex
 drop _merge
-stop 
 
 
 *remove outliers for z scores
@@ -957,10 +956,9 @@ egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_prote
 					}
 					
 				order hccsesindex*
-				stop
 				sum  hccsesindeximprovedfuel_index - hccsesindexland_index
 				egen hccses_index_sum= rowtotal(hccsesindeximprovedfuel_index - hccsesindexland_index)
-				drop hccsesindeximprovedfuel_index - hccsesindexland_index
+				*drop hccsesindeximprovedfuel_index - hccsesindexland_index
 
 			ds, has(type string) 
 			foreach var of varlist `r(varlist)' { 
@@ -977,6 +975,18 @@ egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_prote
 **stop hcc ses index**
 replace childvillage = village if childvillage ==""
 drop village
+
+*fix gametocytes
+replace  gametocytes = gametocytes1 if  gametocytes ==.
+replace  gametocytes = gametocytes2 if  gametocytes ==.
+drop gametocytes2 gametocytes1
+
+replace gender1 = gender1 -1 
+replace gender = gender1 if gender ==.
+drop gender1
+
+*shorten names 
+rename *past_med_history* *pmh*
 
 *outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
 *tables
