@@ -64,7 +64,7 @@ replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != .
 replace fever_6ms=1 if 	fevertoday == 1 
 
 replace fever_6ms=0 if 	numillnessfever == 0 
-replace fever_6ms=1 if 	fevertoday == 0
+replace fever_6ms=0 if 	fevertoday == 0
 
 *cohort
 replace cohort =2 if id_cohort == "c"
@@ -183,6 +183,7 @@ tab malariapositive_dum davidcoinfection
  rename feversymptoms fvrsymptms
  rename othfeversymptoms otherfvrsymptms
  egen all_symptoms = concat(symptms othersymptms fvrsymptms otherfvrsymptms) 
+ gen symptomstoreview =all_symptoms 
 
 		foreach var of varlist all_symptoms { 			
 		replace `var'= subinstr(`var', " ", "_",.)
@@ -359,7 +360,7 @@ egen symptomcount = rowtotal(all_symptoms_*)
 ** *david medication
 *medsprescribe to dummies
 egen all_meds = concat(medsprescribe othmedsprescribe) 
-
+gen medstoreview  = all_meds  
 replace all_meds=lower(all_meds)
 replace all_meds=trim(itrim(all_meds))
 		foreach var of varlist all_meds { 			
@@ -991,6 +992,7 @@ rename *past_med_history* *pmh*
 *outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
 *tables
 
+/*
 *table1bystanforddenvigg
 table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanforddenvigg_ ) saving("`figures'table1bystanforddenvigg.xls", replace ) missing test 
 *table1bystanforddenvigg
@@ -1003,4 +1005,5 @@ table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptom
 table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(site) saving("`figures'meds_by_site.xls", replace) missing test
 
 outsheet using "`data'cleaned_merged_data_$S_DATE.csv", replace comma names
+*/
 save "`data'cleaned_merged_data", replace
