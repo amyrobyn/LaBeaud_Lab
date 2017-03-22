@@ -1,14 +1,25 @@
-local output "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 2017"
-local input "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest"
-cd "`input'"
+/********************************************************************
+ *amy krystosik                  							  		*
+ *import and merge and clean elisa data 							*
+ *lebeaud lab               				        		  		*
+ *last updated march 21, 2017  							  			*
+ ********************************************************************/ 
+ 
+local output "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 21 2017\"
+local input "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\elisas\march 21 2017"
+local westxls "Western (Chulaimbo, Kisumu) AIC ELISA. Common sheet..xlsx"
+local coastxls "COAST ELISA DATABASE.xls.xlsx"
 
+cd "`output'"
 capture log close 
 log using "`output'elisa_import_merge_clean.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
+
+cd "`input'"
 *import csv's
-import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
+import excel "`westxls'", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 rename *, lower
@@ -16,31 +27,31 @@ rename stford* stanford*
 gen dataset = "chulaimbo_aic" 
 save "`output'chulaimbo_aic" , replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
+import excel "`westxls'", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "chulaimbo_hcc"
 save "`output'chulaimbo_hcc", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+import excel "`westxls'", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisuma_aic"
 save "`output'kisuma_aic", replace
 
-import excel "WEST ELISA Database DL Mar 1 2017.xlsx", sheet("KISUMU HCC") cellrange(A4:BJ829) firstrow clear
+import excel "`westxls'", sheet("KISUMU HCC") cellrange(A8:BJ829) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "kisumu_hcc"
 save "`output'kisumu_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
+import excel "`coastxls'", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "milalani_hcc"
 save "`output'milalani_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
+import excel "`coastxls'", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 egen ChikVIgGOD_db = concat(ChikVIgGOD_d  AK)
@@ -49,19 +60,19 @@ rename ChikVIgGOD_db ChikVIgGOD_d
 gen dataset = "msambweni_aic"
 save "`output'msambweni_aic", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
+import excel "`coastxls'", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "nganja_hcc"
 save "`output'nganja_hcc", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
+import excel "`coastxls'", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
 dropmiss, force obs
 dropmiss, force 
 gen dataset = "ukunda_aic"
 save "`output'ukunda_aic", replace
 
-import excel "COAST ELISA Database DL Mar 1 2017.xls", sheet("Ukunda HCC") cellrange(A8:BI1128) firstrow clear
+import excel "`coastxls'", sheet("Ukunda HCC") cellrange(A8:BI1128) firstrow clear
 dropmiss, force 
 dropmiss, force obs
 gen dataset = "ukunda_hcc"
@@ -108,7 +119,7 @@ capture  tostring chikviggod_*, replace force
 							replace `v' = lower(`v') 
 							} 
 
-capture rename stanfordchikigg_a   stanfordchikvigg_a
+capture rename stanfordchikigg_a stanfordchikvigg_a
 capture rename stanfordchikviggresult_a stanfordchikvigg_a
 capture rename stanfordchikviggresult_b stanfordchikvigg_b
 capture rename stforddenvigg_a stanforddenvigg_a
@@ -153,7 +164,7 @@ append using    "ukunda_aic.dta"
 save temp, replace
 dropmiss, force obs
  
-save appended_september20.dta, replace
+save "appended_$S_DATE", replace
 
 save temp, replace
 	use temp, clear
@@ -173,50 +184,36 @@ save temp, replace
 				}
 			*36387  neg and 6792  pos
 restore
-
-use appended_september20.dta, clear
-
-				replace studyid_a = followupid_b if studyid_a ==""
-				replace studyid_a = followupid_c if studyid_a ==""
-				replace studyid_a = followupaliquotid_b if studyid_a ==""
-				replace studyid_a = followupaliquotid_c if studyid_a ==""
-				replace studyid_a = followupaliquotid_d if studyid_a ==""
-				replace studyid_a = followupaliquotid_e if studyid_a ==""
-				replace studyid_a = followupaliquotid_f if studyid_a ==""
-				replace studyid_a = followupaliquotid_g if studyid_a ==""
-				replace studyid_a = followupaliquotid_h if studyid_a ==""
-				replace studyid_a =  studyid_e if studyid_a ==""
-				replace studyid_a = chikvpcr_e  if studyid_a ==""
-					
-				drop studyid_c 
-				drop followupaliquotid_*
+sort studyid_a
+use "appended_$S_DATE", clear
+foreach visit in a b c d e f g h i j{
+	capture replace studyid_a = studyid_`visit' if studyid_a ==""
+}					
 
 				replace studyid_a =lower(studyid_a)
 				replace studyid_a= subinstr(studyid_a, ".", "",.) 
 				replace studyid_a= subinstr(studyid_a, "/", "",.)
 				replace studyid_a= subinstr(studyid_a, " ", "",.)
-				list if studyid_a==""
-				drop if studyid_a==""
- 
+				count if studyid_a==""
+
 *make sure this doesn't create duplicates. also make the same changes to the demographic data.
 				replace studyid_a= subinstr(studyid_a, "cmb", "hf",.) 
 
 		
+duplicates tag studyid_a , gen(dup_studyida)
 
-	bysort  studyid_a: gen dup_merged = _n 
 preserve
 	*keep those that i dropped for duplicate and show to elysse
-	keep if dup_merged >1	
-	export excel using "`save'dup", firstrow(variables) replace
+		count if studyid_a==""
+		duplicates report studyid_a 
+		duplicates list studyid_a 
+		tab dup_studyida, nolab
+		keep if dup_studyida> 0
+		outsheet studyid_a dup_studyida using dup_studyida.csv, replace comma names
 restore
-/*
-	gen dupkey = "dup" if dup_merged >1
-	egen studyid_adup = concat(studyid_a dupkey dup_merged) if dup_merged >1
-	replace studyid_a = studyid_adup if studyid_adup !=""
-	drop dupkey
-	*/
-	drop if dup_merged >1
-	
+		drop if  dup_studyida>0
+		isid studyid_a 
+
 save merged, replace
 
 *take visit out of id
@@ -481,5 +478,25 @@ by cohort, sort : ci stanfordchikvigg_, binomial
 bysort id_wide: carryforward id_wide, gen(id_wide2)
 
 cd "`input'"
-save elisa_merged, replace
+save "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged", replace
 outsheet id* studyid id_wide visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace
+
+
+*************
+gen anna_seroc_denv=.
+*	foreach studyid in "cfa0313" "cfa0327" "cfa0328" "cfa0332" "rfa0427" "rfa0428" "cfa0285" "mfa0537" "mfa0598" "mfa0703" "mfa0933" "ufa0570"{
+	foreach id_wide in "cf313" "cf327" "cf328" "cf332" "rf427" "rf428" "cf285" "mf537" "mf598" "mf703" "mf933" "uf570"{
+	replace anna_seroc_denv= 1 if id_wide == "`id_wide'"
+}
+
+bysort visit: tab anna_seroc_denv stanforddenvigg_ 
+
+
+gen jimmy_seroc_chikv=.
+replace studyid = lower(studyid)
+list studyid if strpos(studyid, "ufa0572")
+foreach id_wide in "uf572" "uf599" "uf840" "mf563" "kf433"{
+	replace jimmy_seroc_chikv= 1 if id_wide == "`id_wide'"
+}
+
+bysort visit: tab jimmy_seroc_chikv stanfordchikvigg_, m

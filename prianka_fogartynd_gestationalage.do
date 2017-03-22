@@ -7,7 +7,9 @@ set scrollbufsize 100000
 set more 1
 
 cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka- fogarty nd"
-insheet using "FogartyNDCHIKV_DATA_2017-02-27_1939.csv", comma clear
+local tables "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka- fogarty nd\tables\"
+insheet using "FogartyNDCHIKV_DATA_2017-03-21_1137.csv", comma clear
+
 
 replace gestational_age_weeks = . if gestational_age_weeks==99
 replace gestational_age_days = . if gestational_age_days==99
@@ -33,7 +35,7 @@ tab gestational_age_cat
 sum gestational_age_weekfrac
 *sum infant birthing questionaire by trimester of infection gestatational age
 
-foreach var in trimester symptom_duration pregnancy_illness birth_time opioids complications birthing_experience after_birth_problems race monthly_income{
+foreach var in trimester symptom_duration pregnancy_illness birth_time opioids complications birthing_experience after_birth_problems race monthly_income smoking{
 	replace `var'= . if `var'==99
 }
 *drop if pregnant ==99 | pregnant ==. 
@@ -44,6 +46,7 @@ replace preg_chikvpos = 1 if pregnant ==1
 replace preg_chikvpos = 0 if pregnant == 0 | ever_had_chikv ==0
 tab preg_chikvpos 
 drop if trimester ==. & preg_chikvpos ==1
+ 
 gen chikv_preg_non =. 
 replace chikv_preg_non = 0 if ever_had_chikv ==1 & pregnant == 0
 replace chikv_preg_non = 1 if ever_had_chikv ==1 & pregnant == 1
@@ -60,17 +63,22 @@ tabout trimester birth_time using trimester_vs_bith_time.xls , stats(chi2) appen
 
 *dob 
 foreach var in primary_date dob {
-				gen `var'1 = date(`var', "MDY")
+				gen `var'2 = `var'
+				gen `var'1 = date(`var', "YMD")
 				format %td `var'1 
 				drop `var'
 				rename `var'1 `var'
 				recast int `var'
 				}
-sort dob
+				
+				
+
 gen mom_age= primary_date - dob  
+tab mom_age, m
 replace mom_age = round(mom_age/365.25)
 sum mom_age
 replace mom_age =. if mom_age <15 
+list dob2 primary_date2 if mom_age ==. 
 
 replace mode_of_delivery = mode_of_delivery -1
 bysort preg_chikvpos:sum smoking_amount marijuana_amount opioid_amount 
@@ -87,7 +95,7 @@ foreach var in list_pregnancy_illness specify_complications  specify_after_birth
 
 
 bysort birth_time: sum preg_chikvpos pregnancy_illness opioids mode_of_delivery complications birthing_experience labour_duration after_birth_problems first_few_months_illness race  education mom_age monthly_income  symptom_duration hospitalized_ever  
-mlogit birth_time preg_chikvpos pregnancy_illness opioids mode_of_delivery complications birthing_experience labour_duration after_birth_problems first_few_months_illness race  education mom_age monthly_income  symptom_duration hospitalized_ever  
+*mlogit birth_time preg_chikvpos pregnancy_illness opioids mode_of_delivery complications birthing_experience labour_duration after_birth_problems first_few_months_illness race  education mom_age monthly_income  symptom_duration hospitalized_ever  
 *opioid_amount  marijuana meth heroine cocaine alcohol_amount 
 *symptoms___14 symptoms___26 symptoms___27 symptoms___28 symptoms___29 symptoms___30 symptoms___31 symptoms___32 symptoms___33 symptoms___20 symptoms___17 disabilities alcohol smoking drugs  symptoms___6 symptoms___7  symptoms___12 symptoms___13 symptoms___15 symptoms___16 symptoms___18 symptoms___19 symptoms___21 symptoms___22 symptoms___23 symptoms___24  symptoms___34  
 
@@ -246,16 +254,17 @@ tab  hospitalized_pregnancy  preg_chikvpos , chi2
 
 *tables
 *demographic tables
-table1, vars(race cat \ mom_age contn \ education cate \ marrital_status bine \ monthly_income cate \  medical_conditions___6 bine \ medical_conditions___10 bine\ alcohol  bine \ smoking bine \ ) by(preg_chikvpos) saving(demographics_bygroups.xls, replace) test missing
+
+table1, vars(race cat \ mom_age contn \ education cate \ marrital_status bine \ monthly_income cate \  medical_conditions___6 bine \ medical_conditions___10 bine\ alcohol  bine \ smoking bine \ ) by(preg_chikvpos) saving("`tables'demographics_bygroups_$S_DATE.xls", replace) test missing
 
 *pregnancy outcomes table
-table1, vars(birth_time cate \ mode_of_delivery bine\ gestational_age_weekfrac conts \ count_abp cate\ count_lab_complic cate\ count_preg_ill cate\ count_baby_health cate\ ) by(preg_chikvpos) saving(pregnancy_bygroups.xls, replace) test missing
+table1, vars(birth_time cate \ mode_of_delivery bine\ gestational_age_weekfrac conts \ count_abp cate\ count_lab_complic cate\ count_preg_ill cate\ count_baby_health cate\ ) by(preg_chikvpos) saving("`tables'pregnancy_bygroups_$S_DATE.xls", replace) test missing
 
 *symptoms table
-table1, vars(symptoms___1 bine\ symptoms___2 bine\ symptoms___3 bine\ symptoms___4 bine\ symptoms___5 bine\ symptoms___6 bine\ symptoms___7 bine\ symptoms___8 bine\ symptoms___9 bine\ symptoms___10 bine\ symptoms___11 bine\ symptoms___12 bine\ symptoms___13 bine\ symptoms___14 cate \ symptoms___15 bine\ symptoms___16 bine\ symptoms___17 cate \ symptoms___18 bine\ symptoms___19 bine\ symptoms___20 cate \ symptoms___21 bine\ symptoms___22 bine\ symptoms___23 bine\ symptoms___24 bine\ symptoms___25 bine\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 bine)  by(preg_chikvpos) saving(symptoms_group.xls, replace) test missing
+table1, vars(symptoms___1 bine\ symptoms___2 bine\ symptoms___3 bine\ symptoms___4 bine\ symptoms___5 bine\ symptoms___6 bine\ symptoms___7 bine\ symptoms___8 bine\ symptoms___9 bine\ symptoms___10 bine\ symptoms___11 bine\ symptoms___12 bine\ symptoms___13 bine\ symptoms___14 cate \ symptoms___15 bine\ symptoms___16 bine\ symptoms___17 cate \ symptoms___18 bine\ symptoms___19 bine\ symptoms___20 cate \ symptoms___21 bine\ symptoms___22 bine\ symptoms___23 bine\ symptoms___24 bine\ symptoms___25 bine\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 bine)  by(preg_chikvpos) saving("`tables'symptoms_group_$S_DATE.xls", replace) test missing
 
 *symptoms table by chikv during or not during preg
-table1, vars(symptoms___1 cate\ symptoms___2 cate\ symptoms___3 cate\ symptoms___4 cate\ symptoms___5 cate\ symptoms___6 cate\ symptoms___7 cate\ symptoms___8 cate\ symptoms___9 cate\ symptoms___10 cate\ symptoms___11 cate\ symptoms___12 cate\ symptoms___13 cate\ symptoms___14 cate \ symptoms___15 cate\ symptoms___16 cate\ symptoms___17 cate \ symptoms___18 cate\ symptoms___19 cate\ symptoms___20 cate \ symptoms___21 cate\ symptoms___22 cate\ symptoms___23 cate\ symptoms___24 cate\ symptoms___25 cate\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 cate \ symptom_duration conts)  by(chikv_preg_non) saving(symptoms_chikv_preg_non.xls, replace) test missing
+table1, vars(symptoms___1 cate\ symptoms___2 cate\ symptoms___3 cate\ symptoms___4 cate\ symptoms___5 cate\ symptoms___6 cate\ symptoms___7 cate\ symptoms___8 cate\ symptoms___9 cate\ symptoms___10 cate\ symptoms___11 cate\ symptoms___12 cate\ symptoms___13 cate\ symptoms___14 cate \ symptoms___15 cate\ symptoms___16 cate\ symptoms___17 cate \ symptoms___18 cate\ symptoms___19 cate\ symptoms___20 cate \ symptoms___21 cate\ symptoms___22 cate\ symptoms___23 cate\ symptoms___24 cate\ symptoms___25 cate\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 cate \ symptom_duration conts)  by(chikv_preg_non) saving("`tables'symptoms_chikv_preg_non_$S_DATE.xls", replace) test missing
 
 *breakdown_of_pregnancy_outcomes 
-table1, vars(count_abp cate\ count_lab_complic cate\ count_baby_health cate\ count_preg_ill cate\ related_caesarean  cate \ preg_ill_gest_diab  cate \ preg_ill_hyperemesis_gr  cate \ preg_ill_gastroenteritis  cate \ preg_ill_uti  cate \ preg_ill_syphillis  cate \ preg_ill_pv_bleed  cate \ preg_ill_sickle_cell  cate \ preg_ill_placental_abruption  cate \  preg_ill_acid_reflux  cate \ preg_ill_breach  cate \ preg_ill_anemia  cate \ baby_health_sickle_cell  cate \ baby_health_respiratory  cate \ baby_health_jaundice  cate \ baby_health_nicu  cate \ baby_health_murmur  cate \ baby_health_chikv  cate \ baby_health_anemia  cate \ baby_health_allergies  cate \ lab_complic_swollen  cate \ lab_complic_prolonged_labour  cate \ lab_complic_placenta_previa  cate \ lab_complic_cord_around_neck  cate \ lab_complic_chikv_pain  cate \ lab_complic_tear  cate \ lab_complic_breach  cate \ lab_complic_hemorrhage  cate \ abp_rash  cate \ abp_eczema  cate \ abp_allergies  cate \ abp_sickle_cell  cate \ abp_sinus  cate \ abp_swelling  cate \ abp_seizures  cate \ abp_jaundice  cate \ abp_viral  cate \ abp_sepsis  cate \ abp_unknown  cate \ abp_malformation  cate \ abp_respiratory  cate \ abp_chikv cate \) by(preg_chikvpos) saving(breakdown_of_pregnancy_outcomes.xls, replace) test missing
+table1, vars(count_abp cate\ count_lab_complic cate\ count_baby_health cate\ count_preg_ill cate\ related_caesarean  cate \ preg_ill_gest_diab  cate \ preg_ill_hyperemesis_gr  cate \ preg_ill_gastroenteritis  cate \ preg_ill_uti  cate \ preg_ill_syphillis  cate \ preg_ill_pv_bleed  cate \ preg_ill_sickle_cell  cate \ preg_ill_placental_abruption  cate \  preg_ill_acid_reflux  cate \ preg_ill_breach  cate \ preg_ill_anemia  cate \ baby_health_sickle_cell  cate \ baby_health_respiratory  cate \ baby_health_jaundice  cate \ baby_health_nicu  cate \ baby_health_murmur  cate \ baby_health_chikv  cate \ baby_health_anemia  cate \ baby_health_allergies  cate \ lab_complic_swollen  cate \ lab_complic_prolonged_labour  cate \ lab_complic_placenta_previa  cate \ lab_complic_cord_around_neck  cate \ lab_complic_chikv_pain  cate \ lab_complic_tear  cate \ lab_complic_breach  cate \ lab_complic_hemorrhage  cate \ abp_rash  cate \ abp_eczema  cate \ abp_allergies  cate \ abp_sickle_cell  cate \ abp_sinus  cate \ abp_swelling  cate \ abp_seizures  cate \ abp_jaundice  cate \ abp_viral  cate \ abp_sepsis  cate \ abp_unknown  cate \ abp_malformation  cate \ abp_respiratory  cate \ abp_chikv cate \) by(preg_chikvpos) saving("`tables'breakdown_of_pregnancy_outcomes_$S_DATE.xls", replace) test missing

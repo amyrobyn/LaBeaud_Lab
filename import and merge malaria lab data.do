@@ -264,10 +264,10 @@ recast int `var'
 	}
 
 order *200
-egen malariapositive = rowtotal( pf200 - none200)
+egen parasite_count= rowtotal( pf200 - none200)
 gen  malariapositive_dum = .
-replace malariapositive_dum = 0 if malariapositive==0
-replace malariapositive_dum  = 1 if malariapositive >0 & malariapositive <. 
+replace malariapositive_dum = 0 if parasite_count==0
+replace malariapositive_dum  = 1 if parasite_count >0 & parasite_count<. 
 
 gen species_cat = "" 
 replace species_cat = "pf" if pf200 >0 & pf200 <.
@@ -278,7 +278,6 @@ replace species_cat = "ni" if ni200 >0 & ni200 <.
 replace species_cat = "none" if none200 >0 & none200 <.
 
 order pf200 pm200 po200 pv200 ni200 none200 
-egen parasite_count= rowtotal(pf200 pm200 po200 pv200 ni200 none200 ) 
 
 replace id_cohort = "f" if id_cohort =="m"
 replace id_wide= subinstr(id_wide, "/", "",.)
@@ -303,4 +302,23 @@ replace city ="msambweni" if city =="m"
 replace city = "ukunda" if city =="w"
 replace city = "ukunda" if city =="u"
 
+*fix gametocytes
+replace gametocytes1 = "0" if gametocytes1=="none"
+replace gametocytes1 = "1" if gametocytes1=="gametocyte"
+
+replace gametocytes2 = "0" if gametocytes2=="none"
+replace gametocytes2 = "1" if gametocytes2=="gametocyte"
+replace gametocytes2 = "." if gametocytes2=="schizonts"
+
+gen schizonts=.
+replace schizonts= 1 if gametocytes2=="schizonts"
+destring gametocytes1 gametocytes2, replace
+replace gametocytes = gametocytes1 if gametocytes ==.
+replace gametocytes = gametocytes2 if gametocytes ==.
+drop gametocytes2  gametocytes1
+
+rename  treatment1 malariatreatment1
+rename  treatment2 malariatreatment2
+rename  parasitelevel  parasitelevel_desc
 save malaria, replace
+

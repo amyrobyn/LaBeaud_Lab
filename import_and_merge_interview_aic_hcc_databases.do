@@ -1,12 +1,26 @@
-set graphics on 
 capture log close 
 set scrollbufsize 100000
 set more 1
-
 log using "R01_import_interviews.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
+local output "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata"
+/*
+local dta "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\dta"
+*all folders
+local coastimport "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned"
+local westimport "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned"
+local labimport "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data"
+
+xls2dta , allsheets recursive save("`dta'", replace): import excel "`coastimport'"  
+xls2dta , allsheets recursive save("`dta'", replace): import excel "`westimport'"  
+xls2dta , allsheets recursive save("`dta'", replace): import excel "`labimport'"  
+
+stop
+*/
+
+**start set file paths**
 *output
 local output "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\"
 
@@ -17,11 +31,58 @@ cd "`output'"
 local importwestaic "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest\"
 local importwesthcc "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\"
 
-*coast folders
-local importcoastaic C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\
-local importcoastaic_old C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Outdated\
-local importcoasthcc C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\
+* aic
+local westaicint "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest\AICInitialVersionOdk_DATA_2017-01-30_1041_west.csv"
+local westaicfu "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest\AICFollowUpVersion15_DATA_2017-01-30_1107_west.csv"
+*"C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest\AICinitialsurveyv191_DATA_2017-01-30_1042.csv"
 
+*hcc
+local westhcc3 "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\west_HCC_3rd Followup.xlsx"
+local westhcc4 "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\west_HCC_4th Followup.xls"
+local westhcc0 "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\west_HCC_Initial.xlsx"
+local westhcc1 "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\west_HCC_1st Followup.xlsx"
+local westhcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest\west_HCC_2nd Followup.xlsx"
+
+*demography 
+local westdem "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\West Demography Database.xls"
+
+
+*coast folders
+local importcoastaic "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\"
+local importcoastaic_old "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Outdated\"
+local importcoasthcc "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\"
+
+*coast files
+
+*coast aic
+local coastaicfu "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\5 coast_aic_FU_Dec 02 2016.xls"
+local coastaicfusheet "#LN00030"
+local coastaicint "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\5 coast_aic_intinial_Dec 02 2016.xls"
+local coastaicinsheet "#LN00029"
+*coast aic malaria
+local coastaicmalmsm "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\5 Msambweni AIC malaria data Feb 2017.xls"
+local coastmalaria_msmsheet "Msambweni"
+local coastaicmalukunda "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\5 AIC Ukunda Malaria Data Feb 2017.xls"
+local coastmalaria_ukundasheet  "Ukunda"
+
+*coast hcc
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Msambweni HCC Follow two 30Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Msambweni HCC Initial 30Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow one  06Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow three  06Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Follow two  06Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Ukunda HCC Initial 30Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Msambweni HCC Follow one 30Nov16.xls"
+local coasthcc2 "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest\Msambweni HCC Follow three 30Nov16.xls"
+
+*demography 
+local coastdemchildukunda "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\Demography\Demography Latest\Ukunda_HCC_children_demography Mar17.xls"
+local coastdemhouseukunda "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\Demography\Demography Latest\Ukunda_HCC_Houses_coordinates Mar17.xls"
+local coastdemhousemsm "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\Demography\Demography Latest\Msambweni_coordinates complete Nov 21 2016.xls"
+**end set file paths**
+
+
+*start importing files. 
 *coast AIC
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest\Coastal Data-Katherine aug_4_2016.xls", sheet("Coast_AIC_Init-Katherine") firstrow clear
 	dropmiss, force obs
@@ -789,7 +850,10 @@ gen suffix = ""
 
 	replace suffix = "b" if strpos(id_childnumber, "b")
 	replace id_childnumber = subinstr(id_childnumber, "b","", .)
- 
+
+	replace suffix = "c" if strpos(id_childnumber, "c")
+	replace id_childnumber = subinstr(id_childnumber, "c","", .)
+
 destring id_childnumber, replace force	
 order id_childnumber
 
@@ -823,6 +887,7 @@ replace childage = agecalc if childage ==.
 drop age2 agecalc
 replace childage = round(childage)
 replace agemonths = round(agemonths)
+tab childage gender
 
 *clean city and site vars
 drop site
@@ -950,4 +1015,11 @@ table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  cont
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
 sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
 
+*agegroups
+gen agegroup = . 
+		replace agegroup =1 if age <=4
+		replace agegroup =2 if age >= 5 & age <=9
+		replace agegroup =3 if age >= 10 & age <=14
+		replace agegroup =4 if age >= 15 & age <=17
+		replace agegroup =5 if age >= 18 & age <=.
 save all_interviews, replace

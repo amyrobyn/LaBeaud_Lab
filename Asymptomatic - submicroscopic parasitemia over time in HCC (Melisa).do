@@ -30,12 +30,13 @@ Demographics, location, growth variables, bednets, season, year
 
 keep if cohort == 2
 keep if fevertoday   == 0
+dropmiss, force
 
 encode id_wide, gen(id) 
 xtset id visit_int
 
 bysort id_wide: egen mal_freq = sum(malariapositive_dum)
-foreach var in zhcaukwho zwtukwho zhtukwho zbmiukwho zheart_rate zsystolicbp zdiastolicbp zpulseoximetry ztemperature zresprate zlen zwei zwfl zbmi zhc zac zts zss{
+foreach var in  zwtukwho zhtukwho zbmiukwho{
 bysort mal_freq visit: egen mean`var' = mean(`var')
 order mean`var'
 }
@@ -60,9 +61,14 @@ forval i = 1/`r(mean)' {
 export excel mal_freq visit   meanzwtukwho meanzhtukwho meanzbmiukwho using tables, replace firstrow(variables)
 
 *Demographics, location, growth variables, bednets, season, year
-drop  gametocytes1 gametocytes2
+replace mal_freq  =2 if mal_freq >1 & mal_freq !=.
+label variable mal_freq "REPEAT MALARIA INFECTION"
+label define mal_freq  0 "NONE" 1 "ONE" 2 "MORE THAN ONE", modify
+label values mal_freq  mal_freq  mal_freq 
+tab mal_freq 
 
-table1, vars(zbmiukwho conts \ zhtukwho conts \ zwtukwho conts \ age contn \ gender bin\ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \ cohort cat \ sleepbednet_dum cat \  mosqbitefreq cat \mosquitocoil cat \mosquitobites cat \mosquitoday cat \mosquitonight cat \mosquitobitefreq cat \mosqbitedaytime cat \mosqbitenight cat \mosquito_exposure_index cat \mosq_prevention_index contn \ hccses_index_sum contn \ hccsesindeximprovedfuel_index cat \ hccsesindeximprovedwater_index cat \ hccsesindeximprovedlight_index cat \ hccsesindextelephone cat \ hccsesindexradio cat \ hccsesindextv cat \ hccsesindexbicycle cat \ hccsesindexmotor_vehicle cat \ hccsesindexdomestic_worker cat \ hccsesindexownflushtoilet cat \ hccsesindexlatrine_index cat \ hccsesindexland_index cat \ hccsesindexrooms cat \ hccsesindexbedrooms cat \ hccsesindeximprovedroof_index cat \ hccsesindeximprovedfloor_index cat \  ) test missing by(mal_freq ) saving("`figures'table_by_malariafreq.xls", replace) 
+
+table1, vars(zbmiukwho conts \ zhtukwho conts \ zwtukwho conts \ age contn \ gender bin\ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \ cohort cat \ sleepbednet_dum cat \  mosqbitefreq cat \mosquitocoil cat \mosquitobites cat \mosquitoday cat \mosquitonight cat \mosquitobitefreq cat \mosqbitedaytime cat \mosqbitenight cat \mosquito_exposure_index cat \mosq_prevention_index contn \ hccses_index_sum contn \ hccsesindeximprovedfuel_index cat \ hccsesindeximprovedwater_index cat \ hccsesindeximprovedlight_index cat \ hccsesindextv cat \ hccsesindexmotor_vehicle cat \ hccsesindexdomestic_worker cat \ hccsesindexownflushtoilet cat \ hccsesindexlatrine_index cat \ hccsesindexland_index cat \ hccsesindexrooms cat \ hccsesindexbedrooms cat \ hccsesindeximprovedroof_index cat \ hccsesindeximprovedfloor_index cat \  sleepbednet cat \ hoh_own_bednet cat \ hoh_number_bednet cat \ hoh_sleep_bednet cat \ hoh_kids_sleep_bednet cat \ usebednet cat \ childrenusebednet cat \ own_bednet cat \ number_bednet cat \ sleep_bednet cat \sleepbednet_dum cat \) test missing by(mal_freq ) saving("`figures'table_by_malariafreq$S_DATE.xls", replace) 
 
 * vars(zwtukwho contn \ zhtukwho contn \ zbmiukwho contn\) 
-table1 , vars(all_symptoms_altms cat \ all_symptoms_jaundice cat \ all_symptoms_bleeding_symptom cat \ all_symptoms_imp_mental cat \ all_symptoms_mucosal_bleed_brs cat \ all_symptoms_bloody_nose cat \ all_symptoms_fever cat \ ) test missing by(mal_freq) saving("`figures'symptomslast6mnths_by_malariafreq.xls", replace) 
+table1 , vars(all_symptoms_altms cat \ all_symptoms_jaundice cat \ all_symptoms_bleeding_symptom cat \ all_symptoms_imp_mental cat \ all_symptoms_mucosal_bleed_brs cat \ all_symptoms_bloody_nose cat \ all_symptoms_fever cat \ ) test missing by(mal_freq) saving("`figures'symptomslast6mnths_by_malariafreq$S_DATE.xls", replace) 

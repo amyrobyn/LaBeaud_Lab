@@ -157,19 +157,28 @@ save malariatemp, replace
 ** add in the consecutive malariapos again
 use malariatemp, clear
 		keep if visit == "a" & malariapositive_dum >0 & malariapositive_dum <.
+		gen malariapositive_duma = malariapositive_dum  
+		gen visita = visit 
 		save visit_a_malaria, replace
 
 	use malariatemp, clear
 	tab visit malariapositive_dum
 		keep if visit == "b" & malariapositive_dum >0 & malariapositive_dum <.
+		gen malariapositive_dumb = malariapositive_dum 
+		gen visitb = visit
 	tab visit malariapositive_dum
+	keep visitb malariapositive_dumb id_wide  
 	save visit_b_malaria, replace
 	
 		
 		merge 1:1 id_wide using visit_a_malaria
-		preserve 
+*		preserve 
+order malariapositive_dum* visit*
+order visita malariapositive_duma visitb malariapositive_dumb
 		keep if _merge==3
 		rename _merge malariapos_ab
+		outsheet using abpos_march18.csv, comma names replace
+		stop
 		keep malariapos_ab id_wide visit
 		save abmalaria , replace
 		restore		

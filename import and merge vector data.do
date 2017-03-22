@@ -69,4 +69,6 @@ bysort city: tab interviewmonth interviewyear, m
 
 collapse  (first)  aedesaegyptiindoor anophelesgambiaeindoor anophelesfunestusindoor culexsppindoor aedesaegyptioutdoor anophelesgambiaeoutdoor anophelesfunestusoutdoor culexsppoutdoor dataset dm date2 aedessimpsoniindoor anophelescostaniindoor indoortotal aedessimpsonioutdoor outdoortotal aedesaegypti anophelesgambiae anophelesfunestus culexspp toxorhynchites aedessimpsoni aedessppnotlisted masoni avgtemp avgmaxtemp avgmintemp overallmaxtemp overallmintemp avgtemprange avgrh avgdewpt ttlrainfall rainfallanomalies temprangeanomalies tempdewptdiffanomalies tempanomalies rhanomalies rhtempanomalies aedesaegyptiinside aedesaegyptioutside aedesaegyptitotal anophelesgambiaeinside anophelesgambiaeoutside anophelesgambiaetotal anophelesfunestusinside anophelesfunestusoutside k culexsppinside culexsppoutside culexspptotal o p q anophelesoutdoor culexoutdoor toxorhynchitesoutdoor anophelesindoor anophelessppoutdoor n, by(city interviewmonth interviewyear) 
 bysort city: tab interviewmonth interviewyear 
+rename interviewmonth  month
+rename interviewyear year
 save "`export'merged_vector_climate", replace

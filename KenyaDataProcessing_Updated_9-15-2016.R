@@ -1069,6 +1069,7 @@ table(Prokopack1$Site)
 ProkopackC <- Prokopack1[which(Prokopack1[,1] == "Chulaimbo"),]
 ProkopackK <- Prokopack1[-which(Prokopack1[,1] == "Chulaimbo"),]
 
+#come back here
 # these data don't make sense. asked desiree, francics, bryson, ngenga, joel, etc. dan's data was more organized.
 # Prokopack2
 # Adjusting and including site names as well as variable names
