@@ -75,19 +75,20 @@ replace time = 1 if visit_int ==1 & cohort ==2
 replace time = 6 if visit_int ==2 & cohort ==2 
 replace time = 12 if visit_int ==3 & cohort ==2 
 
-bysort cohort: tab time visit_int
-tab time, m
-tab time `outcome', m
-tab `outcome'
-tab cohort visit_int , m nolab
- _strip_labels visit_int
-
 stset time, failure(`outcome') id(id_wide) 
 
 sts list
-sts list, by(cohort)
-sts list, by(site cohort)
-sts list, by(site)
+sts list, by(cohort) 
+sts list, by(site cohort) 
+sts list, by(site) 
+sts list, by(urban) 
+sts list, by(city) 
+
+sts list, by(cohort) compare
+sts list, by(site cohort) compare
+sts list, by(site) compare
+sts list, by(urban) compare
+sts list, by(city) compare
 
 xtile ses_index_sum_pct =  ses_index_sum, n(4)
 xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
@@ -95,13 +96,25 @@ xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
 **/Active disease from CHIKV and DENV were associated with SES, gender, X and Y. */
 preserve
 		keep if cohort ==1
-			table1,	vars(cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age contn \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(`outcome') missing test saving("`figures'aic_`outcome'_$S_DATE.xls", replace)
+			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(`outcome') missing test saving("`figures'aic_`outcome'_$S_DATE.xls", replace)
 		*table1 , vars(splenomegaly  bin\ age contn \ gender bin\city cat \  zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\) by(stanforddenvigg_) saving("`tables'seroconverters1'outcome_$S_DATE.xls", replace ) missing test
 		*table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ mosq_prevention_index contn \ mosquito_exposure_index contn \ childvillage cat \ ) by(stanforddenvigg_) saving("`tables'`outcome'$S_DATE.xls", replace ) missing test
 restore
 
 preserve
 	keep if cohort ==2
-		table1,	vars(cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(`outcome') missing test saving("`figures'hcc_`outcome'_$S_DATE.xls", replace)
+		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(`outcome') missing test saving("`figures'hcc_`outcome'_$S_DATE.xls", replace)
 restore
 
+}
+
+/*encode id_wide, gen(id)
+tsset id visit_int
+
+drop lag_denvpcr_1 
+bysort id_wide: gen lag_denvpcr_1 = denvpcrresults_dum[_n-1]
+diagt lag_denvpcr_1 inc_denv
+
+bysort id_wide: gen lead_denvpcr_1 = denvpcrresults_dum[_n+1]
+diagt lead_denvpcr_1  inc_denv
+*/

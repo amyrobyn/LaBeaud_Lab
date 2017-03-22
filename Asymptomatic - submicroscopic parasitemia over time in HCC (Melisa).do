@@ -31,7 +31,6 @@ Demographics, location, growth variables, bednets, season, year
 keep if cohort == 2
 keep if fevertoday   == 0
 dropmiss, force
-
 encode id_wide, gen(id) 
 xtset id visit_int
 

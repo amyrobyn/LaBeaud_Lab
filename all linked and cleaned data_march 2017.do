@@ -30,9 +30,14 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Da
 
 
 gen anna_seroc_denv=.
-*	foreach studyid in "cfa0313" "cfa0327" "cfa0328" "cfa0332" "rfa0427" "rfa0428" "cfa0285" "mfa0537" "mfa0598" "mfa0703" "mfa0933" "ufa0570"{
-	foreach id_wide in "cf313" "cf327" "cf328" "cf332" "rf427" "rf428" "cf285" "mf537" "mf598" "mf703" "mf933" "uf570"{
+*	foreach studyid in "cfa0327" "cfa0328" "cfa0332" "rfa0427" "rfa0428" "cfa0285" "mfa0537" "mfa0598" "mfa0703" "mfa0933" "ufa0570"{
+	foreach id_wide in "cf327" "cf328" "cf332" "rf427" "rf428" "cf285" "mf537" "mf598" "mf703" "mf933" "uf570"{
 	replace anna_seroc_denv= 1 if id_wide == "`id_wide'"
+}
+
+gen anna_seroc_denv_pcr=.
+	foreach id_wide in "cf313" {
+	replace anna_seroc_denv_pcr= 1 if id_wide == "`id_wide'"
 }
 
 gen jimmy_seroc_chikv=.
@@ -44,7 +49,6 @@ foreach id_wide in "uf572" "uf599" "uf840" "mf563" "kf433"{
 
 bysort visit: tab jimmy_seroc_chikv stanfordchikvigg_, m
 bysort visit: tab anna_seroc_denv stanforddenvigg_ 
-
  
 drop _merge
 replace hb = hb_result if hb==.
@@ -73,8 +77,10 @@ encode id_wide, gen(id_wide_int)
 drop visit_int
 encode visit, gen(visit_int)
 xtset id_wide_int visit_int
+
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
+
 order id_childnumber id_cohort id_city id_visit id_city studyid id_wide
 gen id_childnumber2 = substr(id_wide , +3, .) if studyid==""
 replace id_childnumber2 = substr(id_wide , +3, .) if length(studyid)<5
@@ -167,16 +173,19 @@ gen month= month(interviewdate)
 merge m:1 city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate" 
 rename _merge vector_climate
 
+
 *season
 gen season = .
+label variable season "SEASONS"
 replace season =1 if month >=1 & month  <=3
-*label define 1 "hot no rain from mid december"
 replace season =2 if month >=4 & month  <=6
-*label define 2 "long rains"
 replace season =3 if month >=7 & month  <=10
-*label define 3 "less rain cool season"
 replace season =4 if month >=11 & month  <=12
-*label define 4 "short rains"
+
+label define season  1 "hot no rain from mid december" 2 "long rains" 3 "less rain cool season" 4 "short rains", modify
+label values season season season season 
+tab season , nolab
+
 *twoway (scatter  rainfall season, sort mlabel(month))
 gen year_label = "_y_"
 gen season_label = "s_"
@@ -876,8 +885,6 @@ replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all 
 						order sesindex*
 						sum  sesindeximprovedfloor_index - sesindexownflushtoilet
 						egen ses_index_sum= rowtotal(sesindeximprovedfloor_index - sesindexownflushtoilet)
-						bysort severemalaria: tab ses_index_sum
-
 
 		egen wealthindex= rowtotal(sesindeximprovedfloor_index  sesindeximprovedlight_index  sesindextelephone sesindexradio sesindextelevision sesindexbicycle  sesindexmotorizedvehicle sesindexdomesticworker )
 		egen hygieneindex= rowtotal(sesindeximprovedwater_index sesindexownflushtoilet )
@@ -1108,24 +1115,34 @@ table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allerg
 outsheet using "`data'cleaned_merged_data_prev_$S_DATE.csv", replace comma names
 */
 
-bysort id_wide: carryforward jimmy_seroc_chikv  anna_seroc_denv , replace
+	egen max_anna_seroc_denv = max(anna_seroc_denv), by(id_wide)
+	egen max_jimmy_seroc_chikv  = max(jimmy_seroc_chikv), by(id_wide)
+
+	drop jimmy_seroc_chikv anna_seroc_denv
+	rename max_jimmy_seroc_chikv  jimmy_seroc_chikv 
+	rename max_anna_seroc_denv anna_seroc_denv
+
 bysort visit: tab jimmy_seroc_chikv stanfordchikvigg_, m
 list studyid if jimmy_seroc_chikv ==1 & stanfordchikvigg_!=1
-list id_wide if jimmy_seroc_chikv ==1 & stanfordchikvigg_!=1
+list id_wide if jimmy_seroc_chikv ==1 & stanfordchikvigg_!=1 & visit_int>1
 order id_wide visit studyid jimmy_seroc_chikv stanfordchikvigg_ anna_seroc_denv stanforddenvigg_ 
 
-bysort visit denvpcrresults_dum: tab anna_seroc_denv stanforddenvigg_ 
-list studyid if anna_seroc_denv ==1 & stanforddenvigg_ !=1
+bysort visit : tab anna_seroc_denv stanforddenvigg_ 
+list studyid if anna_seroc_denv ==1 & stanforddenvigg_ !=1 
 list id_wide if anna_seroc_denv ==1 & stanforddenvigg_ !=1
+
+xtile ses_index_sum_pct =  ses_index_sum, n(4)
+xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
 
 
 save "`data'cleaned_merged_prevalence", replace
 
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data"
-use cleaned_merged_prevalence, clear
+************************************************************************end prevalence clean******************************************************************
+
+************************************************************************start incidence clean******************************************************************
+use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", clear
 
 **gen incident data based on igg and pcr results. 
-
 gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
 replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
 
@@ -1134,22 +1151,29 @@ replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
 
 save temp, replace
 
-
-******************************************************************************************************************************************
 *find the minimum visit that is tested.
-
+*denv
 preserve 
 		keep if stanforddenvigg_ !=. 
-		bysort id_wide: egen minvisit_igg = min(visit_int)
+		sort id_wide visit, stable 
+egen minvisit_igg = min(visit_int), by(id_wide)
 		save minvisit_igg, replace 
 restore
-		merge m:m id_wide using minvisit_igg
+ 
+merge m:m id_wide using minvisit_igg
 	*keep incident cases
 	bysort id_wide: gen initial_stanforddenvigg_neg =1 if stanforddenvigg_ == 0 & visit_int == minvisit_igg
-	bysort id_wide : carryforward initial_stanforddenvigg_neg, replace
+	egen max_initial_igg  = max(initial_stanforddenvigg_neg), by(id_wide)
+	drop initial_stanforddenvigg_neg
+	rename max_initial_igg   initial_stanforddenvigg_neg
+	
 	keep if initial_stanforddenvigg_neg ==1 | denvpcrresults_dum==1 
+	order inc_denv inc_chikv minvisit_igg
+	sum inc_denv inc_chikv minvisit_igg
+ 
 save inc_denv, replace
 
+*chikv
 use temp, clear
 	preserve 
 		keep if stanfordchikvigg_ !=. 
@@ -1159,6 +1183,11 @@ use temp, clear
 		merge m:m id_wide using minvisit_igg
 	*keep incident cases
 	bysort id_wide: gen initial_stanfordchikvigg_neg =1 if stanfordchikvigg_ == 0 & visit_int == minvisit_igg
-	bysort id_wide : carryforward initial_stanfordchikvigg_neg, replace
+	egen max_initial_igg = max(initial_stanfordchikvigg_neg), by(id_wide)
+	drop initial_stanfordchikvigg_neg
+	rename max_initial_igg   initial_stanfordchikvigg_neg
+
 	keep if initial_stanfordchikvigg_neg ==1 | chikvpcrresults_dum==1 
+sum inc_denv inc_chikv minvisit_igg
 save inc_chikv, replace
+************************************************************************end incidence clean******************************************************************

@@ -18,8 +18,8 @@ use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\da
 replace gametocytes = gametocytes1 if gametocytes ==.
 replace gametocytes = gametocytes2 if gametocytes ==.
 drop gametocytes2  gametocytes2  
-table1, vars(gametocytes conts \) by(cohort ) saving(gametocytes)
-tabout gametocytes using gametocytes.xls , replace
+table1, vars(gametocytes conts \) by(cohort ) saving(gametocytes, replace)
+tabout gametocytes using gametocytes_tab.xls , replace
 tabout gametocytes site using gametocytes_site.xls , replace
 tabout gametocytes  cohort using gametocytes_cohort.xls , replace
 
@@ -105,6 +105,6 @@ bysort repeatmalaria: sum age gender city  zhcaukwho zwtukwho zhtukwho zbmiukwho
 
 tab repeatmalaria
 
-table1 , vars(cohort cat \ all_meds_antimalarial cat \ species_cat cat \ parasite_count_lab conts \ age conts \ gender bin \ city cat \site cat \ urban bin \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone bin \sesindexradio bin \sesindextelevision bin\sesindexbicycle bin\sesindexmotorizedvehicle bin\sesindexdomesticworker cat \sesindexownflushtoilet cat  \  mosquitocoil bin \ mosquitobites bin \ mosquito_exposure_index conts \ mosq_prevention_index conts \  sleepbednet_dum cat \malariatreatmenta cat \ malariatreatment2 cat \ ) by(repeatmalaria) saving("`figures'repeatmalaria$S_DATE.xls", replace ) missing test
+table1 , vars(season cat\ cohort cat \ all_meds_antimalarial cat \ species_cat cat \ parasite_count_lab conts \ gametocytes  cat \ age conts \ gender bin \ city cat \site cat \ urban bin \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone bin \sesindexradio bin \sesindextelevision bin\sesindexbicycle bin\sesindexmotorizedvehicle bin\sesindexdomesticworker cat \sesindexownflushtoilet cat  \  mosquitocoil bin \ mosquitobites bin \ mosquito_exposure_index conts \ mosq_prevention_index conts \  sleepbednet_dum cat \malariatreatmenta cat \ malariatreatment2 cat \ childvillage cat ) by(repeatmalaria) saving("`figures'repeatmalaria$S_DATE.xls", replace ) missing test
 
 outsheet using repeatmalaria_raw.csv , comma names replace 
