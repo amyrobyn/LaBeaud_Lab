@@ -13,10 +13,10 @@ local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\f
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\data\"
 global data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\data\"
 
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
+use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", clear
 
-/**Of 3,026 paired acute and convalescent serum samples by ELISA, 8 seroconverted for CHIKV
- (0.9916% , 95% CI 0.9833 - 0.9958) and 6 for DENV (0.9938 , 95% CI 0.9863   - 0.9972)*/
+/**Of 3,026 paired acute and convalescent serum samples by ELISA, 8 seroconverted for CHIKV (0.9916% , 95% CI 0.9833 - 0.9958) and 6 for DENV (0.9938 , 95% CI 0.9863   - 0.9972)*/
+**gen incident data based on igg and pcr results. 
 
 gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
 replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
@@ -24,31 +24,40 @@ replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
 gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
 replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
 
+save temp, replace
 
-************************************************set these**********************************************************************************
-												*denv
-												local outcome "inc_denv"		
-												local igg stanforddenvigg_
-												local pcr "denvpcrresults_dum"
-												*chikv
-												*local outcome "inc_chikv"
-												*local pcr "chikvpcrresults_dum"
-												*local igg stanfordchikvigg_							
+
 ******************************************************************************************************************************************
 *find the minimum visit that is tested.
+
+preserve 
+		keep if stanforddenvigg_ !=. 
+		bysort id_wide: egen minvisit_igg = min(visit_int)
+		save minvisit_igg, replace 
+restore
+		merge m:m id_wide using minvisit_igg
+	*keep incident cases
+	bysort id_wide: gen initial_stanforddenvigg_neg =1 if stanforddenvigg_ == 0 & visit_int == minvisit_igg
+	bysort id_wide : carryforward initial_stanforddenvigg_neg, replace
+	keep if initial_stanforddenvigg_neg ==1 | denvpcrresults_dum==1 
+save inc_denv, replace
+
+use temp, clear
 	preserve 
-		keep if `igg' !=. 
+		keep if stanfordchikvigg_ !=. 
 		bysort id_wide: egen minvisit_igg = min(visit_int)
 		save minvisit_igg, replace 
 	restore
-		merge 1:1 id_wide using minvisit_igg
+		merge m:m id_wide using minvisit_igg
 	*keep incident cases
-	bysort id_wide: gen initial_`igg'neg =1 if `igg' == 0 & visit_int == minvisit_igg
-	bysort id_wide : carryforward initial_`igg'neg, replace
-	keep if initial_`igg'neg ==1 | `pcr'==1 
-save incident_`outcome', replace
+	bysort id_wide: gen initial_stanfordchikvigg_neg =1 if stanfordchikvigg_ == 0 & visit_int == minvisit_igg
+	bysort id_wide : carryforward initial_stanfordchikvigg_neg, replace
+	keep if initial_stanfordchikvigg_neg ==1 | chikvpcrresults_dum==1 
+save inc_chikv, replace
 
- 
+foreach outcome in  inc_chikv inc_denv {
+use `outcome', clear
+
 *convert visit to time in months
 gen time = . 
 replace time = visit_int*1 if cohort ==1
@@ -84,3 +93,4 @@ keep if cohort ==2
 *	table1,	vars(ses_index_sum conts \ gender bin \ site cat \ age contn \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\) by(`outcome') missing test save(hcc_incident.xls)
 restore
 
+}

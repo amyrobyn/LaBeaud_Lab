@@ -1121,25 +1121,44 @@ list id_wide if anna_seroc_denv ==1 & stanforddenvigg_ !=1
 
 save "`data'cleaned_merged_prevalence", replace
 
+cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data"
+use cleaned_merged_prevalence, clear
 
 **gen incident data based on igg and pcr results. 
+
 gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
 replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
 
 gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
 replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
 
-foreach pcr in chikvpcrresults_dum denvpcrresults_dum{
-	foreach outcome in inc_chikv inc_denv{
-		*find the minimum visit that is tested.
-	preserve 	
-		keep if `outcome' !=.
-		bysort id_wide: egen minvisit = min(visit_int)
-		*keep incident cases
-		bysort id_wide: gen initial_`outcome'neg =1 if `outcome' == 0 & visit_int == minvisit
-		bysort id_wide : carryforward initial_`outcome'neg , replace
-		keep if initial_`outcome'neg ==1 | `pcr'==1 
-		save incident_`outcome', replace
-	restore	
-}
-}
+save temp, replace
+
+
+******************************************************************************************************************************************
+*find the minimum visit that is tested.
+
+preserve 
+		keep if stanforddenvigg_ !=. 
+		bysort id_wide: egen minvisit_igg = min(visit_int)
+		save minvisit_igg, replace 
+restore
+		merge m:m id_wide using minvisit_igg
+	*keep incident cases
+	bysort id_wide: gen initial_stanforddenvigg_neg =1 if stanforddenvigg_ == 0 & visit_int == minvisit_igg
+	bysort id_wide : carryforward initial_stanforddenvigg_neg, replace
+	keep if initial_stanforddenvigg_neg ==1 | denvpcrresults_dum==1 
+save inc_denv, replace
+
+use temp, clear
+	preserve 
+		keep if stanfordchikvigg_ !=. 
+		bysort id_wide: egen minvisit_igg = min(visit_int)
+		save minvisit_igg, replace 
+	restore
+		merge m:m id_wide using minvisit_igg
+	*keep incident cases
+	bysort id_wide: gen initial_stanfordchikvigg_neg =1 if stanfordchikvigg_ == 0 & visit_int == minvisit_igg
+	bysort id_wide : carryforward initial_stanfordchikvigg_neg, replace
+	keep if initial_stanfordchikvigg_neg ==1 | chikvpcrresults_dum==1 
+save inc_chikv, replace
