@@ -134,6 +134,53 @@ egen strata = concat(site)
 		restore
 		}
 
+		
+diagt stanforddenvigg_march2017 denvigg_march2017, prev(2.5%) 
+tab stanforddenvigg_march2017 denvigg_march2017, col m chi2
+
+diagt stanfordchikvigg_march2017 chikvigg_march2017, prev(2.5%) 
+tab stanfordchikvigg_march2017  chikvigg_march2017, col m chi2
+
+
+**without msambweni hcc visit c & without msambweni visit a
+**denv**
+save temp, replace
+
+use temp, clear
+display  "***********drop if visit ==a & city ==msambweni*********"
+		
+	drop if visit =="a" & city =="msambweni"
+			diagt stanforddenvigg_march2017 denvigg_march2017, prev(2.5%) 
+			tab stanforddenvigg_march2017 denvigg_march2017, col m chi2
+			
+			levelsof strata, local(levels) 
+				foreach l of local levels {
+				preserve
+						keep if strata== "`l'"
+						display "*********************************`l' denvigg******************************"
+							diagt stanforddenvigg_march2017 denvigg_march2017, prev(2.5%) 
+				restore
+				}
+**chikv**
+use temp, clear
+display "*******************drop if visit ==c & city ==msambweni & cohort ==2******************"
+
+		drop if visit =="c" & city =="msambweni" & cohort ==2
+
+		diagt stanfordchikvigg_march2017 chikvigg_march2017, prev(2.5%) 
+			tab stanfordchikvigg_march2017  chikvigg_march2017, col m chi2
+
+					levelsof strata, local(levels) 
+					foreach l of local levels {
+preserve
+							keep if strata== "`l'"
+							display "*********************************`l' chikvvigg******************************"
+								diagt stanfordchikvigg_march2017 chikvigg_march2017, prev(2.5%) 
+								tab stanfordchikvigg_march2017  chikvigg_march2017, col m chi2
+restore 
+					}
+	
+stop 
 count if stanforddenvigg_march2017 != denvigg_march2017 & denvigg_march2017 !=. & stanforddenvigg_march2017 !=.
 outsheet stanforddenvigg_march2017 denvigg_march2017 studyid id_wide visit site city    antigenused_  datesamplerun_ using discordant_bylab_denvigg_march2017.csv if stanforddenvigg_march2017 != denvigg_march2017 & denvigg_march2017 !=. & stanforddenvigg_march2017 !=., comma names replace nolab
 

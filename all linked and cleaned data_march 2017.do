@@ -1135,22 +1135,49 @@ xtile ses_index_sum_pct =  ses_index_sum, n(4)
 xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
 
 
+
+*apparent is aic cohort: first febrile episode + fever- take everyone that fails
+*innapparent is hcc cohort: seroconversion with no fever- take only the failures after the first visit (incident, not prevalent)
+*third group is hcc cohort: seroconversion with fever- take only the failures after the first visit (incident, not prevalent)
+	gen apparent_groups= . 
+	replace apparent_groups= 1 if cohort == 1 & feverchildtemp==1
+	replace apparent_groups= 2 if cohort == 2 & fever_6ms ==0
+	replace apparent_groups= 3 if cohort == 2 & fever_6ms ==1 |cohort == 2 & fever_6ms ==.
+	tab apparent_groups
+	*collapse these two groups 
+	gen collapsed_apparent_groups = apparent_groups  
+	replace collapsed_apparent_groups =2 if collapsed_apparent_groups ==3
+
+			
+		
+		*convert visit to time in months
+		gen time = . 
+		replace time = visit_int*1 if cohort ==1
+
+		replace time = 1 if visit_int ==1 & cohort ==2 
+		replace time = 6 if visit_int ==2 & cohort ==2 
+		replace time = 12 if visit_int ==3 & cohort ==2 
+
 save "`data'cleaned_merged_prevalence", replace
 
-************************************************************************end prevalence clean******************************************************************
 
-************************************************************************start incidence clean******************************************************************
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", clear
+********************************************************************start incidence***************************************************************
+local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\figures\"
+local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data"
 
-**gen incident data based on igg and pcr results. 
-gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
-replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
+use "cleaned_merged_prevalence", clear
 
-gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
-replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
+					**gen incident data based on igg and pcr results. 
+					gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
+					replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
 
-save temp, replace
+					gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
+					replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
 
+			save temp, replace
+
+			**************************************************************
 *find the minimum visit that is tested.
 *denv
 preserve 
@@ -1172,6 +1199,7 @@ merge m:m id_wide using minvisit_igg
 	sum inc_denv inc_chikv minvisit_igg
  
 save inc_denv, replace
+outsheet using "`data'inc_denv_w_PCR_$S_DATE.csv", comma replace names
 
 *chikv
 use temp, clear
@@ -1190,4 +1218,112 @@ use temp, clear
 	keep if initial_stanfordchikvigg_neg ==1 | chikvpcrresults_dum==1 
 sum inc_denv inc_chikv minvisit_igg
 save inc_chikv, replace
-************************************************************************end incidence clean******************************************************************
+outsheet using "`data'inc_chikv_w_PCR_$S_DATE.csv", comma replace names
+
+foreach outcome in  inc_chikv  inc_denv  {
+use `outcome', clear
+
+*convert visit to time in months
+gen time = . 
+replace time = visit_int*1 if cohort ==1
+
+replace time = 1 if visit_int ==1 & cohort ==2 
+replace time = 6 if visit_int ==2 & cohort ==2 
+replace time = 12 if visit_int ==3 & cohort ==2 
+
+stset time, failure(`outcome') id(id_wide) 
+
+sts list
+sts list, by(cohort) 
+sts list, by(site cohort) 
+sts list, by(site) 
+sts list, by(urban) 
+sts list, by(city) 
+
+**/Active disease from CHIKV and DENV were associated with SES, gender, X and Y. */
+preserve
+		keep if cohort ==1
+			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(`outcome') missing test saving("`figures'INCIDENCE_$S_DATE.xls", sheet("AIC_`outcome'_W_PCR") sheetreplace) 
+restore
+
+preserve
+	keep if cohort ==2
+		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(`outcome') missing test saving("`figures'INCIDENCE_$S_DATE.xls", sheet("HCC_`outcome'_W_PCR") sheetreplace) 
+restore
+
+}
+
+
+***************************************************end incidence******************************************************************
+
+
+
+***************************************************start Prevalence******************************************************************
+
+use "cleaned_merged_prevalence", clear
+**gen prevalence data based on igg only . 
+encode id_wide, gen(id)
+stset id visit_int
+
+**denv prevalence**
+		stgen no_denv = always(stanforddenvigg_==0 & denvpcrresults_dum==0|stanforddenvigg_==0 & denvpcrresults_dum==.|stanforddenvigg_==. & denvpcrresults_dum==0)
+		stgen when_denv = when(stanforddenvigg_==1 | denvpcrresults_dum==1)
+		stgen prev_denv = ever(stanforddenvigg_==1 | denvpcrresults_dum==1)
+
+		tab prev_denv 
+		tab no_denv 
+
+		gen denv_prev = .
+		replace denv_prev = 1 if prev_denv ==1
+		replace denv_prev = 0 if no_denv ==1
+		tab denv_prev 
+		keep if denv_prev !=.
+		save "`data'prev_denv_w_PCR", replace
+outsheet using "`data'prev_denv_w_PCR_$S_DATE.csv", comma replace names
+ 
+preserve
+keep if cohort ==1
+			*denv
+			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
+restore
+
+preserve
+	keep if cohort ==2
+		*denv
+		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_DENV_W_PCR") sheetreplace) 
+restore
+ 
+
+ 
+ **chikv prevalence**
+use "cleaned_merged_prevalence", clear
+
+		stgen no_chikv = always(stanfordchikvigg_==0 & chikvpcrresults_dum==0 | stanfordchikvigg_==0 & chikvpcrresults_dum==.| stanfordchikvigg_==. & chikvpcrresults_dum==0)
+		stgen when_chikv = when(stanfordchikvigg_==1 | chikvpcrresults_dum==1)
+		stgen prev_chikv  = ever(stanfordchikvigg_==1 | chikvpcrresults_dum==1)
+
+		tab prev_chikv 
+		tab no_chikv  
+
+		gen chikv_prev = .
+		replace chikv_prev = 1 if prev_chikv ==1
+		replace chikv_prev = 0 if no_chikv ==1
+		tab chikv_prev 
+		keep if chikv_prev !=.
+		tab prev_chikv cohort
+
+		save "`data'prev_chikv_w_PCR", replace
+outsheet using "`data'prev_chikv_w_PCR_$S_DATE.csv", comma replace names
+
+preserve
+keep if cohort ==1
+			*chikv
+			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_CHIKV_W_PCR") sheetreplace) 
+restore
+
+preserve
+	keep if cohort ==2
+		*chikv
+		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
+restore
+***************************************************end Prevalence******************************************************************

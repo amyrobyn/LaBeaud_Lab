@@ -13,6 +13,7 @@ local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\f
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\data\"
 global data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\desiree- abstract1\data\"
 
+local cleandata "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", clear
 
 **gen incident data based on igg and pcr results. 
@@ -45,6 +46,8 @@ merge m:m id_wide using minvisit_igg
 	sum inc_denv inc_chikv minvisit_igg
  
 save inc_denv, replace
+outsheet using "`data'inc_denv_NO_PCR_$S_DATE.csv", comma replace names
+outsheet using "`cleandata'inc_denv_NO_PCR_$S_DATE.csv", comma replace names
 
 *chikv
 use temp, clear
@@ -60,11 +63,13 @@ use temp, clear
 	drop initial_stanfordchikvigg_neg
 	rename max_initial_igg   initial_stanfordchikvigg_neg
 
-	keep if initial_stanfordchikvigg_neg ==1 
+keep if initial_stanfordchikvigg_neg ==1 
 sum inc_denv inc_chikv minvisit_igg
 save inc_chikv, replace
+outsheet using "`data'inc_chikv_NO_PCR_$S_DATE.csv", comma replace names
+outsheet using "`cleandata'inc_chikv_NO_PCR_$S_DATE.csv", comma replace names
 
-foreach outcome in  inc_chikv  inc_denv  {
+foreach outcome in inc_chikv  inc_denv{
 use `outcome', clear
 
 *convert visit to time in months
@@ -120,6 +125,8 @@ stset id visit_int
 		tab denv_prev 
 		keep if denv_prev !=.
 		tab prev_denv 
+outsheet using "`data'prev_denv_wo_PCR_$S_DATE.csv", comma replace names
+outsheet using "`cleandata'prev_denv_wo_PCR_$S_DATE.csv", comma replace names
 
 **chikv prevalence**
 		stgen no_chikv = always(stanfordchikvigg_==0)
@@ -136,6 +143,8 @@ stset id visit_int
 		keep if chikv_prev !=.
 		tab prev_chikv 
 
+outsheet using "`data'prev_chikv_wo_PCR_$S_DATE.csv", comma replace names
+outsheet using "`cleandata'prev_chikv_wo_PCR_$S_DATE.csv", comma replace names
 
 preserve
 keep if cohort ==1
