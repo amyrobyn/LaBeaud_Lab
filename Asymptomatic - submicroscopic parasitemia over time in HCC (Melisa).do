@@ -13,8 +13,7 @@ log using "LOG Asymptomatic-submicroscopic parasitemia over time in HCC (Melisa)
 local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Asymptomatic-submicroscopic parasitemia over time in HCC (Melisa)\draft figures\"
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Asymptomatic-submicroscopic parasitemia over time in HCC (Melisa)\data\"
 
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_data", replace
-
+use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
 
 /*
 Asymptomatic/submicroscopic parasitemia over time in HCC (Melisa)
@@ -35,10 +34,11 @@ encode id_wide, gen(id)
 xtset id visit_int
 
 bysort id_wide: egen mal_freq = sum(malariapositive_dum)
-foreach var in  zwtukwho zhtukwho zbmiukwho{
-bysort mal_freq visit: egen mean`var' = mean(`var')
-order mean`var'
+	foreach var in  zwtukwho zhtukwho zbmiukwho{
+	bysort mal_freq visit: egen mean`var' = mean(`var')
+	order mean`var'
 }
+
 *xtline zwtukwho  if id < 10, overlay legend(off) 
 graph drop _all
 egen malfreq_visit = concat(visit_int mal_freq)

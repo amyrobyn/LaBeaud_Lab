@@ -12,16 +12,8 @@ cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Meli
 local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\draft figures\"
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\data\"
 
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_data", replace
+use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
 *How many kids have gametocytes overall?
-
-replace gametocytes = gametocytes1 if gametocytes ==.
-replace gametocytes = gametocytes2 if gametocytes ==.
-drop gametocytes2  gametocytes2  
-table1, vars(gametocytes conts \) by(cohort ) saving(gametocytes, replace)
-tabout gametocytes using gametocytes_tab.xls , replace
-tabout gametocytes site using gametocytes_site.xls , replace
-tabout gametocytes  cohort using gametocytes_cohort.xls , replace
 
 /*Repeat malaria infections (Melisa)- aic only
 Due to reinfection or maltreatment?
@@ -40,6 +32,7 @@ bysort id_wide: gen mal_freq = sum(malariapositive_dum )
 preserve
 	keep if malariapositive_dum ==1
 	egen firstpos = min(visit_int), by(id_wide)
+	keep id_wide visit_int firstpos 
 	save firstpos , replace
 restore 
 merge 1:1 id_wide visit_int using firstpos 
@@ -54,25 +47,26 @@ order mal_freq_max
 preserve 
 keep if firstpos != . 
 	keep if mal_freq >0 & mal_freq !=. 
-	table1, vars(cohort cat \ all_meds_antimalarial cat \ species_cat cat \ parasite_count_lab conts \ age conts \ gender cat\ city cat \site cat \ urban cat\ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat\sesindexradio cat\sesindextelevision cat\sesindexbicycle cat\sesindexmotorizedvehicle cat\sesindexdomesticworker cat \sesindexownflushtoilet cat  \  mosquitocoil bin \ mosquitobites bin \ mosquito_exposure_index conts \ mosq_prevention_index conts \  malariatreatment1 cat \ malariatreatment2 cat \ ) by(mal_freq_max) saving("`figures'repeatmalaria_all.xls", replace ) missing test
+	*table1, vars(cohort cat \ all_meds_antimalarial cat \ species_cat cat \ parasite_count_lab conts \ age conts \ gender cat\ city cat \site cat \ urban cat\ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat\sesindexradio cat\sesindextelevision cat\sesindexbicycle cat\sesindexmotorizedvehicle cat\sesindexdomesticworker cat \sesindexownflushtoilet cat  \  mosquitocoil bin \ mosquitobites bin \ mosquito_exposure_index conts \ mosq_prevention_index conts \  malariatreatment1 cat \ malariatreatment2 cat \ ) by(mal_freq_max) saving("`figures'repeatmalaria_all.xls", replace ) missing test
 restore
 
 *rename past_med_history* pmh*
 order id_wide visit_int 
-
 drop *compl*
-
 
 rename *1 *a
 save temp, replace
-		keep id_wide visit_int site city ses* season* year gender age z* *neg* mosq* parasite* species *dum mom_educ urban wealthindex hygieneindex 
-
+		keep id_wide visit_int site city ses* season* year gender age z* *neg* mosq* parasite* species *dum* mom_educ urban wealthindex hygieneindex 
 		order id_wide visit
-		local vars "parasite_count_lab city gender age mosquitocoil mosquitobites pos_neg pos_nega site zhcaukwho zwtukwho zhtukwho zbmiukwho chikvpcrresults_dum denvpcrresults_dum parasitelevel_desc malariapositive_dum species_cat year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index"
+		order malaria*
+		
+  		 rename malariapositive_dum2 malariapositive_dum_both 
+		 rename malariapositive_dum malariapositive_dum_lab
+		 
+		local vars " ses_index_sum_pct parasite_count_lab city gender age mosquitocoil mosquitobites pos_neg pos_nega site zhcaukwho zwtukwho zhtukwho zbmiukwho chikvpcrresults_dum denvpcrresults_dum parasitelevel_desc  malariapositive_dum_lab malariapositive_dum_both species_cat year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index"
 		reshape wide `vars', i(id_wide) j(visit_int)
-
-		order malariapositive_dum*
-
+	order malariapositive_dum*
+	
 		gen aposbpos = 1 if malariapositive_dum1==1 & malariapositive_dum2==1
 		gen aposbneg = 1 if malariapositive_dum1==1 & malariapositive_dum2==0
 		gen bposcpos= 1 if malariapositive_dum2==1 & malariapositive_dum3==1
@@ -86,9 +80,11 @@ save temp, replace
 		gen fposgpos= 1 if malariapositive_dum6==1 & malariapositive_dum7==1
 		gen fposgneg= 1 if malariapositive_dum6==1 & malariapositive_dum7==0
 
-		gen repeatmalaria = .
+		gen repeatmalaria_yes = .
 		replace repeatmalaria = 1 if aposbpos ==1|bposcpos==1|cposdpos==1| dposepos ==1|eposfpos ==1|fposgpos ==1
-		replace repeatmalaria = 0 if aposbneg ==1|bposcneg==1|cposdneg==1| dposeneg==1|eposfneg==1|fposgneg==1
+		stop
+		gen repeatmalaria_no = .
+		replace repeatmalaria_no = 0 if aposbneg ==1|bposcneg==1|cposdneg==1| dposeneg==1|eposfneg==1|fposgneg==1
 
 		tab repeatmalaria 
 		keep if repeatmalaria !=.

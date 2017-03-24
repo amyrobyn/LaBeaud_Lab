@@ -1,13 +1,13 @@
 /********************************************************************
  *amy krystosik                  							  		*
- *ellyse astmh abstract 2017- apprent and innaparent denv and chikv	*
+ *astmh abstract 2017- apprent and innaparent denv and chikv & symptoms*
  *lebeaud lab               				        		  		*
- *last updated march 14, 2017  							  			*
+ *last updated march 23, 2017  							  			*
  ********************************************************************/ 
 capture log close 
 set more 1
 set scrollbufsize 100000
-log using "elysse_tropmed2017_apparent_inapparent_chikv.smcl", text replace 
+log using "tropmed2017_apparent_inapparent_chikv& symptoms.smcl", text replace 
 cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent"
 
 local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\"
@@ -15,13 +15,18 @@ local cleandata "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cle
 
 foreach inc_outcome in inc_chikv inc_denv{
 use "`cleandata'/`inc_outcome'.dta", clear
-
+replace apparent_groups = collapsed_apparent_groups  
  
 stset visit_int, failure(`inc_outcome') id(id_wide)
 stsum, by(malariapositive_dum )
 sts list, by(malariapositive_dum apparent_groups) 
 
-stsum, by(apparent_groups )
+stsum, by(apparent_groups)
+sts list, by(site)
+
+}
+stop 
+
 stsum, by(apparent_groups  site)
 stsum, by(apparent_groups  city)
 
@@ -33,14 +38,16 @@ tab all_fever
 
 stsum, by(all_fever)
 gen fever_`inc_outcome' = .
-replace fever_`inc_outcome' =1 if all_fever== 1 & `inc_outcome'==1  
+replace fever_`inc_outcome' =1 if all_fever== 1 & `inc_outcome'==1 
 stset visit_int, failure(fever_`inc_outcome') id(id_wide)
 stsum
+stsum, by(antimalarial)
 
 gen fever_`inc_outcome'_malaria = .
 replace fever_`inc_outcome'_malaria =1 if all_fever== 1 & `inc_outcome'==1  & malariapositive_dum ==1
 stset visit_int, failure(fever_`inc_outcome'_malaria ) id(id_wide)
 stsum
+stsum, by(antimalarial)
 
 preserve
 	keep if all_fever ==1
@@ -59,9 +66,10 @@ restore
 preserve 
 	sts list, saving(`inc_outcome'_stsresults, replace) by(strata) 
 	use `inc_outcome'_stsresults, clear
+	display "*******************`inc_outcome'*************"
 	export excel using "`data'stsworkbook", sheet("`inc_outcome'") sheetreplace 
 restore
-
+stop
 bysort `inc_outcome': tab malariapositive_dum apparent_groups, col
 		tab agegroup
 		foreach strata in apparent_groups malariapositive_dum seasonyear sex agegroup primarydiag  reasonhospitalized1{
