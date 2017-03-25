@@ -25,7 +25,6 @@ Only kids with malaria
 How many kids have gametocytes?
 */
 
-keep if cohort ==1
 dropmiss, force
 bysort id_wide: gen mal_freq = sum(malariapositive_dum )
 
@@ -64,7 +63,7 @@ save temp, replace
 		 rename malariapositive_dum lab_malariapositive_dum
   		 rename all_malariapositive_dum malariapositive_dum
 		 
-		local vars "parasite_count_all ses_index_sum_pct parasite_count_lab city gender age mosquitocoil mosquitobites pos_neg pos_nega site zhcaukwho zwtukwho zhtukwho zbmiukwho chikvpcrresults_dum denvpcrresults_dum parasitelevel_desc  malariapositive_dum lab_malariapositive_dum species_cat year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index"
+		local vars "lab_malariapositive_dum malariapositive_dum parasite_count_lab city species parasite_count_hcc gender age mosqbitefreq mosquitocoil mosquitobites mosquitoday mosquitonight mosquitobitefreq mosqbitedaytime mosqbitenight pos_neg pos_nega site zhcaukwho zwtukwho zhtukwho zbmiukwho chikvpcrresults_dum denvpcrresults_dum parasitelevel_desc year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index ses_index_sum_pct parasite_count_all"
 		reshape wide `vars', i(id_wide) j(visit_int)
 		order malariapositive_dum*
 	
@@ -90,39 +89,60 @@ save temp, replace
 		tab repeatmalaria_yes repeatmalaria_no, m
 		
 ******look for incident malaria - neg at initial and pos at fu********
-		gen incb= 1 if malariapositive_dum1==0 & malariapositive_dum2==1
-tab incb
-		gen incc= 1 if malariapositive_dum1==0 & malariapositive_dum3==1| malariapositive_dum2==0 & malariapositive_dum3==1
-tab incc
-		gen incd= 1 if malariapositive_dum1==0 & malariapositive_dum4==1| malariapositive_dum2==0 & malariapositive_dum4==1| malariapositive_dum3==0 & malariapositive_dum4==1
-tab incd
-		gen ince= 1 if malariapositive_dum1==0 & malariapositive_dum5==1| malariapositive_dum2==0 & malariapositive_dum5==1| malariapositive_dum3==0 & malariapositive_dum5==1| malariapositive_dum4==0 & malariapositive_dum5==1
-tab ince
-		gen incf= 1 if malariapositive_dum1==0 & malariapositive_dum6==1| malariapositive_dum2==0 & malariapositive_dum6==1| malariapositive_dum3==0 & malariapositive_dum6==1| malariapositive_dum4==0 & malariapositive_dum6==1| malariapositive_dum5==0 & malariapositive_dum6==1
-tab incf
-		gen incg= 1 if malariapositive_dum1==0 & malariapositive_dum7==1| malariapositive_dum2==0 & malariapositive_dum7==1| malariapositive_dum3==0 & malariapositive_dum7==1| malariapositive_dum4==0 & malariapositive_dum7==1| malariapositive_dum5==0 & malariapositive_dum7==1| malariapositive_dum6==0 & malariapositive_dum7==1
-tab incg
-		gen inch= 1 if malariapositive_dum1==0 & malariapositive_dum8==1| malariapositive_dum2==0 & malariapositive_dum8==1| malariapositive_dum3==0 & malariapositive_dum8==1| malariapositive_dum4==0 & malariapositive_dum8==1| malariapositive_dum5==0 & malariapositive_dum8==1| malariapositive_dum6==0 & malariapositive_dum8==1| malariapositive_dum7==0 & malariapositive_dum8==1
-tab inch
+				gen incb= 1 if malariapositive_dum1==0 & malariapositive_dum2==1
+		tab incb
+				gen incc= 1 if malariapositive_dum1==0 & malariapositive_dum3==1| malariapositive_dum2==0 & malariapositive_dum3==1
+		tab incc
+				gen incd= 1 if malariapositive_dum1==0 & malariapositive_dum4==1| malariapositive_dum2==0 & malariapositive_dum4==1| malariapositive_dum3==0 & malariapositive_dum4==1
+		tab incd
+				gen ince= 1 if malariapositive_dum1==0 & malariapositive_dum5==1| malariapositive_dum2==0 & malariapositive_dum5==1| malariapositive_dum3==0 & malariapositive_dum5==1| malariapositive_dum4==0 & malariapositive_dum5==1
+		tab ince
+				gen incf= 1 if malariapositive_dum1==0 & malariapositive_dum6==1| malariapositive_dum2==0 & malariapositive_dum6==1| malariapositive_dum3==0 & malariapositive_dum6==1| malariapositive_dum4==0 & malariapositive_dum6==1| malariapositive_dum5==0 & malariapositive_dum6==1
+		tab incf
+				gen incg= 1 if malariapositive_dum1==0 & malariapositive_dum7==1| malariapositive_dum2==0 & malariapositive_dum7==1| malariapositive_dum3==0 & malariapositive_dum7==1| malariapositive_dum4==0 & malariapositive_dum7==1| malariapositive_dum5==0 & malariapositive_dum7==1| malariapositive_dum6==0 & malariapositive_dum7==1
+		tab incg
+				gen inch= 1 if malariapositive_dum1==0 & malariapositive_dum8==1| malariapositive_dum2==0 & malariapositive_dum8==1| malariapositive_dum3==0 & malariapositive_dum8==1| malariapositive_dum4==0 & malariapositive_dum8==1| malariapositive_dum5==0 & malariapositive_dum8==1| malariapositive_dum6==0 & malariapositive_dum8==1| malariapositive_dum7==0 & malariapositive_dum8==1
+		tab inch
 
-sum malariapositive_dum*
-		
+		sum malariapositive_dum*
+		sum inc*
 		
 		gen incident_malaria= .
 		replace incident_malaria= 1 if incb==1|incc==1|incd==1|ince==1|incf==1|incg==1|inch==1
-		tab incident_malaria
+		tab incident_malaria 
 		
-		gen repeatmalaria_no = .
-		replace repeatmalaria_no = 1 if aposbneg ==1|bposcneg==1|cposdneg==1| dposeneg==1|eposfneg==1|fposgneg==1
-		tab repeatmalaria_yes repeatmalaria_no, m
-*************		
-		
-		
-		
-		encode id_wide, gen(id)
+		preserve
+			reshape long
+			keep id_wide visit incident_malaria inc* 
+			collapse (firstnm) inc* (max) visit, by(id_wide)
+			tab incident_malaria 
+			replace incident_malaria =0 if incident_malaria ==.
+			tab incident_malaria 
+			sum inc*
+			rename visit maxvisit
+			gen visit = . 
+			replace visit = 2 if incb==1 
+			replace visit = 3 if incc==1 
+			replace visit = 4 if incd==1 
+			replace visit = 5 if ince==1 
+			replace visit = 6 if incf==1 
+			replace visit = 7 if incg==1 
+			replace visit = 8 if inch==1 
+			*replace visit = maxvisit if incident_malaria == 0 & visit ==. 
+			replace visit = 1 if incident_malaria == 0 & visit ==. 
+			rename visit visit_int
+			tab visit_int incident_malaria
+			keep if incident_malaria !=.
+			save incident_malaria, replace 
+			save "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria", replace 
+		restore
+
+************** start malaria prevalence**
+*		reshape long
+*		encode id_wide, gen(id)
+stop 
 		stset id visit_int
-		stop 
-		**malaria prevalence**
+
 		stgen repeatmalaria_dum = always(malariapositive_dum2==0 |malariapositive_dum2==. )
 		stgen when_malaria= when(malariapositive_dum2==1)
 		stgen prev_malaria= ever(malariapositive_dum2==1)

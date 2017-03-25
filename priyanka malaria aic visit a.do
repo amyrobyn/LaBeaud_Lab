@@ -22,7 +22,6 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\dav
 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
 replace cohort = id_cohort if cohort ==""
-*keep if visit == "a" & cohort =="f"
 keep if cohort =="f"
 tab visit 
 drop _merge
@@ -442,7 +441,7 @@ keep if temperature >=38
 replace severemalaria = 0 if malariapositive_dum == 1 & outcomehospitalized_all ==0
 replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all ==1
 tab severemalaria visit
-
+stop
 replace malariapositive_dum =. if malariapositive_dum ==99 
 replace outcome= . if outcome==99
 egen severemalaria_ord = concat(malariapositive_dum outcome) if outcome!=.

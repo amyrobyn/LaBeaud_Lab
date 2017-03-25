@@ -59,12 +59,20 @@ drop hb_result
 rename *temp* *childtemp*
 replace childtemp = childtemperature if childtemp ==.
 drop childtemperature 
-tab childtemp 
+tab childtemp , m
 
 replace childtemp = childtemp /10 if childtemp >50 
-replace feverchildtemp =1 if childtemp >=38  & childtemp !=.
-replace feverchildtemp =0 if childtemp <38
 
+replace feverchildtemp =0 if childtemp <38
+replace feverchildtemp =0 if fevertoday==0  
+replace feverchildtemp =0 if fever==0  
+
+replace feverchildtemp =1 if childtemp >=38  & childtemp !=.
+replace feverchildtemp =1 if fevertoday==1  
+replace feverchildtemp =1 if fever==1  
+
+tab feverchildtemp, m
+order studyid id_wide visit cohort feverchildtemp fever* *temp fever* *fever* 
 gen fever_6ms =. 
 replace fever_6ms=1 if 	numillnessfever > 0 & numillnessfever != . 
 replace fever_6ms=1 if 	fevertoday == 1 
@@ -588,9 +596,9 @@ replace all_meds  = "" if all_meds =="_"
 replace all_meds  = "" if strlen(all_meds) <3
 tab all_meds 			
 preserve
-keep if all_meds !=""
-rename all_meds TOCATEGORIZE
-outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using "`data'allmeds.xls", replace 
+	keep if all_meds !=""
+	rename all_meds TOCATEGORIZE
+	outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using "`data'allmeds.xls", replace 
 restore
 drop medsprescribe othmedsprescribe 
 
@@ -651,7 +659,11 @@ replace othoutcome_dum  = 3 if othoutcome!=""
 replace othoutcome_dum  = 1 if strpos(othoutcome, "nutritional")
 replace outcome = othoutcome_dum  if outcome ==.
 tab outcome outcomehospitalized , m
+lookfor fever
+bysort feverchildtemp: tab outcomehospitalized  malariapositive_dum
+
 gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==2 & outcomehospitalized ==1
+
 preserve
 	keep if discordantoutcome ==1
 	outsheet studyid id_wide visit discordantoutcome outcome outcomehospitalized dataset using "`data'discordant_hospital_outcomes.csv", names comma replace 
@@ -712,7 +724,7 @@ egen zhtukwho = zanthro(childheight,ha,UKWHOterm), xvar(age) gender(gender) genc
 egen zbmiukwho = zanthro(childbmi , ba ,UKWHOterm), xvar(age) gender(gender) gencode(male=0, female=1)nocutoff ageunit(year) 
 */
 *outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
-table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(coinfectiongroup) saving("`figures'anthrozscores.xls", replace ) missing test
+*table1, vars(zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho  conts \)  by(coinfectiongroup) saving("`figures'anthrozscores.xls", replace ) missing test
 *outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  using anthrozscoreslist.xls, replace
 sum zwtukwho zhtukwho zbmiukwho zhcaukwho, d
 
@@ -812,20 +824,26 @@ rename mom_educ_dum mom_educ
 
 **severe malaria**
 drop othoutcome_dum 
-gen othoutcome_dum = 0
+gen othoutcome_dum = .
 replace othoutcome_dum  = 1 if othoutcome!=""
 replace othoutcome_dum  = 0 if strpos(othoutcome, "nutritional")
 gen outcomehospitalized_all = .
+
+replace outcomehospitalized_all = 0 if outcome == 1
+replace outcomehospitalized_all = 0 if outcome == 2
+replace outcomehospitalized_all = 0 if othoutcome_dum == 0
+replace outcomehospitalized_all = 0 if outcomehospitalized == 0
+
 replace outcomehospitalized_all = 1 if outcome == 3
 replace outcomehospitalized_all = 1 if outcome == 4
 replace outcomehospitalized_all = 1 if outcome == 5
 replace outcomehospitalized_all = 1 if othoutcome_dum == 1
 replace outcomehospitalized_all = 1 if outcomehospitalized == 1
 
-
 gen severemalaria = .
 replace severemalaria = 0 if malariapositive_dum == 1 & outcomehospitalized_all ==0 & feverchildtemp ==1
 replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all ==1 & feverchildtemp ==1
+tab severemalaria
 **end severe malaria **
 
 **SES Index for aic**
@@ -1147,17 +1165,27 @@ xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
 	*collapse these two groups 
 	gen collapsed_apparent_groups = apparent_groups  
 	replace collapsed_apparent_groups =2 if collapsed_apparent_groups ==3
+	
+	
+compare parasite_count_lab parasite_count_hcc 
+gen parasite_count_all=.	
+replace parasite_count_all= parasite_count_lab if parasite_count_all==.
+replace parasite_count_all= parasite_count_hcc if parasite_count_all==.
+replace malariapositive_dum2 =1 if parasite_count_all >0 & parasite_count_lab !=.
+replace malariapositive_dum2 =0 if parasite_count_all ==0 
 
-			
-		
-		*convert visit to time in months
-		gen time = . 
-		replace time = visit_int*1 if cohort ==1
 
-		replace time = 1 if visit_int ==1 & cohort ==2 
-		replace time = 6 if visit_int ==2 & cohort ==2 
-		replace time = 12 if visit_int ==3 & cohort ==2 
+*convert visit to time in months
+gen time = . 
+replace time = visit_int*1 if cohort ==1
 
+replace time = 1 if visit_int ==1 & cohort ==2 
+replace time = 6 if visit_int ==2 & cohort ==2 
+replace time = 12 if visit_int ==3 & cohort ==2 
+
+merge 1:1 id_wide visit_int using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\incident_malaria"
+drop if _merge ==2
+drop _merge
 save "`data'cleaned_merged_prevalence", replace
 
 
@@ -1183,7 +1211,7 @@ use "cleaned_merged_prevalence", clear
 preserve 
 		keep if stanforddenvigg_ !=. 
 		sort id_wide visit, stable 
-egen minvisit_igg = min(visit_int), by(id_wide)
+		egen minvisit_igg = min(visit_int), by(id_wide)
 		save minvisit_igg, replace 
 restore
  
@@ -1220,25 +1248,29 @@ sum inc_denv inc_chikv minvisit_igg
 save inc_chikv, replace
 outsheet using "`data'inc_chikv_w_PCR_$S_DATE.csv", comma replace names
 
-foreach outcome in  inc_chikv  inc_denv  {
-use `outcome', clear
 
-*convert visit to time in months
-gen time = . 
-replace time = visit_int*1 if cohort ==1
+*malaria
+use temp, clear
+	preserve 
+	tab incident_malaria
+		keep if  incident_malaria!=. 
+		tab incident_malaria visit_int
+	save incident_malaria, replace
+	outsheet using "`data'inc_malaria_$S_DATE.csv", comma replace names
+restore
+tab incident_malaria cohort
 
-replace time = 1 if visit_int ==1 & cohort ==2 
-replace time = 6 if visit_int ==2 & cohort ==2 
-replace time = 12 if visit_int ==3 & cohort ==2 
 
-stset time, failure(`outcome') id(id_wide) 
 
-sts list
-sts list, by(cohort) 
-sts list, by(site cohort) 
-sts list, by(site) 
-sts list, by(urban) 
-sts list, by(city) 
+foreach outcome in  inc_chikv  inc_denv  incident_malaria {
+	use `outcome', clear
+	stset time, failure(`outcome') id(id_wide) 
+	sts list
+	sts list, by(cohort) 
+	sts list, by(site cohort) 
+	sts list, by(site) 
+	sts list, by(urban) 
+	sts list, by(city) 
 
 **/Active disease from CHIKV and DENV were associated with SES, gender, X and Y. */
 preserve
@@ -1250,9 +1282,7 @@ preserve
 	keep if cohort ==2
 		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(`outcome') missing test saving("`figures'INCIDENCE_$S_DATE.xls", sheet("HCC_`outcome'_W_PCR") sheetreplace) 
 restore
-
 }
-
 
 ***************************************************end incidence******************************************************************
 
@@ -1265,7 +1295,39 @@ use "cleaned_merged_prevalence", clear
 encode id_wide, gen(id)
 stset id visit_int
 
+**malaria prevalence**
+		stgen no_malaria= always( malariapositive_dum2==0 |malariapositive_dum2==. )
+		stgen when_malaria= when(malariapositive_dum2==1)
+		stgen prev_malaria= ever(malariapositive_dum2==1)
+
+		tab prev_malaria
+		tab no_malaria
+
+		gen malaria_prev = .
+		replace malaria_prev = 1 if prev_malaria==1
+		replace malaria_prev = 0 if no_malaria ==1
+		tab malaria_prev 
+		keep if malaria_prev !=.
+		save "`data'prev_malaria_w_PCR", replace
+outsheet using "`data'prev_malaria_w_PCR_$S_DATE.csv", comma replace names
+ 
+preserve
+keep if cohort ==1
+			*denv
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_malaria_W_PCR") sheetreplace) 
+restore
+
+preserve
+	keep if cohort ==2
+		*denv
+		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_malaria_W_PCR") sheetreplace) 
+restore
+
+
 **denv prevalence**
+use "cleaned_merged_prevalence", clear
+encode id_wide, gen(id)
+stset id visit_int
 		stgen no_denv = always(stanforddenvigg_==0 & denvpcrresults_dum==0|stanforddenvigg_==0 & denvpcrresults_dum==.|stanforddenvigg_==. & denvpcrresults_dum==0)
 		stgen when_denv = when(stanforddenvigg_==1 | denvpcrresults_dum==1)
 		stgen prev_denv = ever(stanforddenvigg_==1 | denvpcrresults_dum==1)
@@ -1284,19 +1346,22 @@ outsheet using "`data'prev_denv_w_PCR_$S_DATE.csv", comma replace names
 preserve
 keep if cohort ==1
 			*denv
-			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
 restore
 
 preserve
 	keep if cohort ==2
 		*denv
-		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_DENV_W_PCR") sheetreplace) 
+		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_DENV_W_PCR") sheetreplace) 
 restore
+
  
 
  
  **chikv prevalence**
 use "cleaned_merged_prevalence", clear
+encode id_wide, gen(id)
+stset id visit_int
 
 		stgen no_chikv = always(stanfordchikvigg_==0 & chikvpcrresults_dum==0 | stanfordchikvigg_==0 & chikvpcrresults_dum==.| stanfordchikvigg_==. & chikvpcrresults_dum==0)
 		stgen when_chikv = when(stanfordchikvigg_==1 | chikvpcrresults_dum==1)
@@ -1318,12 +1383,12 @@ outsheet using "`data'prev_chikv_w_PCR_$S_DATE.csv", comma replace names
 preserve
 keep if cohort ==1
 			*chikv
-			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_CHIKV_W_PCR") sheetreplace) 
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_CHIKV_W_PCR") sheetreplace) 
 restore
 
 preserve
 	keep if cohort ==2
 		*chikv
-		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
+		table1,	vars(malariapositive_dum2  bin \ season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
 restore
 ***************************************************end Prevalence******************************************************************
