@@ -1,9 +1,9 @@
-/********************************************************************
- *amy krystosik                  							  		*
- *david coinfection by denv pcr and malaria microscopy, AIC visit A	*
- *lebeaud lab               				        		  		*
- *last updated feb 21, 2017  							  			*
- ********************************************************************/ 
+/********************************************************************************************
+ *Author: Amy Krystosik, MPH PhD               							  					*
+ *Function: merge aic and hcc interviews with lab data, gps data, vector and climate data	*
+ *Org: LaBeaud Lab, Stanford School of Medicine, Pediatrics 			  					*
+ *Last updated: march 26, 2017  									  						*
+ *******************************************************************************************/ 
 capture log close 
 log using "LOG all linked and cleaned data.smcl", text replace 
 set scrollbufsize 100000
@@ -87,8 +87,7 @@ encode visit, gen(visit_int)
 xtset id_wide_int visit_int
 
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
-by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
-
+by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort dob  child_name cfname cmname  clname   csname    csurname  ctname   cfthname  childsname  date_of_birth , replace
 order id_childnumber id_cohort id_city id_visit id_city studyid id_wide
 gen id_childnumber2 = substr(id_wide , +3, .) if studyid==""
 replace id_childnumber2 = substr(id_wide , +3, .) if length(studyid)<5
@@ -124,45 +123,147 @@ destring id_childnumber2, replace
 
 gen studyid3= substr(studyid, 1, 3)
 egen studyid4 = concat(studyid3 id_childnumber2 )
+replace id_childnumber =id_childnumber2 if id_childnumber==.
+compare id_childnumber id_childnumber2 
+drop id_childnumber2
 
 count if studyid4 != studyid
 replace studyid = studyid4 if length(studyid)<5
 *done fixing id's 2
 
-***start***houseid to merge demography**
-gen houseid2 = ""
-replace houseid2 = substr(studyid, 4, . ) 
-order houseid*
-sort city
-destring houseid2 , replace force 
+***start***houseid to merge demography** hcc only
+	save hcc_aic, replace
+		keep if cohort ==1
+		save aic, replace
+	use hcc_aic, clear
+	keep if cohort ==2
+	dropmiss, force
+	dropmiss, obs force
+		
+	gen age_days = age*365	
+	gen dob_gen = interviewdate - age_days 
+	format dob_gen %td
+	format  dob_gen %tddd-Mon-YY
+	compare dob_gen dob 
+	replace dob = dob_gen if dob ==. 
+	order dob_gen dob interviewdate age age_days
+	
 
-tostring houseid2, replace
-replace houseid2= reverse(houseid2)
-replace houseid2 = substr(houseid2, 4, . ) 
-replace houseid2= reverse(houseid2)
-destring houseid2, replace 
+	gen child_dob_month = month(dob)
+	gen child_dob_year= year(dob)
+	gen child_dob_day = day(dob)
+	count if dob ==. & child_name =="" & cfname  =="" & clname ==""
 
-list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="milani"
-list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="nganja"
-bysort city: count if houseid2 != houseid & houseid!=.
+	tab child_dob_month , m
+	tab child_dob_year, m
+	tab child_dob_day , m
 
-order studyid houseid houseid2 city
-destring houseid houseid2  city, replace 
-replace houseid = houseid2 if houseid==. & houseid2!=.
+	
+	
+			gen houseid2 = ""
+			replace houseid2 = substr(studyid, 4, . ) 
+			order houseid*
+			sort city
+			destring houseid2 , replace force 
 
-count if houseid==. & cohort ==2
-replace houseid =. if cohort ==1
+			tostring houseid2, replace
+			replace houseid2= reverse(houseid2)
+			replace houseid2 = substr(houseid2, 4, . ) 
+			replace houseid2= reverse(houseid2)
+			destring houseid2, replace 
 
-count if cohort==2
-count if houseid ==. & cohort==2
+			list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="milani"
+			list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="nganja"
+			bysort city: count if houseid2 != houseid & houseid!=.
 
-*merge with demography data
-merge m:1 city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\xy"
-drop _merge
-outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
+			order studyid houseid houseid2 city
+			destring houseid houseid2  city, replace 
+			replace houseid = houseid2 if houseid==. & houseid2!=.
 
-tab city 
-drop if city =="a"
+			count if houseid==. & cohort ==2
+			replace houseid =. if cohort ==1
+
+			count if cohort==2
+			count if houseid ==. & cohort==2
+
+			*merge with demography data
+			*rename childnumber id_childnumber
+			replace csname	= csurname	if csname	==""
+			drop csname	
+			
+gen childname1  = 	cfname	 
+	drop cfname	  
+gen childname2 = cmname	
+	drop cmname	 
+gen childname3 = clname	
+	drop clname	   
+gen childname4 = csurname
+	drop csurname
+	gen space = " "
+egen childname_long = concat(childname1 space childname2 space childname3 space childname4) 
+	replace childname4 = "99" if childname4 ==""
+	replace childname3 = "99" if childname3 ==""
+	replace childname2 = "99" if childname2 ==""
+	replace childname1 = "99" if childname1 ==""
+		
+merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
+
+rename _merge hhmerge
+tab hhmerge
+drop if hhmerge==2 
+isid id_wide visit
+compare childname_long  child_name  
+replace child_name   = childname_long  if child_name   ==""
+capture drop similscore
+matchit childname_long  child_name
+order childname_long  child_name  similscore hhmerge 
+sum similscore
+sort similscore 
+
+gen child_in_house_num = id_childnumber 
+tostring child_in_house_num , replace 
+replace child_in_house_num = reverse(child_in_house_num )
+replace child_in_house_num = substr(child_in_house_num, 1, 2) 
+replace child_in_house_num = reverse(child_in_house_num )
+tab child_in_house_num if child_in_house_num !="99"
+list dataset studyid id_wide child_in_house_num   id_childnumber  if child_in_house_num =="00"
+tab dataset if child_in_house_num =="99"
+
+destring child_in_house_num, replace
+rename id_childnumber house_child_num
+rename child_in_house_num id_childnumber 
+capture drop id
+encode id_wide, gen(id)
+egen name_dob = concat (id_childnumber space child_dob_month space child_dob_year space childname_long)
+save child, replace
+
+gen childcity = city if city !="msambweni" & city !="milani" & city !="nganja"
+levelsof childcity , local(levels) 
+foreach l of local levels {
+	use child, clear
+	keep if city=="`l'"  
+	matchit id name_dob using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy`l'.dta", idusing(id) txtusing(name_dob) override
+	save child`l', replace
+}
+stop 
+
+*merge m:m city houseid id_childnumber child_dob_year child_dob_month  using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy"
+rename _merge childmerge
+tab childmerge
+order hhmerge childmerge city houseid id_childnumber child_dob_year child_dob_month child_dob_day childname1 childname2 childname3
+
+stop
+
+*..............................i can't get a unique and matching id between the two databases.................................................
+*merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\xy"
+stop 
+
+			drop _merge
+			outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
+		append using aic
+
+			tab city 
+			drop if city =="a"
 
 *cohort
 replace cohort =2 if id_cohort == "c"
