@@ -164,23 +164,28 @@ replace studyid = studyid4 if length(studyid)<5
 	
 			gen houseid2 = ""
 			replace houseid2 = substr(studyid, 4, . ) 
-			order houseid*
-			sort city
+			order houseid* city studyid id_wide
+			gsort -city
 			destring houseid2 , replace force 
 
 			tostring houseid2, replace
 			replace houseid2= reverse(houseid2)
-			replace houseid2 = substr(houseid2, 4, . ) 
+			
+			replace houseid2 = substr(houseid2, 3, . ) if city =="ukunda"
+			replace houseid2 = substr(houseid2, 4, . ) if city !="ukunda"
 			replace houseid2= reverse(houseid2)
 			destring houseid2, replace 
+			
 
 			list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="milani"
 			list studyid id_wide houseid2  houseid  if houseid2 != houseid & houseid!=. & city =="nganja"
-			bysort city: count if houseid2 != houseid & houseid!=.
 
 			order studyid houseid houseid2 city
-			destring houseid houseid2  city, replace 
+			destring houseid houseid2, replace 
+			
 			replace houseid = houseid2 if houseid==. & houseid2!=.
+			replace houseid = houseid2 if city =="ukunda"
+			**come back here***
 
 			count if houseid==. & cohort ==2
 			replace houseid =. if cohort ==1
@@ -210,11 +215,8 @@ egen childname_long = concat(childname1 space childname2 space childname3 space 
 
 save child_to_link_w_demography, replace
 merge m:1 city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
-
 rename _merge hhmerge
-tab hhmerge
 drop if hhmerge==2 
-stop 
 
 isid id_wide visit
 compare childname_long  child_name  
@@ -238,19 +240,28 @@ capture drop id
 encode id_wide, gen(id)
 save child, replace
 
-merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\collapsed_child_xy"
+duplicates tag city houseid id_childnumber visit, gen(city_houseid_id_child_visit_dup)
+tab city_houseid_id_child_visit_dup city
+drop if city_houseid_id_child_visit_dup>0
+isid city houseid id_childnumber visit
+
+order city_houseid_id_child_visit_dup city houseid id_childnumber visit id_wide studyid
+gsort -city_houseid_id_child_visit_dup
+
+dropmiss, force piasm trim
+dropmiss, force piasm obs trim
+destring *, replace 
+
+isid city houseid id_childnumber visit
+tostring villageid , replace
+merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy"
 rename _merge childmerge
-tab childmerge
+tab childmerge hhmerge, m
 order hhmerge childmerge city houseid id_childnumber child_dob_year child_dob_month child_dob_day childname1 childname2 childname3
-stop 
-
-*..............................i can't get a unique and matching id between the two databases.................................................
-*merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\xy"
-stop 
-
-			drop _merge
-			outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
-		append using aic
+drop if childmerge ==2
+outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
+tostring windows childvillage, replace
+append using aic
 
 			tab city 
 			drop if city =="a"

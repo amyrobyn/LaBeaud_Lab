@@ -248,6 +248,8 @@ save xy, replace
 	isid city houseid 
 	save hh_xy, replace
 
+
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography"
 use xy, clear
 	tab city
 	keep if city != "milani" & city != "nganja" 
@@ -255,4 +257,9 @@ use xy, clear
 	destring *, replace
 	isid city houseid id_childnumber 
 	desc city houseid id_childnumber 
+	
+dropmiss, force piasm trim
+dropmiss, force piasm obs trim
+destring *, replace 
+tostring yearsindistrict , replace
 save child_xy, replace

@@ -250,17 +250,12 @@ foreach v of varlist `r(varlist)' {
 } 
 save wide, replace
 
-duplicates tag id_wide visit_int, gen (dup_id_wide_visit_int) 
+duplicates tag id_wide id_visit, gen (dup_id_wide_visit_int) 
 tab dup_id_wide_visit_int 
 outsheet using dup_id_wide_visit_int.csv if dup_id_wide_visit_int>0, comma names replace 
 drop if dup_id_wide_visit_int > 0
-isid id_wide visit_int
+isid id_wide id_visit
 
-duplicates tag id_wide, gen(dup2) 
-	save wide, replace
-		keep if dup2 >0
-		*export excel using "dup2", firstrow(variables) replace
-use wide.dta, clear
 	dropmiss, force
 	dropmiss, force obs
 foreach var in chikviggod_* stanfordchikvod_a  stanforddenvigg_f   stanforddenviggod_c antigenused_e  {
