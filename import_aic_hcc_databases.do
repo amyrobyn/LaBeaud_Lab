@@ -10,10 +10,12 @@ set more 1
 *cd "C:\Users\amykr\Box Sync\DENV CHIKV project/Personalized Datasets/Amy/CSVs nov216/output"
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\CSVs nov29_16\output"
 
-local import "C:\Users\amykr\Box Sync\DENV CHIKV project/Personalized Datasets/Amy/longitudinal_analysis_sept152016/"
-local importnov15 "C:\Users\amykr\Box Sync\DENV CHIKV project/Coast Cleaned/HCC/HCC Latest/"
+local importcoasthcc "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\HCC\HCC Latest/"
+local importcoastaic "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\AIC\AIC Latest/"
+local importwesthcc "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest/"
+local importwestaic "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest/"
 
-import excel "`importnov15'Msambweni HCC Initial 30Nov16.xls", sheet("#LN00024") firstrow clear
+import excel "`importcoasthcc'Msambweni HCC Initial 30Nov16.xls", sheet("#LN00024") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -40,8 +42,9 @@ recast int `var'
 }
 save "Msambweni HCC Initial 06Nov16", replace
 	 
-  
-import excel "`importnov15'Msambweni HCC Follow one 30Nov16.xls", sheet("#LN00025") firstrow clear
+
+
+import excel "`importcoasthcc'Msambweni HCC Follow one 30Nov16.xls", sheet("#LN00025") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -63,8 +66,7 @@ recast int `var'
 save "Msambweni HCC Follow one 06Nov16", replace
 
 
-
-import excel "`importnov15'Msambweni HCC Follow two 30Nov16.xls", sheet("#LN00026") firstrow clear
+import excel "`importcoasthcc'Msambweni HCC Follow two 30Nov16.xls", sheet("#LN00026") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -85,8 +87,7 @@ recast int `var'
 }
 save "Msambweni HCC Follow two 06Nov16", replace
 
-
-import excel "`importnov15'Msambweni HCC Follow three 30Nov16.xls", sheet("#LN00027") firstrow clear
+import excel "`importcoasthcc'Msambweni HCC Follow three 30Nov16.xls", sheet("#LN00027") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -111,7 +112,7 @@ recast int `var'
 save "Msambweni HCC Follow three 06Nov16", replace
 
 *west HCC
-import excel "`import'HCC_1st Followup.xls", sheet("Sheet1") firstrow clear
+import excel "`importwesthcc'west_HCC_1st Followup.xlsx", sheet("Sheet1") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -122,16 +123,17 @@ ds, has(type string)
 	capture  replace `var'=lower(`var')
 		}	
 		destring mumeduclevel hospitalname1, replace
-foreach var in interviewdate datehospitalized1 {
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
-		save "west_HCC_1st Followup", replace
 
-import excel "`import'HCC_2nd Followup.xls", sheet("Sheet1") firstrow clear
+foreach var in datehospitalized1{
+	gen `var'1 = date(`var', "MDY" ,2050)
+	format %td `var'1 
+	drop `var'
+	rename `var'1 `var'
+	recast int `var'
+}
+save "west_HCC_1st Followup", replace
+
+import excel "`importwesthcc'west_HCC_2nd Followup.xlsx", sheet("Sheet1") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -143,17 +145,10 @@ ds, has(type string)
 		}
 		desc start
 
-foreach var in start{
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
 
 save "west_HCC_2nd Followup", replace
 
-import excel "`import'HCC_3rd Followup.xls", sheet("Sheet1") firstrow clear
+import excel "`importwesthcc'west_HCC_3rd Followup.xlsx", sheet("Sheet1") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -163,17 +158,9 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-foreach var in start{
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
-
 save "west_HCC_3rd Followup", replace
 
-import excel "`import'HCC_Initial.xls", sheet("Sheet1") firstrow clear
+import excel "`importwesthcc'west_HCC_Initial.xlsx", sheet("Sheet1") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -190,39 +177,29 @@ save "west_HCC_Initial", replace
 
 
 *AIC
-insheet using "`import'Coast_AIC_Init-Katherine.csv", comma clear
+import excel "`importcoastaic'Coastal Data-Katherine aug_4_2016.xls", sheet("Coast_AIC_Init-Katherine") firstrow clear
+
+ds, has(type string) 
+	foreach var of var `r(varlist)'{
+	capture tostring `var', replace 
+	capture  replace `var'=lower(`var')
+		}	
+
+dropmiss, force
+foreach var of varlist _all{
+	capture rename `var', lower
+}
+
 replace splenomegaly = "1" if splenomegaly =="hyperactive_bowel_sounds" 
 replace hepatomegaly= "1" if hepatomegaly=="hyperactive_bowel_sounds" 
-
-dropmiss, force
-foreach var of varlist _all{
-	capture rename `var', lower
-}
-
-ds, has(type string) 
-	foreach var of var `r(varlist)'{
-	capture tostring `var', replace 
-	capture  replace `var'=lower(`var')
-		}	
-		
-foreach var in start today interviewdate dob datehospitalized1 end {
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
 replace jointnormal = "0" if jointnormal =="swollen"
 
-replace ovaparasites ="." if ovaparasites =="00chemistry"
 *replace antibiotic = "0" if antibiotic =="chillsvoid"
 replace chills ="0" if chills =="chillsvoid"
-destring splenomegaly hepatomegaly nodenormal jointnormal neuronormal ovaparasites chills adenopathy, replace
-tostring antibiotic , replace
-tab malariabloods~r 
+destring splenomegaly hepatomegaly nodenormal jointnormal neuronormal chills adenopathy, replace
 save "Coast_AIC_Init-Katherine", replace
 
-insheet using "`import'FILE1   4 coast_aicfu_18apr16.csv", comma clear
+import excel "`importcoastaic'Coastal Data-Katherine aug_4_2016.xls", sheet("FILE1   4 coast_aicfu_18apr16") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -232,20 +209,11 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-
-foreach var in start today dob end {
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
-}
 destring scleralicterus nodeabnormal , replace
 tostring nodeabnormal jointabnormal neuroabnormal antibiotic , replace
-*tab malariabloods~r 
 save "FILE1   4 coast_aicfu_18apr16", replace
 
-insheet using "`import'FILE2  AIC Ukunda Malaria...  .csv", comma clear
+import excel "`importcoastaic'Coastal Data-Katherine aug_4_2016.xls", sheet("FILE2  AIC Ukunda Malaria") firstrow clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -261,18 +229,17 @@ tostring studyid2 , replace
 		rename sex gender
 		replace gender = gender-1
 		
-		foreach var in dob{
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
+foreach var in dob{
+	gen `var'1 = date(`var', "MDY" ,2050)
+	format %td `var'1 
+	drop `var'
+	rename `var'1 `var'
+	recast int `var'
 }
-
-*tab malariabloods~r 
 save "FILE2  AIC Ukunda Malaria", replace
 
-insheet using "`import'Western_AICFU-Katherine.csv", comma clear
+**west aic**
+insheet using "`importwestaic'AICFollowUpVersion15_DATA_2017-01-30_1107_west.csv", comma names clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -282,13 +249,12 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-
-foreach var in today start interviewdate dob end{
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
+foreach var in end{
+	gen `var'1 = date(`var', "MDY" ,2050)
+	format %td `var'1 
+	drop `var'
+	rename `var'1 `var'
+	recast int `var'
 }
 tostring otherhneck heartexamcoded nodeabnormal jointabnormal neuroabnormal , replace
 destring adenopathy malariabloodsmear antimalarial antiparasitic ibuprofen paracetamol scleralicterus , replace
@@ -296,7 +262,7 @@ desc adenopathy
 tab malariabloods~r 
 save "Western_AICFU-Katherine", replace
 
-insheet using "`import'Western_AIC_Init-Katherine.csv", comma clear case
+insheet using "`importwestaic'AICInitialVersionOdk_DATA_2017-01-30_1041_west.csv", comma names clear
 dropmiss, force
 foreach var of varlist _all{
 	capture rename `var', lower
@@ -306,7 +272,9 @@ ds, has(type string)
 	capture tostring `var', replace 
 	capture  replace `var'=lower(`var')
 		}	
-foreach var in start today interviewdate dob datehospitalized1 {
+
+		desc start today interviewdate datehospitalized1 
+foreach var in start today interviewdate datehospitalized1 {
 gen `var'1 = date(`var', "MDY" ,2050)
 format %td `var'1 
 drop `var'
@@ -414,18 +382,17 @@ foreach var of varlist my*{
 			replace studyid = studyid2 if studyid =="" & studyid2 !=""
 			drop if studyid ==""
 			
-	bysort  studyid: gen dup_merged = _n 
+	duplicates tag studyid, gen(dup_merged) 
 	tab dup_merged
-	list studyid if dup_merged>1
-	list studyid if dup_merged>1
+	list studyid if dup_merged>0
 	tempfile merged
 	save merged, replace
 	*keep those that i dropped for duplicate and show to elysse
-	keep if dup_merged >1	
+	keep if dup_merged >0	
 	outsheet using "dupinterviews", comma replace
 	use merged.dta, clear
 	
-	drop if dup_merged >1
+	drop if dup_merged >0
 	
 tempfile merged
 save merged, replace

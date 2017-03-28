@@ -239,13 +239,11 @@ drop suffix
 	replace visit_int = 6 if visit =="f"
 	replace visit_int = 7 if visit =="g"
 
-	bysort id_wide visit_int: gen dup = _n
-	drop if dup >1
-
-	drop if id_wide ==""
-	drop if visit_int==.
-	
-	isid id_wide visit_int
+duplicates tag id_wide visit_int, gen (dup_id_wide_visit_int) 
+tab dup_id_wide_visit_int 
+outsheet using dup_id_wide_visit_int.csv if dup_id_wide_visit_int>0, comma names replace 
+drop if dup_id_wide_visit_int > 0
+isid id_wide visit_int
 
 foreach var in dob{
 	gen `var'1 = date(`var', "MDY" ,2050)

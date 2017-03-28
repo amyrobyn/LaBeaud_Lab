@@ -16,7 +16,8 @@ local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\a
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
 
 *add in the pcr data from box and from googledoc. 
-bysort id_wide visit: gen dup = _n
+duplicates tag id_wide visit, gen (dup_id_wide_visit) 
+isid id_wide visit
 drop id_childnumber 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\allpcr"
 		*replace denvpcrresults_dum = 1 if denvpcrresults_dum>0 & denvpcrresults_dum<.
@@ -206,20 +207,20 @@ egen childname_long = concat(childname1 space childname2 space childname3 space 
 	replace childname3 = "99" if childname3 ==""
 	replace childname2 = "99" if childname2 ==""
 	replace childname1 = "99" if childname1 ==""
-		
-merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
+
+save child_to_link_w_demography, replace
+merge m:1 city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
 
 rename _merge hhmerge
 tab hhmerge
 drop if hhmerge==2 
+stop 
+
 isid id_wide visit
 compare childname_long  child_name  
 replace child_name   = childname_long  if child_name   ==""
 capture drop similscore
-matchit childname_long  child_name
-order childname_long  child_name  similscore hhmerge 
-sum similscore
-sort similscore 
+order childname_long  child_name  hhmerge 
 
 gen child_in_house_num = id_childnumber 
 tostring child_in_house_num , replace 
@@ -235,19 +236,7 @@ rename id_childnumber house_child_num
 rename child_in_house_num id_childnumber 
 capture drop id
 encode id_wide, gen(id)
-egen name_dob = concat (id_childnumber space child_dob_month space child_dob_year space childname_long)
 save child, replace
-
-/*
-gen childcity = city if city !="msambweni" & city !="milani" & city !="nganja"
-levelsof childcity , local(levels) 
-foreach l of local levels {
-	use child, clear
-	keep if city=="`l'"  
-	matchit id name_dob using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy`l'.dta", idusing(id) txtusing(name_dob) override
-	save child`l', replace
-}
-*/
 
 merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\collapsed_child_xy"
 rename _merge childmerge
