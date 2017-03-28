@@ -12,7 +12,6 @@ log using "samples for christian.smcl", text replace
 use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
 
 **if I force these to be igg negative for denv and chikv, there aren't enough samples**
-keep if chikvpcrresults_dum !=1 & denvpcrresults_dum !=1
 tab severemalaria
  
 gen christian_groups = . 
@@ -23,10 +22,11 @@ replace christian_groups =4 if cohort ==2 & malariapositive_dum2==0
 
 tab christian_groups
 table1, vars(age conts\) by(christian_groups) 
-keep christian_groups age studyid malariapositive_dum2 severemalaria cohort chikvpcrresults_dum denvpcrresults_dum 
-keep if christian_groups !=. 
-*try to get similar ages
-keep if age<=5 & age>=3 | christian_groups ==1
+
+keep christian_groups age gender studyid malariapositive_dum2 severemalaria cohort chikvpcrresults_dum denvpcrresults_dum stanfordchikvigg_ stanforddenvigg_  species  parasite_count_lab parasite_count_hcc parasitelevel_desc parasite_count_all all_symptoms_*
+order  studyid christian_groups age gender malariapositive_dum2 severemalaria cohort chikvpcrresults_dum denvpcrresults_dum stanfordchikvigg_ stanforddenvigg_  species  parasite_count_lab parasite_count_hcc parasitelevel_desc parasite_count_all all_symptoms_*
+
 tab christian_groups 
+
 table1, vars(age conts\) by(christian_groups) 
-outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\christian_samples.csv", comma names replace
+export excel using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\christian_samples.xls", firstrow(variables) replace

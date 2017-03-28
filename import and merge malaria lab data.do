@@ -159,8 +159,8 @@ foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
 		rename *, lower
 		destring _all, replace
 		ds, has(type string) 
-		foreach v of varlist `r(varlist)' { 
-				replace `v' = lower(`v') 
+			foreach v of varlist `r(varlist)' { 
+					replace `v' = lower(`v') 
 			}
 		dropmiss, force
 		dropmiss, force obs
@@ -182,8 +182,7 @@ foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
 
 save `dataset', replace
 }
- 
-
+ use 3rdFU, clear
 append using "Ukunda" "Msambweni" "1stFU" "2ndFU" "Initial" "Obama" "Chulaimbo-Mbaka_Oromo", gen(append)
 
 encode gender, gen(sex)
@@ -242,17 +241,18 @@ drop suffix
 
 	bysort id_wide visit_int: gen dup = _n
 	drop if dup >1
+
 	drop if id_wide ==""
 	drop if visit_int==.
 	
 	isid id_wide visit_int
 
 foreach var in dob{
-gen `var'1 = date(`var', "MDY" ,2050)
-format %td `var'1 
-drop `var'
-rename `var'1 `var'
-recast int `var'
+	gen `var'1 = date(`var', "MDY" ,2050)
+	format %td `var'1 
+	drop `var'
+	rename `var'1 `var'
+	recast int `var'
 }
 
 	foreach var in today date{
@@ -264,10 +264,11 @@ recast int `var'
 	}
 
 order *200
-egen parasite_count= rowtotal( pf200 - none200)
+
+egen parasite_count= rowtotal(pf200 - none200)
 gen  malariapositive_dum = .
 replace malariapositive_dum = 0 if parasite_count==0
-replace malariapositive_dum  = 1 if parasite_count >0 & parasite_count<. 
+replace malariapositive_dum = 1 if parasite_count >0 & parasite_count<. 
 
 gen species_cat = "" 
 replace species_cat = "pf" if pf200 >0 & pf200 <.
@@ -320,5 +321,6 @@ drop gametocytes2  gametocytes1
 rename  treatment1 malariatreatment1
 rename  treatment2 malariatreatment2
 rename  parasitelevel  parasitelevel_desc
+bysort id_cohort city: tab species_cat
+tab gametocytes 
 save malaria, replace
-

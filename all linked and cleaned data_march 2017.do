@@ -9,11 +9,12 @@ log using "LOG all linked and cleaned data.smcl", text replace
 set scrollbufsize 100000
 set more 1
 set scrollbufsize 100000
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data"
-local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\draft_figures_tables/"
-local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data"
+local figures "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\draft_figures_tables/"
+local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
+
 *add in the pcr data from box and from googledoc. 
 bysort id_wide visit: gen dup = _n
 drop id_childnumber 
@@ -237,6 +238,7 @@ encode id_wide, gen(id)
 egen name_dob = concat (id_childnumber space child_dob_month space child_dob_year space childname_long)
 save child, replace
 
+/*
 gen childcity = city if city !="msambweni" & city !="milani" & city !="nganja"
 levelsof childcity , local(levels) 
 foreach l of local levels {
@@ -245,14 +247,13 @@ foreach l of local levels {
 	matchit id name_dob using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy`l'.dta", idusing(id) txtusing(name_dob) override
 	save child`l', replace
 }
-stop 
+*/
 
-*merge m:m city houseid id_childnumber child_dob_year child_dob_month  using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy"
+merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\collapsed_child_xy"
 rename _merge childmerge
 tab childmerge
 order hhmerge childmerge city houseid id_childnumber child_dob_year child_dob_month child_dob_day childname1 childname2 childname3
-
-stop
+stop 
 
 *..............................i can't get a unique and matching id between the two databases.................................................
 *merge m:m city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\xy"
@@ -1062,8 +1063,7 @@ foreach var in mosquitobites outdooractivity  {
 replace `var' = . if `var' ==8
 }
 sum mosquitobites 
-egen mosquito_exposure_index = rowtotal(mosquitobites outdooractivity )
-
+egen mosquito_exposure_index = rowtotal(mosquitobites outdooractivity) if mosquitobites !=. | outdooractivity!=. 
 *mosquito prevention index
 foreach var in mosquitocoil {
 replace `var' = . if `var' ==8
@@ -1085,11 +1085,12 @@ replace sleepbednet_dum = 1 if sleepbednet ==3
 replace sleepbednet_dum = 2 if sleepbednet ==2
 replace sleepbednet_dum = 3 if sleepbednet ==1
 
-foreach var in mosquitocoil sleepbednet_dum windows_protect {
+foreach var in mosquitocoil sleepbednet_dum windows_protect{
 replace `var' = . if `var' ==8
 }
+
 sum mosquitocoil sleepbednet_dum windows_protect  
-egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_protect)
+egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_protect) if mosquitocoil !=. | sleepbednet_dum !=. | windows_protect!=.  
 ********end mosquito***
 
 **hcc ses index**
@@ -1171,7 +1172,8 @@ egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_prote
 					
 				order hccsesindex*
 				sum  hccsesindeximprovedfuel_index - hccsesindexland_index
-				egen hccses_index_sum= rowtotal(hccsesindeximprovedfuel_index - hccsesindexland_index)
+				egen hccses_index_sum= rowtotal(hccsesindeximprovedfuel_index - hccsesindexland_index)  if hccsesindeximprovedfuel_index !=. | hccsesindexland_index !=.  
+				stop 
 				*drop hccsesindeximprovedfuel_index - hccsesindexland_index
 
 			ds, has(type string) 
@@ -1266,7 +1268,6 @@ xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
 	*collapse these two groups 
 	gen collapsed_apparent_groups = apparent_groups  
 	replace collapsed_apparent_groups =2 if collapsed_apparent_groups ==3
-	
 	
 compare parasite_count_lab parasite_count_hcc 
 gen parasite_count_all=.	
