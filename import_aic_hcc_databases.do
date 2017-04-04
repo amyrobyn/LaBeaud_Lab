@@ -15,6 +15,66 @@ local importcoastaic "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\A
 local importwesthcc "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\HCC\HCC Latest/"
 local importwestaic "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC\AIC Latest/"
 
+*coast hcc
+import excel "`importcoasthcc'Ukunda HCC Initial 30Nov16.xls", sheet("#LN00059") firstrow clear
+	dropmiss, force piasm  trim
+	dropmiss, force obs piasm  trim
+	foreach var of varlist _all{
+		capture rename `var', lower
+	}
+	ds, has(type string) 
+		foreach var of var `r(varlist)'{
+		capture tostring `var', replace 
+		capture  replace `var'=lower(`var')
+			}	
+tostring *, replace force
+save "Ukunda HCC Initial", replace
+
+import excel "`importcoasthcc'Ukunda HCC Follow one  06Nov16.xls", sheet("#LN00060") firstrow clear
+	dropmiss, force piasm  trim
+	dropmiss, force obs piasm  trim
+	foreach var of varlist _all{
+		capture rename `var', lower
+	}
+	ds, has(type string) 
+		foreach var of var `r(varlist)'{
+		capture tostring `var', replace 
+		capture  replace `var'=lower(`var')
+			}	
+			
+	tostring *, replace force
+save "Ukunda HCC Follow one", replace
+
+import excel "`importcoasthcc'Ukunda HCC Follow two  06Nov16.xls", sheet("#LN00061") firstrow clear
+	dropmiss, force piasm  trim
+	dropmiss, force obs piasm  trim
+	foreach var of varlist _all{
+		capture rename `var', lower
+	}
+	ds, has(type string) 
+		foreach var of var `r(varlist)'{
+		capture tostring `var', replace 
+		capture  replace `var'=lower(`var')
+			}	
+			
+	tostring *, replace force
+save "Ukunda HCC Follow two", replace
+
+import excel "`importcoasthcc'Ukunda HCC Follow three  06Nov16.xls", sheet("#LN00056") firstrow clear
+	dropmiss, force piasm  trim
+	dropmiss, force obs piasm  trim
+	foreach var of varlist _all{
+		capture rename `var', lower
+	}
+	ds, has(type string) 
+		foreach var of var `r(varlist)'{
+		capture tostring `var', replace 
+		capture  replace `var'=lower(`var')
+			}	
+			
+	tostring *, replace force
+save "Ukunda HCC Follow three", replace
+
 import excel "`importcoasthcc'Msambweni HCC Initial 30Nov16.xls", sheet("#LN00024") firstrow clear
 dropmiss, force piasm  trim
 dropmiss, force obs piasm  trim
@@ -42,9 +102,7 @@ recast int `var'
 }
 tostring *, replace force 
 save "Msambweni HCC Initial 06Nov16", replace
-	 
-
-
+ 
 import excel "`importcoasthcc'Msambweni HCC Follow one 30Nov16.xls", sheet("#LN00025") firstrow clear
 dropmiss, force piasm  trim
 dropmiss, force obs piasm  trim
@@ -66,7 +124,6 @@ recast int `var'
 }
 tostring *, replace force
 save "Msambweni HCC Follow one 06Nov16", replace
-
 
 import excel "`importcoasthcc'Msambweni HCC Follow two 30Nov16.xls", sheet("#LN00026") firstrow clear
 dropmiss, force piasm  trim
@@ -114,7 +171,6 @@ rename `var'1 `var'
 recast int `var'
 }
 		
-
 
 tostring *, replace force
 save "Msambweni HCC Follow three 06Nov16", replace
@@ -322,7 +378,7 @@ capture tostring hospitalname1 numhospitalized , replace
 tostring *, replace force
 save "West_AIC_INITIAL", replace
 
-append using "Msambweni HCC Follow three 06Nov16" "Msambweni HCC Follow two 06Nov16" "Msambweni HCC Follow one 06Nov16" "Msambweni HCC Initial 06Nov16"  "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta" "Western_AICFU-Katherine.dta" "Coast_AIC_Init-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" , gen(append) 
+append using "Ukunda HCC Initial" "Ukunda HCC Follow one" "Ukunda HCC Follow two" "Ukunda HCC Follow three"  "Msambweni HCC Follow three 06Nov16" "Msambweni HCC Follow two 06Nov16" "Msambweni HCC Follow one 06Nov16" "Msambweni HCC Initial 06Nov16"  "west_HCC_1st Followup.dta" "west_HCC_2nd Followup.dta" "west_HCC_3rd Followup.dta" "west_HCC_Initial.dta" "Western_AICFU-Katherine.dta" "Coast_AIC_Init-Katherine.dta" "FILE2  AIC Ukunda Malaria.dta" "FILE1   4 coast_aicfu_18apr16.dta" , gen(append) 
 
 replace hospitalname2 = "3" if hospitalname2 =="3) mswambweni district hospital"
 replace hospitalname2 = "5" if hospitalname2 =="5) other"
@@ -398,8 +454,34 @@ save merged, replace
 	tab id_visit 
 	gen id_childnumber = ""
 	replace id_childnumber = substr(studyid, +4, .)
+	
+gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
+tab notnumeric	/*==1 where nonnumeric characters*/
+list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
+
+	
+	
+gen suffix = "" 	
+foreach suffix in a b c d e f g h {
+	replace suffix = "`suffix'" if strpos(id_childnumber, "`suffix'")
+	replace id_childnumber = subinstr(id_childnumber, "`suffix'","", .)
+	}
+destring id_childnumber, replace 	 
+tostring id_childnumber, replace
+egen id_childnumber2 = concat(id_childnumber suffix)
+drop id_childnumber
+rename id_childnumber2 id_childnumber
 	order id_cohort id_city id_visit id_childnumber studyid
 	egen id_wide = concat(id_city id_cohort id_childnum)
+drop suffix
+
+duplicates tag id_wide id_visit, gen(id_wide_id_visit_dup)
+tab id_wide_id_visit_dup
+outsheet id_wide_id_visit_dup studyid id_wide id_visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\hcc_aic_interviews_wide_id_visit_dup.csv" if id_wide_id_visit_dup>0, comma names replace
+drop if id_wide_id_visit_dup>0
+isid id_city id_cohort  id_childnumber id_visit 
+isid id_wide id_visit
+
 
 save temp, replace
 	
@@ -408,3 +490,60 @@ save temp, replace
 	rename siteint site
 destring *, replace
 save all_interviews, replace
+
+use all_interviews, replace
+*export the malaria results for coast hcc to the lab results section.
+keep if id_city == "u"|id_city == "g"|id_city == "l" & id_cohort =="c"
+dropmiss, force
+dropmiss, obs force
+lookfor childnumber
+keep id_wide id_visit id_cohort id_city species prev density gametocytes id_childnumber
+egen studyid = concat(id_city id_cohort id_visit id_childnumber)
+order studyid  id_wide id_city id_cohort id_visit id_childnumber species prev density gametocytes
+outsheet using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\coast_hcc_malaria.csv", replace comma names
+
+*create list of those without demogrpahy data from cornelius
+		import excel using "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\id's with no demography data_cornelius_march3_2017.xlsx", clear firstrow
+			gen no_demography =1
+			replace StudyID = lower(StudyID)
+			rename StudyID studyid 
+			replace studyid = subinstr(studyid, ".", "",.) 
+			replace studyid = subinstr(studyid, "/", "",.)
+			replace studyid = subinstr(studyid, " ", "",.)
+
+				*take visit out of id
+								forval i = 1/3 { 
+									gen id`i' = substr(studyid, `i', 1) 
+								}
+		*gen id_wid without visit						 
+			rename id1 id_city  
+			rename id2 id_cohort  
+			rename id3 id_visit 
+			tab id_visit 
+			gen id_childnumber = ""
+			replace id_childnumber = substr(studyid, +4, .)
+			
+		gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
+		tab notnumeric	/*==1 where nonnumeric characters*/
+		list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
+
+			
+			
+		gen suffix = "" 	
+		foreach suffix in a b c d e f g h {
+			replace suffix = "`suffix'" if strpos(id_childnumber, "`suffix'")
+			replace id_childnumber = subinstr(id_childnumber, "`suffix'","", .)
+			}
+		destring id_childnumber, replace 	 
+		tostring id_childnumber, replace
+		egen id_childnumber2 = concat(id_childnumber suffix)
+		drop id_childnumber
+		rename id_childnumber2 id_childnumber
+			order id_cohort id_city id_visit id_childnumber studyid
+			egen id_wide = concat(id_city id_cohort id_childnum)
+		drop suffix
+
+		duplicates tag id_wide id_visit, gen(id_wide_id_visit_dup)
+		tab id_wide_id_visit_dup
+keep studyid id_wide  id_visit no_demography
+save "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\no_demography", replace

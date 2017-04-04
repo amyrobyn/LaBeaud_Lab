@@ -1,5 +1,5 @@
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data"
-insheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent inapparent\data\2009 KENYA CENUS SUMMARY AGE-GENDER BIN 3-2017.csv", comma clear names
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\"
+insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\elysse- apparent inapparent\data\2009 KENYA CENUS SUMMARY AGE-GENDER BIN 3-2017.csv", comma clear names
 	foreach var of varlist  agegroup sex city{
 		replace `var' = lower(`var')	
 	}
@@ -18,5 +18,3 @@ insheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\elysse- apparent ina
 	egen strata= concat(agegroup gender city)
 
 	save pop, replace
-
-*end merge kenya 2009 census

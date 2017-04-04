@@ -2,47 +2,45 @@
  *amy krystosik                  							  *
  *built environement hcc									  *
  *lebeaud lab               				        		  *
- *last updated feb 2, 2017 									  *
+ *last updated march 29, 2017 									  *
  **************************************************************/ 
 
- /*
- Impact of built environment/home environment on vectorborne disease risk (Amy)
-Household information (windows, roof, water sources, etc.)
-DV notes: cleaning village location data
+/*Impact of built environment/home environment on vectorborne disease risk (Amy)
+ Household information (windows, roof, water sources, etc.)
 Vector abundance and rainfall/case (Amy)
 */
 
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\built environement hcc"
 capture log close 
 log using "built environement hcc.smcl", text replace 
 set scrollbufsize 100000
 set more 1
-
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\built environement hcc"
-local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 
 *incidence
-use "`data'incident_malaria", clear
-keep incident_malaria studyid id_wide visit
-save "incident_malaria", replace
+use "`data'incident_malaria$S_DATE", clear
+keep incident_malaria id_wide visit
+save "incident_malaria$S_DATE", replace
 
-use "`data'inc_chikv", clear
-keep inc_chikv studyid id_wide visit
-save "inc_chikv", replace
+use "`data'inc_chikv$S_DATE", clear
+keep inc_chikv  id_wide visit
+save "inc_chikv$S_DATE", replace
 
-use "`data'inc_denv", clear
-keep inc_denv studyid id_wide visit
-save "inc_denv", replace
+use "`data'inc_denv$S_DATE", clear
+keep inc_denv id_wide visit
+save "inc_denv$S_DATE", replace
 
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
-merge 1:1 id_wide visit using "inc_denv"
+use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence$S_DATE", replace
+merge 1:1 id_wide visit using "inc_denv$S_DATE"
 drop _merge
-merge 1:1 id_wide visit  using "inc_chikv"
+merge 1:1 id_wide visit  using "inc_chikv$S_DATE"
 drop _merge
-merge 1:1 id_wide visit using "incident_malaria"
+merge 1:1 id_wide visit using "incident_malaria$S_DATE"
 drop _merge
 
 *hcc only 
 keep if cohort ==2
+capture drop id
 encode id_wide, gen(id)		
 lookfor year month
 tab year month
@@ -85,32 +83,18 @@ sum toxorhynchitesoutdoor  toxorhynchites
 
 
 *water
-tab head_of_household_water_collecti 
-tab head_of_household_water_collect0 
+tab hoh_water_collecti 
 gen water_cotainers = . 
-
-replace water_cotainers = 0 if head_of_household_water_collecti ==""|head_of_household_water_collecti =="n/a"
-replace water_cotainers = 1 if head_of_household_water_collecti !="" & water_cotainers ==.
-
-replace water_cotainers = 0 if head_of_household_water_collect0 ==""|head_of_household_water_collect0 =="n/a" & water_cotainers ==.
-replace water_cotainers = 1 if head_of_household_water_collect0 !="" & water_cotainers ==.
-
-replace water_cotainers = 0 if watercolltype  ==""| watercolltype =="n/a" & water_cotainers ==.
-replace water_cotainers = 1 if watercolltype  !="" & water_cotainers ==.
-
-replace water_cotainers = 0 if watercollectitems ==""| watercollectitems  =="n/a" & water_cotainers ==.
+replace water_cotainers = 1 if hoh_water_collecti !="" & water_cotainers ==.
 replace water_cotainers = 1 if watercollectitems !="" & water_cotainers ==.
-
-
 replace water_cotainers = watercollobjects if water_cotainers ==.
 replace water_cotainers = objectwater if water_cotainers ==.
-
-drop objectwater watercollobjects watercollectitems watercolltype  head_of_household_water_collect0 head_of_household_water_collecti 
+drop objectwater watercollobjects watercollectitems watercolltype  hoh_water_collecti 
 
 *livestock
-sum keep_livestock  habits_livestock_location habits_which_livestock_livestock habits_which_livestock_livestoc1 habits_attend_livestock_attend_l habits_attend_livestock_attend_0 habits_livestock_contact_livesto habits_livestock_contact_livest0 
+sum  livestock_location livestock_contact keep_livestock which_livestock which_other_livestock attend_livestock
 
-foreach var in keep_livestock  habits_livestock_location habits_which_livestock_livestock habits_which_livestock_livestoc1 habits_attend_livestock_attend_l habits_attend_livestock_attend_0 habits_livestock_contact_livesto habits_livestock_contact_livest0 {
+foreach var in  livestock_location livestock_contact keep_livestock which_livestock which_other_livestock attend_livestock{
 	tab `var'
 }
 
@@ -124,19 +108,18 @@ sum yellowfever childvaccination
 
 rename educlevel educ
 
-foreach var in  hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe tribe tribeother hh_tribe hh_tribe_other{
+foreach var in   tribe tribeother hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe{
 tab `var'
 }
-egen tribe2 = concat( hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe tribe tribeother hh_tribe hh_tribe_other)
-drop hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe tribe tribeother hh_tribe hh_tribe_other 
+
+egen tribe2 = concat(tribe tribeother hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe)
+drop  tribe tribeother hoc_tribe hoc_othtribe hoh_tribe hoh_othtribe
 rename tribe2 tribe
 encode tribe, gen(tribe_int)
 
 save builtenvironment, replace 
 
 bysort group: sum age gender ses_index_sum tribe_int educ
-egen village_elisa = concat(village group)
-
 
 outsheet using "built environemnt.csv", comma names replace
 
@@ -152,15 +135,18 @@ replace female = gender  if female ==.
 rename motor_vehicle  ownmoterbike
 
 destring *, replace
-replace land_index = "0none" if land_index =="none"
-replace land_index = "1rent" if land_index =="rent"
-replace land_index = "2family" if land_index =="family"
-replace land_index = "3own" if land_index =="own"
-
-encode land_index, gen(ownland2)
-
+gen ownland2= land_index
+capture drop id
+encode id_wide, gen(id)
+stset id visit_int
+preserve
+	order gps*
+	keep id_wide visit city cohort gps* *dum stanford*
+	outsheet using "to_map__$S_DATE.csv", comma names replace
+restore 
+stop 
 *here are two options for your logistic regression
-
+/*
 bysort group: sum age ses_index_sum_pct educ gender tribe_int 
 *table1, by(group) vars(age conts \ses_index_sum_pct cat \educ cat \gender cat \tribe_int cat \) saving("table1a.xls", replace) test missing
 *table1, vars(age conts \ses_index_sum_pct cate \educ cate \gender cate \tribe_int cate \) saving("table1b.xls", replace) test missing
@@ -177,12 +163,11 @@ bysort group: sum windows ownland2 ownmoterbike i.city_int female adult keep_liv
 bysort group: sum windows ownland2 ownmoterbike city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum 
 
 *logit group windows ownland2 ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum, or 
-bysort group: sum windows ownland2 ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum
-
-outreg2 using logit1.xls, replace
+*bysort group: sum windows ownland2 ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index  ses_index_sum
+*outreg2 using logit1.xls, replace
 
 *logit group  i.city_int ses_index_sum_pct  educ childage , or
-outreg2 using logit2.xls, append
+*outreg2 using logit2.xls, append
 
 gen groupdum =.
 replace groupdum= 0 if group ==0
@@ -194,26 +179,55 @@ table1, by(groupdum) vars(ownland2 cat \ ownmoterbike cat \ childvillage_int con
 bysort groupdum: sum ownland2 ownmoterbike childvillage female adult age ses_index_sum_pct educ gender tribe_int 
 table1, by(mal_denv_chikv_count)  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \ses_index_sum_pct cat \educ cat \gender bin \tribe_int cat \) saving("table2_group_$S_DATE.xls", replace) test missing
 */
-foreach fail in inc_chikv inc_den{
+*/
+/*incident data is not enough to run these multivariate models right now
+foreach fail in  inc_den inc_chikv {
 preserve
-	keep if `fail'!=.
-	dropmiss, force
-		 stset survivaltime, failure(`fail') id(id_wide) 
-		 stsum
+		 stset survivaltime, failure(`fail') id(id) 
+		 *stsum
 		 stcoxkm, by(site)
-		 bysort `fail': sum
-		 stcox educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies 
+		 *bysort `fail': sum
+		 stcox educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies season i.site_int i.city_int
 		 estat phtest
 	restore
 }
 
-preseve
-	keep if incident_malaria !=.
-	dropmiss, force
-	stset survivaltime, failure(incident_malaria ) id(id_wide) 
+stset survivaltime, failure(incident_malaria) id(id_wide) 
 	stsum
 	stcoxkm, by(site)
-	bysort incident_malaria : sum 
-	stcox educ gender age aedesaegyptiindoor  mosq_prevention_index  ownmoterbike i.city_int female adult keep_livestock   mosquito_exposure_index  mosq_prevention_index   temprangeanomalies rainfallanomalies
+	bysort incident_malaria: sum educ gender age aedesaegyptiindoor  ownmoterbike i.city_int female adult keep_livestock   temprangeanomalies rainfallanomalies
+    stcox educ gender age aedesaegyptiindoor  ownmoterbike i.city_int female adult keep_livestock   temprangeanomalies rainfallanomalies
     estat phtest
+*/
+
+dropmiss, force
+capture drop id
+encode id_wide, gen(id)
+encode site, gen(site_int)
+
+preserve
+	bysort id_wide: egen malariapositive_dummax = max(malariapositive_dum)
+	bysort id_wide: egen stanforddenvigg_max = max(stanforddenvigg_)
+	bysort id_wide: egen stanfordchikvigg_max = max(stanfordchikvigg_)
+
+	keep if visit =="a"
+	table1, by(malariapositive_dum)  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_malariapositive_dum_$S_DATE.xls", replace) test missing
+	table1, by(stanforddenvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanforddenvigg_$S_DATE.xls", replace) test missing
+	table1, by(stanfordchikvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanfordchikvigg_$S_DATE.xls", replace) test missing
+
+sum  hccsesindeximprovedfuel_index hccsesindeximprovedwater_index hccsesindeximprovedlight_index hccsesindextelephone hccsesindexradio hccsesindexown_tv hccsesindexbicycle hccsesindexmotor_vehicle hccsesindexdomestic_worker hccsesindexownflushtoilet hccsesindexlatrine_index hccsesindexland_index hccsesindexrooms hccsesindexbedrooms hccsesindeximprovedroof_index hccsesindeximprovedfloor_index
+
 restore
+
+tsset id_wide_int visit_int
+xtdescribe
+xttab stanforddenvigg_ 
+
+xtlogit stanforddenvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies i.site_int, re
+
+xtlogit stanfordchikvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies i.site_int, re
+
+xtlogit malariapositive_dum  educ gender age aedesaegyptiindoor  ownmoterbike i.site_int female adult temprangeanomalies rainfallanomalies, re
+
+bysort site cohort stanforddenvigg_ : fsum hccsesi~f_index hccsesi~r_index  numberofwindows sleepbywindow windowsscreened  hoh_windows sleep_close_w~w drinkingwater  other_water_s~e  light   flooring improvedfloor~x water_cotainers educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies site_int
+

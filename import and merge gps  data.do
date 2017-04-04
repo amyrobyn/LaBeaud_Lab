@@ -25,7 +25,7 @@ tab houseid_city_dup
 outsheet using msambweni_houseid_city_dup.csv if houseid_city_dup>0, comma names replace
 drop if houseid_city_dup>0
 isid city houseid 
-tostring villhouse village, replace
+tostring villhouse village , replace
 save msmbweni_xy1, replace
 
 import excel "C:\Users\amykr\Box Sync/DENV CHIKV project/Coast Cleaned/Demography/Demography Latest/Ukunda_HCC_children_demography Mar17.xls", sheet("#LN00065") firstrow clear
@@ -47,8 +47,8 @@ gen city ="Ukunda"
 gen houseid =villhouse
 order houseid 
 tostring houseid , replace
-replace houseid = substr(houseid, 2, .)
-destring houseid , replace
+gen houseid_novillage = substr(houseid, 2, .)
+destring houseid houseid_novillage , replace
 rename personid id_childnumber 
 isid city houseid id_childnumber 
 
@@ -108,10 +108,10 @@ rename dob child_dob
 	tab child_dob_month 
 	tab child_dob_year
 	tab child_dob_day 
-tostring villhouse village, replace
+tostring villhouse village id_childnumber, replace
 save ukunda_xy2, replace
 
-import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest/West Demography Database", sheet("Sheet1") firstrow clear
+import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest/Demography_Data29mar2017", sheet("Sheet1") firstrow clear
 duplicates drop
 	rename *, lower
 	gen city = village
@@ -119,7 +119,19 @@ duplicates drop
 	
 	gen houseid  = house_number
 	gen id_childnumber = chid_individualid
-	duplicates tag city houseid id_childnumber , gen(city_houseid_id_childnumber_dup)
+	replace studyid = subinstr(studyid, "/", "", .)
+	gen chid_individualid2 = substr(studyid, 10, .)
+	gen suffix = "a" if strpos(chid_individualid2, "A")
+	replace chid_individualid2 = subinstr(chid_individualid2 , "A", "", .)
+	destring chid_individualid2, replace  
+	tostring chid_individualid2, replace
+	egen chid_individualid3 = concat(chid_individualid2 suffix)
+	order chid_individualid3  
+	tostring id_childnumber , replace
+	replace id_childnumber = chid_individualid3 
+	drop chid_individualid3  chid_individualid2 suffix 
+	
+	duplicates tag city houseid id_childnumber , gen(city_houseid_id_childnumber_dup)	
 	tab city_houseid_id_childnumber_dup
 	outsheet using west_city_houseid_id_childnumber_dup.csv if city_houseid_id_childnumber_dup>0, comma names replace
 	drop if city_houseid_id_childnumber_dup>0

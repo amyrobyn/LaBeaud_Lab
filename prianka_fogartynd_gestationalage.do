@@ -2,13 +2,13 @@ set graphics on
 capture log close 
 set scrollbufsize 100000
 set more 1
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka- fogarty nd"
 log using "fogartynd_gestationalage.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka- fogarty nd"
-local tables "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka- fogarty nd\tables\"
-insheet using "FogartyNDCHIKV_DATA_2017-03-21_1137.csv", comma clear
+local tables "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka- fogarty nd\tables\"
+insheet using "FogartyNDCHIKV_DATA_2017-04-04_1323.csv", comma clear
 
 
 replace gestational_age_weeks = . if gestational_age_weeks==99
@@ -40,10 +40,13 @@ foreach var in trimester symptom_duration pregnancy_illness birth_time opioids c
 }
 *drop if pregnant ==99 | pregnant ==. 
 tab pregnant ever_had_chikv, m
+tab result_mother ever_had_chikv, m
+stop 
+tab pregnant result_mother, m
 
 gen preg_chikvpos = .
-replace preg_chikvpos = 1 if pregnant ==1 
-replace preg_chikvpos = 0 if pregnant == 0 | ever_had_chikv ==0
+replace preg_chikvpos = 1 if result_mother==1 & pregnant ==1
+replace preg_chikvpos = 0 if result_mother==0
 tab preg_chikvpos 
 drop if trimester ==. & preg_chikvpos ==1
  
@@ -251,7 +254,7 @@ order preg_chikvpos
 outsheet using final_data.csv, replace comma names
 
 tab  hospitalized_pregnancy  preg_chikvpos , chi2
-
+replace result_child =. if result_child ==99
 *tables
 *demographic tables
 
@@ -267,4 +270,4 @@ table1, vars(symptoms___1 bine\ symptoms___2 bine\ symptoms___3 bine\ symptoms__
 table1, vars(symptoms___1 cate\ symptoms___2 cate\ symptoms___3 cate\ symptoms___4 cate\ symptoms___5 cate\ symptoms___6 cate\ symptoms___7 cate\ symptoms___8 cate\ symptoms___9 cate\ symptoms___10 cate\ symptoms___11 cate\ symptoms___12 cate\ symptoms___13 cate\ symptoms___14 cate \ symptoms___15 cate\ symptoms___16 cate\ symptoms___17 cate \ symptoms___18 cate\ symptoms___19 cate\ symptoms___20 cate \ symptoms___21 cate\ symptoms___22 cate\ symptoms___23 cate\ symptoms___24 cate\ symptoms___25 cate\ symptoms___26 cate \ symptoms___27 cate \ symptoms___28 cate \ symptoms___29 cate \ symptoms___30 cate \ symptoms___31 cate \ symptoms___32 cate \ symptoms___33 cate \ symptoms___34 cate \ symptom_duration conts)  by(chikv_preg_non) saving("`tables'symptoms_chikv_preg_non_$S_DATE.xls", replace) test 
 
 *breakdown_of_pregnancy_outcomes 
-table1, vars(count_abp cate\ count_lab_complic cate\ count_baby_health cate\ count_preg_ill cate\ related_caesarean  cate \ preg_ill_gest_diab  cate \ preg_ill_hyperemesis_gr  cate \ preg_ill_gastroenteritis  cate \ preg_ill_uti  cate \ preg_ill_syphillis  cate \ preg_ill_pv_bleed  cate \ preg_ill_sickle_cell  cate \ preg_ill_placental_abruption  cate \  preg_ill_acid_reflux  cate \ preg_ill_breach  cate \ preg_ill_anemia  cate \ baby_health_sickle_cell  cate \ baby_health_respiratory  cate \ baby_health_jaundice  cate \ baby_health_nicu  cate \ baby_health_murmur  cate \ baby_health_chikv  cate \ baby_health_anemia  cate \ baby_health_allergies  cate \ lab_complic_swollen  cate \ lab_complic_prolonged_labour  cate \ lab_complic_placenta_previa  cate \ lab_complic_cord_around_neck  cate \ lab_complic_chikv_pain  cate \ lab_complic_tear  cate \ lab_complic_breach  cate \ lab_complic_hemorrhage  cate \ abp_rash  cate \ abp_eczema  cate \ abp_allergies  cate \ abp_sickle_cell  cate \ abp_sinus  cate \ abp_swelling  cate \ abp_seizures  cate \ abp_jaundice  cate \ abp_viral  cate \ abp_sepsis  cate \ abp_unknown  cate \ abp_malformation  cate \ abp_respiratory  cate \ abp_chikv cate \) by(preg_chikvpos) saving("`tables'breakdown_of_pregnancy_outcomes_$S_DATE.xls", replace) test 
+table1, vars(result_child bin \ count_abp cate\ count_lab_complic cate\ count_baby_health cate\ count_preg_ill cate\ related_caesarean  cate \ preg_ill_gest_diab  cate \ preg_ill_hyperemesis_gr  cate \ preg_ill_gastroenteritis  cate \ preg_ill_uti  cate \ preg_ill_syphillis  cate \ preg_ill_pv_bleed  cate \ preg_ill_sickle_cell  cate \ preg_ill_placental_abruption  cate \  preg_ill_acid_reflux  cate \ preg_ill_breach  cate \ preg_ill_anemia  cate \ baby_health_sickle_cell  cate \ baby_health_respiratory  cate \ baby_health_jaundice  cate \ baby_health_nicu  cate \ baby_health_murmur  cate \ baby_health_chikv  cate \ baby_health_anemia  cate \ baby_health_allergies  cate \ lab_complic_swollen  cate \ lab_complic_prolonged_labour  cate \ lab_complic_placenta_previa  cate \ lab_complic_cord_around_neck  cate \ lab_complic_chikv_pain  cate \ lab_complic_tear  cate \ lab_complic_breach  cate \ lab_complic_hemorrhage  cate \ abp_rash  cate \ abp_eczema  cate \ abp_allergies  cate \ abp_sickle_cell  cate \ abp_sinus  cate \ abp_swelling  cate \ abp_seizures  cate \ abp_jaundice  cate \ abp_viral  cate \ abp_sepsis  cate \ abp_unknown  cate \ abp_malformation  cate \ abp_respiratory  cate \ abp_chikv cate \) by(preg_chikvpos) saving("`tables'breakdown_of_pregnancy_outcomes_$S_DATE.xls", replace) test 

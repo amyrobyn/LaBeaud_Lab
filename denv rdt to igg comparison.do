@@ -19,6 +19,12 @@ fsum stanford_igg_fu_dum stanford_igg_initial_dum rdt_igg_dum
 diagt stanford_igg_fu_dum rdt_igg_dum
 tab stanford_igg_fu_dum rdt_igg_dum
 
+
+*compare rdt igg and stanford igg initial 
+fsum stanford_igg_fu_dum stanford_igg_initial_dum rdt_igg_dum
+diagt stanford_igg_initial_dum  rdt_igg_dum
+tab stanford_igg_initial_dum  rdt_igg_dum
+
 *compare rdt igm to igg seroconverters (those neg at initial and positive at follow up 
 bysort stanford_igg_initial_dum :  tab stanford_igg_fu_dum rdt_igm_dum, m
 

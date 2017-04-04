@@ -11,6 +11,18 @@ set more 1
 
 cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016"
 
+insheet using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\coast_hcc_malaria.csv", clear
+drop  id_wide id_city id_cohort id_visit id_childnumber
+		gen dataset = "coast_hcc_malaria"
+		rename *, lower
+		ds, has(type string) 
+		foreach v of varlist `r(varlist)' { 
+			replace `v' = lower(`v') 
+		}
+	dropmiss, force
+		destring _all, replace
+save coast_hcc, replace
+
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\AIC Ukunda malaria data April 2016.xls", sheet("Ukunda") firstrow clear
 		gen dataset = "AIC Ukunda malaria data April 2016"
 		rename *, lower
@@ -54,7 +66,7 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 		capture tostring studyid2, replace
 		drop studyid2
 		rename studyid1 studyid
-save Ukunda, replace
+save Ukunda_aic, replace
 
 import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\AICA Msambweni Malaria Data2016.xls", sheet("Msambweni data") firstrow clear
 		gen dataset = "AICA Msambweni Malaria Data2016"
@@ -183,7 +195,7 @@ foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
 save `dataset', replace
 }
  use 3rdFU, clear
-append using "Ukunda" "Msambweni" "1stFU" "2ndFU" "Initial" "Obama" "Chulaimbo-Mbaka_Oromo", gen(append)
+append using "Ukunda_aic" "coast_hcc" "Msambweni" "1stFU" "2ndFU" "Initial" "Obama" "Chulaimbo-Mbaka_Oromo", gen(append)
 
 encode gender, gen(sex)
 drop gender
@@ -264,17 +276,19 @@ foreach var in dob{
 order *200
 
 egen parasite_count= rowtotal(pf200 - none200)
+replace parasite_count = density if density !=. 
 gen  malariapositive_dum = .
 replace malariapositive_dum = 0 if parasite_count==0
 replace malariapositive_dum = 1 if parasite_count >0 & parasite_count<. 
 
-gen species_cat = "" 
+gen species_cat = species 
 replace species_cat = "pf" if pf200 >0 & pf200 <.
 replace species_cat = "pm" if pm200  >0 & pm200 <.
 replace species_cat = "po" if po200 >0 & po200 <.
 replace species_cat = "pv" if pv200 >0 & pv200 <.
 replace species_cat = "ni" if ni200 >0 & ni200 <.
 replace species_cat = "none" if none200 >0 & none200 <.
+tab species_cat species 
 
 order pf200 pm200 po200 pv200 ni200 none200 
 

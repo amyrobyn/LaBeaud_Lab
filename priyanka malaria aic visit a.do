@@ -8,10 +8,11 @@ capture log close
 log using "priyankamalariaaicvisita.smcl", text replace 
 set scrollbufsize 100000
 set more 1
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data"
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\data"
+
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
 
-local tables "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\"
+local tables "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\"
 *add in the pcr data from box and from googledoc. 
 bysort id_wide visit: gen dup = _n
 drop id_childnumber 
@@ -63,14 +64,13 @@ replace childheight = childheight/10 if childheight >500
 replace childheight = childheight *10 if childheight <20
 replace childweight=childweight/10 if childweight>200
 
-
-	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
+foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'==0
-	}
+}
 
 	foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry temperature resprate{ 
 		replace `var'=. if `var'<15
-	}
+}
 	
 levelsof agegender, local(levels) 
 foreach l of local levels {
@@ -302,9 +302,7 @@ foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 }
 
 
-replace outcomehospitalized = . if outcomehospitalized ==8
 dropmiss, force
-table1, vars(all_symptoms_halitosis cat \  all_symptoms_edema cat \  all_symptoms_appetite_change cat \  all_symptoms_constipation cat \  all_symptoms_behavior_change cat \  all_symptoms_altms cat \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional cat \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia cat \  all_symptoms_dysphrea cat \  all_symptoms_anaemia cat \  all_symptoms_seizure cat \  all_symptoms_itchiness cat \  all_symptoms_bleeding_symptom cat \  all_symptoms_sore_throat cat \  all_symptoms_sens_eyes cat \  all_symptoms_earache cat \  all_symptoms_funny_taste cat \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs cat \  all_symptoms_bloody_nose cat \  all_symptoms_rash cat \  all_symptoms_dysuria cat \  all_symptoms_nausea cat \  all_symptoms_respiratory cat \  all_symptoms_aches_pains cat \  all_symptoms_abdominal_pain cat \  all_symptoms_diarrhea cat \  all_symptoms_vomiting cat \  all_symptoms_chiils cat \  all_symptoms_fever cat \  all_symptoms_eye_symptom cat \  all_symptoms_other cat \  ) saving("table1_symptoms_by_group.xls", replace ) missing test
 
 order all_symptoms_*
 
@@ -332,10 +330,6 @@ foreach var in date_of_birth  {
 table1 , vars(temperature conts \ age contn \ gender cat \city cat \cohort cat \ heart_rate conts \ scleralicterus cat \ splenomegaly  cat \) saving("table2_by_group.xls", replace ) missing test 
 
 *severity
-replace outcomehospitalized  = . if outcomehospitalized ==8
-
-
-bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 
 drop _merge
 
 outsheet studyid gender age zwtukwho childweight  zhtukwho childheight  zbmiukwho childbmi  zhcaukwho  headcircum  if zbmiukwho  >5 & zbmiukwho  !=. |zbmiukwho  <-5 & zbmiukwho  !=. |zhcaukwho  <-5 & zhcaukwho  !=. |zhcaukwho  >5 & zhcaukwho  !=. using anthrotoreview.xls, replace
@@ -392,7 +386,7 @@ encode city, gen(city_s)
 
 local demograhpics dob date_of_birth  gender age  childoccupation educlevel otheduclevel mumeduclevel numsiblings childtravel wheretravel nightaway outdooractivity mosquitocoil sleepbednet mosquitobites everhospitalised reasonhospitalized1 reasonhospitalized2 counthosp othmumeduclevel othchildoccupation numhospitalized 
 local symptoms symptomcount all_symptoms*
-local severity outcome outcomehospitalized datehospit*alized 
+local severity outcome 
 local onset stageofdisease othstageofdisease stageofdiseasecoded  numdaysonset date_symptom_onset 
 local medical_history childcontact eversurgery reasonsurgery datesurgery gestational breastfed durationbfed othdurationbfed childvaccination yellowfever encephalitis pastmedhist othpastmedhist everpregnant hivpastmedhist 
 local meds currenttakingmeds currentmeds meds  othcurrentmeds hivmeds pcpdrugs antibiotic antimalarial antiparasitic ibuprofen paracetamol 
@@ -407,17 +401,21 @@ foreach group in `infection_groups' `severity' `demograhpics' `symptoms' `onset'
 	sum `group'
 }
 */
-replace outcomehospitalized = . if outcomehospitalized ==8
 replace outcome= . if outcome==99|outcome==6
-
 tab outcome
+*combine the last two groups
+replace outcome = 3 if outcome ==4
 
 *ordinal 
 gen othoutcome_dum = .
 replace othoutcome_dum  = 3 if othoutcome!=""
+tab othoutcome_dum  
+tab othoutcome
 replace othoutcome_dum  = 1 if strpos(othoutcome, "nutritional")
 replace outcome = othoutcome_dum  if outcome ==.
 drop othoutcome_dum
+
+tab outcome
 
 *binary
 gen othoutcome_dum = .
@@ -441,7 +439,7 @@ keep if temperature >=38
 replace severemalaria = 0 if malariapositive_dum == 1 & outcomehospitalized_all ==0
 replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all ==1
 tab severemalaria visit
-stop
+
 replace malariapositive_dum =. if malariapositive_dum ==99 
 replace outcome= . if outcome==99
 egen severemalaria_ord = concat(malariapositive_dum outcome) if outcome!=.
@@ -654,18 +652,9 @@ encode childvillage, gen(village_int)
 
 tabout childvillage using village.xls , replace
  
-*binary
-table1 , vars(splenomegaly  bin\ age contn \ gender bin\city cat \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\ ) by(severemalaria) saving("`tables'severmalaria_$S_DATE.xls", replace ) missing test
-table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ childvillage cat \ mosq_prevention_index contn \ mosquito_exposure_index contn) by(severemalaria) saving("`tables'table2_by_group_$S_DATE.xls", replace ) missing test
-logit severemalaria parasite_count age gender pastmedhist_dum  hivmeds zbmiukwho zhtukwho zwtukwho zhcaukwho mom_educ i.city_int i.site_int urban wealthindex hygieneindex , or
-outreg using logit2.doc, replace
-
-logit severemalaria parasite_count age gender pastmedhist_dum  hivmeds zbmiukwho zhcaukwho mom_educ i.city_int wealthindex hygieneindex , or
-outreg using logit1.doc, replace
-
 *ordinal
-table1 , vars(splenomegaly  bin\ age contn \ gender bin\city cat \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bin\  all_symptoms_jaundice cat\  all_symptoms_bleeding_symptom bin\  all_symptoms_imp_mental cat\  all_symptoms_mucosal_bleed_brs bin\  all_symptoms_bloody_nose cat\  all_symptoms_fever bin\  scleralicterus bin\ systolicbp70 bin\) by(severemalaria_ord) saving("`tables'severmalaria_ord_$S_DATE.xls", replace ) missing test
-table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age contn \ gender bin \ city cat \ site cat \ urban cat \ wealthindex contn \ ses_index_sum  contn  \ hygieneindex contn \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ mosq_prevention_index contn \ mosquito_exposure_index contn \ childvillage cat \ ) by(severemalaria_ord) saving("`tables'table2_by_group_ord_$S_DATE.xls", replace ) missing test
+table1 , vars(splenomegaly  bine\ age conts \ gender bine\city cate \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bine\  all_symptoms_jaundice cate\  all_symptoms_bleeding_symptom bine\  all_symptoms_imp_mental cate\  all_symptoms_mucosal_bleed_brs bine\  all_symptoms_bloody_nose cate\  all_symptoms_fever bine\  scleralicterus bine\ systolicbp70 bine\) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\severmalaria_ord_$S_DATE.xls", replace ) missing test
+table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cate \ age conts \ gender bine \ city cate \ site cate \ urban cate \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cate \sesindeximprovedwater_index cate \sesindeximprovedlight_index cate \sesindextelephone cate \sesindexradio cate \sesindextelevision cate \sesindexbicycle cate \sesindexmotorizedvehicle cate \sesindexdomesticworker cate \sesindexownflushtoilet cate \ pastmedhist_dum cate \ hivmeds cate \ pmhother_resp cate \ pmhsickle_cell  cate \ pmhpneumonia cate \ pmhintestinal_worms cate \ pmhmalaria cate \ pmhdiarrhea cate \ pmhdiabetes cate \ pmhseizure_disorder  cate \ pmhhiv cate \ pmhmeningitis  cate \ pmhtuberculosis cate \ pmhcardio_illness cate \ pmhasthma cate \ mosq_prevention_index conts \ mosquito_exposure_index conts \ childvillage cate \ ) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_ord_$S_DATE.xls", replace ) missing test
 
 *data export
 outsheet using "finaldataset_$S_DATE.csv", comma names replace

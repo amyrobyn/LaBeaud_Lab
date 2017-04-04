@@ -204,6 +204,7 @@ tab malariapositive_dum davidcoinfection
 						tab `var'_`symptom'
 						}
 			}	
+			
 drop symptms othersymptms fvrsymptms otherfvrsymptms 
 
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
@@ -290,6 +291,15 @@ egen all_symptoms_other3 = rowtotal(all_symptoms_other  all_symptoms_other2)
 drop all_symptoms_other2 all_symptoms_other
 rename all_symptoms_other3 all_symptoms_other
 
+/*set matsize 800
+pwcorr all_symptoms_*, sig bonferroni star(0.05) obs print(.10)
+estpost correlate all_symptoms_*, matrix
+
+esttab ., not unstack compress noobs
+capture bysort all_symptoms_*: eststo: estpost correlate all_symptoms_*, listwise
+
+estout est1 using "correlation_matrix.xls", replace 
+*/
 
 egen symptomcount = rowtotal(all_symptoms_*)
 ** *david medication
@@ -490,7 +500,9 @@ preserve
 		order davidcoinfection2 group studyid id_wide denvpcrresults_dum malariapositive_dum
 		sort davidcoinfection2
 restore
-
+tab outcomehospitalized 
+lookfor hospital
+stop 
 
 replace outcomehospitalized = . if outcomehospitalized ==8
 replace outcome= . if outcome==99|outcome==6
@@ -508,7 +520,6 @@ restore
 
 bysort group: tab symptomcount outcomehospitalized , chi2      
 bysort group: sum symptomcount outcomehospitalized , detail
-
 
 gen selected = .
 replace selected = 0 if malariapositive_dum==0 & denvpcrresults_dum==0

@@ -1,18 +1,18 @@
 /********************************************************************
  *amy krystosik                  							  		*
- *melisa Repeat malaria infections (Melisa)- aic only				*
+ *Repeat and incident malaria										*
  *lebeaud lab               				        		  		*
- *last updated march 18, 2017  							  			*
+ *last updated march 28, 2017  							  			*
  ********************************************************************/ 
 capture log close 
 set more 1
 set scrollbufsize 100000
-log using "LOG Repeat malaria infections (Melisa)- aic only.smcl", text replace 
-cd "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only"
-local figures "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\draft figures\"
-local data "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\data\"
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only"
+log using "LOG repeat and incident malaria infections .smcl", text replace 
+local figures "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\draft figures\"
+local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\Repeat malaria infections (Melisa)- aic only\data\"
 
-use "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
+use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence", replace
 *How many kids have gametocytes overall?
 
 /*Repeat malaria infections (Melisa)- aic only
@@ -26,7 +26,7 @@ How many kids have gametocytes?
 */
 
 dropmiss, force
-bysort id_wide: gen mal_freq = sum(malariapositive_dum )
+bysort id_wide: gen mal_freq = sum(malariapositive_dum)
 
 preserve
 	keep if malariapositive_dum ==1
@@ -62,8 +62,8 @@ save temp, replace
   		 rename malariapositive_dum2 all_malariapositive_dum
 		 rename malariapositive_dum lab_malariapositive_dum
   		 rename all_malariapositive_dum malariapositive_dum
-		 
-		local vars "lab_malariapositive_dum malariapositive_dum parasite_count_lab city species parasite_count_hcc gender age mosqbitefreq mosquitocoil mosquitobites mosquitoday mosquitonight mosquitobitefreq mosqbitedaytime mosqbitenight pos_neg pos_nega site zhcaukwho zwtukwho zhtukwho zbmiukwho chikvpcrresults_dum denvpcrresults_dum parasitelevel_desc year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index ses_index_sum_pct parasite_count_all"
+		 order id_wide visit_int
+		local vars "lab_malariapositive_dum malariapositive_dum parasite_count_lab city age species parasite_count_hcc gender mosqbitefreq mosquitocoil mosquitobites mosquitoday mosquitonight mosquitobitefreq mosqbitedaytime mosqbitenight site zwtukwho zhtukwho zbmiukwho parasitelevel_desc pos_neg pos_nega zhcaukwho chikvpcrresults_dum denvpcrresults_dum year season season_label seasonyear zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc urban mom_educ othoutcome_dum sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet ses_index_sum wealthindex hygieneindex pastmedhist_dum mosquito_exposure_index sleepbednet_dum mosq_prevention_index ses_index_sum_pct parasite_count_all"
 		reshape wide `vars', i(id_wide) j(visit_int)
 		order malariapositive_dum*
 	
@@ -133,39 +133,7 @@ save temp, replace
 			rename visit visit_int
 			tab visit_int incident_malaria
 			keep if incident_malaria !=.
-			save incident_malaria, replace 
-			save "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria", replace 
+			keep id_wide visit incident_malaria
+			save "incident_malaria$S_DATE", replace 
+			save "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria$S_DATE", replace 
 		restore
-
-************** start malaria prevalence**
-*		reshape long
-*		encode id_wide, gen(id)
-stop 
-		stset id visit_int
-
-		stgen repeatmalaria_dum = always(malariapositive_dum2==0 |malariapositive_dum2==. )
-		stgen when_malaria= when(malariapositive_dum2==1)
-		stgen prev_malaria= ever(malariapositive_dum2==1)
-
-		bysort id_wide: gen repeatmalaria_dum =0 if repeatmalaria_no==1
-		bysort id_wide: replace repeatmalaria_dum =1 if repeatmalaria_yes==1
-	
-		keep if repeatmalaria !=.
-		keep repeatmalaria id_wide malariapositive_dum* 
-		tab repeatmalaria 
-		
-reshape long 
-keep repeatmalaria id_wide malariapositive_dum* visit_int
-collapse repeatmalaria (min) visit_int, by(id_wide) 
-	tab repeatmalaria 
-save repeatmalaria, replace
-merge 1:1 id_wide visit_int using temp
-bysort repeatmalaria: sum age gender city  zhcaukwho zwtukwho zhtukwho zbmiukwho zaicb_heart_rate zaicb_childtemp zlen zwei zwfl zbmi zhc parasite_count*   zbmiukwho   zhtukwho   zwtukwho   zhcaukwho   age gender city site urban wealthindex ses_index_sum hygieneindex sesindeximprovedfloor_index sesindeximprovedwater_index sesindeximprovedlight_index sesindextelephone sesindexradio sesindextelevision sesindexbicycle sesindexmotorizedvehicle sesindexdomesticworker sesindexownflushtoilet pastmedhist_dum 
-
-tab repeatmalaria
-
-table1 , vars(season cat\ cohort cat \ all_meds_antimalarial cat \ species_cat cat \ parasite_count_lab conts \ gametocytes  cat \ age conts \ gender bin \ city cat \site cat \ urban bin \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone bin \sesindexradio bin \sesindextelevision bin\sesindexbicycle bin\sesindexmotorizedvehicle bin\sesindexdomesticworker cat \sesindexownflushtoilet cat  \  mosquitocoil bin \ mosquitobites bin \ mosquito_exposure_index conts \ mosq_prevention_index conts \  sleepbednet_dum cat \malariatreatmenta cat \ malariatreatment2 cat \ childvillage cat ) by(repeatmalaria) saving("`figures'repeatmalaria$S_DATE.xls", replace ) missing test
-
-outsheet using repeatmalaria_raw.csv , comma names replace 
-keep id_wide visit
-save repeatmalaria, replace

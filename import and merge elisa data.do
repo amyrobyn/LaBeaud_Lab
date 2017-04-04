@@ -212,10 +212,8 @@ preserve
 		outsheet studyid_a dup_studyida using dup_studyida.csv, replace comma names
 restore
 		drop if  dup_studyida>0
-		isid studyid_a 
-
 save merged, replace
-
+isid studyid_a
 *take visit out of id
 						forval i = 1/3 { 
 							gen id`i' = substr(studyid_a, `i', 1) 
@@ -227,7 +225,6 @@ save merged, replace
 	gen city = id_city  
 	gen id_childnumber  = ""
 	replace id_childnumber  = substr(studyid_a, +4, .)
-
 gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
 tab notnumeric	/*==1 where nonnumeric characters*/
 list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
@@ -239,10 +236,20 @@ foreach suffix in a b c d e f g h {
 	replace id_childnumber = subinstr(id_childnumber, "`suffix'","", .)
 	}
 destring id_childnumber, replace 	 
+tostring id_childnumber, replace
+egen id_childnumber2 = concat(id_childnumber suffix)
+drop id_childnumber
+rename id_childnumber2 id_childnumber
 	order id_cohort city id_visit id_childnumber studyid_a
-	egen id_wide = concat(city id_cohort id_childnum suffix)
+	egen id_wide = concat(city id_cohort id_childnum)
 drop suffix
 drop if id_visit =="?"
+
+duplicates tag id_wide id_visit, gen(id_wide_id_visit_dup)
+outsheet id_wide_id_visit_dup studyid_a id_wide id_visit using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\elisa_wide_id_visit_dup.csv" if id_wide_id_visit_dup>0, comma names replace
+drop if id_wide_id_visit_dup>0
+isid id_city id_cohort  id_childnumber id_visit 
+isid id_wide id_visit
 
 ds, has(type string) 
 foreach v of varlist `r(varlist)' { 
@@ -252,9 +259,16 @@ save wide, replace
 
 duplicates tag id_wide id_visit, gen (dup_id_wide_visit_int) 
 tab dup_id_wide_visit_int 
-outsheet using dup_id_wide_visit_int.csv if dup_id_wide_visit_int>0, comma names replace 
+outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\elisa_dup_id_wide_visit_int.csv" if dup_id_wide_visit_int>0, comma names replace 
 drop if dup_id_wide_visit_int > 0
 isid id_wide id_visit
+
+duplicates tag id_wide , gen (dup_id_wide) 
+tab dup_id_wide
+outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\elisa_dup_id_wide.csv" if dup_id_wide_visit_int>0, comma names replace 
+drop if dup_id_wide > 0
+isid id_wide 
+
 
 	dropmiss, force
 	dropmiss, force obs
@@ -262,8 +276,6 @@ foreach var in chikviggod_* stanfordchikvod_a  stanforddenvigg_f   stanforddenvi
 tostring `var', replace 
 }
 tostring chikviggod_* , replace force
-	list if dup2>0
-	drop if dup2>0
 	dropmiss, force
 	dropmiss, force obs
 	
@@ -271,8 +283,12 @@ tostring chikviggod_* , replace force
 	capture tostring chikviggod_e, replace
 capture tostring stanforddenviggod_f , replace force
 
-	
-
+isid id_wide
+duplicates tag id_wide, gen(id_wide_visit)
+outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\elisa_dup_id_wide.csv" if id_wide_visit>0, comma names replace 
+drop if id_wide_visit>0
+tab id_wide_visit
+isid studyid_a
 reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
 encode id_wide, gen(id_wide_int)
 encode VISIT, gen(visit_int)
@@ -360,7 +376,7 @@ save pcr, replace
 drop *pcr*
 dropmiss, force obs
 dropmiss, force
-isid id_wide VISIT
+isid id_wide visit
 
 		ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
