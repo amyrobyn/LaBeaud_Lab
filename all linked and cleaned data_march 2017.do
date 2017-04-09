@@ -32,7 +32,6 @@ replace cohort = id_cohort if cohort ==""
 drop _merge cohort
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
 
-
 gen anna_seroc_denv=.
 *	foreach studyid in "cfa0327" "cfa0328" "cfa0332" "rfa0427" "rfa0428" "cfa0285" "mfa0537" "mfa0598" "mfa0703" "mfa0933" "ufa0570"{
 	foreach id_wide in "cf327" "cf328" "cf332" "rf427" "rf428" "cf285" "mf537" "mf598" "mf703" "mf933" "uf570"{
@@ -90,7 +89,6 @@ drop visit_int
 encode visit, gen(visit_int)
 xtset id_wide_int visit_int
 
-by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort, replace
 by id_wide_int : carryforward id_childnumber id_cohort id_city id_cohort dob  child_name cfname cmname  clname   csname    csurname  ctname   cfthname  childsname  date_of_birth , replace
 order id_childnumber id_cohort id_city id_visit id_city studyid id_wide
 gen id_childnumber2 = substr(id_wide , +3, .) if studyid==""
@@ -218,9 +216,6 @@ save child_to_link_w_demography, replace
 merge m:1 city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
 rename _merge hhmerge
 drop if hhmerge==2 
-merge m:m id_wide using "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\no_demography"
-
-stop 
 isid id_wide visit
 compare childname_long  child_name  
 replace child_name   = childname_long  if child_name   ==""
@@ -258,8 +253,22 @@ destring *, replace
 isid city houseid id_childnumber visit
 tostring villageid id_childnumber, replace
 merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy"
+
 rename _merge childmerge
 tab childmerge hhmerge, m
+
+label variable childmerge  "demography information at child level, merge status"
+label variable hhmerge "demography information at household level, merge status"
+label define childmerge  1 "No demography data" 3 "merged with demography data" , modify
+label values childmerge  childmerge  
+label define hhmerge  1 "No demography data" 3 "merged with demography data" , modify
+label values hhmerge  hhmerge   
+
+label variable childmerge  "demography information at child level"
+label define season  1 "hot no rain from mid december" 2 "long rains" 3 "less rain cool season" 4 "short rains", modify
+label values season season season season 
+tab season , nolab
+
 tab childmerge city, m
 order hhmerge childmerge city houseid id_childnumber child_dob_year child_dob_month child_dob_day childname1 childname2 childname3
 outsheet studyid id_wide city houseid id_childnumber  childmerge hhmerge  using "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\west_unmatched_hcc_demography.csv" if childmerge !=3  & hhmerge !=3 & site =="west", comma names replace
@@ -268,6 +277,42 @@ outsheet studyid id_wide city houseid id_childnumber childmerge hhmerge  using "
 drop if childmerge ==2
 outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
 tostring windows childvillage, replace
+
+	replace childrenusebednet = lower(childrenusebednet )
+	replace childrenusebednet = "1" if childrenusebednet =="all"
+	replace childrenusebednet = "1" if childrenusebednet =="yes"
+	replace childrenusebednet = "0" if childrenusebednet =="none"
+	replace childrenusebednet = "0" if childrenusebednet =="no"
+	replace childrenusebednet = "2" if childrenusebednet =="some"
+	replace childrenusebednet = "8" if childrenusebednet =="refused"
+	destring childrenusebednet , replace 
+	replace hoh_kids_sleep_bednet = childrenusebednet if hoh_kids_sleep_bednet ==.
+	replace hoh_kids_sleep_bednet = sleepbednet if hoh_kids_sleep_bednet ==.
+	drop childrenusebednet sleepbednet 
+	tab hoh_kids_sleep_bednet , m
+	
+	tab own_bednet  
+	replace own_bednet  = "1" if own_bednet  =="yes"
+	replace own_bednet  = "0" if own_bednet  =="no"
+	destring own_bednet  , replace 
+	replace hoh_own_bednet = own_bednet  if hoh_own_bednet ==.
+	tab hoh_own_bednet , m
+	lookfor bednet
+	drop own_bednet  
+
+	replace hoh_number_bednet = number_bednet if hoh_number_bednet ==.
+		drop number_bednet 
+
+	replace usebednet = lower(usebednet )
+	replace usebednet= "1" if usebednet=="yes"
+	replace usebednet= "0" if usebednet=="no"
+	destring usebednet, replace 
+	replace hoh_sleep_bednet = usebednet if hoh_sleep_bednet ==.
+	tab hoh_sleep_bednet 
+	tab usenetfreq 
+	replace hoh_sleep_bednet = usenetfreq if hoh_sleep_bednet ==.
+	drop usebednet usenetfreq
+
 append using aic
 
 			tab city 
@@ -286,14 +331,18 @@ drop interviewdate2 interview_date
 
 gen year = year(interviewdate)
 gen month= month(interviewdate)
+
 *merge with vector data
 merge m:1 city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate" 
 rename _merge vector_climate
 
+**now that all the data is merged, carryfoward all the values from baseline***
+lookfor visit_int id
+
 
 *season
 gen season = .
-label variable season "SEASONS"
+label variable season "Seasons"
 replace season =1 if month >=1 & month  <=3
 replace season =2 if month >=4 & month  <=6
 replace season =3 if month >=7 & month  <=10
@@ -303,7 +352,6 @@ label define season  1 "hot no rain from mid december" 2 "long rains" 3 "less ra
 label values season season season season 
 tab season , nolab
 
-*twoway (scatter  rainfall season, sort mlabel(month))
 gen year_label = "_y_"
 gen season_label = "s_"
 egen seasonyear = concat(season_label  season year_label  year)
@@ -378,19 +426,6 @@ tab denvpcrresults_dum malariapositive_dum2, m
 gsort -denvpcrresults_dum 
 
 bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malariapositive_dum2 ==1 |denvpcrresults_dum ==1, clean
-
-**************david's severity models*************	
-gen davidcoinfection =.
-		foreach id_wide in cf201 cf241 cf247 kf189 kf204 kf337 cf196 cf205 cf211 cf246 cf248 cf256 cf257 cf265 cf273 cf313 cf340 rf496 cf193 cf200 cf210 cf236 cf243 cf268 cf271 cf300 cf348 cf385 kf185 kf202 kf342 cf245 kf184 {
-					replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="a"
-		}
-
-		foreach id_wide in cf305 cf272 kf184{
-			replace davidcoinfection = 1 if id_wide =="`id_wide'" & visit =="c"
-		}
-
-tab denvpcrresults_dum  davidcoinfection 
-tab malariapositive_dum davidcoinfection 
 
 *symptoms to dummies
  rename currentsymptoms symptms
@@ -667,7 +702,6 @@ replace all_meds=trim(itrim(all_meds))
 
 		}
 
-
 		foreach var of varlist all_meds{ 			
 			foreach med in "antibacterial" "antimalarial" "antipyretic"  "antihelmenthic" "expectorant" "allergy" "supplement"  "antifungal" "othermed" "admit" "ors" "iv" "cough" "sulphate" "painmed" "bronchospasm" "topical" "gerd" "none" "antiamoeba"{ 
 						tostring `var', replace
@@ -726,42 +760,15 @@ replace coinfectiongroup = 0 if malariapositive_dum ==0 & denvpcrresults_dum ==0
 replace coinfectiongroup = 1 if malariapositive_dum==1
 replace coinfectiongroup = 2 if denvpcrresults_dum==1
 replace coinfectiongroup  = 3 if dmcoinf==1
-tab davidcoinfection coinfectiongroup, m
 
 gen coinfectiongroup2 = .
 replace coinfectiongroup2 = 0 if malariapositive_dum2 ==0 & denvpcrresults_dum ==0
 replace coinfectiongroup2 = 1 if malariapositive_dum2==1
 replace coinfectiongroup2 = 2 if denvpcrresults_dum==1
 replace coinfectiongroup2 = 3 if dmcoinf2==1
-tab davidcoinfection coinfectiongroup2 , m
-
-*outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection group group2 using coinfection.xls, replace
-
-
-foreach studyid in "cfa236" "kfa00337" "kfa00185" "cfa00256" "kfc00184" "kfa00204" "kfa00202" "cfa00205" "cfa00385" "cfa00211" "cfa00201" "cfa00273" "kfa00189" "cfa00348" "cfa00300" "cfa00248" "cfa00313" "cfa00257" "rfa00496" "cfa00196" "cfa00246" "cfa00200" "cfa00243" "cfa00268" "kfa00342" "cfa00265" "cfa00247" "cfa00241" "cfa00340" "cfa00271" "cfa00193" "cfa00245" "cfa00210"{
-list if studyid == "`studyid'"
-}
-
-foreach studyid in "cfa236" "kfa337" "kfa185" "cfa256" "kfc184" "kfa204" "kfa202" "cfa205" "cfa385" "cfa211" "cfa201" "cfa273" "kfa189" "cfa348" "cfa3" "cfa248" "cfa313" "cfa257" "rfa496" "cfa196" "cfa246" "cfa2" "cfa243" "cfa268" "kfa342" "cfa265" "cfa247" "cfa241" "cfa340" "cfa271" "cfa193" "cfa245" "cfa210"{
-list if studyid == "`studyid'"
-}
-
-gen davidcoinfection2 =.
-foreach studyid in "cf236" "kf337" "kf185" "cf256" "kfc184" "kf204" "kf202" "cf205" "cf385" "cf211" "cf201" "cf273" "kf189" "cf348" "cf3" "cf248" "cf313" "cf257" "rf496" "cf196" "cf246" "cf2" "cf243" "cf268" "kf342" "cf265" "cf247" "cf241" "cf340" "cf271" "cf193" "cf245" "cf210"{
-replace davidcoinfection2 = 1 if id_wide== "`studyid'"
-}
-
-*outsheet city studyid id_wide visit denvpcrresults_dum malariapositive_dum malariapositive_dum2  davidcoinfection davidcoinfection2  group  using coinfection2.xls, replace
-
-preserve 
-		keep davidcoinfection2 coinfectiongroup studyid id_wide denvpcrresults_dum malariapositive_dum
-		order davidcoinfection2 coinfectiongroup  studyid id_wide denvpcrresults_dum malariapositive_dum
-		sort davidcoinfection2
-restore
-
 
 replace outcomehospitalized = . if outcomehospitalized ==8
-replace outcome= . if outcome==99|outcome==6
+replace outcome= . if outcome==99
 
 gen othoutcome_dum = .
 replace othoutcome_dum  = 3 if othoutcome!=""
@@ -770,7 +777,6 @@ replace outcome = othoutcome_dum  if outcome ==.
 tab outcome outcomehospitalized , m
 lookfor fever
 bysort feverchildtemp: tab outcomehospitalized  malariapositive_dum
-
 gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==2 & outcomehospitalized ==1
 
 preserve
@@ -780,13 +786,6 @@ restore
 
 bysort coinfectiongroup: tab symptomcount outcomehospitalized , chi2      
 bysort coinfectiongroup: sum symptomcount outcomehospitalized , detail
-
-
-gen selected = .
-replace selected = 0 if malariapositive_dum==0 & denvpcrresults_dum==0
-replace selected = 1 if malariapositive_dum==1
-replace selected = 1 if denvpcrresults_dum==1
-replace selected = 1 if dmcoinf==1
 
 dropmiss, force
 bysort coinfectiongroup: sum  all_symptoms*
@@ -813,16 +812,8 @@ foreach var in date_of_birth  {
 
 *severity
 replace outcomehospitalized  = . if outcomehospitalized ==8
-
 bysort coinfectiongroup: sum numhospitalized durationhospitalized1 durationhospitalized2 durationhospitalized3 durationhospitalized4 durationhospitalized5 
-
-
-*table1 , vars( \malariapositive_dum cat \ ovaparasites cat\ outcomehospitalized cat \ durationhospitalized1 conts\ durationhospitalized2 conts\ numhospitalized cat\  consecutivemalariapos  cat\) by(group) saving("table3_severity_by_group.xls", replace ) missing test 
-*repeatmalaria bin \ 
-
 bysort outcomehospitalized: sum malariapositive_dum malariapositive_dum2 coinfectiongroup coinfectiongroup2
-
-*bysort group: sum gametocytes ovaparasites repeatmalaria outcomehospitalized 
 drop _merge
 
 /*net get  dm0004_1.pkg
@@ -865,8 +856,6 @@ preserve
 		rename weight WEIGHT
 		rename height HEIGHT
 		rename head HEAD
-
-*outsheet studyid GENDER agemons GENDER WEIGHT HEIGHT site measure oedema HEAD using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\denvchikvmalariagps_symptoms.csv", comma names replace
 restore
 
 
@@ -927,8 +916,6 @@ replace mom_educ_dum = 2 if mom_educ ==2 | mom_educ==3 | mom_educ==4
 replace mom_educ_dum = mom_educ_dum-1 
 drop mom_educ
 rename mom_educ_dum mom_educ 
-
-
 **end mom educ**
 
 **severe malaria**
@@ -955,6 +942,7 @@ replace severemalaria = 1 if malariapositive_dum == 1 & outcomehospitalized_all 
 tab severemalaria
 **end severe malaria **
 
+
 **SES Index for aic**
 		**ses index
 duplicates tag id_wide visit , gen(id_wide_visit_dup)
@@ -964,16 +952,16 @@ preserve
 	keep if cohort ==1
 				
 
-							foreach var of varlist  floortype rooftype watersource lightsource  telephone radio television bicycle motorizedvehi domesticworker latrinetype {
+						foreach var of varlist  floortype rooftype watersource lightsource  telephone radio television bicycle motorizedvehi domesticworker latrinetype {
 							capture tostring `var', replace
 							tab `var'
-							}
+						}
 
-							foreach var of varlist _all{
+						foreach var of varlist _all{
 							capture replace `var'=trim(itrim(lower(`var')))
 							capture replace `var' = "" if `var'==""
 							rename *, lower
-							}
+						}
 				tostring floortype , replace
 				replace flooring  = floortype if flooring  =="."
 					replace flooring = "3" if flooring =="Cement"
@@ -984,16 +972,16 @@ preserve
 					destring flooring, replace
 				drop floortype
 				destring flooring, replace
-				gen improvedfloor_index = .
-				replace improvedfloor_index= 0 if flooring ==1
-				replace improvedfloor_index= 1 if flooring ==2|flooring ==3|flooring ==4
+				gen improvedfloor= .
+				replace improvedfloor= 0 if flooring ==1
+				replace improvedfloor= 1 if flooring ==2|flooring ==3|flooring ==4
 
 				destring watersource, replace
-				gen improvedwater_index =.
-				replace improvedwater_index =0 if watersource == 1
-				replace improvedwater_index =1 if watersource == 2
-				replace improvedwater_index =2 if watersource == 3
-				replace improvedwater_index =3 if watersource == 4|watersource == 5|watersource == 6
+				gen improvedwater=.
+				replace improvedwater=0 if watersource == 1
+				replace improvedwater=1 if watersource == 2
+				replace improvedwater=2 if watersource == 3
+				replace improvedwater=3 if watersource == 4|watersource == 5|watersource == 6
 
 				tostring lightsource light_source   light, replace 
 				replace lightsource = light_source if lightsource ==""
@@ -1002,11 +990,11 @@ preserve
 				replace light = lightsource if light==""
 				tab light
 						
-				gen improvedlight_index = .
-				replace improvedlight_index = 0 if light=="4" |light=="lantern"|light=="tin lamp"|light=="Lantern"
-				replace improvedlight_index = 1 if light=="5"| light=="2"
-				replace improvedlight_index = 2 if light=="8"	
-				replace improvedlight_index = 3 if light=="3"| light=="1"| light=="6"|light=="Electricity line"|light=="electricity"
+				gen improvedlight= .
+				replace improvedlight= 0 if light=="4" |light=="lantern"|light=="tin lamp"|light=="Lantern"
+				replace improvedlight= 1 if light=="5"| light=="2"
+				replace improvedlight= 2 if light=="8"	
+				replace improvedlight= 3 if light=="3"| light=="1"| light=="6"|light=="Electricity line"|light=="electricity"
 
 		destring latrinetype , replace
 		gen ownflushtoilet = .
@@ -1015,24 +1003,20 @@ preserve
 		replace ownflushtoilet = 2 if latrinetype  == 4
 		replace ownflushtoilet = 2 if latrinetype  == 5
 				
-				foreach var of varlist improvedfloor_index  improvedwater_index improvedlight_index telephone radio television bicycle  motorizedvehicle domesticworker ownflushtoilet {
+foreach var of varlist improvedfloor improvedwater improvedlight telephone radio television bicycle motorizedvehicle domesticworker ownflushtoilet {
 										tostring `var', replace
 										replace `var'=lower(`var')
-										gen sesindex`var' =`var'
-										replace sesindex`var' = "1" if `var' == "yes" 
-										replace sesindex`var' = "0" if `var' == "no" |`var' == "none" 
-										destring sesindex`var', replace force
-							}
+										gen aic_sesindex`var' =`var'
+										replace aic_sesindex`var' = "1" if `var' == "yes" 
+										replace aic_sesindex`var' = "0" if `var' == "no" |`var' == "none" 
+										destring aic_sesindex`var', replace force
+				gen aic_sesindex`var'_dum = .
+				replace aic_sesindex`var'_dum =1 if aic_sesindex`var'==1
+				replace aic_sesindex`var'_dum =0 if aic_sesindex`var'==0				
+				}
 							
-						order sesindex*
-						sum  sesindeximprovedfloor_index - sesindexownflushtoilet
-						egen ses_index_sum= rowtotal(sesindeximprovedfloor_index - sesindexownflushtoilet)
-
-		egen wealthindex= rowtotal(sesindeximprovedfloor_index  sesindeximprovedlight_index  sesindextelephone sesindexradio sesindextelevision sesindexbicycle  sesindexmotorizedvehicle sesindexdomesticworker )
-		egen hygieneindex= rowtotal(sesindeximprovedwater_index sesindexownflushtoilet )
-
-		keep id_wide visit ses_index_sum sesindeximprovedfloor_index - sesindexownflushtoilet wealthindex sesindeximprovedfloor_index  sesindeximprovedlight_index  sesindextelephone sesindexradio sesindextelevision sesindexbicycle  sesindexmotorizedvehicle sesindexdomesticworker hygieneindex sesindeximprovedwater_index sesindexownflushtoilet
-
+		order aic_sesindex*
+		keep id_wide visit aic_sesindeximprovedfloor_dum - aic_sesindexownflushtoilet_dum
 		save aic_sesindex, replace
 restore
 **AIC SES Index End
@@ -1079,40 +1063,81 @@ bysort severemalaria: sum  pmhother_resp pmhsickle_cell pmhpneumonia pmhintestin
 *past medical history- break out
 ********end medical history***
 
-
 **mosquito exposure index
-foreach var in mosquitobites outdooractivity  {
-replace `var' = . if `var' ==8
-}
-sum mosquitobites 
-egen mosquito_exposure_index = rowtotal(mosquitobites outdooractivity) if mosquitobites !=. | outdooractivity!=. 
+*clean up mosqbitfreq
+	tostring  mosquitobitefreq mosqbitefreq, replace
+	replace mosqbitefreq = mosquitobitefreq if  mosqbitefreq  =="."|mosquitobitefreq ==""
+	tab mosqbitefreq 
+	drop mosquitobitefreq 
+	replace mosqbitefreq ="1" if mosqbitefreq =="daily"
+	replace mosqbitefreq ="2" if mosqbitefreq =="every_other_day"
+	replace mosqbitefreq ="3" if mosqbitefreq =="weekly"
+	replace mosqbitefreq ="5" if mosqbitefreq =="monthly"
+	replace mosqbitefreq ="6" if mosqbitefreq =="every_other_month"
+	replace mosqbitefreq ="8" if mosqbitefreq =="refused"
+	destring mosqbitefreq , replace 
+	tab mosqbitefreq 
+*clean up mosquitocoil 
+	replace mosquitocoil = usemosqcoil if mosquitocoil ==.
+	drop usemosqcoil 
+
+*clean up mosquitoday mosquitonight 
+	replace mosqbitedaytime = mosquitoday if mosqbitedaytime ==.
+	drop mosquitoday 
+	
+	replace mosqbitenight = mosquitonight if mosqbitenight ==.
+	drop mosquitonight 
+bysort cohort visit: fsum mosqbitedaytime mosqbitenight mosqbitefreq mosquitocoil mosquitobites mosquito_control avoidmosquitoes hoh_mosquito_control
+
+drop id
+encode id_wide, gen(id)
+drop visit_int
+encode visit, gen(visit_int)
+xtset id visit_int
+
 *mosquito prevention index
-foreach var in mosquitocoil {
-replace `var' = . if `var' ==8
-}
-
 gen windows_protect = . 
-replace windows_protect= 1 if strpos(windows, "air_conditioning")
-replace windows_protect= 0 if strpos(windows, "no_windows")
-replace windows_protect= 0 if strpos(windows, "no-windows")
-replace windows_protect= 1 if strpos(windows, "windows_with_screens")
-replace windows_protect= 0 if strpos(windows, "windows_with_screens windows_without_sc")
-replace windows_protect = 0 if strpos(windows, "windows_without_screens")
-replace windows_protect= 1 if strpos(windows, "windows_without_screens air_conditionin")
-replace windows_protect= 0 if strpos(windows, "windows_without_screens no-windows")
+	replace windows_protect= 1 if strpos(windows, "air_conditioning")
+	replace windows_protect= 0 if strpos(windows, "no_windows")
+	replace windows_protect= 0 if strpos(windows, "no-windows")
+	replace windows_protect= 1 if strpos(windows, "windows_with_screens")
+	replace windows_protect= 0 if strpos(windows, "windows_with_screens windows_without_sc")
+	replace windows_protect = 0 if strpos(windows, "windows_without_screens")
+	replace windows_protect= 1 if strpos(windows, "windows_without_screens air_conditionin")
+	replace windows_protect= 0 if strpos(windows, "windows_without_screens no-windows")
 
-gen sleepbednet_dum = . 
-replace sleepbednet_dum = 0 if sleepbednet ==4
-replace sleepbednet_dum = 1 if sleepbednet ==3
-replace sleepbednet_dum = 2 if sleepbednet ==2
-replace sleepbednet_dum = 3 if sleepbednet ==1
+	replace hoh_mosquito_control= mosquito_control if hoh_mosquito_control==""
+		drop mosquito_control 
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, "mosquito","mosq", .)
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, "burning","brn", .)
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, "repellent","rplnt", .)
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, "sprays","spr", .)
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, "n/a","", .)
+	replace hoh_mosquito_control= subinstr(hoh_mosquito_control, " ","_", .)
+	replace hoh_mosquito_control= "none" if hoh_mosquito_control== "n/a"|hoh_mosquito_control== "none"|hoh_mosquito_control== "none_n/a"
 
-foreach var in mosquitocoil sleepbednet_dum windows_protect{
-replace `var' = . if `var' ==8
+tab hoh_mosquito_control
+
+
+gen mosq_cont = hoh_mosquito_control
+		foreach var of varlist mosq_cont { 			
+			foreach mosquito_control in "burning_herbs" "fire" "mosquito_coil" "sprays" "repellent"{
+						replace `var'=trim(itrim(lower(`var')))
+						moss `var', match(`mosquito_control') prefix(`mosquito_control')
+
+						gen `var'_`mosquito_control'=.
+						replace `var'_`mosquito_control'= 1 if strpos(`var', "`mosquito_control'")
+						replace `var'= subinstr(`var', "`mosquito_control'", "",.)
+						order `var'_`mosquito_control'
+						tab `var'_`mosquito_control'
+						}
+			}	
+foreach var in mosquitocoil sleepbednet windows_protect mosquitobites outdooractivity mosqbitedaytime mosqbitenight mosqbitefreq avoidmosquitoes  mosq_cont_repellent mosq_cont_sprays mosq_cont_mosquito_coil mosq_cont_fire mosq_cont_burning_herbs{
+	gen `var'd = .
+	replace `var'd = 1 if `var'==1
+	replace `var'd = 0 if `var'==0
 }
 
-sum mosquitocoil sleepbednet_dum windows_protect  
-egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_protect) if mosquitocoil !=. | sleepbednet_dum !=. | windows_protect!=.  
 ********end mosquito***
 
 **hcc ses index**
@@ -1126,10 +1151,6 @@ egen mosq_prevention_index = rowtotal(mosquitocoil sleepbednet_dum windows_prote
 					rename *, lower
 					}
 
-		foreach var in childtravel nightaway  keep_livestock  outdooractivity mosquitocoil mosquitobites mosquitoday mosquitonight mosqbitedaytime mosqbitenight{
-		replace `var' = . if `var' == 8
-		}
-stop 
 		tostring cookingfuel cooking_fuel, replace
 		replace cookingfuel = cooking_fuel if cookingfuel ==""
 		replace cookingfuel = "1" if cookingfuel =="electricity"
@@ -1213,35 +1234,69 @@ replace light = light_source  if light ==.
 		replace latrine_index = 1 if latrine_location ==1
 		replace latrine_index = 1 if latrine_location ==2
 		
-		 gen ownflushtoilet = .
-		 tab toilet_latrine
-*come back here tomorrow
-		 replace  ownflushtoilet = 1 if strpos(toilet_latrine, "own_flush")
+replace toilet_latrine= "1" if toilet_latrine=="own_flush"
+replace toilet_latrine= "1" if toilet_latrine=="flush toilet"
+replace toilet_latrine= "3" if toilet_latrine=="pit latrine"
+replace toilet_latrine= "3" if toilet_latrine=="traditional_pit_latrine"
+replace toilet_latrine= "5" if toilet_latrine=="none"
+destring toilet_latrine, replace
 
-		 rename land  land_index 
+gen ownflushtoilet = .
+replace  ownflushtoilet = 1 if toilet_latrine==1
+replace  ownflushtoilet = 0 if toilet_latrine==2|toilet_latrine==3|toilet_latrine==4|toilet_latrine==5|toilet_latrine==6
+tab ownflushtoilet 
 
-		*house
-		foreach var in rooms bedrooms hoh_floor flooring hoh_roof { 
+rename land  land_index 
+*house
+		foreach var in rooms bedrooms hoh_roof { 
 		tab `var'
 		}
 
 
-		egen flooring2 = concat( hoh_floor hoh_floor flooring floorspecify floortype)
-		drop hoh_floor hoh_floor flooring floorspecify floortype
-		rename flooring2  flooring 
+	replace flooring = "." if flooring=="yes"
+	replace flooring = "." if flooring=="no"
 
-		gen improvedfloor_index = "no"
-		replace improvedfloor_index= "yes" if strpos(flooring, "cement")|strpos(flooring, "tile")|strpos(flooring, "cement/dirt")|strpos(flooring, "dirt/cement")|strpos(flooring, "dirt/tiles")
+	tostring hoh_floor flooring floorspecify , replace 
+	replace hoh_floor = flooring if hoh_floor =="."| hoh_floor ==""
+	replace hoh_floor = floorspecify if hoh_floor =="."|hoh_floor ==""
+	replace hoh_floor = floortype if hoh_floor =="."| hoh_floor ==""
+	replace hoh_floor = "." if hoh_floor =="yes"| hoh_floor =="no"
+	replace hoh_floor = flooring if hoh_floor =="."| hoh_floor ==""
+	replace hoh_floor = floorspecify if hoh_floor =="."|hoh_floor ==""
+	replace hoh_floor = floortype if hoh_floor =="."| hoh_floor ==""
+
+	replace hoh_floor = "4" if hoh_floor =="cement"
+	replace hoh_floor = "4" if hoh_floor =="cement"
+	replace hoh_floor = "1" if hoh_floor =="dirt/cement"
+	replace hoh_floor = "1" if hoh_floor =="dirt/earth"
+	replace hoh_floor = "1" if hoh_floor =="dirt/earth"
+	destring hoh_floor , replace
+	tab hoh_floor  cohort, m
+
+	drop flooring floorspecify floortype
+	rename hoh_floor flooring
+	gen improvedfloor_index = .
+	tab flooring
+	replace improvedfloor_index= 1 if flooring== 2| flooring== 3|flooring== 4
+	replace improvedfloor_index= 0 if flooring== 1
 
 		foreach var in roof hoh_roof hoh_roof roofspecify rooftype{
 		tab `var'
 		}
-		egen roof2 = concat(roof hoh_roof hoh_roof roofspecify rooftype othrooftype)
-		drop roof hoh_roof hoh_roof roofspecify rooftype othrooftype
-		rename roof2  roof
-		gen improvedroof_index = "no"
-		replace improvedroof_index = "yes" if strpos(roof, "corrugated")|strpos(roof, "tiles")|strpos(roof, "iron")|strpos(roof, "mabati")
-
+		tostring roof hoh_roof roofspecify rooftype, replace
+		replace roof = hoh_roof if roof =="."|roof ==""|roof =="0"|roof =="4"
+		replace roof = roofspecify  if roof =="."|roof ==""|roof =="0"|roof =="4"
+		replace roof = rooftype if roof =="."|roof ==""|roof =="0"|roof =="4"
+		drop hoh_roof hoh_roof roofspecify rooftype othrooftype
+		replace roof = "2" if roof == "corrugated iron"
+		replace roof = "1" if roof == "natural material"
+		destring roof, replace
+		tab roof, m
+		
+		gen improvedroof_index = .
+		replace improvedroof_index = 1 if roof==3 
+		replace improvedroof_index = 0 if roof ==1|roof ==2 
+		tab improvedroof_index 
 
 
 replace rooms = hoh_rooms if rooms ==.
@@ -1258,11 +1313,11 @@ tab bedrooms cohort, m
 foreach var of varlist improvedfuel_index improvedwater_index improvedlight_index telephone radio own_tv bicycle motor_vehicle domestic_worker ownflushtoilet latrine_index land_index rooms bedrooms improvedroof_index improvedfloor_index{
 								tostring `var', replace
 								replace `var'=lower(`var')
-								gen hccsesindex`var' =`var'
+								gen hcc_ses_`var' =`var'
 								*drop `var'
-								replace hccsesindex`var' = "1" if `var' == "yes" 
-								replace hccsesindex`var' = "0" if `var' == "no" |`var' == "none" 
-								destring hccsesindex`var', replace force
+								replace hcc_ses_`var' = "1" if `var' == "yes" 
+								replace hcc_ses_`var' = "0" if `var' == "no" |`var' == "none" 
+								destring hcc_ses_`var', replace force
 					}
 					
 			ds, has(type string) 
@@ -1275,18 +1330,45 @@ foreach var of varlist improvedfuel_index improvedwater_index improvedlight_inde
 				destring `var', replace
 			}
 
-			order hccsesindex*
-				foreach var in  hccsesindeximprovedfuel_index hccsesindeximprovedwater_index hccsesindeximprovedlight_index hccsesindextelephone hccsesindexradio hccsesindexown_tv hccsesindexbicycle hccsesindexmotor_vehicle hccsesindexdomestic_worker hccsesindexownflushtoilet hccsesindexlatrine_index hccsesindexland_index  hccsesindeximprovedroof_index hccsesindeximprovedfloor_index{
-					replace `var' = . if `var'==8 
-				}
-				sum hccsesindex*
-				egen hccses_index_sum= rowtotal(hccsesindeximprovedfuel_index - hccsesindexland_index)  if hccsesindeximprovedfuel_index !=.|hccsesindeximprovedwater_index !=.|hccsesindeximprovedlight_index !=.|hccsesindextelephone !=.|hccsesindexradio !=.|hccsesindexown_tv !=.|hccsesindexbicycle !=.|hccsesindexmotor_vehicle !=.|hccsesindexdomestic_worker !=.|hccsesindexownflushtoilet !=.|hccsesindexlatrine_index !=.|hccsesindexland_index !=.|hccsesindexrooms !=.|hccsesindexbedrooms !=.|hccsesindeximprovedroof_index !=.|hccsesindeximprovedfloor_index!=.
-				*drop hccsesindeximprovedfuel_index - hccsesindexland_index
+				sum hcc_ses_*
 
+foreach var in childtravel nightaway  keep_livestock  outdooractivity mosquitocoil mosquitobites mosqbitedaytime mosqbitenight hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index  hcc_ses_improvedroof_index hcc_ses_improvedfloor_index{
+			gen `var'_dum = . 
+			replace `var'_dum = 1 if `var' == 1
+			replace `var'_dum = 0 if `var' == 0
+		}
 
-
-			
 **end hcc ses index**
+*use allt he baseline data to fill in for each visit & then create indices 
+bysort id_wide (visit): carryforward hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum gender city cohort latitude longitude house_longitude house_latitude amy_city_id amy_compound_id amy_house_id amy_child_id compstatus compnumber compound_latitude compound_longitude compound_altitude compound_accuracy hoc_surname hoc_fname hoc_mname hoc_lname hoc_othername hoc_studyid hoc_gender hoc_dob hoc_age hoc_category hoc_language hoc_othlanguage hoc_tribe hoc_othtribe hoc_religion hoc_married hoc_other_married hoc_sleep_status house_number house_altitude house_accuracy house_pic hoh_surname hoh_fname hoh_mname hoh_lname hoh_othername hoh_studyid hoh_gender hoh_dob hoh_age hoh_category hoh_language hoh_othlanguage hoh_tribe hoh_othtribe hoh_religion hoh_married hoh_other_married hoh_children hoh_num_children hoh_house hoh_other_house hoh_sleep_here hoh_live_here hoh_district_years hoh_house_years 	hoh_people_per_room hoh_windows hoh_screens sleep_close_window hoh_own_bednet hoh_number_bednet hoh_sleep_bednet hoh_kids_sleep_bednet hoh_mosquito_control hoh_communal_tv hoh_water_collection  cooking_fuel water_source other_water_source light_source mosqbitefreq  mosquitocoil mosquitobites  mosqbitedaytime mosqbitenight avoidmosquitoes hoh_mosquito_control hoh_mosquito_control  mosq_cont_mosquito_coil mosquitocoil mosquito_coilcount mosquitocoild mosq_cont_mosquito_coild mosquitocoil_dum mosq_cont_repellent mosq_cont_sprays mosq_cont_fire mosq_cont_burning_herbs mosqbitefreq mosquitobites mosqbitedaytime mosqbitenight mosq_cont mosquitobitesd mosqbitedaytimed mosqbitenightd mosqbitefreqd mosq_cont_repellentd mosq_cont_spraysd mosq_cont_fired mosq_cont_burning_herbsd mosquitobites_dum mosqbitedaytime_dum mosqbitenight_dum, replace
+
+			*aic ses_index_sum
+			order aic*
+				egen aic_ses_index_sum= rowtotal(aic_sesindex*)
+					pctile pct_aic_ses_index = aic_ses_index_sum, nq(4)
+					xtile quart_aic_ses_index = aic_ses_index_sum, nquantiles(4)
+				egen wealthindex= rowtotal(aic_sesindeximprovedfloor_dum aic_sesindeximprovedlight aic_sesindextelephone  aic_sesindextelevision_dum aic_sesindexbicycle_dum aic_sesindexmotorizedvehicle_dum aic_sesindexdomesticworker_dum aic_sesindexradio_dum)
+					pctile pct_wealthindex = wealthindex, nq(4)
+					xtile quart_wealthindex = wealthindex, nquantiles(4)
+				egen hygieneindex= rowtotal( aic_sesindexownflushtoilet_dum aic_sesindeximprovedwater_dum)
+					pctile pct_hygieneindex= hygieneindex, nq(4)
+					xtile quart_hygieneindex = hygieneindex, nquantiles(4)
+
+
+				egen mosquito_exposure_index = rowtotal(mosqbitedaytime mosqbitenight mosqbitefreq mosquitobites outdooractivity avoidmosquitoes)  
+					pctile pct_mosq_exp_index = mosquito_exposure_index , nq(4)
+					xtile quart_mosq_exp_index = mosquito_exposure_index , nquantiles(4)
+				egen mosquito_prevention_index = rowtotal(mosquitocoil avoidmosquitoes mosquitocoil sleepbednet windows_protect mosq_cont_repellent mosq_cont_sprays mosq_cont_mosquito_coil mosq_cont_fire mosq_cont_burning_herbs)
+					pctile pct_mosq_prev_index = mosquito_prevention_index , nq(4)
+					xtile quart_mosq_prev_index = mosquito_prevention_index , nquantiles(4)
+			*hccses_index_sum
+				egen hccses_index_sum= rowtotal(hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum)  if hcc_ses_improvedfuel_index !=.|hcc_ses_improvedwater_index !=.|hcc_ses_improvedlight_index !=.|hcc_ses_telephone !=.|hcc_ses_radio !=.|hcc_ses_own_tv !=.|hcc_ses_bicycle !=.|hcc_ses_motor_vehicle !=.|hcc_ses_domestic_worker !=.|hcc_ses_ownflushtoilet !=.|hcc_ses_latrine_index !=.|hcc_ses_land_index !=.|hcc_ses_rooms !=.|hcc_ses_bedrooms !=.|hcc_ses_improvedroof_index !=.|hcc_ses_improvedfloor_index!=.
+				tab hccses_index_sum, m
+				pctile pct_hccses_index= hccses_index_sum, nq(4)
+				xtile quartile_hccses_index = hccses_index_sum, nquantiles(4)
+*done creating indices
+
+		
 replace childvillage = village if childvillage ==""
 drop village
 
@@ -1302,8 +1384,6 @@ drop gender1
 *shorten names 
 rename *past_med_history* *pmh*
 
-
-
 *merge kenya 2009 census data
 replace city = "msambweni" if city =="nganja"
 replace city = "msambweni" if city =="milani"
@@ -1315,24 +1395,6 @@ replace city = "ukunda" if city =="w"
 	merge m:1 strata using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\pop"
 	drop _merge
 tab strata
-
-*outsheet using "C:\Users\amykr\Box Sync\ASTMH 2017 abstracts\priyanka malaria aic visit a\data\priyankamalariaaicvisita.csv", replace comma names
-*tables
-
-/*
-*table1bystanforddenvigg
-table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zchildtemp conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanforddenvigg_ ) saving("`figures'prevalent_stanforddenvigg.xls", replace ) missing test 
-*table1bystanforddenvigg
-table1 , vars(age conts \ gender bin \ city cat \ outcome cat \ outcomehospitalized bin \  heart_rate conts \ zhcaukwho conts \ zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ zchildtemp conts \ zresprate conts \ zlen conts \ zwei conts \ zwfl conts \ zbmi conts \ zhc conts \ scleralicterus cat \ splenomegaly  cat \  hivmeds bin \ hivpastmedhist bin \) by(stanfordchikvigg_ ) saving("`figures'prevalent_stanforddenvigg.xls", replace ) missing test 
-*table1bycohrt
-table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(cohort) saving("`figures'prev_cohort.xls", replace ) missing test 
-table1 , vars(age conts \ gender bin \ city cat \ stanforddenvigg_ cat \  stanfordchikvigg_ cat \  zwtukwho conts \ zhtukwho conts \ zbmiukwho conts \) by(site) saving("`figures'prev_site.xls", replace ) missing test 
-
-table1, vars(all_symptoms_halitosis bin \  all_symptoms_edema bin \  all_symptoms_appetite_change bin \  all_symptoms_constipation cat \  all_symptoms_behavior_change bin \  all_symptoms_altms bin \  all_symptoms_abnormal_gums cat \  all_symptoms_jaundice cat \  all_symptoms_constitutional bin \  all_symptoms_asthma cat \  all_symptoms_lethergy cat \  all_symptoms_dysphagia bin \  all_symptoms_dysphrea bin  \  all_symptoms_anaemia cat \  all_symptoms_seizure bin \  all_symptoms_itchiness bin \  all_symptoms_bleeding_symptom bin \  all_symptoms_sore_throat bin \  all_symptoms_sens_eyes cat \  all_symptoms_earache bin \  all_symptoms_funny_taste bin \  all_symptoms_imp_mental cat \  all_symptoms_mucosal_bleed_brs bin \  all_symptoms_bloody_nose cat \  all_symptoms_rash bin \  all_symptoms_dysuria bin \  all_symptoms_nausea bin \  all_symptoms_respiratory bin \  all_symptoms_aches_pains bin \  all_symptoms_abdominal_pain bin \  all_symptoms_diarrhea bin \  all_symptoms_vomiting bin \  all_symptoms_chiils  bin \  all_symptoms_fever bin \  all_symptoms_eye_symptom bin \  all_symptoms_other cat \  ) by(cohort) saving("`figures'prev_symptoms_by_cohort.xls", replace) missing test
-table1, vars(all_meds_antifungal bin \ all_meds_supplement bin \ all_meds_allergy bin \ all_meds_expectorant cat\ all_meds_antihelmenthic bin \ all_meds_antipyretic bin \ all_meds_antimalarial bin \ all_meds_antibacterial bin \ all_meds_bronchospasm bin \ all_meds_topical  bin \ all_meds_antiamoeba bin \    all_meds_none bin \   all_meds_gerd bin \   all_meds_painmed bin \ all_meds_sulphate bin \ all_meds_cough bin \ all_meds_iv bin \ all_meds_ors bin \ all_meds_admit bin \ all_meds_othermed bin \  ) by(site) saving("`figures'prev_meds_by_site.xls", replace) missing test
-
-outsheet using "`data'cleaned_merged_data_prev_$S_DATE.csv", replace comma names
-*/
 
 	egen max_anna_seroc_denv = max(anna_seroc_denv), by(id_wide)
 	egen max_jimmy_seroc_chikv  = max(jimmy_seroc_chikv), by(id_wide)
@@ -1349,11 +1411,6 @@ order id_wide visit studyid jimmy_seroc_chikv stanfordchikvigg_ anna_seroc_denv 
 bysort visit : tab anna_seroc_denv stanforddenvigg_ 
 list studyid if anna_seroc_denv ==1 & stanforddenvigg_ !=1 
 list id_wide if anna_seroc_denv ==1 & stanforddenvigg_ !=1
-
-xtile ses_index_sum_pct =  ses_index_sum, n(4)
-xtile  hccses_index_sum_pct =   hccses_index_sum, n(4)
-
-
 
 *apparent is aic cohort: first febrile episode + fever- take everyone that fails
 *innapparent is hcc cohort: seroconversion with no fever- take only the failures after the first visit (incident, not prevalent)
@@ -1388,12 +1445,11 @@ drop if _merge ==2
 drop _merge
 
 order latitude longitude *latitude *longitude x y point_x point_y
-gen gps_x_long = .
+capture gen gps_x_long = .
 replace gps_x_long = point_x if gps_x_long ==.
 replace gps_x_long = longitude if gps_x_long ==.
 replace gps_x_long = house_longitude if gps_x_long ==.
-
-gen gps_y_lat = .
+capture gen gps_y_lat = .
 replace gps_y_lat = point_y if gps_y_lat ==.
 replace gps_y_lat = latitude if gps_y_lat ==.
 replace gps_y_lat = house_latitude if gps_y_lat ==.
@@ -1404,16 +1460,18 @@ save "`data'cleaned_merged_prevalence$S_DATE", replace
 
 drop *dup
 order studyid  hhmerge childmerge id_wide city houseid id_childnumber visit cohort id*  *igg* *pcr* *dum  age gender parasite*
-local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+bysort id_wide (visit): carryforward cohort age gender city site year season month seasonyear mosquito_exposure_index  mosqbitefreq mosquitocoil mosquitobites   mosqbitedaytime mosqbitenight  avoidmosquitoes hoh_mosquito_control hoh_*  hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index hcc_ses_improvedfloor_index , replace
+
+ local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 outsheet using "`data'cleaned_merged_prevalence$S_DATE.csv", replace names comma
 
 ********************************************************************start incidence***************************************************************
 
 					**gen incident data based on igg and pcr results. 
-					gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
+					capture gen inc_denv= 0 if denvpcrresults_dum==0 |stanforddenvigg_==0
 					replace inc_denv= 1 if denvpcrresults_dum==1 |stanforddenvigg_==1
 
-					gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
+					capture gen inc_chikv= 0 if chikvpcrresults_dum ==0 | stanfordchikvigg_==0
 					replace inc_chikv = 1 if chikvpcrresults_dum ==1 | stanfordchikvigg_==1
 
 			save temp, replace
@@ -1486,7 +1544,7 @@ foreach outcome in inc_denv incident_malaria inc_chikv{
 **/Active disease from CHIKV and DENV were associated with SES, gender, X and Y. */
 preserve
 		keep if cohort ==1
-			table1,	vars(season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(`outcome') missing test saving("`figures'INCIDENCE_$S_DATE.xls", sheet("AIC_`outcome'_W_PCR") sheetreplace) 
+			table1,	vars(season cat \cohort cat \  urban bin\ gender bin \ site cat \ age conts \ city cat ) by(`outcome') missing test saving("`figures'INCIDENCE_$S_DATE.xls", sheet("AIC_`outcome'_W_PCR") sheetreplace) 
 restore
 
 preserve
@@ -1526,13 +1584,13 @@ outsheet using "`data'prev_malaria_w_PCR_$S_DATE.csv", comma replace names
 preserve
 keep if cohort ==1
 			*denv
-			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_malaria_W_PCR") sheetreplace) 
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ gender bin \ site cat \ age conts \ city cat cat) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_malaria_W_PCR") sheetreplace) 
 restore
 
 preserve
 	keep if cohort ==2
 		*denv
-		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts ) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_malaria_W_PCR") sheetreplace) 
+		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ ) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_malaria_W_PCR") sheetreplace) 
 restore
 
 
@@ -1560,13 +1618,13 @@ outsheet using "`data'prev_denv_w_PCR_$S_DATE.csv", comma replace names
 preserve
 keep if cohort ==1
 			*denv
-			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\  gender bin \ site cat \ age conts \ city cat ) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
 restore
 
 preserve
 	keep if cohort ==2
 		*denv
-		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_DENV_W_PCR") sheetreplace) 
+		table1,	vars(malariapositive_dum2  bin \season cat \cohort cate \ gender bine \ age conts \ city cate \ ) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_DENV_W_PCR") sheetreplace) 
 restore
 
  
@@ -1599,12 +1657,12 @@ outsheet using "`data'prev_chikv_w_PCR_$S_DATE.csv", comma replace names
 preserve
 keep if cohort ==1
 			*chikv
-			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ ses_index_sum conts \ gender bin \ site cat \ age conts \ city cat \ mosquito_exposure_index contn \ mosq_prevention_index contn\ \  ses_index_sum  conts \ hygieneindex conts \ wealthindex conts \ ses_index_sum_pct  cat) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_CHIKV_W_PCR") sheetreplace) 
+			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ gender bin \ site cat \ age conts \ city cat  \) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_CHIKV_W_PCR") sheetreplace) 
 restore
 
 preserve
 	keep if cohort ==2
 		*chikv
-		table1,	vars(malariapositive_dum2  bin \ season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosq_prevention_index conts\ hccses_index_sum_pct cate \ hccses_index_sum conts\) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
+		table1,	vars(malariapositive_dum2  bin \ season cat \cohort cate \ gender bine \ age conts \ city cate \ ) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
 restore
 ***************************************************end Prevalence******************************************************************
