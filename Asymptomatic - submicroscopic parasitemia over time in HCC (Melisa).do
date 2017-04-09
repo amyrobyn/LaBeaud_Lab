@@ -27,81 +27,106 @@ Demographics, location, growth variables, bednets, season, year
 	Add in mosq, climate later if needed
 */
 replace species  = species_cat if species  ==""
-bysort fevertoday cohort site:  tab species  
 
-keep if cohort == 2
-keep if fevertoday == 0
-tab species
+*asymptomatic malaria means hcc + no fever
+	keep if cohort == 2
+	keep if fevertoday == 0
+	dropmiss, force
 
-dropmiss, force
-drop id 
-encode id_wide, gen(id) 
-xtset id visit_int
+*clean up bednet		
+	replace hoh_sleep_bednet =sleepbednet if hoh_sleep_bednet ==.
+	replace hoh_sleep_bednet =usebednet if hoh_sleep_bednet ==.
+	drop sleepbednet usebednet 
+	replace hoh_kids_sleep_bednet = childrenusebednet if hoh_kids_sleep_bednet ==.
+	drop childrenusebednet 
+*clean up mosq
+	replace mosquitocoil = usemosqcoil if mosquitocoil ==.
+	drop usemosqcoil 
+*clean up mosqbitfreq
+	tostring  mosquitobitefreq mosqbitefreq, replace
+	replace mosqbitefreq = mosquitobitefreq if  mosqbitefreq  =="."|mosquitobitefreq ==""
+	tab mosqbitefreq 
+	drop mosquitobitefreq 
+	replace mosqbitefreq ="1" if mosqbitefreq =="daily"
+	replace mosqbitefreq ="2" if mosqbitefreq =="every_other_day"
+	replace mosqbitefreq ="3" if mosqbitefreq =="weekly"
+	replace mosqbitefreq ="5" if mosqbitefreq =="monthly"
+	replace mosqbitefreq ="6" if mosqbitefreq =="every_other_month"
+	replace mosqbitefreq ="8" if mosqbitefreq =="refused"
+	destring mosqbitefreq , replace 
+	tab mosqbitefreq 
+*stset data
+	capture drop id 
+	encode id_wide, gen(id)
+	stset visit_int, id(id) f(malariapositive_dum)
 
+*************use the malariapositive_dum2 **************
 replace parasite_count_lab = parasite_count_hcc if parasite_count_lab ==.
 compare parasite_count_lab parasite_count_hcc 
 replace malariapositive_dum2 =1 if parasite_count_lab >0 & parasite_count_lab !=.
 replace malariapositive_dum2 =0 if parasite_count_lab==0 
 tab species malariapositive_dum 
+drop malariapositive_dum 
+rename malariapositive_dum2 malariapositive_dum
 
-bysort id_wide: egen mal_freq = sum(malariapositive_dum2)
-	foreach var in  zwtukwho zhtukwho zbmiukwho{
-	bysort mal_freq visit: egen mean`var' = mean(`var')
-	order mean`var'
-}
+*survival data
+	stdescribe
+	sts list
+		stgen no_malaria= always(malariapositive_dum==0 |malariapositive_dum==. )
+		stgen when_malaria= when(malariapositive_dum==1)
+		tab when_malaria visit_int
+		
+		stgen prev_malaria= ever(malariapositive_dum==1)
+		tab prev_malaria
 
-*xtline zwtukwho  if id < 10, overlay legend(off) 
-graph drop _all
-egen malfreq_visit = concat(visit_int mal_freq)
+		tab no_malaria
+		gen malaria_prev = .
+		replace malaria_prev = 1 if prev_malaria==1
+		replace malaria_prev = 0 if no_malaria ==1
+		tab malaria_prev 
+		bysort id: egen minvisit = min(visit_int) if no_malaria ==1 
+		tab minvisit 
+		drop if no_malaria ==1 & visit_int !=minvisit
+		tab malaria_prev 
 
-*growth_by_malariafreq
-table1, vars(zwtukwho contn \ zhtukwho contn \ zbmiukwho contn\) test missing by(malfreq_visit) saving("`figures'growth_by_malariafreq.xls", replace) 
+	*create the malaria yes/no bin. 
+		drop if when_malaria==1 & visit!="a"|when_malaria==2 & visit!="b"|when_malaria==3 & visit!="c"|when_malaria==4 & visit!="d"
+		drop if when_malaria  ==. & no_malaria !=1
+			gen asympt_malaria_cat =. 
+			replace asympt_malaria_cat= 1 if no_malaria ==0
+			replace asympt_malaria_cat= 0 if no_malaria ==1
 
-/*
-egen mal_freq_group= group(mal_freq) 
-sum mal_freq_group, meanonly 
-
-foreach var in meanzwtukwho meanzhtukwho meanzbmiukwho{
-forval i = 1/`r(mean)' { 
-	xtline `var' if mal_freq_group == `i', overlay name(gr`i') 
-	local graphs `graphs' gr`i'
-}  
-*/
-*graph doesn't work in stata. export to do in excel
-export excel mal_freq visit   meanzwtukwho meanzhtukwho meanzbmiukwho using tables, replace firstrow(variables)
-
-*Demographics, location, growth variables, bednets, season, year
-replace mal_freq  =2 if mal_freq >1 & mal_freq !=.
-label variable mal_freq "REPEAT MALARIA INFECTION"
-label define mal_freq  0 "NONE" 1 "ONE" 2 "MORE THAN ONE", modify
-label values mal_freq  mal_freq  mal_freq 
-tab mal_freq 
-
-**collapse by id_wide
-drop id
-encode id_wide, gen(id)
-drop id_wide
-tsset id visit_int
-
-*desc gametocytes    parasite_count_lab  zbmiukwho  zhtukwho  zwtukwho  age  gender      year  season  month    cohort  sleepbednet_dum  mosquitocoil  mosquitobites  mosquitoday  mosquitonight  mosquitobitefreq  mosqbitedaytime  mosqbitenight  mosquito_exposure_index  mosq_prevention_index  hccses_index_sum  hccsesindeximprovedfuel_index  hccsesindeximprovedwater_index  hccsesindeximprovedlight_index  hccsesindextv  hccsesindexmotor_vehicle  hccsesindexdomestic_worker  hccsesindexownflushtoilet  hccsesindexlatrine_index  hccsesindexland_index  hccsesindexrooms  hccsesindexbedrooms  hccsesindeximprovedroof_index  hccsesindeximprovedfloor_index  sleepbednet  hoh_own_bednet  hoh_number_bednet  hoh_sleep_bednet  hoh_kids_sleep_bednet  usebednet  childrenusebednet  own_bednet  number_bednet  sleep_bednet
-
-replace mal_freq = 1 if mal_freq ==2
-encode species, gen(species_int)
-
-	bysort dataset cohort site mal_freq: tab species species_int, m
-save long, replace
-
-collapse2  (max) mal_freq (first) gametocytes  (firstnm) species_int (first) city  (first) site  (first) seasonyear (first) mosquitobitefreq (first) mosqbitefreq  (firstnm) parasite_count_lab (firstnm) zbmiukwho (firstnm) zhtukwho (firstnm) zwtukwho (firstnm) age (firstnm) gender (firstnm) year (firstnm) season (firstnm) month (firstnm) cohort (firstnm) sleepbednet_dum (firstnm) mosquitocoil (firstnm) mosquitobites (firstnm) mosquitoday (firstnm) mosquitonight (firstnm) mosqbitedaytime (firstnm) mosqbitenight (firstnm) mosquito_exposure_index (firstnm) mosq_prevention_index (firstnm) hccses_index_sum (firstnm) hccsesindeximprovedfuel_index (firstnm) hccsesindeximprovedwater_index (firstnm) hccsesindeximprovedlight_index (firstnm) hccsesindextv (firstnm) hccsesindexmotor_vehicle (firstnm) hccsesindexdomestic_worker (firstnm) hccsesindexownflushtoilet (firstnm) hccsesindexlatrine_index (firstnm) hccsesindexland_index (firstnm) hccsesindexrooms (firstnm) hccsesindexbedrooms (firstnm) hccsesindeximprovedroof_index (firstnm) hccsesindeximprovedfloor_index (firstnm) sleepbednet (firstnm) hoh_own_bednet (firstnm) hoh_number_bednet (firstnm) hoh_sleep_bednet (firstnm) hoh_kids_sleep_bednet (firstnm) usebednet (firstnm) childrenusebednet (firstnm) own_bednet (firstnm) number_bednet (firstnm) sleep_bednet, by(id)
-bysort mal_freq  : tab species site, m
-
-table1, vars(gametocytes conts \ species cat \ parasite_count_lab  contn \  zbmiukwho conts \ zhtukwho conts \ zwtukwho conts \ age contn \ gender bin\ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \ cohort cat \ sleepbednet_dum cat \  mosqbitefreq cat \mosquitocoil cat \mosquitobites cat \mosquitoday cat \mosquitonight cat \mosquitobitefreq cat \mosqbitedaytime cat \mosqbitenight cat \mosquito_exposure_index cat \mosq_prevention_index contn \ hccses_index_sum contn \ hccsesindeximprovedfuel_index cat \ hccsesindeximprovedwater_index cat \ hccsesindeximprovedlight_index cat \ hccsesindextv cat \ hccsesindexmotor_vehicle cat \ hccsesindexdomestic_worker cat \ hccsesindexownflushtoilet cat \ hccsesindexlatrine_index cat \ hccsesindexland_index cat \ hccsesindexrooms cat \ hccsesindexbedrooms cat \ hccsesindeximprovedroof_index cat \ hccsesindeximprovedfloor_index cat \  sleepbednet cat \ hoh_own_bednet cat \ hoh_number_bednet cat \ hoh_sleep_bednet cat \ hoh_kids_sleep_bednet cat \ usebednet cat \ childrenusebednet cat \ own_bednet cat \ number_bednet cat \ sleep_bednet cat \sleepbednet_dum cat \) test missing by(mal_freq ) saving("`figures'table_by_malariafreq$S_DATE.xls", replace) 
+*clean up species
+		replace species = "pf/pm" if species =="pfpm"
+		replace species = "neg" if species =="0" & asympt_malaria_cat==0
+		replace species = "neg" if species =="" & asympt_malaria_cat==0
+		replace species = "neg" if asympt_malaria_cat==0
 
 
-lookfor cohort parasite species gamet mala density micro
-lookfor dum
 
-tab species id_cohort
-order mala*
-tab density id_cohort 
 
-list id  if mal_freq>0 & mal_freq!=. & species ==.
+**fsum by malaria
+	sum asympt_malaria_cat gametocytes species parasite_count_lab  
+	bysort asympt_malaria_cat: sum hoh_sleep_bednet hoh_kids_sleep_bednet hoh_own_bednet hoh_number_bednet sleepbednet_dum 
+	bysort asympt_malaria_cat: sum cohort age gender city site year season month seasonyear 
+	
+	bysort asympt_malaria_cat: sum  mosquito_exposure_index  mosq_prevention_index mosqbitefreq  mosquitocoil mosquitobites mosquitoday mosquitonight mosqbitedaytime mosqbitenight  avoidmosquitoes hoh_mosquito_control 
+	bysort asympt_malaria_cat: sum hccses_index_sum hccsesindexmotor_vehicle hccsesindexdomestic_worker hccsesindexland_index hccsesindeximprovedroof_index hccsesindeximprovedfloor_index  hoh_room hoh_bedroom
+
+label variable childmerge  "demography information at child level, merge status"
+label variable hhmerge "demography information at household level, merge status"
+label define childmerge  1 "No demography data" 3 "merged with demography data" , modify
+label values childmerge  childmerge  
+label define hhmerge  1 "No demography data" 3 "merged with demography data" , modify
+label values hhmerge  hhmerge   
+
+*table 1
+*table1, vars(cohort cat \ sleepbednet_dum cat \  mosqbitefreq cat \mosquitocoil cat \mosquitobites cat \mosquitoday cat \mosquitonight cat \mosqbitedaytime cat \mosqbitenight cat \ age conts \ gender bin\ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \  gametocytes conts \species cate \ parasite_count_lab  contn \  ) test missing by(malaria) saving("`figures'table_by_malariafreq$S_DATE.xls", replace)  
+table1, vars(childmerge cat \ hhmerge cat \ gametocytes conts \ species cat \ parasite_count_lab  conts \ hoh_sleep_bednet cat \hoh_kids_sleep_bednet cat \hoh_own_bednet cat \hoh_number_bednet cat \ cohort cat \ age contn \ gender bin \ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \  mosquito_exposure_index  conts \ mosq_prevention_index conts \ mosqbitefreq conts \ mosquitocoil cat \ mosquitobites cat \ mosquitoday cat \ mosquitonight cat \ mosqbitedaytime cat \ mosqbitenight  cat \ avoidmosquitoes cat \ hoh_mosquito_control cat \ hccses_index_sum conts \ hccsesindexmotor_vehicle cat \  hccsesindexdomestic_worker cat \ hccsesindexland_index cat \ hccsesindeximprovedroof_index cat \ hccsesindeximprovedfloor_index  cat \ hoh_room conts \ hoh_bedroom conts \ ) test missing by(asympt_malaria_cat) saving("`figures'table_by_malaria$S_DATE.xls", replace)
+table1, vars(childmerge cat \ hhmerge cat \  gametocytes conts \ species cat \ parasite_count_lab  conts \ hoh_sleep_bednet cat \hoh_kids_sleep_bednet cat \hoh_own_bednet cat \hoh_number_bednet cat \ cohort cat \ age contn \ gender bin \ city cat \ site cat \ year cat \ season cat \ month cat \ seasonyear cat \  mosquito_exposure_index  conts \ mosq_prevention_index conts \ mosqbitefreq conts \ mosquitocoil cat \ mosquitobites cat \ mosquitoday cat \ mosquitonight cat \ mosqbitedaytime cat \ mosqbitenight  cat \ avoidmosquitoes cat \ hoh_mosquito_control cat \ hccses_index_sum conts \ hccsesindexmotor_vehicle cat \  hccsesindexdomestic_worker cat \ hccsesindexland_index cat \ hccsesindeximprovedroof_index cat \ hccsesindeximprovedfloor_index  cat \ hoh_room conts \ hoh_bedroom conts \ ) test by(asympt_malaria_cat) saving("`figures'table_by_malaria_NOMISSING$S_DATE.xls", replace)
+
+preserve 
+	keep if asympt_malaria_cat==1
+	table1, vars(gametocytes conts \ species cat \ parasite_count_lab  conts \) by(city)  test missing saving("`figures'table_mal_POS_bycity_$S_DATE.xls", replace)
+	table1, vars(gametocytes conts \ species cat \ parasite_count_lab  conts \) by(city)  test saving("`figures'table_mal_POS_bycity_NOMISSING_$S_DATE.xls", replace)
+restore
