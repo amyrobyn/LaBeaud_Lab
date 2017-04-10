@@ -495,15 +495,14 @@ replace systolicbp70 = 0 if  systolicbp >= 70 & systolicbp <.
 		gen improvedlight_index = .
 		replace improvedlight_index = 0 if light==4
 		replace improvedlight_index = 1 if light==5| light==2
-		replace improvedlight_index = 2 if light==8	
-		replace improvedlight_index = 3 if light==3| light==1| light==6
+		replace improvedlight_index = 2 if light==3| light==1| light==6
 
 destring latrinetype , replace
 gen ownflushtoilet = .
-replace ownflushtoilet = 0 if latrinetype  == 0
+
+replace ownflushtoilet = 0 if latrinetype  == 1|latrinetype  == 2
 replace ownflushtoilet = 1 if latrinetype  == 3
-replace ownflushtoilet = 2 if latrinetype  == 4
-replace ownflushtoilet = 2 if latrinetype  == 5
+replace ownflushtoilet = 2 if latrinetype  == 4 | latrinetype  == 5
 		
 		foreach var of varlist improvedfloor_index  improvedwater_index improvedlight_index telephone radio television bicycle  motorizedvehicle domesticworker ownflushtoilet {
 								tostring `var', replace
@@ -651,10 +650,59 @@ encode site, gen(site_int)
 encode childvillage, gen(village_int)
 
 tabout childvillage using village.xls , replace
- 
+
+tab  severemalaria_ord
+
+replace species ="" if species =="ni"|species =="none"
+
+tab species_cat severemalaria_ord, m
+tab species
+
+gen rural = . 
+replace rural =1 if city =="msambweni"|city =="chulaimbo"
+replace rural =0 if city =="kisumu"|city =="ukunda"
+tab rural severemalaria_ord
+
+destring severemalaria_ord, replace
+desc severemalaria_ord 
+replace severemalaria_ord  = 1 if severemalaria_ord  ==11
+replace severemalaria_ord  = 2 if severemalaria_ord  ==12
+replace severemalaria_ord  = 3 if severemalaria_ord  ==13
+
+tab severemalaria_ord 
+label variable severemalaria_ord "Malaria Severity Groups"
+label define severemalaria_ord  1 "No Follow-Up" 2 "Sent home with Follow-Up" 3 "Hospitalized or Reffered", modify
+label values severemalaria_ord  severemalaria_ord  severemalaria_ord  
+
+
 *ordinal
-table1 , vars(splenomegaly  bine\ age conts \ gender bine\city cate \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bine\  all_symptoms_jaundice cate\  all_symptoms_bleeding_symptom bine\  all_symptoms_imp_mental cate\  all_symptoms_mucosal_bleed_brs bine\  all_symptoms_bloody_nose cate\  all_symptoms_fever bine\  scleralicterus bine\ systolicbp70 bine\) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\severmalaria_ord_$S_DATE.xls", replace ) missing test
-table1, vars(parasite_count  conts \ zbmiukwho conts \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  mom_educ cat \ age conts \ gender bin \ city cat \ site cat \ urban cat \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \ sesindeximprovedfloor_index cat \sesindeximprovedwater_index cat \sesindeximprovedlight_index cat \sesindextelephone cat \sesindexradio cat \sesindextelevision cat \sesindexbicycle cat \sesindexmotorizedvehicle cat \sesindexdomesticworker cat \sesindexownflushtoilet cat \ pastmedhist_dum cat \ hivmeds cat \ pmhother_resp cat \ pmhsickle_cell  cat \ pmhpneumonia cat \ pmhintestinal_worms cat \ pmhmalaria cat \ pmhdiarrhea cat \ pmhdiabetes cat \ pmhseizure_disorder  cat \ pmhhiv cat \ pmhmeningitis  cat \ pmhtuberculosis cat \ pmhcardio_illness cat \ pmhasthma cat \ mosq_prevention_index conts \ mosquito_exposure_index conts \ childvillage cat \ ) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_ord_$S_DATE.xls", replace ) missing test
+*table1 , vars(splenomegaly  bine\ age conts \ gender bine \ city cate \ zheart_rate conts \ zsystolicbp conts \ zdiastolicbp conts \ zpulseoximetry conts \ ztemperature conts \ zresprate conts \ hb conts \  all_symptoms_altms bine\  all_symptoms_jaundice cate\  all_symptoms_bleeding_symptom bine\  all_symptoms_imp_mental cate\  all_symptoms_mucosal_bleed_brs bine\  all_symptoms_bloody_nose cate\  all_symptoms_fever bine\  scleralicterus bine\ systolicbp70 bine\) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\severmalaria_ord_$S_DATE.xls", replace ) missing test
+table1, vars(urban cate \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \  mom_educ cate \ age conts \ gender bine \ city cate \ site cate \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  species cate\ parasite_count  conts \ zbmiukwho conts \ rural bine\ species cate\ parasite_count  conts \ zbmiukwho conts \ sesindeximprovedfloor_index cate \sesindeximprovedwater_index cate \sesindeximprovedlight_index cate \sesindextelephone cate \sesindexradio cate \sesindextelevision cate \sesindexbicycle cate \sesindexmotorizedvehicle cate \sesindexdomesticworker cate \sesindexownflushtoilet cate \ pastmedhist_dum cate \ hivmeds cate \ pmhother_resp cate \ pmhsickle_cell  cate \ pmhpneumonia cate \ pmhintestinal_worms cate \ pmhmalaria cate \ pmhdiarrhea cate \ pmhdiabetes cate \ pmhseizure_disorder  cate \ pmhhiv cate \ pmhmeningitis  cate \ pmhtuberculosis cate \ pmhcardio_illness cate \ pmhasthma cate \ mosq_prevention_index conts \ mosquito_exposure_index conts \) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_ord_$S_DATE.xls", replace ) missing test
+*do the two by two table
+
+preserve
+	keep if severemalaria_ord == 1|severemalaria_ord == 2
+	table1, vars(urban cate \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \  mom_educ cate \ age conts \ gender bine \ city cate \ site cate \ zhtukwho conts \  zwtukwho conts \  zhcaukwho conts \  species cate\ parasite_count  conts \ zbmiukwho conts \ rural bine\ species cate\ parasite_count  conts \ zbmiukwho conts \ sesindeximprovedfloor_index cate \sesindeximprovedwater_index cate \sesindeximprovedlight_index cate \sesindextelephone cate \sesindexradio cate \sesindextelevision cate \sesindexbicycle cate \sesindexmotorizedvehicle cate \sesindexdomesticworker cate \sesindexownflushtoilet cate \ pastmedhist_dum cate \ hivmeds cate \ pmhother_resp cate \ pmhsickle_cell  cate \ pmhpneumonia cate \ pmhintestinal_worms cate \ pmhmalaria cate \ pmhdiarrhea cate \ pmhdiabetes cate \ pmhseizure_disorder  cate \ pmhhiv cate \ pmhmeningitis  cate \ pmhtuberculosis cate \ pmhcardio_illness cate \ pmhasthma cate \ mosq_prevention_index conts \ mosquito_exposure_index conts \) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_one_two_$S_DATE.xls", replace ) missing test
+restore
+
+preserve
+	keep if severemalaria_ord == 1|severemalaria_ord == 3
+	bysort severemalaria_ord: tab species
+bysort severemalaria_ord: tab city
+
+bysort severemalaria_ord:  tab site
+	bysort severemalaria_ord: sum urban     wealthindex     ses_index_sum       hygieneindex      mom_educ     age     gender     city     site     zhtukwho      zwtukwho           species    parasite_count      zbmiukwho     rural    species    parasite_count      zbmiukwho     sesindeximprovedfloor_index    sesindeximprovedwater_index    sesindeximprovedlight_index    sesindextelephone    sesindexradio    sesindextelevision    sesindexbicycle    sesindexmotorizedvehicle    sesindexownflushtoilet     pmhother_resp     pmhintestinal_worms     pmhmalaria     pmhdiarrhea     mosq_prevention_index     mosquito_exposure_index
+	table1, vars(urban cate \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \  mom_educ cate \ age conts \ gender bine \ city cate \ site cate \ zhtukwho conts \  zwtukwho conts \ species cate\ parasite_count  conts \ zbmiukwho conts \ rural bine\ species cate\ parasite_count  conts \ zbmiukwho conts \ sesindeximprovedfloor_index cate \sesindeximprovedwater_index cate \sesindeximprovedlight_index cate \sesindextelephone cate \sesindexradio cate \sesindextelevision cate \sesindexbicycle cate \sesindexmotorizedvehicle cate \sesindexownflushtoilet cate \  pmhother_resp cate \  pmhintestinal_worms cate \ pmhmalaria cate \ pmhdiarrhea cate \ mosq_prevention_index conts \ mosquito_exposure_index conts \) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_one_three_$S_DATE.xls", replace ) missing test
+restore
+
+preserve
+	keep if severemalaria_ord == 2|severemalaria_ord == 3
+		bysort severemalaria_ord: tab city
+		bysort severemalaria_ord: tab site
+		bysort severemalaria_ord: tab species
+	bysort severemalaria_ord: sum urban     wealthindex     ses_index_sum       hygieneindex      mom_educ     age     gender     city     site     zhtukwho      zwtukwho               parasite_count      zbmiukwho     rural        parasite_count      zbmiukwho     sesindeximprovedfloor_index    sesindeximprovedwater_index    sesindeximprovedlight_index    sesindextelephone    sesindexradio    sesindextelevision    sesindexbicycle    sesindexmotorizedvehicle    sesindexownflushtoilet    pmhother_resp     pmhintestinal_worms     pmhmalaria     pmhdiarrhea     mosq_prevention_index     mosquito_exposure_index    
+	table1, vars(species cate \ urban cate \ wealthindex conts \ ses_index_sum  conts  \ hygieneindex conts \  mom_educ cate \ age conts \ gender bine \ city cate \ site cate \ zhtukwho conts \  zwtukwho conts \    parasite_count  conts \ zbmiukwho conts \ rural bine\ parasite_count  conts \ zbmiukwho conts \ sesindeximprovedfloor_index cate \sesindeximprovedwater_index cate \sesindeximprovedlight_index cate \sesindextelephone cate \sesindexradio cate \sesindextelevision cate \sesindexbicycle cate \sesindexmotorizedvehicle cate \sesindexownflushtoilet cate \  pmhother_resp cate \  pmhintestinal_worms cate \ pmhmalaria cate \ pmhdiarrhea cate \ mosq_prevention_index conts \ mosquito_exposure_index conts \) by(severemalaria_ord) saving("C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka malaria aic visit a\tables\table2_by_group_two_three_$S_DATE.xls", replace ) missing test
+restore
 
 *data export
 outsheet using "finaldataset_$S_DATE.csv", comma names replace
