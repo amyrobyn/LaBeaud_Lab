@@ -11,10 +11,9 @@
 # Also, make sure that you select the correct sheet number when changing the excel files
 
 #Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre7') # for 32-bit version
+R_LIBS_USER="C:/Program Files/R/R-3.3.2/library"
 Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7') # for 64-bit version
-install.packages(c("readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2"))
-install.packages(c("rJava", "WriteXLS", "xlsx"))
-
+install.packages(c("readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
 #if (Sys.getenv("JAVA_HOME")!="")
 #  Sys.setenv(JAVA_HOME="")
 ### Packages :
@@ -31,6 +30,8 @@ library(car) # VIF stuff
 library(sjPlot) # For making nice tables
 library(visreg) # Plotting GLM fits
 library(datamart) # String processing functions included
+library(reshape2) # reshape datasets
+library(reshape)
 
 ### Data
 
@@ -324,6 +325,7 @@ UkundaClimate$Month <- as.yearmon(UkundaClimate$Date)
 
   # Save Daily Summaries
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
+#setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/monthly summaries")
 
 f = "ChulaimboDailyClimateData.xls"
 write.xlsx(ChulaimboClimate, f, sheetName = "Climate Data, Daily Scale", col.names = TRUE,
@@ -842,6 +844,8 @@ pupae1wide <- melt(Pupae1, c("Date", "Site", "Species"), "Pupae")
 Pupae1<-cast(pupae1wide, Site + Date ~ Species)
 Pupae1<-Pupae1[c("Site", "Date", "Aedes aegypti", "Anopheles", "Culex", "Toxorhynchites")]
 
+glimpse(Pupae2)
+Pupae2$Pupae <- rowSums(Pupae2[16:17])
 Pupae2<-Pupae2[c("Site", "Date", "Pupae", "SpeciesL")]
 Pupae2$SpeciesL[Pupae2$SpeciesL=="Toxorhynchite"] <- "Toxo"
 Pupae2$SpeciesL[Pupae2$SpeciesL=="Ae.simpsoni"] <- "Ae.simp"
@@ -850,25 +854,26 @@ Pupae2$SpeciesL[Pupae2$SpeciesL=="_"] <- "none"
 Pupae2$SpeciesL[Pupae2$SpeciesL=="Ae.simp"] <- "aedes"
 Pupae2$SpeciesL <- tolower(Pupae2$SpeciesL)
 Pupae2$SpeciesL[Pupae2$SpeciesL=="ae.simp"] <- "aedes"
-
+Pupae2$SpeciesL[Pupae2$SpeciesL=="aedes simp"] <- "aedes"
+table(Pupae2$SpeciesL)
 pupae2wide <- melt(Pupae2, c("Date", "Site", "SpeciesL"), "Pupae")
-Pupae2<-cast(pupae2wide, Site + Date ~ SpeciesL)
-glimpse(Pupae2)
+Pupae2wide<-cast(pupae2wide, Site + Date ~ SpeciesL)
 # These variable names may need to be updated as more data is collected
 names(Pupae1)[1] <- "Site"; 
 names(Pupae1)[2] <- "Date"
-names(Pupae1)[3] <- "Aedes aegypti"
+names(Pupae1)[3] <- "Aedes spp"
 names(Pupae1)[4] <- "Anopheles spp."
 names(Pupae1)[5] <- "Culex spp."
 names(Pupae1)[6] <- "Toxorhynchites spp."
-
-names(Pupae2)[1] <- "Site"; 
-names(Pupae2)[2] <- "Date"
-names(Pupae2)[3] <- "Aedes"
-names(Pupae2)[4] <- "Anopheles spp."
-names(Pupae2)[5] <- "Culex spp."
-names(Pupae2)[6] <- "Toxorhynchites spp."
-
+Pupae2wide<-Pupae2wide[c(1:5, 7)]
+names(Pupae2wide)[1] <- "Site"; 
+names(Pupae2wide)[2] <- "Date"
+names(Pupae2wide)[3] <- "Aedes spp"
+names(Pupae2wide)[4] <- "Anopheles spp."
+names(Pupae2wide)[5] <- "Culex spp."
+names(Pupae2wide)[6] <- "Toxo spp."
+glimpse(Pupae2wide)
+Pupae2<-Pupae2wide
 # Adjusting dates
 Pupae1$Date <- as.yearmon(as.Date(as.POSIXct(Pupae1$Date), origin = "1900-01-01"))
 
@@ -883,15 +888,17 @@ head(Pupae1)
 head(Pupae2)
 
 # Separation into site specific data sets
-
+table(Pupae2$Site)
 Pupae2$Site[Pupae2$Site=="Milalani"] <- "Msambweni"
 Pupae2$Site[Pupae2$Site=="Nganja"] <- "Msambweni"
 
-
+Pupae2$Site[Pupae2$Site=="Diani A "] <- "Diani"
 Pupae2$Site[Pupae2$Site=="Diani A"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="Diani B"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="DianiA"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="DianiB"] <- "Diani"
+Pupae2$Site[Pupae2$Site=="Diani"] <- "Ukunda"
+table(Pupae2$Site)
 
 table(Pupae1$Site)
 
@@ -1337,10 +1344,9 @@ SentinelTrap1 <- SentinelTrap1[,!ind]
 glimpse(SentinelTrap2)
 names(SentinelTrap2)[1] <- "Date"
 names(SentinelTrap2)[5] <- "Site"; 
-
 SentinelTrap2$measure <-rowSums(SentinelTrap2[12:16])
 SentinelTrap2 <- melt(SentinelTrap2, c("Date", "Site", "Species"), "measure")
-
+glimpse(SentinelTrap2)
 table(SentinelTrap2$Species)
 SentinelTrap2$Species[SentinelTrap2$Species=="Ae.Simpsoni"] <- "aedes spp"
 SentinelTrap2$Species[SentinelTrap2$Species=="Aedes simpsoni"] <- "aedes spp"
@@ -1361,10 +1367,12 @@ SentinelTrap2$Species[SentinelTrap2$Species=="Mansoni"] <- "mansoni"
 SentinelTrap2$Species[SentinelTrap2$Species=="none"] <- "none"
 SentinelTrap2$Species[SentinelTrap2$Species=="None"] <- "none"
 SentinelTrap2$Species[SentinelTrap2$Species=="Not done"] <- "99"
+table(SentinelTrap2$Species)
 
 SentinelTrap2wide<-cast(SentinelTrap2, Site + Date ~ Species)
 glimpse(SentinelTrap2wide)
 SentinelTrap2<-SentinelTrap2wide
+
 # Removing excess columns and rows
 i1 <- apply(SentinelTrap2,1,function(x) all(is.na(x)))
 SentinelTrap2 <- SentinelTrap2[!i1,]
@@ -1375,7 +1383,8 @@ SentinelTrap2 <- SentinelTrap2[, -dim(SentinelTrap2)[2]]
 
 # Adjusting dates
 SentinelTrap1$Date <- as.yearmon(SentinelTrap1$Date)
-SentinelTrap2$Date <- as.yearmon(as.Date(as.numeric(SentinelTrap2$Date), origin = "1900-01-01"))
+SentinelTrap2$Date <- as.yearmon(as.Date((SentinelTrap2$Date), origin = "1900-01-01"))
+glimpse(SentinelTrap2)
 
 SentinelTrap2$Site[SentinelTrap2$Site=="nganja"] <- "Msambweni"
 SentinelTrap2$Site[SentinelTrap2$Site=="Nganja"] <- "Msambweni"
@@ -1387,8 +1396,8 @@ table(SentinelTrap2$Site)
 # Separation into site specific data sets
 SentinelTrapC <- SentinelTrap1[which(SentinelTrap1$Site == "Chulaimbo"),]
 SentinelTrapK <- SentinelTrap1[-which(SentinelTrap1$Site == "Chulaimbo"),]
-SentinelTrapM <- SentinelTrap2[which(SentinelTrap2[,1] == "Msambweni"),]
-SentinelTrapU <- SentinelTrap2[-which(SentinelTrap2[,1] == "Msambweni"),]
+SentinelTrapM <- SentinelTrap2[which(SentinelTrap2$Site == "Msambweni"),]
+SentinelTrapU <- SentinelTrap2[-which(SentinelTrap2$Site == "Msambweni"),]
 glimpse(c(SentinelTrapU, SentinelTrapM, SentinelTrapK, SentinelTrapC))
 
 # Landing Catches
@@ -1501,7 +1510,8 @@ glimpse(LandingCatchesC)
 glimpse(LandingCatchesK)
 #come back here
 # Save the now cleaned data sets as individual Excel files, with sheets for the different sites
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Vector Data/monthly summaries from both sites")
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
+#setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Vector Data/monthly summaries from both sites")
 f <- "OvitrapMonthlySummaries.xls"
 write.xlsx(as.data.frame(OvitrapC), f, sheetName = "Chulaimbo", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
@@ -1603,6 +1613,7 @@ DENV$Date <- as.yearmon((DENV$Date))
 DENV <- DENV[, c("city","Date", "DENV PCR Results")]
 
 # Save the now cleaned data sets as an Excel file
+#setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
 f <- "DENVData.xls"
 write.xlsx(as.data.frame(DENV), f, sheetName = "Chulaimbo", col.names = TRUE,
