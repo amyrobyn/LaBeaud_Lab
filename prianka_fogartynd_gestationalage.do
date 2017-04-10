@@ -57,9 +57,7 @@ gen preg_chikvpos = .
 replace preg_chikvpos = 1 if result_mother==1 & pregnant ==1
 replace preg_chikvpos = 0 if pregnant == 0 | result_mother==0
 
-
 tab preg_chikvpos 
- 
 drop if trimester ==. & preg_chikvpos ==1
  
 gen chikv_preg_non =. 
@@ -262,6 +260,8 @@ egen count_lab_complic= rowtotal(lab_complic_*)
 egen count_abp= rowtotal(abp_*)
 
 order preg_chikvpos 
+tab preg_chikvpos  trimester, m
+
 
 outsheet using final_data.csv, replace comma names
 
