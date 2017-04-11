@@ -72,7 +72,6 @@ gen labelage = "age"
 tab age, m
 egen agegender = concat(labelage age sexlabel gender)
 tab agegender
-stop 
 drop if strpos(agegender, ".")
 
 levelsof agegender, local(levels) 
@@ -102,4 +101,11 @@ foreach l of local levels {
 }
 keep sd* median* age gender agegender 
 collapse (mean)  sd* median* , by(agegender)
+save normal_population_aic_b, replace
+use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\our_population"
+drop if strpos(agegender, ".")
+keep agegender
+merge m:1 agegender using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\normal_population_aic_b"
+drop _merge
+duplicates drop 
 save normal_population_aic_b, replace
