@@ -324,7 +324,7 @@ MsamClimate$Month <- as.yearmon(MsamClimate$Date)
 UkundaClimate$Month <- as.yearmon(UkundaClimate$Date)
 
   # Save Daily Summaries
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
 #setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/monthly summaries")
 
 f = "ChulaimboDailyClimateData.xls"
@@ -341,6 +341,7 @@ write.xlsx(UkundaClimate, f, sheetName = "Climate Data, Daily Scale", col.names 
            row.names = FALSE, append = FALSE, showNA = TRUE)
 
 # Creating monthly summaries of all the data
+glimpse(ChulaimboMonthlyClimate)
 ChulaimboMonthlyClimate <- ddply(ChulaimboClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                                  AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                                  OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
@@ -399,7 +400,7 @@ Larval1 <- read_excel("Larval Sampling Data.xlsx", sheet = 1)
 Prokopack1 <- read_excel("Prokopack Sampling Data.xlsx", sheet = 1)
 SentinelTrap1 <- read_excel("BioGents-Sentinel Trap Mosquito   Sampling Data.xlsx", sheet = 1)
 LandingCatches1 <- read_excel("HLC  Adult Mosquito Sampling  Data.xlsx", sheet = 1)
-glimpse(LandingCatches1)
+Pupae1 <-Larval1[,1:15]
 
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Vector Data/Coast/Coast Latest")
 Ovitrap2 <- read_excel("Ovitrapdata.xls", sheet = 1)
@@ -407,9 +408,7 @@ Larval2 <- read_excel("LarvalF.xls", sheet = 2)
 Prokopack2 <- read_excel("ProkopackF.xls", sheet = 1)
 SentinelTrap2 <- read_excel("BG Sentinel data.xls", sheet = 1)
 LandingCatches2 <- read_excel("HLC.xls", sheet = 1)
-Pupae1 <-Larval1[,1:15]
 Pupae2 <-Larval2[,1:17]
-
 # Cleaning
 
 # Ovitrap 
@@ -452,7 +451,7 @@ Ovitrap1$species <- tolower(Ovitrap1$species)
 #reshape to wide
 library(reshape)
 Ovitrap1wide <- melt(Ovitrap1, c("date", "site", "species", "indoors"), "measure")
-Ovitrap1wide<-cast(Ovitrap1wide, site + date + indoors ~ species)
+Ovitrap1wide<-cast(Ovitrap1wide, site + date + indoors ~ species , fun = sum, value  = 'measure')
 glimpse(Ovitrap1wide)
 
 Aedes_aegypti_Indoor <- Ovitrap1wide[ which(Ovitrap1wide$indoors ==1), c (1:2, 5) ] 
@@ -533,7 +532,7 @@ table(Ovitrap2$species)
 
 library(reshape)
 Ovitrap2wide <- melt(Ovitrap2, c("date", "site", "species", "location"), "egg count")
-Ovitrap2wide<-cast(Ovitrap2wide, site + date + location ~ species)
+Ovitrap2wide<-cast(Ovitrap2wide, site + date + location ~ species, fun = sum, value  = 'egg count')
 glimpse(Ovitrap2wide)
 
 Aedes_aegypti_Indoor <- Ovitrap2wide[ which(Ovitrap2wide$location =="Indoor"), c (1:2, 7) ] 
@@ -643,7 +642,7 @@ Larval2$species[Larval2$species=="aedes"] <- "aedes spp"
 table(Larval2$species)
 
 Larval2wide <- melt(Larval2, c("date", "site", "species", "location"), "measure")
-Larval2wide<-cast(Larval2wide, site + date + location ~ species)
+Larval2wide<-cast(Larval2wide, site + date + location ~ species, fun = sum, value  = 'measure')
 glimpse(Larval2wide)
 names(Larval2wide)[names(Larval2wide)=="location"] <- "indoors"
 Larval2wide$indoors[Larval2wide$indoors=="indoor"] <- "1"
@@ -735,7 +734,7 @@ Larval1$indoors[Larval1$indoors=="Outdoors"] <- "0"
 #reshape to wide
 library(reshape)
 Larval1wide <- melt(Larval1, c("date", "site", "species", "indoors"), "measure")
-Larval1wide<-cast(Larval1wide, site + date + indoors ~ species)
+Larval1wide<-cast(Larval1wide, site + date + indoors ~ species, fun = sum, value  = 'measure')
 glimpse(Larval1wide)
 
 Aedes_aegypti_Indoor <- Larval1wide[ which(Larval1wide$indoors ==1), c (1:2, 5) ] 
@@ -806,13 +805,16 @@ Larval2$Date <- as.yearmon(as.Date(as.POSIXct(Larval2$Date), origin = "1900-01-0
   head(Larval2)
 Larval2$Site[Larval2$Site=="Milalani"] <- "Msambweni"
 Larval2$Site[Larval2$Site=="Nganja"] <- "Msambweni"
-table(Larval2$Site)
+Larval2$Site[Larval2$Site=="Milalani"] <- "Msambweni"
+Larval2$Site[Larval2$Site=="Nganja"] <- "Msambweni"
 
-LarvalC <- Larval1[which(Larval1[,1] == "Chulaimbo"),]
-LarvalK <- Larval1[-which(Larval1[,1] == "Chulaimbo"),]
-LarvalM <- Larval2[which(Larval2[,1] == "Msambweni"),]
-LarvalU <- Larval2[-which(Larval2[,1] == "Msambweni"),]
+table(Larval1$Site)
 
+LarvalC <- Larval1[which(Larval1$Site == "Chulaimbo"),]
+LarvalK <- Larval1[-which(Larval1$Site == "Chulaimbo"),]
+LarvalM <- Larval2[which(Larval2$Site == "Msambweni"),]
+LarvalU <- Larval2[-which(Larval2$Site == "Msambweni"),]
+glimpse(LarvalU)
 # Pupae **Data is now availalbe for coast and west! 
 # Removing excess columns and rows
 ind <- apply(Pupae1, 1, function(x) all(is.na(x)))
@@ -834,18 +836,19 @@ for(i in 1:(dim(Pupae2)[1])){
   }
 }
 glimpse(Pupae1)
-Pupae1<-Pupae1[c("Site", "Date", "Pupae", "Species")]
+Pupae1<-Pupae1[c("Site", "Date", "Pupae", "Species", "IN-OUT-DOORS")]
+table(Pupae1$Species)
+Pupae1$Species[Pupae1$Species=="0"] <- "none"
+Pupae1$Species[Pupae1$Species=="33"] <- "none"
+
 #reshape to wide
-attach(Pupae1)
-mytable <- table(Site,Species) # A will be rows, B will be columns 
-mytable # print tabl
-pupae1wide <- melt(Pupae1, c("Date", "Site", "Species"), "Pupae")
-Pupae1<-cast(pupae1wide, Site + Date ~ Species)
-Pupae1<-Pupae1[c("Site", "Date", "Aedes spp", "Anopheles", "Culex", "Toxorhynchites")]
+pupae1wide <- melt(Pupae1, c("Date", "Site", "Species", "IN-OUT-DOORS"), "Pupae")
+glimpse(pupae1wide)
+
 
 glimpse(Pupae2)
 Pupae2$Pupae <- rowSums(Pupae2[16:17])
-Pupae2<-Pupae2[c("Site", "Date", "Pupae", "SpeciesL")]
+Pupae2<-Pupae2[c("Site", "Date", "Pupae", "Location", "SpeciesL")]
 Pupae2$SpeciesL[Pupae2$SpeciesL=="Toxorhynchite"] <- "Toxo"
 Pupae2$SpeciesL[Pupae2$SpeciesL=="Ae.simpsoni"] <- "Ae.simp"
 Pupae2$SpeciesL[Pupae2$SpeciesL==""] <- "none"
@@ -855,15 +858,85 @@ Pupae2$SpeciesL <- tolower(Pupae2$SpeciesL)
 Pupae2$SpeciesL[Pupae2$SpeciesL=="ae.simp"] <- "aedes spp"
 Pupae2$SpeciesL[Pupae2$SpeciesL=="aedes simp"] <- "aedes spp"
 table(Pupae2$SpeciesL)
-pupae2wide <- melt(Pupae2, c("Date", "Site", "SpeciesL"), "Pupae")
-Pupae2wide<-cast(pupae2wide, Site + Date ~ SpeciesL)
+
+Pupae2$Location[Pupae2$Location=="1ndoor"] <- "indoor"
+Pupae2$Location[Pupae2$Location=="Indoor"] <- "indoor"
+Pupae2$Location[Pupae2$Location=="Outdoor"] <- "outdoor"
+Pupae2_indoor <- Pupae2[which(Pupae2$Location == "indoor"),]
+table(Pupae2_indoor$SpeciesL)
+Pupae2_indoor$SpeciesL[Pupae2_indoor$SpeciesL=="aedes"] <- "aedes indoor"
+Pupae2_indoor$SpeciesL[Pupae2_indoor$SpeciesL=="an.gambiae"] <- "anopheles indoor"
+Pupae2_indoor$SpeciesL[Pupae2_indoor$SpeciesL=="culex"] <- "culex indoor"
+Pupae2_indoorwide <- melt(Pupae2_indoor, c("Date", "Site", "SpeciesL", "Location"), "Pupae")
+Pupae2_indoorwide<-cast(Pupae2_indoorwide, Site + Date + Location ~ SpeciesL, fun = sum, value  = 'Pupae')
+glimpse(Pupae2_indoorwide)
+
+#come back here
+Pupae2_outdoor <- Pupae2[which(Pupae2$Location == "outdoor"),]
+table(Pupae2_outdoor$SpeciesL)
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Ae.simpsoni"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Aedes simp"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Aedes"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Ae.simp"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="aedes"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="aedes spp"] <- "aedes outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="an.gambiae"] <- "anopheles outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="culex"] <- "culex outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Culex"] <- "culex outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Toxo"] <- "Toxo outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="Toxorhynchite"] <- "Toxo outdoor"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="None"] <- "none"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL==""] <- "none"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="_"] <- "none"
+Pupae2_outdoor$SpeciesL[Pupae2_outdoor$SpeciesL=="0"] <- "none"
+glimpse(Pupae2_outdoor)
+
+Pupae2_indoorwide <- melt(Pupae2_indoor, c("Date", "Site", "SpeciesL", "Location"), "Pupae")
+glimpse(Pupae2_indoorwide)
+Pupae2_indoorwide<-cast(Pupae2_indoorwide, Site + Date + Location ~ SpeciesL, fun = sum, value  = 'Pupae')
+glimpse(Pupae2_indoorwide)
+
+Pupae2_outdoor <- melt(Pupae2_outdoor, c("Date", "Site", "SpeciesL", "Location"), "Pupae")
+glimpse(Pupae2_outdoorwide)
+Pupae2_outdoorwide<-cast(Pupae2_outdoor, Site + Date + Location~SpeciesL, fun = sum, value  = 'Pupae')
+glimpse(Pupae2_outdoorwide)
+
+Pupae2 <- merge(Pupae2_outdoorwide, Pupae2_indoorwide, by=c("Date","Site"))
+glimpse(Pupae2)
+
 # These variable names may need to be updated as more data is collected
-names(Pupae1)[1] <- "Site"; 
-names(Pupae1)[2] <- "Date"
-names(Pupae1)[3] <- "Aedes spp"
-names(Pupae1)[4] <- "Anopheles spp."
-names(Pupae1)[5] <- "Culex spp."
-names(Pupae1)[6] <- "Toxorhynchites spp."
+glimpse(Pupae1)
+table(Pupae1$'IN-OUT-DOORS')
+Pupae1$'IN-OUT-DOORS'[Pupae1$'IN-OUT-DOORS'=="indoors"] <- "indoor"
+Pupae1$'IN-OUT-DOORS'[Pupae1$'IN-OUT-DOORS'=="Indoors"] <- "indoor"
+Pupae1$'IN-OUT-DOORS'[Pupae1$'IN-OUT-DOORS'=="Outdoors"] <- "outdoor"
+Pupae1$'IN-OUT-DOORS'[Pupae1$'IN-OUT-DOORS'=="outdoors"] <- "outdoor"
+Pupae1_indoor <- Pupae1[which(Pupae1$'IN-OUT-DOORS' == "indoor"),]
+table(Pupae1_indoor$Species)
+Pupae1_indoor$Species[Pupae1_indoor$Species=="Aedes aegypti"] <- "aedes indoor"
+Pupae1_indoor$Species[Pupae1_indoor$Species=="Culex"] <- "culex indoor"
+glimpse(Pupae1_indoor)
+Pupae1_indoorwide <- melt(Pupae1_indoor, c("Date", "Site", "Species", "IN-OUT-DOORS"), "Pupae")
+Pupae1_indoorwide<-cast(Pupae1_indoorwide, Site + Date + IN-OUT-DOORS~ Species, fun = sum, value  = 'Pupae')
+glimpse(Pupae1_indoorwide)
+
+
+Pupae1_outdoor <- Pupae1[which(Pupae1$'IN-OUT-DOORS' == "outdoor"),]
+table(Pupae1_outdoor$Species)
+Pupae1_outdoor$Species[Pupae1_outdoor$Species=="Aedes aegypti"] <- "aedes outdoor"
+Pupae1_outdoor$Species[Pupae1_outdoor$Species=="Anopheles"] <- "Anopheles outdoor"
+Pupae1_outdoor$Species[Pupae1_outdoor$Species=="Culex"] <- "culex outdoor"
+Pupae1_outdoor$Species[Pupae1_outdoor$Species=="Toxorhynchites"] <- "Toxorhynchites outdoor"
+
+glimpse(Pupae1_outdoor)
+Pupae1_outdoorwide <- melt(Pupae1_outdoor, c("Date", "Site", "Species", "IN-OUT-DOORS"), "Pupae")
+Pupae1_outdoorwide<-cast(Pupae1_outdoorwide, Site + Date + IN-OUT-DOORS~ Species)
+glimpse(Pupae1_outdoorwide)
+
+Pupae1 <- merge(Pupae1_outdoorwide, Pupae1_indoorwide, by=c("Date","Site"))
+glimpse(Pupae1)
+
+
 Pupae2wide<-Pupae2wide[c(1:5, 7)]
 names(Pupae2wide)[1] <- "Site"; 
 names(Pupae2wide)[2] <- "Date"
@@ -899,13 +972,13 @@ Pupae2$Site[Pupae2$Site=="DianiB"] <- "Diani"
 Pupae2$Site[Pupae2$Site=="Diani"] <- "Ukunda"
 table(Pupae2$Site)
 
-table(Pupae1$Site)
+table(Pupae2$Site)
 
-PupaeC <- Pupae1[which(Pupae1[,1] == "Chulaimbo"),]
-PupaeK <- Pupae1[-which(Pupae1[,1] == "Chulaimbo"),]
+PupaeC <- Pupae1[which(Pupae1$Site == "Chulaimbo"),]
+PupaeK <- Pupae1[-which(Pupae1$Site == "Chulaimbo"),]
 
-PupaeM <- Pupae2[which(Pupae2[,1] == "Msambweni"),]
-PupaeU <- Pupae2[-which(Pupae2[,1] == "Msambweni"),]
+PupaeM <- Pupae2[which(Pupae2$Site == "Msambweni"),]
+PupaeU <- Pupae2[-which(Pupae2$Site == "Msambweni"),]
 
 # Prokopack
 # Adjusting and including site names as well as variable names
@@ -967,79 +1040,34 @@ names(Prokopack1)[names(Prokopack1)=="Ga-gravid"] <- "Ga.gravid"
 names(Prokopack1)[names(Prokopack1)=="Ga-Male"] <- "Ga.Male"    
 names(Prokopack1)[names(Prokopack1)=="Ga-Unfed"] <- "Ga.Unfed"    
 names(Prokopack1) <- tolower(names(Prokopack1))
-
-Prokopack1_s<-Prokopack1[c(1:21,25)]
 glimpse(Prokopack1)
-
-Prokopack1_long<-reshape(Prokopack1, direction='long', 
-        varying= c("aedes.male", "aedes.unfed", "aedes-bloodfed", "aedes.halfgravid", "aedes.gravid", "ga.male", "ga.unfed", "ga.bloodfed", "ga.halfgravid", "ga.gravid", "fu.male", "fu.unfed", "fu.bloodfed", "fu.halfgravid", "fu.gravid", "cu.male", "cu.unfed", "cu.bloodfed", "cu.halfgravid", "cu.gravid"),
-        timevar='species',
-        times=c("aedes", "cu", "fu", "ga"),
-        v.names=c("male", "unfed", "bloodfed", "gravid", "halfgravid"),
-        idvar=c('date', 'site', 'indoor', 'time', 'house id'))
-
-
-Prokopack1_long$measure <- rowSums(Prokopack1_long[23:26])
-names(Prokopack1_long) <- tolower(names(Prokopack1_long))
-Prokopack1_long$species <- tolower(Prokopack1_long$species)
+Prokopack1_s<-Prokopack1[c(1:21,25, 28)]
+glimpse(Prokopack1_s)
+Prokopack1_s$aedes <- rowSums(Prokopack1_s[1:5])
+table(Prokopack1_s$aedes)
+names(Prokopack1_s) <- tolower(names(Prokopack1_s))
+Prokopack1_s$species <- tolower(Prokopack1_s$species)
 
 #reshape to wide
-library(reshape)
-Prokopack1wide <- melt(Prokopack1_long, c("date", "site", "species", "indoor"), "measure")
-Prokopack1wide<-cast(Prokopack1wide, site + date + indoor ~ species)
+glimpse(Prokopack1_s)
+#come back here and fix this tomorrow
+Prokopack1wide <- melt(Prokopack1_s, c("date", "site", "indoor"), "aedes")
 glimpse(Prokopack1wide)
+table(Prokopack1wide$value,Prokopack1wide$indoor)
+aedes_Indoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==1), ] 
+glimpse(aedes_Indoor)
+names(aedes_Indoor)[3] <- "aedes indoor" 
 
-Aedes_aegypti_Indoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==1), c (1:2, 4) ] 
-names(Aedes_aegypti_Indoor)[3] <- "Indoor" 
+aedes_outdoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==0),] 
+names(aedes_outdoor)[3] <- "aedes outdoor" 
 
-CulexsppIndoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==1), c (1:2, 5) ] 
-names(CulexsppIndoor)[3] <- "Indoor" 
-
-Aedes_aegypti_outdoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==0), c (1:2, 4) ] 
-names(Aedes_aegypti_outdoor)[3] <- "outdoor" 
-
-Culexsppoutdoor <- Prokopack1wide[ which(Prokopack1wide$indoor ==0), c (1:2, 5) ] 
-names(Culexsppoutdoor)[3] <- "outdoor" 
-
-Indoor_Total<- rbind(Aedes_aegypti_Indoor, CulexsppIndoor)
-Indoor_Total <- aggregate(Indoor_Total$Indoor, by=list(date=Indoor_Total$date, site =Indoor_Total$site), FUN=sum)
-names(Indoor_Total)[3] <- "Indoor Total" 
-
-outdoor_Total<- rbind(Aedes_aegypti_outdoor, Culexsppoutdoor)
-outdoor_Total <- aggregate(outdoor_Total$outdoor, by=list(date=outdoor_Total$date, site =outdoor_Total$site), FUN=sum)
-names(outdoor_Total)[3] <- "Outdoor Total" 
-
-#names
-names(Aedes_aegypti_Indoor)[3] <- "Aedes spp, Indoor" 
-glimpse(Aedes_aegypti_Indoor)
-names(CulexsppIndoor)[3] <- "Culex spp., Indoor" 
-glimpse(CulexsppIndoor)
-names(Aedes_aegypti_outdoor)[3] <- "Aedes spp, Outdoor" 
-glimpse(Aedes_aegypti_outdoor)
-names(Culexsppoutdoor)[3] <- "Culex spp., Outdoor" 
-glimpse(Culexsppoutdoor)
-
-glimpse(c(Aedes_aegypti_outdoor, Culexsppoutdoor, outdoor_Total, Indoor_Total, Aedes_aegypti_Indoor, CulexsppIndoor))
+glimpse(c(aedes_outdoor, aedes_Indoor))
 
 # merge two data frames by ID and Country
-total <- merge(Aedes_aegypti_outdoor, Culexsppoutdoor, by=c("date","site"))
-total <- merge(total, outdoor_Total, by=c("date","site"))
-total <- merge(total, Indoor_Total, by=c("date","site"))
-total <- merge(total, Aedes_aegypti_Indoor, by=c("date","site"))
-total <- merge(total, CulexsppIndoor, by=c("date","site"))
-Prokopack1<-total[c(2,1,7, 8, 6, 3, 4, 5)]
+total <- merge(aedes_outdoor, aedes_Indoor, by=c("date","site"))
+Prokopack1<-total[c(2,1, 3, 6)]
 glimpse(Prokopack1)
 # These variable names may need to be updated as more data is collected
-names(Prokopack1)[1] <- "Site"; 
-names(Prokopack1)[2] <- "Date"
-names(Prokopack1)[3] <- "Aedes spp, Indoor"
-names(Prokopack1)[4] <- "Culex spp., Indoor"
-names(Prokopack1)[5] <- "Indoor Total"
-names(Prokopack1)[6] <- "Aedes spp, Outdoor"
-names(Prokopack1)[7] <- "Culex spp., Outdoor"
-names(Prokopack1)[8] <- "Outdoor Total"
-
-glimpse(Prokopack1)
 # Removing excess columns and rows
 Prokopack1 <- Prokopack1[-1,]
 ind <- apply(Prokopack1, 2, function(x) all(is.na(x)))
@@ -1047,10 +1075,8 @@ Prokopack1 <- Prokopack1[,!ind]
 #Prokopack1b <- Prokopack1[(-which(is.na(Prokopack1$Date))),]
 glimpse(Prokopack1)
 
-
-
 # Adjusting dates
-Prokopack1$Date <- as.yearmon(as.Date(as.POSIXct(Prokopack1$Date), origin = "1900-01-01"))
+Prokopack1$date <- as.yearmon(Prokopack1$date) 
 
 # Taking care of NA's
 Prokopack1[is.na(Prokopack1)] <- 0
@@ -1059,19 +1085,19 @@ Prokopack1[is.na(Prokopack1)] <- 0
 head(Prokopack1)
 
 # Separation into site specific data sets
-Prokopack1$Site[Prokopack1$Site=="Milalani"] <- "Msambweni"
-Prokopack1$Site[Prokopack1$Site=="Nganja"] <- "Msambweni"
+Prokopack1$Site[Prokopack1$site=="Milalani"] <- "Msambweni"
+Prokopack1$Site[Prokopack1$site=="Nganja"] <- "Msambweni"
 
-Prokopack1$Site[Prokopack1$Site=="Diani A"] <- "Diani"
-Prokopack1$Site[Prokopack1$Site=="Diani B"] <- "Diani"
-Prokopack1$Site[Prokopack1$Site=="DianiA"] <- "Diani"
-Prokopack1$Site[Prokopack1$Site=="DianiB"] <- "Diani"
+Prokopack1$Site[Prokopack1$site=="Diani A"] <- "Diani"
+Prokopack1$Site[Prokopack1$site=="Diani B"] <- "Diani"
+Prokopack1$Site[Prokopack1$site=="DianiA"] <- "Diani"
+Prokopack1$Site[Prokopack1$site=="DianiB"] <- "Diani"
 
-table(Prokopack1$Site)
+table(Prokopack1$site)
 
 ProkopackC <- Prokopack1[which(Prokopack1[,1] == "Chulaimbo"),]
 ProkopackK <- Prokopack1[-which(Prokopack1[,1] == "Chulaimbo"),]
-
+glimpse(ProkopackC)
 # Prokopack2
 # Adjusting and including site names as well as variable names
 for(i in 1:(dim(Prokopack2)[1])){
@@ -1151,7 +1177,7 @@ table(Prokopack2$species)
 
 
 glimpse(Prokopack2)
-Prokopack2wide<-cast(Prokopack2, site + date + indoor ~ species)
+Prokopack2wide<-cast(Prokopack2, site + date + indoor ~ species, fun = sum, value  = 'total mosq count')
 glimpse(Prokopack2wide)
 
 Aedes_aegypti_Indoor <- Prokopack2wide[ which(Prokopack2wide$indoor ==1), c (1:2, 4) ] 
@@ -1232,7 +1258,7 @@ Prokopack2 <- Prokopack2[-1,]
 ind <- apply(Prokopack2, 2, function(x) all(is.na(x)))
 Prokopack2 <- Prokopack2[,!ind]
 #Prokopack2 <- Prokopack2[(-which(is.na(Prokopack2$Date))),]
-glimpse(Prokopack2b)
+glimpse(Prokopack2)
 
 # Adjusting dates
 Prokopack2$Date <- as.yearmon(as.Date(as.POSIXct(Prokopack2$Date), origin = "1900-01-01"))
@@ -1246,6 +1272,8 @@ head(Prokopack2)
 # Separation into site specific data sets
 Prokopack2$Site[Prokopack2$Site=="milalani"] <- "Msambweni"
 Prokopack2$Site[Prokopack2$Site=="nganja"] <- "Msambweni"
+Prokopack2$Site[Prokopack2$Site=="Milalani"] <- "Msambweni"
+Prokopack2$Site[Prokopack2$Site=="Nganja"] <- "Msambweni"
 
 Prokopack2$Site[Prokopack2$Site=="Diani A"] <- "Diani"
 Prokopack2$Site[Prokopack2$Site=="Diani B"] <- "Diani"
@@ -1260,11 +1288,7 @@ glimpse(ProkopackM)
 ProkopackU <- Prokopack2[which(Prokopack2[,1] == "ukunda"),]
 glimpse(ProkopackU)
 
-# Adjusting dates
-Prokopack1$Date <- as.yearmon(as.Date(as.numeric(Prokopack1$Date), origin = "1900-01-01"))
-Prokopack2$Date <- as.yearmon(as.Date(as.numeric(Prokopack2$Date), origin = "1900-01-01"))
-
-  # Double checking everything was processed correctly
+# Double checking everything was processed correctly
   head(Prokopack1)
   head(Prokopack2)
 
@@ -1324,7 +1348,7 @@ names(SentinelTrap1long)[1] <- "date"
 names(SentinelTrap1long)[2] <- "site";
 
 SentinelTrap1wide <- melt(SentinelTrap1long, c("date", "site", "species"), "measure")
-SentinelTrap1wide<-cast(SentinelTrap1wide, site + date ~ species)
+SentinelTrap1wide<-cast(SentinelTrap1wide, site + date ~ species, fun = sum, value  = 'measure')
 glimpse(SentinelTrap1wide)
 SentinelTrap1<-SentinelTrap1wide
 names(SentinelTrap1)[1] <- "Site";
@@ -1368,7 +1392,7 @@ SentinelTrap2$Species[SentinelTrap2$Species=="None"] <- "none"
 SentinelTrap2$Species[SentinelTrap2$Species=="Not done"] <- "99"
 table(SentinelTrap2$Species)
 
-SentinelTrap2wide<-cast(SentinelTrap2, Site + Date ~ Species)
+SentinelTrap2wide<-cast(SentinelTrap2, Site + Date ~ Species, fun = sum, value  = 'measure')
 glimpse(SentinelTrap2wide)
 SentinelTrap2<-SentinelTrap2wide
 
@@ -1469,7 +1493,7 @@ glimpse(LandingCatches2wide)
 
 LandingCatches2$Species <- tolower(LandingCatches2$Species)
 
-LandingCatches2wide<-cast(LandingCatches2wide, Site + Date~ Species + Location)
+LandingCatches2wide<-cast(LandingCatches2wide, Site + Date~ Species + Location, fun = sum, value  = 'measure')
 LandingCatches2wide$aedes.indoor <- rowSums(LandingCatches2wide[c(3, 5, 7 , 9 , 12, 15, 17, 19)])
 LandingCatches2wide$aedes.outdoor <- rowSums(LandingCatches2wide[c(4, 6, 8 , 10, 11, 13, 14, 18, 20, 21)])
 LandingCatches2wide$aedes.total <- rowSums(LandingCatches2wide[c(51:52)])
@@ -1508,34 +1532,40 @@ glimpse(LandingCatchesC)
 glimpse(LandingCatchesK)
 
 # Save the now cleaned data sets as individual Excel files, with sheets for the different sites
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
 #setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Vector Data/monthly summaries from both sites")
 #create montly summary of the vector data for each site and trap type
 glimpse(OvitrapC)
-OvitrapC$'Aedes spp, Indoor'<-as.double(OvitrapC$'Aedes spp, Indoor')
-OvitrapC$'Aedes spp, Outdoor'<-as.double(OvitrapC$'Aedes spp, Outdoor')
+OvitrapC$'AedessppIndoor'<-as.double(OvitrapC$'Aedes spp, Indoor')
+OvitrapC$'AedessppOutdoor'<-as.double(OvitrapC$'Aedes spp, Outdoor')
 glimpse(OvitrapC)
-MonthlyOvitrapC <- ddply(OvitrapC, ~OvitrapC$Date, summarise, Ttl_Aedes.spp.Indoor = sum(OvitrapC$'Aedes spp, Indoor'),
-                               ttl_Aedes_spp_Outdoor = sum(OvitrapC$'Aedes spp, Outdoor')) 
+MonthlyOvitrapC <- ddply(OvitrapC, ~OvitrapC$Date, summarise, 
+                                Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                                ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
+glimpse(MonthlyOvitrapC)
+
 glimpse(OvitrapK)
-OvitrapK$'Aedes spp, Indoor'<-as.double(OvitrapK$'Aedes spp, Indoor')
-OvitrapK$'Aedes spp, Outdoor'<-as.double(OvitrapK$'Aedes spp, Outdoor')
+OvitrapK$'AedessppIndoor'<-as.double(OvitrapK$'Aedes spp, Indoor')
+OvitrapK$'AedessppOutdoor'<-as.double(OvitrapK$'Aedes spp, Outdoor')
 glimpse(OvitrapK)
-MonthlyOvitrapK <- ddply(OvitrapK, ~OvitrapK$Date, summarise, Ttl_Aedes.spp.Indoor = sum(OvitrapK$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(OvitrapK$'Aedes spp, Outdoor')) 
+MonthlyOvitrapK <- ddply(OvitrapK, ~OvitrapK$Date, summarise, 
+                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(OvitrapM)
-OvitrapM$'Aedes spp, Indoor'<-as.double(OvitrapM$'Aedes spp, Indoor')
-OvitrapM$'Aedes spp, Outdoor'<-as.double(OvitrapM$'Aedes spp, Outdoor')
+OvitrapM$'AedessppIndoor'<-as.double(OvitrapM$'Aedes spp, Indoor')
+OvitrapM$'AedessppOutdoor'<-as.double(OvitrapM$'Aedes spp, Outdoor')
 glimpse(OvitrapM)
-MonthlyOvitrapM <- ddply(OvitrapM, ~OvitrapM$Date, summarise, Ttl_Aedes.spp.Indoor = sum(OvitrapM$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(OvitrapM$'Aedes spp, Outdoor')) 
+MonthlyOvitrapM <- ddply(OvitrapM, ~OvitrapM$Date, summarise, 
+                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(OvitrapU)
-OvitrapU$'Aedes spp, Indoor'<-as.double(OvitrapU$'Aedes spp, Indoor')
-OvitrapU$'Aedes spp, Outdoor'<-as.double(OvitrapU$'Aedes spp, Outdoor')
+OvitrapU$'AedessppIndoor'<-as.double(OvitrapU$'Aedes spp, Indoor')
+OvitrapU$'AedessppOutdoor'<-as.double(OvitrapU$'Aedes spp, Outdoor')
 glimpse(OvitrapU)
-MonthlyOvitrapU <- ddply(OvitrapU, ~OvitrapU$Date, summarise, Ttl_Aedes.spp.Indoor = sum(OvitrapU$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(OvitrapU$'Aedes spp, Outdoor')) 
+MonthlyOvitrapU <- ddply(OvitrapU, ~OvitrapU$Date, summarise, 
+                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 f <- "OvitrapMonthlySummaries.xls"
 write.xlsx(as.data.frame(MonthlyOvitrapC), f, sheetName = "Chulaimbo", col.names = TRUE,
@@ -1550,31 +1580,34 @@ write.xlsx(as.data.frame(MonthlyOvitrapU), f, sheetName = "Ukunda", col.names = 
 
 #create montly summary of the vector data for each site and trap type
 glimpse(LarvalC)
-LarvalC$'Aedes spp, Indoor'<-as.double(LarvalC$'Aedes spp, Indoor')
-OvitrapC$'Aedes spp, Outdoor'<-as.double(LarvalC$'Aedes spp, Outdoor')
+LarvalC$'AedessppIndoor'<-as.double(LarvalC$'Aedes spp, Indoor')
+LarvalC$'AedessppOutdoor'<-as.double(LarvalC$'Aedes spp, Outdoor')
 glimpse(LarvalC)
-MonthlyLarvalC <- ddply(LarvalC, ~LarvalC$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LarvalC$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(LarvalC$'Aedes spp, Outdoor')) 
+MonthlyLarvalC <- ddply(LarvalC, ~Date, summarise, 
+                        Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(LarvalK)
-LarvalK$'Aedes spp, Indoor'<-as.double(LarvalK$'Aedes spp, Indoor')
-LarvalK$'Aedes spp, Outdoor'<-as.double(LarvalK$'Aedes spp, Outdoor')
-glimpse(LarvalK)
-MonthlyLarvalK <- ddply(LarvalK, ~LarvalK$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LarvalK$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(LarvalK$'Aedes spp, Outdoor')) 
+LarvalK$'AedessppIndoor'<-as.double(LarvalK$'Aedes spp, Indoor')
+LarvalK$'AedessppOutdoor'<-as.double(LarvalK$'Aedes spp, Outdoor')
+MonthlyLarvalK <- ddply(LarvalK, ~Date, summarise, 
+                        Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(LarvalM)
-LarvalM$'Aedes spp, Indoor'<-as.double(LarvalM$'Aedes spp, Indoor')
-LarvalM$'Aedes spp, Outdoor'<-as.double(LarvalM$'Aedes spp, Outdoor')
+LarvalM$'AedessppIndoor'<-as.double(LarvalM$'Aedes spp, Indoor')
+LarvalM$'AedessppOutdoor'<-as.double(LarvalM$'Aedes spp, Outdoor')
 glimpse(LarvalM)
-MonthlyLarvalM <- ddply(LarvalM, ~LarvalM$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LarvalM$'Aedes spp, Indoor'),
-                         ttl_Aedes_spp_Outdoor = sum(LarvalM$'Aedes spp, Outdoor')) 
+MonthlyLarvalM <- ddply(LarvalM, ~Date, summarise, 
+                        Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(LarvalU)
-LarvalU$'Aedes spp, Indoor'<-as.double(LarvalU$'Aedes spp, Indoor')
-LarvalU$'Aedes spp, Outdoor'<-as.double(LarvalU$'Aedes spp, Outdoor')
+LarvalU$'AedessppIndoor'<-as.double(LarvalU$'Aedes spp, Indoor')
+LarvalU$'AedessppOutdoor'<-as.double(LarvalU$'Aedes spp, Outdoor')
 glimpse(LarvalU)
-MonthlyLarvalU <- ddply(LarvalU, ~LarvalU$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LarvalU$'Aedes spp, Indoor'),
-                        ttl_Aedes_spp_Outdoor = sum(LarvalU$'Aedes spp, Outdoor')) 
+MonthlyLarvalU <- ddply(LarvalU, ~Date, summarise, 
+                        Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                        ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 f <- "LarvalMonthlySummaries.xls"
 write.xlsx(as.data.frame(MonthlyLarvalC), f, sheetName = "Chulaimbo", col.names = TRUE,
@@ -1586,34 +1619,37 @@ write.xlsx(as.data.frame(MonthlyLarvalM), f, sheetName = "Msambweni", col.names 
 write.xlsx(as.data.frame(MonthlyLarvalU), f, sheetName = "Ukunda", col.names = TRUE,
            row.names = FALSE, append = TRUE, showNA = TRUE)
 
-
 #create montly summary of the vector data for each site and trap type
 glimpse(PupaeC)
-PupaeC$'Aedes spp, Indoor'<-as.double(PupaeC$'Aedes spp, Indoor')
-OvitrapC$'Aedes spp, Outdoor'<-as.double(PupaeC$'Aedes spp, Outdoor')
-glimpse(PupaeC)
-MonthlyPupaeC <- ddply(PupaeC, ~PupaeC$Date, summarise, Ttl_Aedes.spp.Indoor = sum(PupaeC$'Aedes spp, Indoor'),
-                       ttl_Aedes_spp_Outdoor = sum(PupaeC$'Aedes spp, Outdoor')) 
+PupaeC$'AedessppIndoor'<-as.double(PupaeC$'aedes indoor')
+PupaeC$'AedessppOutdoor'<-as.double(PupaeC$'aedes outdoor')
+MonthlyPupaeC <- ddply(PupaeC, ~PupaeC$Date, summarise, 
+                       Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                       ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(PupaeK)
-PupaeK$'Aedes spp, Indoor'<-as.double(PupaeK$'Aedes spp, Indoor')
-PupaeK$'Aedes spp, Outdoor'<-as.double(PupaeK$'Aedes spp, Outdoor')
+table(PupaeK$'aedes outdoor')
+PupaeK$'AedessppIndoor'<-as.double(PupaeK$'aedes indoor')
+PupaeK$'AedessppOutdoor'<-as.double(PupaeK$'aedes outdoor')
 glimpse(PupaeK)
-MonthlyPupaeK <- ddply(PupaeK, ~PupaeK$Date, summarise, Ttl_Aedes.spp.Indoor = sum(PupaeK$'Aedes spp, Indoor'),
-                       ttl_Aedes_spp_Outdoor = sum(PupaeK$'Aedes spp, Outdoor')) 
+MonthlyPupaeK <- ddply(PupaeK, ~PupaeK$Date, summarise, 
+                       Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                       ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(PupaeM)
-PupaeM$'Aedes spp, Indoor'<-as.double(PupaeM$'Aedes spp, Indoor')
-PupaeM$'Aedes spp, Outdoor'<-as.double(PupaeM$'Aedes spp, Outdoor')
+PupaeM$'AedessppIndoor'<-as.double(PupaeM$'aedes indoor')
+PupaeM$'AedessppOutdoor'<-as.double(PupaeM$'aedes outdoor')
 glimpse(PupaeM)
-MonthlyPupaeM <- ddply(PupaeM, ~PupaeM$Date, summarise, Ttl_Aedes.spp.Indoor = sum(PupaeM$'Aedes spp, Indoor'),
-                       ttl_Aedes_spp_Outdoor = sum(PupaeM$'Aedes spp, Outdoor')) 
+MonthlyPupaeM <- ddply(PupaeM, ~PupaeM$Date, summarise, 
+                       Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                       ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(PupaeU)
-PupaeU$'Aedes spp, Indoor'<-as.double(PupaeU$'Aedes spp, Indoor')
-PupaeU$'Aedes spp, Outdoor'<-as.double(PupaeU$'Aedes spp, Outdoor')
+PupaeU$'AedessppIndoor'<-as.double(PupaeU$'aedes indoor')
+PupaeU$'AedessppOutdoor'<-as.double(PupaeU$'aedes outdoor')
 glimpse(PupaeU)
-MonthlyPupaeU <- ddply(PupaeU, ~PupaeU$Date, summarise, Ttl_Aedes.spp.Indoor = sum(PupaeU$'Aedes spp, Indoor'),
-                       ttl_Aedes_spp_Outdoor = sum(PupaeU$'Aedes spp, Outdoor')) 
+MonthlyPupaeU <- ddply(PupaeU, ~PupaeU$Date, summarise, 
+                       Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                       ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 f <- "PupaeMonthlySummaries.xls"
 write.xlsx(as.data.frame(MonthlyPupaeC), f, sheetName = "Chulaimbo", col.names = TRUE,
@@ -1627,32 +1663,37 @@ write.xlsx(as.data.frame(MonthlyPupaeU), f, sheetName = "Ukunda", col.names = TR
 
 #create montly summary of the vector data for each site and trap type
 glimpse(ProkopackC)
-ProkopackC$'Aedes spp, Indoor'<-as.double(ProkopackC$'Aedes spp, Indoor')
-OvitrapC$'Aedes spp, Outdoor'<-as.double(ProkopackC$'Aedes spp, Outdoor')
+ProkopackC$'AedessppIndoor'<-as.double(ProkopackC$'aedes indoor')
+ProkopackC$'AedessppOutdoor'<-as.double(ProkopackC$'aedes outdoor')
 glimpse(ProkopackC)
-MonthlyProkopackC <- ddply(ProkopackC, ~ProkopackC$Date, summarise, Ttl_Aedes.spp.Indoor = sum(ProkopackC$'Aedes spp, Indoor'),
-                           ttl_Aedes_spp_Outdoor = sum(ProkopackC$'Aedes spp, Outdoor')) 
+MonthlyProkopackC <- ddply(ProkopackC, ~ProkopackC$date, summarise, 
+                           Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                           ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(ProkopackK)
-ProkopackK$'Aedes spp, Indoor'<-as.double(ProkopackK$'Aedes spp, Indoor')
-ProkopackK$'Aedes spp, Outdoor'<-as.double(ProkopackK$'Aedes spp, Outdoor')
+ProkopackK$'AedessppIndoor'<-as.double(ProkopackK$'aedes indoor')
+ProkopackK$'AedessppOutdoor'<-as.double(ProkopackK$'aedes outdoor')
 glimpse(ProkopackK)
-MonthlyProkopackK <- ddply(ProkopackK, ~ProkopackK$Date, summarise, Ttl_Aedes.spp.Indoor = sum(ProkopackK$'Aedes spp, Indoor'),
-                           ttl_Aedes_spp_Outdoor = sum(ProkopackK$'Aedes spp, Outdoor')) 
+MonthlyProkopackK <- ddply(ProkopackK, ~ProkopackK$date, summarise, 
+                           Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                           ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(ProkopackM)
-ProkopackM$'Aedes spp, Indoor'<-as.double(ProkopackM$'Aedes spp, Indoor')
-ProkopackM$'Aedes spp, Outdoor'<-as.double(ProkopackM$'Aedes spp, Outdoor')
+ProkopackM$'AedessppIndoor'<-as.double(ProkopackM$'Aedes spp, Indoor')
+ProkopackM$'AedessppOutdoor'<-as.double(ProkopackM$'Aedes spp, Outdoor')
 glimpse(ProkopackM)
-MonthlyProkopackM <- ddply(ProkopackM, ~ProkopackM$Date, summarise, Ttl_Aedes.spp.Indoor = sum(ProkopackM$'Aedes spp, Indoor'),
-                           ttl_Aedes_spp_Outdoor = sum(ProkopackM$'Aedes spp, Outdoor')) 
+MonthlyProkopackM <- ddply(ProkopackM, ~ProkopackM$Date, summarise, 
+                           Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                           ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(ProkopackU)
-ProkopackU$'Aedes spp, Indoor'<-as.double(ProkopackU$'Aedes spp, Indoor')
-ProkopackU$'Aedes spp, Outdoor'<-as.double(ProkopackU$'Aedes spp, Outdoor')
+ProkopackU$AedessppIndoor<-as.double(ProkopackU$'Aedes spp, Indoor')
+ProkopackU$AedessppOutdoor<-as.double(ProkopackU$'Aedes spp, Outdoor')
 glimpse(ProkopackU)
-MonthlyProkopackU <- ddply(ProkopackU, ~ProkopackU$Date, summarise, Ttl_Aedes.spp.Indoor = sum(ProkopackU$'Aedes spp, Indoor'),
-                           ttl_Aedes_spp_Outdoor = sum(ProkopackU$'Aedes spp, Outdoor')) 
+MonthlyProkopackU <- ddply(ProkopackU, ~ProkopackU$Date, summarise, 
+                            Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                           ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
 f <- "ProkopackMonthlySummaries.xls"
 write.xlsx(as.data.frame(MonthlyProkopackC), f, sheetName = "Chulaimbo", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
@@ -1665,29 +1706,30 @@ write.xlsx(as.data.frame(MonthlyProkopackU), f, sheetName = "Ukunda", col.names 
 
 
 
-
 #create montly summary of the vector data for each site and trap type
 glimpse(SentinelTrapC)
-SentinelTrapC$'aedes spp'<-as.double(SentinelTrapC$'aedes spp')
+SentinelTrapC$'aedesspp'<-as.double(SentinelTrapC$'Aedes spp')
 glimpse(SentinelTrapC)
-MonthlySentinelTrapC <- ddply(SentinelTrapC, ~SentinelTrapC$Date, summarise, Ttl_Aedes.spp = sum(SentinelTrapC$'aedes spp'))
+MonthlySentinelTrapC <- ddply(SentinelTrapC, ~SentinelTrapC$Date, summarise, 
+                              Ttl_Aedes.spp = sum(aedesspp))
 
 glimpse(SentinelTrapK)
-SentinelTrapK$'aedes spp'<-as.double(SentinelTrapK$'aedes spp')
+SentinelTrapK$'aedesspp'<-as.double(SentinelTrapK$'Aedes spp')
 glimpse(SentinelTrapK)
-MonthlySentinelTrapK <- ddply(SentinelTrapK, ~SentinelTrapK$Date, summarise, Ttl_Aedes.spp = sum(SentinelTrapK$'aedes spp'))
+MonthlySentinelTrapK <- ddply(SentinelTrapK, ~SentinelTrapK$Date, summarise, 
+                              Ttl_Aedes.spp = sum(aedesspp))
 
 
 glimpse(SentinelTrapM)
-SentinelTrapM$'aedes spp'<-as.double(SentinelTrapM$'aedes spp')
+SentinelTrapM$'aedesspp'<-as.double(SentinelTrapM$'aedes spp')
 glimpse(SentinelTrapM)
-MonthlySentinelTrapM <- ddply(SentinelTrapM, ~SentinelTrapM$Date, summarise, Ttl_Aedes.spp = sum(SentinelTrapM$'aedes spp'))
+MonthlySentinelTrapM <- ddply(SentinelTrapM, ~SentinelTrapM$Date, summarise, Ttl_Aedes.spp = sum(aedesspp))
 
 
 glimpse(SentinelTrapU)
-SentinelTrapU$'aedes spp'<-as.double(SentinelTrapU$'aedes spp')
+SentinelTrapU$'aedesspp'<-as.double(SentinelTrapU$'aedes spp')
 glimpse(SentinelTrapU)
-MonthlySentinelTrapU <- ddply(SentinelTrapU, ~SentinelTrapU$Date, summarise, Ttl_Aedes.spp = sum(SentinelTrapU$'aedes spp'))
+MonthlySentinelTrapU <- ddply(SentinelTrapU, ~SentinelTrapU$Date, summarise, Ttl_Aedes.spp = sum(aedesspp))
  
 
 f <- "SentinelTrapMonthlySummaries.xls"
@@ -1702,34 +1744,35 @@ write.xlsx(as.data.frame(MonthlySentinelTrapU), f, sheetName = "Ukunda", col.nam
 
 #create montly summary of the vector data for each site and trap type
 glimpse(LandingCatchesC)
-LandingCatchesC$'Aedes spp, Inside'<-as.double(LandingCatchesC$'Aedes spp, Inside')
-OvitrapC$'Aedes spp, Outside'<-as.double(LandingCatchesC$'Aedes spp, Outside')
+LandingCatchesC$'AedessppInside'<-as.double(LandingCatchesC$'Aedes spp, Inside')
+LandingCatchesC$'AedessppOutside'<-as.double(LandingCatchesC$'Aedes spp, Outside')
 glimpse(MonthlyLandingCatchesC)
 MonthlyLandingCatchesC <- ddply(LandingCatchesC, ~LandingCatchesC$date, summarise, 
-                                Ttl_Aedes.spp.Indoor = sum(LandingCatchesC$'Aedes spp, Inside'),
-                                ttl_Aedes_spp_Outdoor = sum(LandingCatchesC$'Aedes spp, Outside')) 
+                                Ttl_Aedes.spp.Indoor = sum(AedessppInside),
+                                ttl_Aedes_spp_Outdoor = sum(AedessppOutside)) 
 
 glimpse(LandingCatchesK)
-LandingCatchesK$'Aedes spp, Inside'<-as.double(LandingCatchesK$'Aedes spp, Inside')
-OvitrapC$'Aedes spp, Outside'<-as.double(LandingCatchesK$'Aedes spp, Outside')
-glimpse(MonthlyLandingCatchesK)
+LandingCatchesK$'AedessppInside'<-as.double(LandingCatchesK$'Aedes spp, Inside')
+LandingCatchesK$'AedessppOutside'<-as.double(LandingCatchesK$'Aedes spp, Outside')
 MonthlyLandingCatchesK <- ddply(LandingCatchesK, ~LandingCatchesK$date, summarise, 
-                                Ttl_Aedes.spp.Indoor = sum(LandingCatchesK$'Aedes spp, Inside'),
-                                ttl_Aedes_spp_Outdoor = sum(LandingCatchesK$'Aedes spp, Outside')) 
+                                Ttl_Aedes.spp.Indoor = sum(AedessppInside),
+                                ttl_Aedes_spp_Outdoor = sum(AedessppOutside)) 
 
 glimpse(LandingCatchesM)
-LandingCatchesM$'Aedes spp, Inside'<-as.double(LandingCatchesM$'Aedes spp, Indoor')
-LandingCatchesM$'Aedes spp, Outside'<-as.double(LandingCatchesM$'Aedes spp, Outdoor')
+LandingCatchesM$'aedes.indoor'<-as.double(LandingCatchesM$'aedes.indoor')
+LandingCatchesM$'aedes.outdoor'<-as.double(LandingCatchesM$'aedes.outdoor')
 glimpse(LandingCatchesM)
-MonthlyLandingCatchesM <- ddply(LandingCatchesM, ~LandingCatchesM$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LandingCatchesM$'Aedes spp, Indoor'),
-                                ttl_Aedes_spp_Outdoor = sum(LandingCatchesM$'Aedes spp, Outdoor')) 
+MonthlyLandingCatchesM <- ddply(LandingCatchesM, ~LandingCatchesM$Date, summarise, 
+                                Ttl_Aedes.spp.Indoor = sum(aedes.indoor),
+                                ttl_Aedes_spp_Outdoor = sum(aedes.outdoor)) 
 
 glimpse(LandingCatchesU)
-LandingCatchesU$'Aedes spp, Inside'<-as.double(LandingCatchesU$'Aedes spp, Indoor')
-LandingCatchesU$'Aedes spp, Outside'<-as.double(LandingCatchesU$'Aedes spp, Outdoor')
+LandingCatchesU$'aedes.indoor'<-as.double(LandingCatchesU$'aedes.indoor')
+LandingCatchesU$'Aedes spp, Outside'<-as.double(LandingCatchesU$'aedes.outdoor')
 glimpse(LandingCatchesU)
-MonthlyLandingCatchesU <- ddply(LandingCatchesU, ~LandingCatchesU$Date, summarise, Ttl_Aedes.spp.Indoor = sum(LandingCatchesU$'Aedes spp, Indoor'),
-                                ttl_Aedes_spp_Outdoor = sum(LandingCatchesU$'Aedes spp, Outdoor')) 
+MonthlyLandingCatchesU <- ddply(LandingCatchesU, ~LandingCatchesU$Date, 
+                                summarise, Ttl_Aedes.spp.Indoor = sum(aedes.indoor),
+                                ttl_Aedes_spp_Outdoor = sum(aedes.outdoor)) 
 
 f <- "LandingCatchesMonthlySummaries.xls"
 write.xlsx(as.data.frame(MonthlyLandingCatchesC), f, sheetName = "Chulaimbo", col.names = TRUE,
@@ -1783,7 +1826,7 @@ DENV <- DENV[, c("city","Date", "DENV PCR Results")]
 
 # Save the now cleaned data sets as an Excel file
 #setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc")
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
 f <- "DENVData.xls"
 write.xlsx(as.data.frame(DENV), f, sheetName = "Chulaimbo", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
