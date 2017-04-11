@@ -265,9 +265,6 @@ label define hhmerge  1 "No demography data" 3 "merged with demography data" , m
 label values hhmerge  hhmerge   
 
 label variable childmerge  "demography information at child level"
-label define season  1 "hot no rain from mid december" 2 "long rains" 3 "less rain cool season" 4 "short rains", modify
-label values season season season season 
-tab season , nolab
 
 tab childmerge city, m
 order hhmerge childmerge city houseid id_childnumber child_dob_year child_dob_month child_dob_day childname1 childname2 childname3
@@ -333,7 +330,7 @@ gen year = year(interviewdate)
 gen month= month(interviewdate)
 
 *merge with vector data
-merge m:1 city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate" 
+merge m:m city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate"
 rename _merge vector_climate
 
 **now that all the data is merged, carryfoward all the values from baseline***
@@ -519,7 +516,6 @@ bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malari
 						tab `var'_`symptom'
 						}
 			}	
-drop symptms othersymptms fvrsymptms otherfvrsymptms 
 
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
