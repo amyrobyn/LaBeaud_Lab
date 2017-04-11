@@ -29,6 +29,7 @@ foreach dataset in PupaeMonthlySummaries SentinelTrapMonthlySummaries ProkopackM
 	save "`dataset'`sheet'.dta", replace
 	use vector, clear
 	append using "`dataset'`sheet'.dta"
+	replace city =lower(city)
 	save vector, replace	
 	}
 }	
@@ -95,6 +96,7 @@ duplicates drop
 capture drop dups
 duplicates tag city interviewmonth interviewyear , gen(dups)
 tab dups
+replace city =lower(city)
 save "`dataset'", replace
 }
 
@@ -110,7 +112,13 @@ append using "UkundaMonthlyClimateData.dta" "ChulaimboMonthlyClimateData.dta" "K
 save climate, replace
 duplicates tag month year city, gen(dup)
 tab dup
+replace city =lower(city)
 merge 1:1 city month year using vector	
 drop date date2 dups dup dm _merge
 sum 
+replace city =lower(city)
+tab city 
+tab month year
 save "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate", replace
+duplicates tag month year city , gen(dup)
+tab dup
