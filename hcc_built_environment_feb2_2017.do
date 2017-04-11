@@ -61,26 +61,17 @@ replace group = 5 if stanforddenvigg_ == 1 & stanfordchikvigg_ ==1 & malariaposi
 egen mal_denv_chikv_count = rowtotal(stanforddenvigg_ stanfordchikvigg_ malariapositive_dum2  )
 
 *mosquito aedes
-sum aedesaegyptiindoor aedessimpsoniindoor aedesaegyptioutdoor aedessimpsonioutdoor  aedesaegypti  aedessimpsoni  aedessppnotlisted  aedesaegyptiinside  aedesaegyptitotal 
-
-*anopheles
-sum anophelesgambiaeindoor anophelesfunestusindoor  anophelesgambiaeoutdoor anophelesfunestusoutdoor anophelescostaniindoor anophelesgambiae anophelesfunestus anophelesoutdoor 
-
-*culex
-sum culexsppindoor culexsppoutdoor culexspp 
+sum aedesspp aedessppindoor aedessppoutdoor aedessppinside aedessppoutside aedesspptotal aedesindoor aedesoutdoor aedesaegyptiindoor aedesaegyptioutdoor
 
 *totals
-sum indoortotal outdoortotal 
-
-*yellow fever
-sum masoni 
+sum aedesspptotal indoortotal outdoortotal
 
 *culex
-sum culexsppinside k culexsppoutside culexspptotal culexoutdoor 
+order culex* *culex*
+sum culextotal culexspp culex culexsppindoor culexsppoutdoor culexsppinside culexsppoutside
 
 *toxo
-sum toxorhynchitesoutdoor  toxorhynchites 
-
+sum toxorhynchites
 
 *water
 tab hoh_water_collecti 
@@ -119,7 +110,7 @@ encode tribe, gen(tribe_int)
 
 save builtenvironment, replace 
 
-bysort group: sum age gender ses_index_sum tribe_int educ
+bysort group: sum age gender tribe_int educ
 
 outsheet using "built environemnt.csv", comma names replace
 
@@ -144,7 +135,7 @@ preserve
 	keep id_wide visit city cohort gps* *dum stanford*
 	outsheet using "to_map__$S_DATE.csv", comma names replace
 restore 
-stop 
+ 
 *here are two options for your logistic regression
 /*
 bysort group: sum age ses_index_sum_pct educ gender tribe_int 
@@ -214,8 +205,8 @@ preserve
 	table1, by(malariapositive_dum)  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_malariapositive_dum_$S_DATE.xls", replace) test missing
 	table1, by(stanforddenvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanforddenvigg_$S_DATE.xls", replace) test missing
 	table1, by(stanfordchikvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanfordchikvigg_$S_DATE.xls", replace) test missing
-
-sum  hccsesindeximprovedfuel_index hccsesindeximprovedwater_index hccsesindeximprovedlight_index hccsesindextelephone hccsesindexradio hccsesindexown_tv hccsesindexbicycle hccsesindexmotor_vehicle hccsesindexdomestic_worker hccsesindexownflushtoilet hccsesindexlatrine_index hccsesindexland_index hccsesindexrooms hccsesindexbedrooms hccsesindeximprovedroof_index hccsesindeximprovedfloor_index
+order hcc_ses*
+sum hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index hcc_ses_improvedfloor_index hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum
 
 restore
 
@@ -223,11 +214,11 @@ tsset id_wide_int visit_int
 xtdescribe
 xttab stanforddenvigg_ 
 
-xtlogit stanforddenvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies i.site_int, re
+xtlogit stanforddenvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int, re
 
-xtlogit stanfordchikvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies i.site_int, re
+xtlogit stanfordchikvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor    mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int, re
 
 xtlogit malariapositive_dum  educ gender age aedesaegyptiindoor  ownmoterbike i.site_int female adult temprangeanomalies rainfallanomalies, re
 
-bysort site cohort stanforddenvigg_ : fsum hccsesi~f_index hccsesi~r_index  numberofwindows sleepbywindow windowsscreened  hoh_windows sleep_close_w~w drinkingwater  other_water_s~e  light   flooring improvedfloor~x water_cotainers educ gender age aedesaegyptiindoor  aedesaegyptioutdoor   mosq_prevention_index  rainfallanomalies site_int
+bysort site cohort stanforddenvigg_ : fsum hccsesi~f_index hccsesi~r_index  numberofwindows sleepbywindow windowsscreened  hoh_windows sleep_close_w~w drinkingwater  other_water_s~e  light   flooring improvedfloor~x water_cotainers educ gender age aedesaegyptiindoor  aedesaegyptioutdoor mosquito_exposure_index mosquito_prevention_index rainfallanomalies site_int
 
