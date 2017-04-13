@@ -1,21 +1,23 @@
 /********************************************************************************************
- *Author: Amy Krystosik, MPH PhD               							  					*
+ *Author: Amy Krystosik			               							  					*
  *Function: merge aic and hcc interviews with lab data, gps data, vector and climate data	*
  *Org: LaBeaud Lab, Stanford School of Medicine, Pediatrics 			  					*
- *Last updated: march 28, 2017  									  						*
+ *Last updated: april 11, 2017  									  						*
  *Notes: any data without unique id was dropped from this analysis 							*
  *******************************************************************************************/ 
 
 capture log close 
-log using "LOG all linked and cleaned data.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 set scrollbufsize 100000
 cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data"
+log using "LOG all linked and cleaned data.smcl", text replace 
 local figures "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\figures\"
 local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 
 use "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\interviewdata\all_interviews", clear
+dropmiss, force piasm
+dropmiss, force obs
 
 *add in the pcr data from box and from googledoc. 
 duplicates tag id_wide visit, gen (dup_id_wide_visit) 
@@ -28,9 +30,13 @@ merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Da
 
 
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
+dropmiss, force piasm
+dropmiss, force obs
 replace cohort = id_cohort if cohort ==""
 drop _merge cohort
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
+dropmiss, force piasm
+dropmiss, force obs
 
 gen anna_seroc_denv=.
 *	foreach studyid in "cfa0327" "cfa0328" "cfa0332" "rfa0427" "rfa0428" "cfa0285" "mfa0537" "mfa0598" "mfa0703" "mfa0933" "ufa0570"{
@@ -212,8 +218,14 @@ egen childname_long = concat(childname1 space childname2 space childname3 space 
 	replace childname2 = "99" if childname2 ==""
 	replace childname1 = "99" if childname1 ==""
 tostring id_childnumber, replace
+dropmiss, force piasm
+dropmiss, force obs
 save child_to_link_w_demography, replace
+dropmiss, force piasm
+dropmiss, force obs
 merge m:1 city houseid using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\hh_xy"
+dropmiss, force piasm
+dropmiss, force obs
 rename _merge hhmerge
 drop if hhmerge==2 
 isid id_wide visit
@@ -252,7 +264,11 @@ destring *, replace
 
 isid city houseid id_childnumber visit
 tostring villageid id_childnumber, replace
+dropmiss, force piasm
+dropmiss, force obs
 merge m:1 city houseid id_childnumber using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\demography\child_xy"
+dropmiss, force piasm
+dropmiss, force obs
 
 rename _merge childmerge
 tab childmerge hhmerge, m
@@ -309,8 +325,12 @@ tostring windows childvillage, replace
 	tab usenetfreq 
 	replace hoh_sleep_bednet = usenetfreq if hoh_sleep_bednet ==.
 	drop usebednet usenetfreq
+dropmiss, force piasm
+dropmiss, force obs
 
 append using aic
+dropmiss, force piasm
+dropmiss, force obs
 
 			tab city 
 			drop if city =="a"
@@ -330,7 +350,20 @@ gen year = year(interviewdate)
 gen month= month(interviewdate)
 
 *merge with vector data
-merge m:m city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate"
+replace city = lower(city)
+replace city = "msambweni" if city =="milani"
+replace city = "msambweni" if city =="njanga"
+replace city = "msambweni" if city =="nganja"
+
+tab city 
+tab month year
+dropmiss, force piasm
+dropmiss, force obs
+
+merge m:1 city month year using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\vector\merged_vector_climate"
+dropmiss, force piasm
+dropmiss, force obs
+ 
 rename _merge vector_climate
 
 **now that all the data is merged, carryfoward all the values from baseline***
@@ -357,11 +390,18 @@ tab seasonyear , m
 gen sexlabel = "sex"
 gen agelabel = "age"
 egen agegender = concat(agelabel age sexlabel gender)
-drop if strpos(agegender, ".")
+save "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\our_population", replace
+ 
+dropmiss, force piasm
+dropmiss, force obs
 merge m:1 agegender using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\normal_population_aic_b"
-drop if age>18
+dropmiss, force piasm
+dropmiss, force obs
+
+drop if age>18 & age<.
 drop heart_rate 
 rename heartrate heart_rate 
+ 
 *replace childheight = child_height if childheight ==.
 *drop child_height 
 *replace childweight = child_weight if childweight ==.
@@ -370,6 +410,7 @@ replace headcircum  = head_circumference if headcircum  ==.
 drop head_circumference 
 
 rename childtemp childtemp
+ 
 
 foreach var in heart_rate systolicbp  diastolicbp  pulseoximetry childtemp resprate { 
 		replace `var'= . if `var'==999
@@ -414,6 +455,7 @@ gen malariapositive_dum2 = malariapositive_dum
 replace malariapositive_dum2 =1 if bsresult > 0 & bsresult <. & malariapositive_dum2 ==.
 replace malariapositive_dum2 =1 if rdtresult > 0 & rdtresult <. & malariapositive_dum2  ==.
 tab malariapositive_dum2 malariapositive_dum, m 
+ 
 
 tab malariapositive_dum malariapositive_dum2 
 
@@ -515,8 +557,9 @@ bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malari
 						order `var'_`symptom'
 						tab `var'_`symptom'
 						}
+ 
 			}	
-
+ 
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
 replace all_symptoms= subinstr(all_symptoms, "__", "_",.)
@@ -576,6 +619,7 @@ tab all_symptoms
 
 
 replace all_symptoms= subinstr(all_symptoms, "," ,"",.)
+ 
 
 foreach symptom in "body_rushes" "boggy_pus_discharging_swelling_on_butt" "chicken_box" "chicken_pox" "constipation" "difficulty_in_urination" "dry_lips" "ear_discharge" "eye_discharge" "_flue"  "_flu," "_flu"  "_foul_smelly_stool" "_ful_micturation" "_fungal_skin_infection" "_infra_auricular_sweling" "_jiggers" "_kidney_problem" "_measles" "_neckswelling" "_pus_ear_discharge" "_restless" "_ringworms" "_running_nose" "_sickle_cell" "_sickler" "_small_pox" "_sores_on_the_neck" "_sprained_wrist" "_strutles" "_swollen_inguinal_lymhnodes" "_tearing_eyes" "_tinea_corporis" "_urine_retention" "_whitish_eye_discharge" "_worms_in_his_stool" "body_rushes" "chicken_pox" "eye_discharge" "_tooth_" "boils" "burn"  "_worms"  "_wound" {		
 				replace all_symptoms = subinstr(all_symptoms, "`symptom'", "other2",.)
@@ -632,7 +676,7 @@ replace all_meds=trim(itrim(all_meds))
 		foreach item in "syrup" "unibrolcoldcap" "unibrol" "tricohist" "trichohist" "cold_cap" "ascoril"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"cough",.)
 		} 
-		
+
 		foreach item in "cetrizine hydrochloride" "chlorepheramine" "chlore" "hydrocrt" "hydrocortisone" "cetrizine" "piriton" "priton" "hydroctisone_cream" "hydroctisone" "hydroctione" "cpm" "pitriton" "probeta-n" {
 		replace all_meds= subinstr(all_meds, "`item'" ,"allergy",.)
 		}
@@ -687,6 +731,7 @@ replace all_meds=trim(itrim(all_meds))
 		foreach item in "plasil"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"gerd",.)
 		}
+ 
 
 		foreach item in "none"{
 		replace all_meds= subinstr(all_meds, "`item'" ,"none",.)
@@ -734,7 +779,9 @@ replace all_meds  = "" if all_meds =="_"
 replace all_meds  = "" if all_meds =="_"
 replace all_meds  = "" if strlen(all_meds) <3
 tab all_meds 			
+ 
 preserve
+ 
 	keep if all_meds !=""
 	rename all_meds TOCATEGORIZE
 	outsheet medsprescribe othmedsprescribe  TOCATEGORIZE using "`data'allmeds.xls", replace 
@@ -749,6 +796,7 @@ replace dmcoinf2 = 1 if malariapositive_dum2==1 & denvpcrresults_dum==1
 foreach var in malariapositive_dum denvpcrresults_dum dmcoinf{
 	bysort  `var': sum all_symptoms_*
 }
+ 
 
 *group 0 is neg; 1 is malaria pos; 2 is denv pos; 3 is coinfection. 
 gen coinfectiongroup = .
@@ -774,7 +822,8 @@ tab outcome outcomehospitalized , m
 lookfor fever
 bysort feverchildtemp: tab outcomehospitalized  malariapositive_dum
 gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==2 & outcomehospitalized ==1
-
+ 
+ 
 preserve
 	keep if discordantoutcome ==1
 	outsheet studyid id_wide visit discordantoutcome outcome outcomehospitalized dataset using "`data'discordant_hospital_outcomes.csv", names comma replace 
@@ -854,12 +903,8 @@ preserve
 		rename head HEAD
 restore
 
+merge m:1 studyid using "`data'z_scores"
 
-insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\david coinfectin paper\who anthro\MySurvey_z_st.csv", clear 
-save "`data'z_scores", replace
-
-use "`data'pre_z"
-merge 1:1 studyid using "`data'z_scores"
 drop _merge
 sum  zlen zwei zwfl zbmi zhc 
 
@@ -941,6 +986,7 @@ tab severemalaria
 
 **SES Index for aic**
 		**ses index
+		drop if gender ==3
 duplicates tag id_wide visit , gen(id_wide_visit_dup)
 drop if id_wide_visit_dup>0
 isid id_wide visit 
@@ -1436,6 +1482,8 @@ replace time = 1 if visit_int ==1 & cohort ==2
 replace time = 6 if visit_int ==2 & cohort ==2 
 replace time = 12 if visit_int ==3 & cohort ==2 
 
+dropmiss, force piasm
+dropmiss, force obs
 merge 1:1 id_wide visit_int using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria$S_DATE"
 drop if _merge ==2
 drop _merge
@@ -1453,12 +1501,13 @@ replace gps_y_lat = house_latitude if gps_y_lat ==.
 list gps_y_lat point_y latitude house_latitude gps_y_lat point_x longitude house_longitude in 1/100, clean
 
 save "`data'cleaned_merged_prevalence$S_DATE", replace
-
+ 
+ 
 drop *dup
 order studyid  hhmerge childmerge id_wide city houseid id_childnumber visit cohort id*  *igg* *pcr* *dum  age gender parasite*
 bysort id_wide (visit): carryforward cohort age gender city site year season month seasonyear mosquito_exposure_index  mosqbitefreq mosquitocoil mosquitobites   mosqbitedaytime mosqbitenight  avoidmosquitoes hoh_mosquito_control hoh_*  hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index hcc_ses_improvedfloor_index , replace
 
- local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 outsheet using "`data'cleaned_merged_prevalence$S_DATE.csv", replace names comma
 
 ********************************************************************start incidence***************************************************************

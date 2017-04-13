@@ -460,7 +460,7 @@ stsum
 sts list
 sts list, by(severemalaria )
 
-stop
+
 
 replace malariapositive_dum =. if malariapositive_dum ==99 
 replace outcome= . if outcome==99
@@ -674,12 +674,11 @@ encode childvillage, gen(village_int)
 tabout childvillage using village.xls , replace
 
 tab  severemalaria_ord
-
 replace species ="" if species =="ni"|species =="none"
 
 tab species_cat severemalaria_ord, m
 tab species
-
+ 
 gen rural = . 
 replace rural =1 if city =="msambweni"|city =="chulaimbo"
 replace rural =0 if city =="kisumu"|city =="ukunda"

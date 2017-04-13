@@ -58,11 +58,13 @@ replace preg_chikvpos = 1 if result_mother==1 & pregnant ==1
 replace preg_chikvpos = 0 if pregnant == 0 | result_mother==0
 
 tab preg_chikvpos 
-drop if trimester ==. & preg_chikvpos ==1
+replace preg_chikvpos = . if trimester ==. & preg_chikvpos ==1
+ 
  
 gen chikv_preg_non =. 
 replace chikv_preg_non = 0 if result_mother ==1 & pregnant == 0
 replace chikv_preg_non = 1 if result_mother ==1 & pregnant == 1
+replace chikv_preg_non = . if trimester ==. & preg_chikvpos ==1
 
 label define gestational_age_cat  0 "full-term" 1 "pre-term" 2 "post-term" , modify 
 tabout trimester gestational_age_cat if smoking ==0 using trimeste_vs_gestational_agecat.xls , stats(chi2) replace h1("trimeste vs gestational agecat(row %)") h2( "|full-term | pre-term | post-term | Total" ) h3("Didn't Smoke") lines(none)

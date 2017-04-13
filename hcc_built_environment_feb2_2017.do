@@ -1,8 +1,8 @@
 /*************************************************************
  *amy krystosik                  							  *
- *built environement hcc									  *
+ *built environement hcc +aic 									  *
  *lebeaud lab               				        		  *
- *last updated march 29, 2017 									  *
+ *last updated april 11, 2017 									  *
  **************************************************************/ 
 
 /*Impact of built environment/home environment on vectorborne disease risk (Amy)
@@ -30,7 +30,9 @@ use "`data'inc_denv$S_DATE", clear
 keep inc_denv id_wide visit
 save "inc_denv$S_DATE", replace
 
-use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence$S_DATE", replace
+local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
+use "`data'cleaned_merged_prevalence$S_DATE", clear
+capture drop inc_chikv incident_malaria inc_denv
 merge 1:1 id_wide visit using "inc_denv$S_DATE"
 drop _merge
 merge 1:1 id_wide visit  using "inc_chikv$S_DATE"
@@ -39,7 +41,7 @@ merge 1:1 id_wide visit using "incident_malaria$S_DATE"
 drop _merge
 
 *hcc only 
-keep if cohort ==2
+*keep if cohort ==2
 capture drop id
 encode id_wide, gen(id)		
 lookfor year month
@@ -60,18 +62,8 @@ replace group = 5 if stanforddenvigg_ == 1 & stanfordchikvigg_ ==1 & malariaposi
 *keep if group !=. 
 egen mal_denv_chikv_count = rowtotal(stanforddenvigg_ stanfordchikvigg_ malariapositive_dum2  )
 
-*mosquito aedes
-sum aedesspp aedessppindoor aedessppoutdoor aedessppinside aedessppoutside aedesspptotal aedesindoor aedesoutdoor aedesaegyptiindoor aedesaegyptioutdoor
-
-*totals
-sum aedesspptotal indoortotal outdoortotal
-
-*culex
-order culex* *culex*
-sum culextotal culexspp culex culexsppindoor culexsppoutdoor culexsppinside culexsppoutside
-
-*toxo
-sum toxorhynchites
+*aedes
+sum ttl_aedessppindoorhlc ttl_aedes_spp_outdoorhlc ttl_aedessppindoorlarval ttl_aedes_spp_outdoorlarval ttl_aedessppindoorovitrap ttl_aedes_spp_outdoorovitrap ttl_aedessppindoorprokopack ttl_aedes_spp_outdoorprokopack ttl_aedessppindoorpupae ttl_aedes_spp_outdoorpupae ttl_aedessppsentinel
 
 *water
 tab hoh_water_collecti 
@@ -112,7 +104,7 @@ save builtenvironment, replace
 
 bysort group: sum age gender tribe_int educ
 
-outsheet using "built environemnt.csv", comma names replace
+*outsheet using "built environemnt.csv", comma names replace
 
 gen adult = .
 replace adult = 0 if age <18
@@ -191,34 +183,42 @@ stset survivaltime, failure(incident_malaria) id(id_wide)
     estat phtest
 */
 
-dropmiss, force
 capture drop id
 encode id_wide, gen(id)
 encode site, gen(site_int)
-
 preserve
-	bysort id_wide: egen malariapositive_dummax = max(malariapositive_dum)
-	bysort id_wide: egen stanforddenvigg_max = max(stanforddenvigg_)
-	bysort id_wide: egen stanfordchikvigg_max = max(stanfordchikvigg_)
-
-	keep if visit =="a"
-	table1, by(malariapositive_dum)  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_malariapositive_dum_$S_DATE.xls", replace) test missing
-	table1, by(stanforddenvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanforddenvigg_$S_DATE.xls", replace) test missing
-	table1, by(stanfordchikvigg_ )  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_stanfordchikvigg_$S_DATE.xls", replace) test missing
-order hcc_ses*
-sum hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index hcc_ses_improvedfloor_index hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum
-
+	keep if cohort ==2 	
+	*table1, by(incident_malaria)  vars(ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ age  conts \educ cat \gender bin \tribe_int cat \) saving("visita_malariapositive_dum_$S_DATE.xls", replace) test missing
+	table1, by(inc_denv )  vars(hcc_ses_improvedroof_index bin\ hcc_ses_improvedfloor_index bin\ hcc_ses_telephone_dum bin\ hcc_ses_radio_dum bin\ hcc_ses_bicycle_dum bin\ hccses_index_sum conts\ hcc_ses_radio bin\ hcc_ses_bicycle cat \  ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ age  conts \educ cat \gender bin \) saving("visita_stanforddenvigg_$S_DATE.xls", replace) test missing
+	table1, by(inc_chikv )  vars( hcc_ses_improvedroof_index bin\ hcc_ses_improvedfloor_index bin\ hcc_ses_telephone_dum bin\ hcc_ses_radio_dum bin\ hcc_ses_bicycle_dum bin\ hccses_index_sum conts\ hcc_ses_radio bin\ hcc_ses_bicycle cat \  ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ adult cat \age  conts \educ cat \gender bin \) saving("visita_stanfordchikvigg_$S_DATE.xls", replace) test missing
 restore
+
+egen aedes_ind_immature = rowtotal(ttl_aedessppindoorlarval ttl_aedessppindoorovitrap ttl_aedessppindoorpupae )
+egen aedes_outdoor_immature =   rowtotal(ttl_aedes_spp_outdoorlarval ttl_aedes_spp_outdoorovitrap ttl_aedes_spp_outdoorpupae )
+egen aedes_indoor_mature=rowtotal(ttl_aedessppindoorhlc   ttl_aedessppindoorprokopack )
+egen aedes_outdoor_mature = rowtotal(ttl_aedes_spp_outdoorhlc ttl_aedes_spp_outdoorprokopack )
 
 tsset id_wide_int visit_int
 xtdescribe
-xttab stanforddenvigg_ 
+xttab inc_chikv   
+xttab incident_malaria 
+xttab inc_denv 
+sum inc_chikv   incident_malaria inc_denv
 
-xtlogit stanforddenvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int, re
+capture drop l1*
 
-xtlogit stanfordchikvigg_ educ gender age aedesaegyptiindoor  aedesaegyptioutdoor    mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int, re
+foreach var in ttlrainfall rainfallanoma avgtemp avgmaxtemp avgmintemp avgtemprange avgrh avgdewpt  aedes_outdoor_mature aedes_indoor_mature aedes_outdoor_immature aedes_ind_immature  ttl_aedessppindoorhlc ttl_aedes_spp_outdoorhlc ttl_aedessppindoorlarval ttl_aedes_spp_outdoorlarval ttl_aedessppindoorovitrap ttl_aedes_spp_outdoorovitrap ttl_aedessppindoorprokopack ttl_aedes_spp_outdoorprokopack ttl_aedessppindoorpupae ttl_aedes_spp_outdoorpupae ttl_aedessppsentinel{
+sum `var', d
+gen l1`var' = l1.`var' /*DENV: first lag didn't work for rain and temp (inversely associated with seroconversion) try it with the second lag*/
+order l1`var' 
+}
+*	table1, by(incident_malaria)  vars( ttlrainfall conts \ rainfallanoma conts \ avgtemp conts \ avgmaxtemp conts \ avgmintemp conts \ avgtemprange conts \ avgrh conts \ avgdewpt conts \  conts \ aedes_outdoor_mature conts \ aedes_indoor_mature conts \ aedes_outdoor_immature conts \ aedes_ind_immature conts \  conts \ ttl_aedessppindoorhlc conts \ ttl_aedes_spp_outdoorhlc conts \ ttl_aedessppindoorlarval conts \ ttl_aedes_spp_outdoorlarval conts \ ttl_aedessppindoorovitrap conts \ ttl_aedes_spp_outdoorovitrap conts \ ttl_aedessppindoorprokopack conts \ ttl_aedes_spp_outdoorprokopack conts \ ttl_aedessppindoorpupae conts \ ttl_aedes_spp_outdoorpupae conts \ ttl_aedessppsentinel conts \  aedes_ind_immature conts \ aedes_outdoor_immature conts \ aedes_indoor_mature conts \ aedes_outdoor_mature conts \  ttl_aedessppindoorhlc conts \  ttl_aedes_spp_outdoorhlc conts \  ttl_aedessppindoorlarval conts \  ttl_aedes_spp_outdoorlarval conts \  ttl_aedessppindoorovitrap conts \  ttl_aedes_spp_outdoorovitrap conts \  ttl_aedessppindoorprokopack conts \  ttl_aedes_spp_outdoorprokopack conts \  ttl_aedessppindoorpupae conts \  ttl_aedes_spp_outdoorpupae conts \  ttl_aedessppsentinel conts \  ttlrainfall conts \  rainfallanoma conts \  avgtemp conts \  avgmaxtemp conts \  avgmintemp conts \   avgtemprange conts \  avgrh conts \   avgdewpt conts \  ) saving("mosquito_climate_malaria_$S_DATE.xls", replace) test missing
+	table1, by(inc_denv) vars(l1ttl_aedessppsentinel conts \ l1ttl_aedes_spp_outdoorpupae conts \ l1ttl_aedessppindoorpupae conts \ l1ttl_aedes_spp_outdoorprokopack conts \ l1ttl_aedessppindoorprokopack conts \ l1ttl_aedes_spp_outdoorovitrap conts \ l1ttl_aedessppindoorovitrap conts \ l1ttl_aedes_spp_outdoorlarval conts \ l1ttl_aedessppindoorlarval conts \ l1ttl_aedes_spp_outdoorhlc conts \ l1ttl_aedessppindoorhlc conts \ l1aedes_ind_immature conts \ l1aedes_outdoor_immature conts \ l1aedes_indoor_mature conts \ l1aedes_outdoor_mature conts \ l1avgdewpt conts \ l1avgrh conts \ l1avgtemprange conts \ l1avgmintemp conts \ l1avgmaxtemp conts \ l1avgtemp conts \ l1rainfallanoma conts \ l1ttlrainfall  conts \ aedes_ind_immature conts \ aedes_outdoor_immature conts \ aedes_indoor_mature conts \ aedes_outdoor_mature conts \  ttl_aedessppindoorhlc conts \  ttl_aedes_spp_outdoorhlc conts \  ttl_aedessppindoorlarval conts \  ttl_aedes_spp_outdoorlarval conts \  ttl_aedessppindoorovitrap conts \  ttl_aedes_spp_outdoorovitrap conts \  ttl_aedessppindoorprokopack conts \  ttl_aedes_spp_outdoorprokopack conts \  ttl_aedessppindoorpupae conts \  ttl_aedes_spp_outdoorpupae conts \  ttl_aedessppsentinel conts \ ttlrainfall conts \  rainfallanoma conts \  avgtemp conts \  avgmaxtemp conts \  avgmintemp conts \   avgtemprange conts \  avgrh conts \   avgdewpt conts \   hcc_ses_improvedroof_index bin\ hcc_ses_improvedfloor_index bin\ hcc_ses_telephone_dum bin\ hcc_ses_radio_dum bin\ hcc_ses_bicycle_dum bin\ hccses_index_sum conts\ hcc_ses_radio bin\ hcc_ses_bicycle cat \  ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ age  conts \educ cat \gender bin \) saving("mosquito_climate_stanforddenvigg_$S_DATE.xls", replace) test missing
+	table1, by(inc_chikv) vars(l1ttl_aedessppsentinel conts \ l1ttl_aedes_spp_outdoorpupae conts \ l1ttl_aedessppindoorpupae conts \ l1ttl_aedes_spp_outdoorprokopack conts \ l1ttl_aedessppindoorprokopack conts \ l1ttl_aedes_spp_outdoorovitrap conts \ l1ttl_aedessppindoorovitrap conts \ l1ttl_aedes_spp_outdoorlarval conts \ l1ttl_aedessppindoorlarval conts \ l1ttl_aedes_spp_outdoorhlc conts \ l1ttl_aedessppindoorhlc conts \ l1aedes_ind_immature conts \ l1aedes_outdoor_immature conts \ l1aedes_indoor_mature conts \ l1aedes_outdoor_mature conts \ l1avgdewpt conts \ l1avgrh conts \ l1avgtemprange conts \ l1avgmintemp conts \ l1avgmaxtemp conts \ l1avgtemp conts \ l1rainfallanoma conts \ l1ttlrainfall  conts \ aedes_ind_immature conts \ aedes_outdoor_immature conts \ aedes_indoor_mature conts \ aedes_outdoor_mature conts \  ttl_aedessppindoorhlc conts \  ttl_aedes_spp_outdoorhlc conts \  ttl_aedessppindoorlarval conts \  ttl_aedes_spp_outdoorlarval conts \  ttl_aedessppindoorovitrap conts \  ttl_aedes_spp_outdoorovitrap conts \  ttl_aedessppindoorprokopack conts \  ttl_aedes_spp_outdoorprokopack conts \  ttl_aedessppindoorpupae conts \  ttl_aedes_spp_outdoorpupae conts \  ttl_aedessppsentinel conts \  ttlrainfall conts \  rainfallanoma conts \  avgtemp conts \  avgmaxtemp conts \  avgmintemp conts \ avgtemprange conts \  avgrh conts \ avgdewpt conts \  hcc_ses_improvedroof_index bin\ hcc_ses_improvedfloor_index bin\ hcc_ses_telephone_dum bin\ hcc_ses_radio_dum bin\ hcc_ses_bicycle_dum bin\ hccses_index_sum conts\ hcc_ses_radio bin\ hcc_ses_bicycle cat \  ownland2 cat \ ownmoterbike cat \ childvillage cat \ female cat \ age  conts \educ cat \gender bin \) saving("mosquito_climate_stanfordchikvigg_$S_DATE.xls", replace) test missing
 
-xtlogit malariapositive_dum  educ gender age aedesaegyptiindoor  ownmoterbike i.site_int female adult temprangeanomalies rainfallanomalies, re
-
-bysort site cohort stanforddenvigg_ : fsum hccsesi~f_index hccsesi~r_index  numberofwindows sleepbywindow windowsscreened  hoh_windows sleep_close_w~w drinkingwater  other_water_s~e  light   flooring improvedfloor~x water_cotainers educ gender age aedesaegyptiindoor  aedesaegyptioutdoor mosquito_exposure_index mosquito_prevention_index rainfallanomalies site_int
+/*
+xtlogit inc_denv educ gender age mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int avgtemp avgmaxtemp avgmintemp avgtemprange avgrh avgdewpt rainfallanomalies ttlrainfall ttl_aedessppindoorhlc ttl_aedes_spp_outdoorhlc ttl_aedessppindoorlarval ttl_aedes_spp_outdoorlarval ttl_aedessppindoorovitrap ttl_aedes_spp_outdoorovitrap ttl_aedessppindoorprokopack ttl_aedes_spp_outdoorprokopack ttl_aedessppindoorpupae ttl_aedes_spp_outdoorpupae ttl_aedessppsentinel aedes_ind_immature aedes_outdoor_immature aedes_indoor_mature aedes_outdoor_mature, re
+xtlogit inc_chikv    educ gender age   mosquito_exposure_index mosquito_prevention_index rainfallanomalies i.site_int avgtemp avgmaxtemp avgmintemp avgtemprange avgrh avgdewpt rainfallanomalies ttlrainfall ttl_aedessppindoorhlc ttl_aedes_spp_outdoorhlc ttl_aedessppindoorlarval ttl_aedes_spp_outdoorlarval ttl_aedessppindoorovitrap ttl_aedes_spp_outdoorovitrap ttl_aedessppindoorprokopack ttl_aedes_spp_outdoorprokopack ttl_aedessppindoorpupae ttl_aedes_spp_outdoorpupae ttl_aedessppsentinel aedes_ind_immature aedes_outdoor_immature aedes_indoor_mature aedes_outdoor_mature, re
+xtlogit incident_malaria  educ gender age ownmoterbike i.site_int female adult temprangeanomalies rainfallanomalies avgtemp avgmaxtemp avgmintemp avgtemprange avgrh avgdewpt rainfallanomalies ttlrainfall ttl_aedessppindoorhlc ttl_aedes_spp_outdoorhlc ttl_aedessppindoorlarval ttl_aedes_spp_outdoorlarval ttl_aedessppindoorovitrap ttl_aedes_spp_outdoorovitrap ttl_aedessppindoorprokopack ttl_aedes_spp_outdoorprokopack ttl_aedessppindoorpupae ttl_aedes_spp_outdoorpupae ttl_aedessppsentinel aedes_ind_immature aedes_outdoor_immature aedes_indoor_mature aedes_outdoor_mature, re
+bysort site cohort stanforddenvigg_ : fsum hccses_index_ quartile_hccs pct_hccses_in numberofwindows sleepbywindow windowsscreened  hoh_windows sleep_close_w~w drinkingwater  other_water_s~e  light   flooring improvedfloor~x water_cotainers educ gender age mosquito_exposure_index mosquito_prevention_index rainfallanomalies site_int
 
