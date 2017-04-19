@@ -4,12 +4,12 @@
  *lebeaud lab               				        		  *
  *last updated feb2, 2017  							  		  *
  **************************************************************/ 
+cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria"
 capture log close 
 log using "malaria  data.smcl", text replace 
 set scrollbufsize 100000
 set more 1
 
-cd "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria"
 *import all data and save locally 
 
 foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
@@ -42,10 +42,10 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 			dropmiss, force
 			rename density parasite_count
 			destring _all, replace
+			rename *, lower
 	save malaria_coast_hcc, replace
 	
 	use malaria_Ukunda_aic, clear
-				gen dataset = "malaria AIC Ukunda "
 				rename *, lower
 						
 		*gen id_wide
@@ -95,6 +95,8 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 				drop studyid_fu  actualfollowdate followed spp2 countul2 gametocytes2 treatment2 studyid2  expectedfollowupdate id_cohort id_visit id_city id_childnumber id_cohort
 		tostring pos_neg, replace
 				append using ukunda_aic_fu 
+				replace dataset = "malaria AIC Ukunda iniital" if  dataset ==""
+
 				gen schizonts =. 
 				replace schizonts=1 if gametocytes1 =="schizonts"|gametocytes1 =="schizouts"
 				replace gametocytes1 ="." if gametocytes1 =="schizonts"
@@ -147,8 +149,9 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 				destring _all, replace
 				rename countul1* *200
 				tostring pos_neg, replace
-				
+	rename *, lower			
 	save malaria_Ukunda_aic, replace
+
 	use malaria_Msambweni, clear
 				rename *, lower
 				
@@ -188,10 +191,10 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 					rename countul2 countul1
 					rename gametocytes2 gametocytes1
 					rename treatment2 treatment1
-					rename  pos_neg1  pos_neg
-					
-					gen dataset = "msambweni_aic_fu" 
-				save msambweni_aic_fu , replace
+					rename  pos_neg1 pos_neg
+				rename *, lower	
+				gen dataset = "malaria_msambweni fu"
+				save msambweni_aic_fu, replace
 				restore
 				drop studyid_fu  actualfollowdate followed spp2 countul2 gametocytes2 treatment2 studyid2  expectedfollowupdate id_cohort id_visit id_city id_childnumber pos_neg1 id_cohort
 				append using msambweni_aic_fu 
@@ -215,6 +218,7 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 
 				*repeat id's 
 				duplicates tag studyid, gen(repeatids)
+				
 				outsheet using repeatids_msambweni.csv, comma replace names
 				drop if repeatids >0
 				drop repeatids 
@@ -240,12 +244,14 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 					}
 					
 			tostring pos_neg, replace
-		gen dataset = "malaria_msambweni"				
+		replace dataset = "malaria_msambweni initial" if  dataset ==""
+		
+		rename *, lower
 		save malaria_Msambweni, replace
 
 foreach dataset in "Obama" "Chulaimbo-Mbaka_Oromo"{
 use "malaria_`dataset'"				
-				gen dataset ="`dataset'"
+				gen dataset ="malaria_`dataset'"
 
 				rename *, lower
 				capture rename clientno studyid
@@ -284,13 +290,13 @@ use "malaria_`dataset'"
 				capture tostring studyid2, replace
 				capture  tostring pos_neg, replace
 
-
+		rename *, lower
 		save "malaria_`dataset'", replace
 		}
 
 foreach dataset in "Initial" "1stFU" "2ndFU" "3rdFU"{
 use "malaria_`dataset'"
-gen dataset ="malaria_`dataset'"
+gen dataset ="malaria_west_hcc_`dataset'"
 				rename *, lower
 				destring _all, replace
 				ds, has(type string) 
@@ -315,13 +321,11 @@ gen dataset ="malaria_`dataset'"
 					capture recast int `var'
 				}
 			capture tostring pos_neg, replace
-
+		rename *, lower
 		save "malaria_`dataset'", replace
 		}
-
-use 3rdFU, clear
-append using "Ukunda_aic" "coast_hcc" "Msambweni" "1stFU" "2ndFU" "Initial" "Obama" "Chulaimbo-Mbaka_Oromo", gen(append)
-
+use malaria_Msambweni, clear
+append using "malaria_Obama" "malaria_Ukunda_aic" "malaria_1stFU" "malaria_2ndFU" "malaria_3rdFU" "malaria_Chulaimbo-Mbaka_Oromo" "malaria_coast_hcc" "malaria_Initial", gen(append)
 		replace studyid= subinstr(studyid, "/", "",.)
 		replace studyid= subinstr(studyid, "-", "",.)
 		replace studyid= subinstr(studyid, "o", "0",.)
@@ -474,18 +478,7 @@ append using "Ukunda_aic" "coast_hcc" "Msambweni" "1stFU" "2ndFU" "Initial" "Oba
 		order pos_neg malariapositive_dum
 		bysort id_cohort: sum  pos_neg malariapositive_dum
 
-		replace visit_type = visittype if visit_type ==.
-		drop visittype
-
-		gen acute = .
-		replace acute = 1 if visit_int == 1|visit_int == 3|visit_int == 5|visit_int == 7
-		replace acute = 0 if visit_int == 2|visit_int == 4|visit_int == 6
-
-		replace acute = 1 if visiti_type ==1|visiti_type ==2|visiti_type ==4|visiti_type ==5
-		replace acute = 1 if visit_type ==1|visit_type ==2|visit_type ==4|visit_type ==5
-		replace acute = 0 if visit_type ==3
-		replace acute = 1 if dataset ==""
-
+		
 		replace city = "msambweni" if city =="g"
 		replace city = "chulaimbo" if city =="r"
 		replace city = "msambweni" if city =="l"
@@ -496,34 +489,57 @@ append using "Ukunda_aic" "coast_hcc" "Msambweni" "1stFU" "2ndFU" "Initial" "Oba
 		dropmiss, force
 		dropmiss, obs force 
 		drop if malariapositive_dum ==.
+drop hospitalsite gender
+rename dataset malaria_dataset
+rename *, lower
 save malaria, replace
 
 merge 1:1 id_wide  id_visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\all_interview_data\all_interviews"
-
+tab dataset _merge
+ 
 drop if _merge == 2
 
-bysort id_cohort city: tab malariapositive_dum  fever, row
+replace visit_type = visittype if visit_type ==.
+		drop visittype
+		gen acute = .
+		replace acute = 1 if dataset =="Coast_AIC_Initial"|dataset =="West_AIC_INITIAL"|dataset =="West_AIC_INITIAL"
+		replace acute = 1 if dataset =="Western_AIC_FU"
+		replace acute = 0 if dataset =="coast_aic_fu"
+		replace acute = 1 if visit_int == 1
+		replace acute = 1 if visit_type ==1|visit_type ==2|visit_type ==4|visit_type ==5
+		replace acute = 0 if visit_type ==3
+		replace acute =99 if id_cohort =="c"
+
+bysort acute id_cohort city: sum malariapositive_dum 
+
+gen FEVER = . 
+replace FEVER =1 if fevertemp ==1|fever ==1| fevertoday ==1 | FeverToday ==1
+replace temp = temperature if temp ==.
+drop temperature 
+replace FEVER =1 if temp >=38 & temp !=.
+replace FEVER =0 if temp <38 
+tab fever
 
 preserve
 keep if city =="ukunda" 
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
-*aic ukunda initial
+*aic ukunda acute
 fsum malariapositive_dum   
 restore
 
 preserve
 keep if city =="msambweni" 
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
-*aic msambweni initial
+*aic msambweni acute
 fsum malariapositive_dum   
 restore
 
 
 preserve
 keep if city =="kisumu" 
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
 *aic kisumu initial
 fsum malariapositive_dum   
@@ -531,15 +547,14 @@ restore
 
 preserve
 keep if city =="chulaimbo" 
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
 *aic chulaimbo initial
 fsum malariapositive_dum   
 restore
 
-
 preserve
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
 *aic initial
 fsum malariapositive_dum   
@@ -547,8 +562,43 @@ restore
 
 preserve
 keep if fever ==1
-keep if id_visit =="a"|id_visit =="c"|id_visit =="e"|id_visit =="g"
+keep if acute ==1 
 keep if id_cohort =="f"
-*aic initial febrile
+*aic acute febrile
 fsum malariapositive_dum   
 restore	
+
+preserve
+keep if id_cohort =="c"
+*hcc
+fsum malariapositive_dum   
+restore	
+
+preserve
+keep if id_cohort =="c"
+*hcc by city 
+bysort city: fsum malariapositive_dum   
+restore	
+
+bysort  malaria_dataset : fsum malariapositive_dum   
+tab malaria_dataset 
+
+preserve
+keep if id_cohort =="c"
+*hcc all comers
+fsum malariapositive_dum   
+ci malariapositive_dum   , binomial 
+bysort id_visit: ci malariapositive_dum   , binomial 
+restore	
+
+preserve
+keep if id_cohort =="f"
+keep if acute ==1
+*acute aic 
+fsum malariapositive_dum   
+ci malariapositive_dum   , binomial 
+bysort city: ci malariapositive_dum   , binomial 
+restore	
+
+keep fever id_wide id_visit id_cohort  malariapositive_dum    pos_neg malariapositive_dum ni200 none200 pf200 pm200 po200 pv200 pm_pf200 po_pf200 malariatreatment1 malaria_dataset parasitelevel_desc gametocytes parasite_count species_cat sickle_result  city 
+save malaria_merged, replace
