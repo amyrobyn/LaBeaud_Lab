@@ -584,11 +584,19 @@ bysort  malaria_dataset : fsum malariapositive_dum
 tab malaria_dataset 
 
 preserve
-keep if id_cohort =="c"
-*hcc all comers
-fsum malariapositive_dum   
-ci malariapositive_dum   , binomial 
-bysort id_visit: ci malariapositive_dum   , binomial 
+	keep if id_cohort =="c"
+	*hcc all comers
+	fsum malariapositive_dum   
+	ci malariapositive_dum   , binomial 
+	bysort id_visit: ci malariapositive_dum   , binomial 
+restore	
+
+preserve
+	keep if id_cohort =="c"
+	*hcc all comers
+	fsum malariapositive_dum   
+	ci malariapositive_dum   , binomial 
+	bysort site id_visit: ci malariapositive_dum   , binomial 
 restore	
 
 preserve
