@@ -125,5 +125,4 @@ preserve
 		*chikv
 		table1,	vars(season cat \cohort cate \ gender bine \ age conts \ city cate \ mosquito_exposure_index conts \ mosquito_prevention_index conts\ hccses_index_sum conts\) by(prev_chikv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("HCC_PREV_CHIKV_W_PCR") sheetreplace) 
 restore
-***************************************************end Prevalence******************************************************************
-
+***************************************************end Prevalence********************************************************
