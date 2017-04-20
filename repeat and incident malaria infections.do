@@ -136,6 +136,8 @@ save temp, replace
 			keep id_wide visit incident_malaria
 			dropmiss, force obs
 			dropmiss, force piasm
+			capture drop _merge
 			save "incident_malaria$S_DATE", replace 
+			
 			save "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria$S_DATE", replace 
 		restore

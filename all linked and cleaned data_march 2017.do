@@ -23,18 +23,25 @@ dropmiss, force obs
 duplicates tag id_wide visit, gen (dup_id_wide_visit) 
 isid id_wide visit
 drop id_childnumber 
+replace pos_neg = "1" if pos_neg == "pos" 
+replace pos_neg = "0" if pos_neg == "neg"
+destring  pos_neg , replace
+
 merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\PCR Database\PCR Latest\allpcr"
 		*replace denvpcrresults_dum = 1 if denvpcrresults_dum>0 & denvpcrresults_dum<.
 		save "`data'elisas_PCR_RDT$S_DATE", replace	
 		rename _merge interview_elisa_pcr_match
 
+drop pos_neg
+replace id_visit = visit if id_visit ==""
+merge 1:1 id_wide id_visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria\malaria_merged"
+tab acute
 
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Personalized Datasets\Amy\malaria prelim data dec 29 2016\malaria"
 dropmiss, force piasm
 dropmiss, force obs
 replace cohort = id_cohort if cohort ==""
 drop _merge cohort
-merge 1:1 id_wide visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
+merge 1:1 id_wide id_visit using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged"
 dropmiss, force piasm
 dropmiss, force obs
 
@@ -112,8 +119,7 @@ drop notnumeric
 gen byte notnumeric = real(id_childnumber2)==.	/*makes indicator for obs w/o numeric values*/
 tab notnumeric	/*==1 where nonnumeric characters*/
 list id_childnumber2 if notnumeric==1	/*will show which have nonnumeric*/
-	
-gen suffix = "" 
+	gen suffix = ""
 	replace suffix = "a" if strpos(id_childnumber2, "a")
 	replace id_childnumber2 = subinstr(id_childnumber2, "a","", .)
 
@@ -131,6 +137,7 @@ destring id_childnumber2, replace
 
 gen studyid3= substr(studyid, 1, 3)
 egen studyid4 = concat(studyid3 id_childnumber2 )
+destring id_childnumber2 , replace force 
 replace id_childnumber =id_childnumber2 if id_childnumber==.
 compare id_childnumber id_childnumber2 
 drop id_childnumber2
@@ -228,7 +235,7 @@ dropmiss, force piasm
 dropmiss, force obs
 rename _merge hhmerge
 drop if hhmerge==2 
-isid id_wide visit
+isid id_wide id_visit
 compare childname_long  child_name  
 replace child_name   = childname_long  if child_name   ==""
 capture drop similscore
@@ -250,19 +257,25 @@ capture drop id
 encode id_wide, gen(id)
 save child, replace
 
-duplicates tag city houseid id_childnumber visit, gen(city_houseid_id_child_visit_dup)
+gen houseid_3  = ""
+replace houseid_3  = substr(studyid, 3,1)  
+destring houseid_3  , replace  force
+replace houseid = houseid_3 if houseid ==. 
+drop houseid_3 
+duplicates tag city houseid id_childnumber id_visit, gen(city_houseid_id_child_visit_dup)
 tab city_houseid_id_child_visit_dup city
 drop if city_houseid_id_child_visit_dup>0
-isid city houseid id_childnumber visit
 
-order city_houseid_id_child_visit_dup city houseid id_childnumber visit id_wide studyid
+isid city houseid id_childnumber id_visit
+
+order city_houseid_id_child_visit_dup city houseid id_childnumber id_visit id_wide studyid
 gsort -city_houseid_id_child_visit_dup
 
 dropmiss, force piasm trim
 dropmiss, force piasm obs trim
 destring *, replace 
 
-isid city houseid id_childnumber visit
+isid city houseid id_childnumber id_visit
 tostring villageid id_childnumber, replace
 dropmiss, force piasm
 dropmiss, force obs
@@ -288,7 +301,7 @@ outsheet studyid id_wide city houseid id_childnumber  childmerge hhmerge  using 
 outsheet studyid id_wide city houseid id_childnumber childmerge hhmerge  using "C:\Users\amykr\Box Sync\DENV CHIKV project\Coast Cleaned\Demography\Demography Latest\coast_unmatched_hcc_demography.csv" if childmerge !=3  & hhmerge !=3 & site =="coast", comma names replace
 
 drop if childmerge ==2
-outsheet dataset id_wide studyid id_city visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
+outsheet dataset id_wide studyid id_city id_visit id_cohort stanford* using "`data'missing.csv" if id_cohort =="", comma names replace
 tostring windows childvillage, replace
 
 	replace childrenusebednet = lower(childrenusebednet )
@@ -464,7 +477,7 @@ tab denvpcrresults_dum malariapositive_dum2, m
 
 gsort -denvpcrresults_dum 
 
-bysort city: list id_wide visit denvpcrresults_dum malariapositive_dum if malariapositive_dum2 ==1 |denvpcrresults_dum ==1, clean
+bysort city: list id_wide id_visit denvpcrresults_dum malariapositive_dum if malariapositive_dum2 ==1 |denvpcrresults_dum ==1, clean
 
 *symptoms to dummies
  rename currentsymptoms symptms
@@ -649,7 +662,7 @@ rename all_symptoms_other3 all_symptoms_other
 egen symptomcount = rowtotal(all_symptoms_*)
 ** *david medication
 *medsprescribe to dummies
-egen all_meds = concat(medsprescribe othmedsprescribe malariatreatment1 malariatreatment2) 
+egen all_meds = concat(medsprescribe othmedsprescribe malariatreatment1 ) 
 gen medstoreview  = all_meds  
 replace all_meds=lower(all_meds)
 replace all_meds=trim(itrim(all_meds))
@@ -826,7 +839,7 @@ gen discordantoutcome =1  if outcome ==1 & outcomehospitalized ==1 |  outcome ==
  
 preserve
 	keep if discordantoutcome ==1
-	outsheet studyid id_wide visit discordantoutcome outcome outcomehospitalized dataset using "`data'discordant_hospital_outcomes.csv", names comma replace 
+	outsheet studyid id_wide id_visit discordantoutcome outcome outcomehospitalized dataset using "`data'discordant_hospital_outcomes.csv", names comma replace 
 restore
 
 bysort coinfectiongroup: tab symptomcount outcomehospitalized , chi2      
@@ -987,9 +1000,9 @@ tab severemalaria
 **SES Index for aic**
 		**ses index
 		drop if gender ==3
-duplicates tag id_wide visit , gen(id_wide_visit_dup)
+duplicates tag id_wide id_visit , gen(id_wide_visit_dup)
 drop if id_wide_visit_dup>0
-isid id_wide visit 
+isid id_wide id_visit 
 preserve
 	keep if cohort ==1
 				
@@ -1058,11 +1071,11 @@ foreach var of varlist improvedfloor improvedwater improvedlight telephone radio
 				}
 							
 		order aic_sesindex*
-		keep id_wide visit aic_sesindeximprovedfloor_dum - aic_sesindexownflushtoilet_dum
+		keep id_wide id_visit aic_sesindeximprovedfloor_dum - aic_sesindexownflushtoilet_dum
 		save aic_sesindex, replace
 restore
 **AIC SES Index End
-merge 1:1 id_wide visit using aic_sesindex
+merge 1:1 id_wide id_visit using aic_sesindex
 drop _merge
 
 
@@ -1129,12 +1142,12 @@ bysort severemalaria: sum  pmhother_resp pmhsickle_cell pmhpneumonia pmhintestin
 	
 	replace mosqbitenight = mosquitonight if mosqbitenight ==.
 	drop mosquitonight 
-bysort cohort visit: fsum mosqbitedaytime mosqbitenight mosqbitefreq mosquitocoil mosquitobites mosquito_control avoidmosquitoes hoh_mosquito_control
+bysort cohort id_visit: fsum mosqbitedaytime mosqbitenight mosqbitefreq mosquitocoil mosquitobites mosquito_control avoidmosquitoes hoh_mosquito_control
 
 drop id
 encode id_wide, gen(id)
 drop visit_int
-encode visit, gen(visit_int)
+encode id_visit, gen(visit_int)
 xtset id visit_int
 
 *mosquito prevention index
@@ -1382,7 +1395,7 @@ foreach var in childtravel nightaway  keep_livestock  outdooractivity mosquitoco
 
 **end hcc ses index**
 *use allt he baseline data to fill in for each visit & then create indices 
-bysort id_wide (visit): carryforward hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum gender city cohort latitude longitude house_longitude house_latitude amy_city_id amy_compound_id amy_house_id amy_child_id compstatus compnumber compound_latitude compound_longitude compound_altitude compound_accuracy hoc_surname hoc_fname hoc_mname hoc_lname hoc_othername hoc_studyid hoc_gender hoc_dob hoc_age hoc_category hoc_language hoc_othlanguage hoc_tribe hoc_othtribe hoc_religion hoc_married hoc_other_married hoc_sleep_status house_number house_altitude house_accuracy house_pic hoh_surname hoh_fname hoh_mname hoh_lname hoh_othername hoh_studyid hoh_gender hoh_dob hoh_age hoh_category hoh_language hoh_othlanguage hoh_tribe hoh_othtribe hoh_religion hoh_married hoh_other_married hoh_children hoh_num_children hoh_house hoh_other_house hoh_sleep_here hoh_live_here hoh_district_years hoh_house_years 	hoh_people_per_room hoh_windows hoh_screens sleep_close_window hoh_own_bednet hoh_number_bednet hoh_sleep_bednet hoh_kids_sleep_bednet hoh_mosquito_control hoh_communal_tv hoh_water_collection  cooking_fuel water_source other_water_source light_source mosqbitefreq  mosquitocoil mosquitobites  mosqbitedaytime mosqbitenight avoidmosquitoes hoh_mosquito_control hoh_mosquito_control  mosq_cont_mosquito_coil mosquitocoil mosquito_coilcount mosquitocoild mosq_cont_mosquito_coild mosquitocoil_dum mosq_cont_repellent mosq_cont_sprays mosq_cont_fire mosq_cont_burning_herbs mosqbitefreq mosquitobites mosqbitedaytime mosqbitenight mosq_cont mosquitobitesd mosqbitedaytimed mosqbitenightd mosqbitefreqd mosq_cont_repellentd mosq_cont_spraysd mosq_cont_fired mosq_cont_burning_herbsd mosquitobites_dum mosqbitedaytime_dum mosqbitenight_dum, replace
+bysort id_wide (id_visit): carryforward hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum gender city cohort latitude longitude house_longitude house_latitude amy_city_id amy_compound_id amy_house_id amy_child_id compstatus compnumber compound_latitude compound_longitude compound_altitude compound_accuracy hoc_surname hoc_fname hoc_mname hoc_lname hoc_othername hoc_studyid hoc_gender hoc_dob hoc_age hoc_category hoc_language hoc_othlanguage hoc_tribe hoc_othtribe hoc_religion hoc_married hoc_other_married hoc_sleep_status house_number house_altitude house_accuracy house_pic hoh_surname hoh_fname hoh_mname hoh_lname hoh_othername hoh_studyid hoh_gender hoh_dob hoh_age hoh_category hoh_language hoh_othlanguage hoh_tribe hoh_othtribe hoh_religion hoh_married hoh_other_married hoh_children hoh_num_children hoh_house hoh_other_house hoh_sleep_here hoh_live_here hoh_district_years hoh_house_years 	hoh_people_per_room hoh_windows hoh_screens sleep_close_window hoh_own_bednet hoh_number_bednet hoh_sleep_bednet hoh_kids_sleep_bednet hoh_mosquito_control hoh_communal_tv hoh_water_collection  cooking_fuel water_source other_water_source light_source mosqbitefreq  mosquitocoil mosquitobites  mosqbitedaytime mosqbitenight avoidmosquitoes hoh_mosquito_control hoh_mosquito_control  mosq_cont_mosquito_coil mosquitocoil mosquito_coilcount mosquitocoild mosq_cont_mosquito_coild mosquitocoil_dum mosq_cont_repellent mosq_cont_sprays mosq_cont_fire mosq_cont_burning_herbs mosqbitefreq mosquitobites mosqbitedaytime mosqbitenight mosq_cont mosquitobitesd mosqbitedaytimed mosqbitenightd mosqbitefreqd mosq_cont_repellentd mosq_cont_spraysd mosq_cont_fired mosq_cont_burning_herbsd mosquitobites_dum mosqbitedaytime_dum mosqbitenight_dum, replace
 
 			*aic ses_index_sum
 			order aic*
@@ -1445,12 +1458,12 @@ tab strata
 	rename max_jimmy_seroc_chikv  jimmy_seroc_chikv 
 	rename max_anna_seroc_denv anna_seroc_denv
 
-bysort visit: tab jimmy_seroc_chikv stanfordchikvigg_, m
+bysort id_visit: tab jimmy_seroc_chikv stanfordchikvigg_, m
 list studyid if jimmy_seroc_chikv ==1 & stanfordchikvigg_!=1
 list id_wide if jimmy_seroc_chikv ==1 & stanfordchikvigg_!=1 & visit_int>1
-order id_wide visit studyid jimmy_seroc_chikv stanfordchikvigg_ anna_seroc_denv stanforddenvigg_ 
+order id_wide id_visit studyid jimmy_seroc_chikv stanfordchikvigg_ anna_seroc_denv stanforddenvigg_ 
 
-bysort visit : tab anna_seroc_denv stanforddenvigg_ 
+bysort id_visit : tab anna_seroc_denv stanforddenvigg_ 
 list studyid if anna_seroc_denv ==1 & stanforddenvigg_ !=1 
 list id_wide if anna_seroc_denv ==1 & stanforddenvigg_ !=1
 
@@ -1484,9 +1497,10 @@ replace time = 12 if visit_int ==3 & cohort ==2
 
 dropmiss, force piasm
 dropmiss, force obs
+capture drop _merge
 merge 1:1 id_wide visit_int using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\incident_malaria$S_DATE"
-drop if _merge ==2
-drop _merge
+*drop if _merge ==2
+*drop _merge
 
 order latitude longitude *latitude *longitude x y point_x point_y
 capture gen gps_x_long = .
@@ -1499,14 +1513,13 @@ replace gps_y_lat = latitude if gps_y_lat ==.
 replace gps_y_lat = house_latitude if gps_y_lat ==.
 
 list gps_y_lat point_y latitude house_latitude gps_y_lat point_x longitude house_longitude in 1/100, clean
-
 save "`data'cleaned_merged_prevalence$S_DATE", replace
  
  
 drop *dup
-order studyid  hhmerge childmerge id_wide city houseid id_childnumber visit cohort id*  *igg* *pcr* *dum  age gender parasite*
+order studyid  hhmerge childmerge id_wide city houseid id_childnumber id_visit  cohort id*  *igg* *pcr* *dum  age gender parasite*
 bysort id_wide (visit): carryforward cohort age gender city site year season month seasonyear mosquito_exposure_index  mosqbitefreq mosquitocoil mosquitobites   mosqbitedaytime mosqbitenight  avoidmosquitoes hoh_mosquito_control hoh_*  hcc_ses_improvedfuel_index_dum hcc_ses_improvedwater_index_dum hcc_ses_improvedlight_index_dum hcc_ses_telephone_dum hcc_ses_radio_dum hcc_ses_own_tv_dum hcc_ses_bicycle_dum hcc_ses_motor_vehicle_dum hcc_ses_domestic_worker_dum hcc_ses_ownflushtoilet_dum hcc_ses_latrine_index_dum hcc_ses_land_index_dum hcc_ses_improvedroof_index_dum hcc_ses_improvedfloor_index_dum hcc_ses_improvedfuel_index hcc_ses_improvedwater_index hcc_ses_improvedlight_index hcc_ses_telephone hcc_ses_radio hcc_ses_own_tv hcc_ses_bicycle hcc_ses_motor_vehicle hcc_ses_domestic_worker hcc_ses_ownflushtoilet hcc_ses_latrine_index hcc_ses_land_index hcc_ses_rooms hcc_ses_bedrooms hcc_ses_improvedroof_index hcc_ses_improvedfloor_index , replace
-
+replace gender =. if gender ==2 |gender ==4
 local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 outsheet using "`data'cleaned_merged_prevalence$S_DATE.csv", replace names comma
 
@@ -1528,10 +1541,11 @@ preserve
 		keep if stanforddenvigg_ !=. 
 		sort id_wide visit, stable 
 		egen minvisit_igg = min(visit_int), by(id_wide)
-		save minvisit_igg, replace 
+		drop _merge
+		save "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\minvisit_igg", replace 
 restore
- 
-merge m:m id_wide using minvisit_igg
+drop _merge 
+merge m:m id_wide using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\minvisit_igg"
 	*keep incident cases
 	bysort id_wide: gen initial_stanforddenvigg_neg =1 if stanforddenvigg_ == 0 & visit_int == minvisit_igg
 	egen max_initial_igg  = max(initial_stanforddenvigg_neg), by(id_wide)
@@ -1550,8 +1564,10 @@ use temp, clear
 	preserve 
 		keep if stanfordchikvigg_ !=. 
 		bysort id_wide: egen minvisit_igg = min(visit_int)
+		drop _merge
 		save minvisit_igg, replace 
 	restore
+		drop _merge
 		merge m:m id_wide using minvisit_igg
 	*keep incident cases
 	bysort id_wide: gen initial_stanfordchikvigg_neg =1 if stanfordchikvigg_ == 0 & visit_int == minvisit_igg
@@ -1611,6 +1627,7 @@ encode id_wide, gen(id)
 stset id visit_int
 
 **malaria prevalence**
+replace gender =. if gender ==2|gender ==4
 		stgen no_malaria= always( malariapositive_dum2==0 |malariapositive_dum2==. )
 		stgen when_malaria= when(malariapositive_dum2==1)
 		stgen prev_malaria= ever(malariapositive_dum2==1)
@@ -1625,13 +1642,13 @@ stset id visit_int
 		keep if malaria_prev !=.
 save "`data'prev_malaria_w_PCR$S_DATE", replace
 outsheet using "`data'prev_malaria_w_PCR_$S_DATE.csv", comma replace names
- 
+replace gender =. if gender ==2|gender ==3|gender ==4 
 preserve
 keep if cohort ==1
 			*denv
 			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\ gender bin \ site cat \ age conts \ city cat cat) by(prev_malaria) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_malaria_W_PCR") sheetreplace) 
 restore
-
+replace gender =. if gender ==2|gender ==4
 preserve
 	keep if cohort ==2
 		*denv
@@ -1641,6 +1658,7 @@ restore
 
 **denv prevalence**
 use "`data'cleaned_merged_prevalence$S_DATE", clear
+replace gender =. if gender ==2|gender ==4
 
 capture drop id
 encode id_wide, gen(id)
@@ -1662,6 +1680,7 @@ outsheet using "`data'prev_denv_w_PCR_$S_DATE.csv", comma replace names
  
 preserve
 keep if cohort ==1
+replace gender =. if gender ==2|gender ==4
 			*denv
 			table1,	vars(malariapositive_dum2  bin \ season cat \cohort cat \  urban bin\  gender bin \ site cat \ age conts \ city cat ) by(prev_denv) missing test saving("`figures'PREVALENCE_$S_DATE.xls", sheet("AIC_PREV_DENV_W_PCR") sheetreplace) 
 restore
@@ -1677,6 +1696,7 @@ restore
  
  **chikv prevalence**
 use "`data'cleaned_merged_prevalence$S_DATE", clear
+replace gender =. if gender ==2|gender ==4
 
 capture drop id 
 encode id_wide, gen(id)

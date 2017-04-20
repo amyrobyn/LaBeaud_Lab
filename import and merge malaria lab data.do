@@ -591,6 +591,11 @@ preserve
 	bysort id_visit: ci malariapositive_dum   , binomial 
 restore	
 
+drop site 
+gen site = "" 
+replace site = "west" if city =="kisumu"|city =="chulaimbo"
+replace site = "coast" if city =="msambweni"|city =="ukunda"
+
 preserve
 	keep if id_cohort =="c"
 	*hcc all comers
@@ -598,6 +603,15 @@ preserve
 	ci malariapositive_dum   , binomial 
 	bysort site id_visit: ci malariapositive_dum   , binomial 
 restore	
+
+preserve
+	keep if id_cohort =="c"
+	*hcc all comers
+	fsum malariapositive_dum   
+	ci malariapositive_dum   , binomial 
+	bysort site : ci malariapositive_dum   , binomial 
+restore	
+
 
 preserve
 keep if id_cohort =="f"
@@ -608,5 +622,6 @@ ci malariapositive_dum   , binomial
 bysort city: ci malariapositive_dum   , binomial 
 restore	
 
-keep fever id_wide id_visit id_cohort  malariapositive_dum    pos_neg malariapositive_dum ni200 none200 pf200 pm200 po200 pv200 pm_pf200 po_pf200 malariatreatment1 malaria_dataset parasitelevel_desc gametocytes parasite_count species_cat sickle_result  city 
+keep fever id_wide id_visit id_cohort  malariapositive_dum    pos_neg malariapositive_dum ni200 none200 pf200 pm200 po200 pv200 pm_pf200 po_pf200 malariatreatment1 malaria_dataset parasitelevel_desc gametocytes parasite_count species_cat sickle_result  city  acute
 save malaria_merged, replace
+tab acute 

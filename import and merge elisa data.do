@@ -16,68 +16,88 @@ log using "`output'elisa_import_merge_clean.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
+*open and save files locally 
+import excel "`coastxls'", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
+	save "`output'ukunda_aic", replace
+import excel "`coastxls'", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
+	save "`output'nganja_hcc", replace
+import excel "`coastxls'", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
+	save "`output'msambweni_aic", replace
+import excel "`coastxls'", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
+	save "`output'milalani_hcc", replace
+import excel "`westxls'", sheet("KISUMU HCC") cellrange(A8:BJ829) firstrow clear
+	save "`output'kisumu_hcc", replace
+import excel "`westxls'", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
+	save "`output'chulaimbo_aic" , replace
+import excel "`westxls'", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
+	save "`output'chulaimbo_hcc", replace
+import excel "`westxls'", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
+	save "`output'kisuma_aic", replace
+import excel "`coastxls'", sheet("Ukunda HCC") cellrange(A8:BI1128) firstrow clear
+	save "`output'ukunda_hcc", replace
 
 cd "`input'"
 *import csv's
-import excel "`westxls'", sheet("CHULAIMBO AIC") cellrange(A9:CP648) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-rename *, lower
-rename stford* stanford*
-gen dataset = "chulaimbo_aic" 
+use "`output'chulaimbo_aic", clear
+	dropmiss, force obs
+	dropmiss, force 
+	rename *, lower
+	rename stford* stanford*
+	gen dataset = "chulaimbo_aic" 
 save "`output'chulaimbo_aic" , replace
 
-import excel "`westxls'", sheet("CHULAIMBO HCC") cellrange(A8:BQ644) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "chulaimbo_hcc"
+use "`output'chulaimbo_hcc", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "chulaimbo_hcc"
 save "`output'chulaimbo_hcc", replace
 
-import excel "`westxls'", sheet("KISUMU AIC") cellrange(A9:CF832) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "kisuma_aic"
+use "`output'kisuma_aic", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "kisuma_aic"
 save "`output'kisuma_aic", replace
 
-import excel "`westxls'", sheet("KISUMU HCC") cellrange(A8:BJ829) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "kisumu_hcc"
+use "`output'kisumu_hcc", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "kisumu_hcc"
 save "`output'kisumu_hcc", replace
 
-import excel "`coastxls'", sheet("MILALANI HCC") cellrange(A8:BL589) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "milalani_hcc"
+use "`output'milalani_hcc", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "milalani_hcc"
 save "`output'milalani_hcc", replace
 
-import excel "`coastxls'", sheet("Msambweni  AIC") cellrange(A9:BG1488) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-egen ChikVIgGOD_db = concat(ChikVIgGOD_d  AK)
-drop ChikVIgGOD_d  AK
-rename ChikVIgGOD_db ChikVIgGOD_d 
-gen dataset = "msambweni_aic"
+use "`output'msambweni_aic", clear
+	dropmiss, force obs
+	dropmiss, force 
+	egen ChikVIgGOD_db = concat(ChikVIgGOD_d  AK)
+	drop ChikVIgGOD_d  AK
+	rename ChikVIgGOD_db ChikVIgGOD_d 
+	gen dataset = "msambweni_aic"
 save "`output'msambweni_aic", replace
 
-import excel "`coastxls'", sheet("NGANJA HCC") cellrange(A8:BL319) firstrow clear
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "nganja_hcc"
+use "`output'nganja_hcc", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "nganja_hcc"
 save "`output'nganja_hcc", replace
 
-import excel "`coastxls'", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
-dropmiss, force obs
-dropmiss, force 
-gen dataset = "ukunda_aic"
+use "`output'ukunda_aic", clear
+	use "`output'ukunda_aic", clear
+	dropmiss, force obs
+	dropmiss, force 
+	gen dataset = "ukunda_aic"
 save "`output'ukunda_aic", replace
 
-import excel "`coastxls'", sheet("Ukunda HCC") cellrange(A8:BI1128) firstrow clear
-dropmiss, force 
-dropmiss, force obs
-gen dataset = "ukunda_hcc"
-rename *, lower
-rename stanfordchikigg_a stanfordchikvigg_a 
+use "`output'ukunda_hcc", clear
+	dropmiss, force 
+	dropmiss, force obs
+	gen dataset = "ukunda_hcc"
+	rename *, lower
+	rename stanfordchikigg_a stanfordchikvigg_a 
 save "`output'ukunda_hcc", replace
 clear
 
@@ -152,18 +172,11 @@ save `dataset', replace
 }
 
 
-
-append using "kisumu_hcc.dta"  
-append using "kisuma_aic.dta" 
-append using "chulaimbo_aic.dta" 
-append using "msambweni_aic.dta" 
-append using "nganja_hcc.dta"
-append using  "chulaimbo_hcc.dta"
-append using  "milalani_hcc.dta"
-append using    "ukunda_aic.dta" 
+use "kisumu_hcc.dta", clear
+append using "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta" 
 save temp, replace
 dropmiss, force obs
- 
+
 save "appended_$S_DATE", replace
 
 save temp, replace
@@ -197,11 +210,11 @@ foreach visit in a b c d e f g h i j{
 				count if studyid_a==""
 
 *make sure this doesn't create duplicates. also make the same changes to the demographic data.
-				replace studyid_a= subinstr(studyid_a, "cmb", "hf",.) 
-
+				list studyid_a dataset if strpos(studyid_a, "cmb") 
+				replace studyid_a= subinstr(studyid_a, "cmb", "cf",.) 
 		
 duplicates tag studyid_a , gen(dup_studyida)
-
+tab dup_studyida
 preserve
 	*keep those that i dropped for duplicate and show to elysse
 		count if studyid_a==""
@@ -227,7 +240,7 @@ isid studyid_a
 	replace id_childnumber  = substr(studyid_a, +4, .)
 gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
 tab notnumeric	/*==1 where nonnumeric characters*/
-list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
+list dataset studyid_a id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
 
 gen suffix = "" 	
 local suffix a 
@@ -263,7 +276,7 @@ outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped
 drop if dup_id_wide_visit_int > 0
 isid id_wide id_visit
 
-duplicates tag id_wide , gen (dup_id_wide) 
+duplicates tag id_wide, gen (dup_id_wide) 
 tab dup_id_wide
 outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped\elisa_dup_id_wide.csv" if dup_id_wide_visit_int>0, comma names replace 
 drop if dup_id_wide > 0
@@ -289,11 +302,18 @@ outsheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\duplicates dropped
 drop if id_wide_visit>0
 tab id_wide_visit
 isid studyid_a
-reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_ , i(id_wide) j(VISIT) string
+
+replace antigenused_d = antigenused_b_d if antigenused_d ==""
+drop antigenused_b_d 
+ 
+reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_  initialaliquotid_ correctsampleid_ duplicateid_ followupaliquotid_ stanfordchikvod2_ stanfordchikod_,  i(id_wide) j(VISIT) string
 encode id_wide, gen(id_wide_int)
-encode VISIT, gen(visit_int)
+drop id_visit id_wide_visit
+rename VISIT visit
+encode visit, gen(visit_int)
 xtset id_wide_int visit_int
 by id_wide_int : carryforward id_childnumber id_cohort id_city city, replace
+isid id_wide_int visit_int
 
 egen stanfordchikvigg_all = concat(stanfordchikvigg2_ stanfordchikvigg_ stanfordchikvod_ )
 drop stanfordchikvigg2_  stanfordchikvigg_
@@ -376,7 +396,7 @@ save pcr, replace
 drop *pcr*
 dropmiss, force obs
 dropmiss, force
-isid id_wide visit
+isid id_wide_int visit_int
 
 		ds, has(type string) 
 			foreach v of varlist `r(varlist)' { 
@@ -412,12 +432,12 @@ save elisas, replace
 		rename cohort_s cohort				
 		bysort cohort  city: sum stanforddenvigg_ stanfordchikvigg_ 
 
-
 		replace city = "Chulaimbo" if city =="c"
 		replace city = "Kisumu" if city =="u"
 		replace city = "Ukunda" if city =="k"
 
 		save prevalent, replace
+isid id_wide_int visit_int
 
 preserve 
 	keep if id_cohort =="HCC"
@@ -442,9 +462,7 @@ restore
 		keep abvisit visit id_wide
 		merge 1:1 id_wide visit using prevalent
 		keep if abvisit ==3 & stanfordchikvigg_ !=.
-		
-		keep studyid  id_wide site visit id_visit antigenused_ id_city city stanforddenvigg_ stanfordchikvigg_  cohort id_cohort datesamplecollected_ datesamplecol~_ 
-
+		keep studyid  id_wide site visit visit_int antigenused_ id_city city stanforddenvigg_ stanfordchikvigg_  cohort id_cohort datesamplecollected_ datesamplecol~_ *od*
 		export excel using "prevalent_visitab_chikv", firstrow(variables) replace
 	
 	*denv matched prevalence
@@ -461,11 +479,11 @@ restore
 		
 		merge 1:1 id_wide visit using prevalent		
 		keep if abvisit ==3 & stanforddenvigg_ !=.
-		keep id_visit id_cohort id_city studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
+		keep visit_int  id_cohort id_city studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
 		export excel using "prevalent_visitab_denv", firstrow(variables) replace
 		
 		*denv prevlanece
-use prevalent, clear			
+use prevalent, clear		
 foreach var in stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ {
 	preserve
 		keep if `var'!=. 
@@ -481,7 +499,7 @@ replace city = "msambweni" if city =="nganja"
 
 save  prevalent, replace
 
-keep id_city id_cohort id_visit studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ 
+keep id_city id_cohort visit_int studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ datesamplecollected_   antigenused_ 
 keep if stanforddenvigg_	!= .|stanfordchikvigg_	!= .|chikvigg_	!= .|denvigg_!= .
 encode city, gen(city_int)
 
@@ -495,8 +513,13 @@ by cohort, sort : ci stanfordchikvigg_, binomial
 bysort id_wide: carryforward id_wide, gen(id_wide2)
 
 cd "`input'"
+duplicates tag id_wide visit_int, gen(dups)
+isid id_wide visit_int
+compare  visit_int visit
+rename visit id_visit 
 save "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\ELISA Database\ELISA Latest\elisa_merged", replace
-outsheet id* studyid id_wide visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace
+
+outsheet id* studyid id_wide id_visit stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_  using "elisas_merged.csv", comma names replace
 
 
 *************
@@ -506,7 +529,7 @@ gen anna_seroc_denv=.
 	replace anna_seroc_denv= 1 if id_wide == "`id_wide'"
 }
 
-bysort visit: tab anna_seroc_denv stanforddenvigg_ 
+bysort id_visit: tab anna_seroc_denv stanforddenvigg_ 
 
 
 gen jimmy_seroc_chikv=.
@@ -516,4 +539,4 @@ foreach id_wide in "uf572" "uf599" "uf840" "mf563" "kf433"{
 	replace jimmy_seroc_chikv= 1 if id_wide == "`id_wide'"
 }
 
-bysort visit: tab jimmy_seroc_chikv stanfordchikvigg_, m
+bysort id_visit: tab jimmy_seroc_chikv stanfordchikvigg_, m

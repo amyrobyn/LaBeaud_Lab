@@ -266,6 +266,7 @@ use "west_HCC_3rd Followup", clear
 			desc start
 	capture tostring hospitalname1 numhospitalized , replace 
 	tostring *, replace force
+	gen dataset ="west_HCC_2nd Followup"
 	save "west_HCC_2nd Followup", replace
 
 use "west_HCC_3rd Followup", clear
@@ -321,6 +322,7 @@ use "Coast_AIC_Initial", clear
 	}
 
 	tostring *, replace force
+	gen dataset = "Coast_AIC_Initial"
 save "Coast_AIC_Initial", replace
 
 use "coast_aic_fu", clear
@@ -337,6 +339,7 @@ use "coast_aic_fu", clear
 	
 	capture tostring hospitalname1 numhospitalized , replace 
 	tostring *, replace force
+	gen dataset ="coast_aic_fu"
 save "coast_aic_fu", replace
 
 **west aic**
