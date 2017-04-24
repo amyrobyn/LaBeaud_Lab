@@ -6,7 +6,7 @@ local figures "C:\Users\amykr\Box Sync\Amy Krystosik's Files\progress report apr
 local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\progress report april 2017\data\"
 local cleandata "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 
-use "`cleandata'prev_chikv_w_PCR10 Apr 2017", clear
+use "`cleandata'prev_chikv_w_PCR$S_DATE", clear
 	*fix city
 		replace city = "c" if id_wide =="cf433"
 		replace city = id_city if city ==""
@@ -42,7 +42,7 @@ local data "C:\Users\amykr\Box Sync\Amy Krystosik's Files\progress report april 
 local cleandata "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\"
 *******************************************start malaria**********************************************
 *malaria 
-use "`cleandata'cleaned_merged_prevalence$S_DATE", clear
+use "`cleandata'cleaned_merged_prevalence19 Apr 2017", clear
 		replace city = "c" if id_wide =="cf433"
 		replace city = id_city if city ==""
 		replace city = "chulaimbo" if city=="c"
@@ -61,7 +61,10 @@ replace fever = feverpos1 if fever ==.
 		keep malariapositive_dum species_cat gametocytes   parasite_count_all visit_int id_wide city cohort fever pos_neg acute site
 		keep if malariapositive_dum !=.
 replace species_cat ="" if species_cat =="neg"|species_cat =="0"
+replace species_cat =subinstr(species_cat , "_", "/", .)
+replace species_cat ="pf/pm" if species_cat =="pm/pf"
 replace species_cat ="pf/pm" if species_cat =="pfpm"
+replace species_cat ="pf/po" if species_cat =="po/pf"
 tab species_cat 
 egen cohort_city =concat(cohort city)
 		table1, vars(species_cat cat \ ) by(cohort_city ) saving("`figures'species.xls", replace)
@@ -69,6 +72,7 @@ egen cohort_city =concat(cohort city)
 bysort acute: fsum pos_neg if fever == 1 & cohort ==1
 bysort acute: fsum malariapositive_dum if fever == 1 & cohort ==1
 drop acute
+
 preserve
 	keep if fever ==1 & cohort == 1
 	replace site = "west" if city =="kisumu"|city =="chulaimbo"
@@ -77,16 +81,16 @@ preserve
 	reshape wide malariapositive_dum species_cat gametocytes parasite_count_all pos_neg, i(id_wide) j(visit_int) 
 	bysort site: fsum malariapositive_dum*
 restore
+
 preserve
 	keep if fever ==1
-	
 	replace site = "west" if city =="kisumu"|city =="chulaimbo"
 	replace site = "coast" if city =="msambweni"|city =="ukunda"
-	
 	reshape wide malariapositive_dum species_cat gametocytes parasite_count_all pos_neg, i(id_wide) j(visit_int) 
 	bysort site cohort: fsum malariapositive_dum*
 restore
- 
+
+
 *******************************************end malaria*************************************************
  
 

@@ -173,7 +173,7 @@ use "Msambweni HCC Follow one", clear
 	}
 	tostring *, replace force
 	gen dataset = "Msambweni HCC Follow one"
-save "Msambweni HCC Follow one ", replace
+save "Msambweni HCC Follow one", replace
 
 use "Msambweni HCC Follow two", clear
 	dropmiss, force piasm  trim
@@ -487,9 +487,7 @@ save merged, replace
 gen byte notnumeric = real(id_childnumber)==.	/*makes indicator for obs w/o numeric values*/
 tab notnumeric	/*==1 where nonnumeric characters*/
 list id_childnumber if notnumeric==1	/*will show which have nonnumeric*/
-
-	
-	
+		
 gen suffix = "" 	
 foreach suffix in a b c d e f g h {
 	replace suffix = "`suffix'" if strpos(id_childnumber, "`suffix'")
@@ -511,7 +509,6 @@ drop if id_wide_id_visit_dup>0
 isid id_city id_cohort  id_childnumber id_visit 
 isid id_wide id_visit
 
-
 save temp, replace
 	
 	encode site, gen(siteint)
@@ -531,7 +528,6 @@ keep id_wide id_visit id_cohort id_city species prev density gametocytes id_chil
 egen studyid = concat(id_city id_cohort id_visit id_childnumber)
 order studyid  id_wide id_city id_cohort id_visit id_childnumber species prev density gametocytes
 outsheet using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\coast_hcc_malaria.csv", replace comma names
-
 *create list of those without demogrpahy data from cornelius
 		import excel using "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\Demography\Demography Latest\id's with no demography data_cornelius_march3_2017.xlsx", clear firstrow
 			gen no_demography =1

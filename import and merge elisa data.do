@@ -16,6 +16,7 @@ log using "`output'elisa_import_merge_clean.smcl", text replace
 set scrollbufsize 100000
 set more 1
 
+
 *open and save files locally 
 import excel "`coastxls'", sheet("Ukunda AIC") cellrange(A9:AZ1519) firstrow clear 
 	save "`output'ukunda_aic", replace
@@ -116,6 +117,20 @@ capture  tostring chikviggod_*, replace force
 			capture replace datesamplecollected_a ="." if datesamplecollected_a=="n/a"
 			capture destring datesamplecollected_a, replace
 			capture recast int datesamplecollected_a
+			
+			foreach var in   stanfordchikvod_a chikviggod_a denviggod_a stanforddenviggod_a stanfordchikvod_b chikviggod_b denviggod_b stanforddenviggod_b chikviggod_c denviggod_c stanforddenviggod_c stanfordchikvod_d chikviggod_d denviggod_d stanforddenviggod_d chikviggod_e denviggod_e denviggod_f{
+			gen value_igg`var' = `var'
+			tostring value_igg`var', replace force
+			replace value_igg`var' = lower(value_igg`var')
+			replace value_igg`var' = subinstr(value_igg`var', "pos", "", .)
+			replace value_igg`var' = subinstr(value_igg`var', "neg", "", .)
+			replace value_igg`var' = subinstr(value_igg`var', "rpt", "", .)
+			replace value_igg`var' = subinstr(value_igg`var', "no sample", "", .)
+			replace value_igg`var' = subinstr(value_igg`var', "no serum", "", .)
+			destring value_igg`var', replace 
+			 }
+			
+
 
 						foreach var in  denviggod_b  denvigg_f  studyid_a denviggod_b chikviggod_a  chikviggod_a denviggod_a denviggod_a  denviggod_b chikviggod_b chikviggod_c denviggod_c denviggod_e denviggod_f stanfordchikvod_d stanfordchikvod_d n datesamplecollected stanforddenvod_a p s u w ab stanforddenvigg_f stanfordchikvod_a  stanfordchikvod_b  chikvigg_e  denvigg_e followupaliquotid_f  antigenused_d chikvigg_d  chikviggod_d chikvigg_f chikviggod_f stanfordchikvigg_d  stanforddenvigg_d antigenused_e initialaliquotid_e chikvpcr_e{
 						capture tostring `var', replace 
@@ -125,6 +140,7 @@ capture  tostring chikviggod_*, replace force
 			foreach var in chikviggod_a denviggod_b {
 			capture drop `var'
 			}
+			
 				foreach var in datesamplecollected_a datesamplecollected_f datesamplecollected_b datesamplerun_a datesamplecollected_{
 					capture gen `var'1 = date(`var', "mdy" ,2050)
 					capture  format %td `var'1 

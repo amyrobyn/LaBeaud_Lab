@@ -105,13 +105,14 @@ preserve
 	replace date_of_birth = . if  id_wide =="KF184"
 	replace where =""	if visit !="a"
 	replace occupation =. if occupation ==99	
-	keep id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv	result_igg_denv malariapositive_dum date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
+	keep id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv	result_igg_denv malariapositive_dum denvpcrresults_dum  date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
 	*repellent mosquito_coil mosquito_net mosquito_bites mosquitoes_day mosquitoes_night water_collection illness_today number_illnesses  duration hospitalized_1 number_hospitalizations_1 reason_1 when_1 where_1 duration_1 
-	order id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv	result_igg_denv malariapositive_dum date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
+	order id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv result_igg_denv malariapositive_dum date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
 	*repellent mosquito_coil mosquito_net mosquito_bites mosquitoes_day mosquitoes_night water_collection illness_today number_illnesses  duration hospitalized_1 number_hospitalizations_1 reason_1 when_1 where_1 duration_1 
 	rename id_wide studyid
 	rename redcap_event_name_kenya redcap_event_name
 	rename malariapositive_dum result_microscopy_malaria
+	rename denvpcrresults_dum result_pcr_denv
 	
 	outsheet using  "redcap_import_kenya.csv", comma names replace
 restore
