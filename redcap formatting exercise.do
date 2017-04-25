@@ -12,7 +12,13 @@ set more 1
 set scrollbufsize 100000
 cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Data Managment\redcap\ro1 lab results long"
 log using "data import ex.smcl", text replace 
-use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence17 Apr 2017", clear
+use "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\cleaned_merged_prevalence$S_DATE", clear
+replace visit = lower(visit)
+
+replace visit = id_visit if visit ==""
+
+replace visit = "a" if visit_int ==1 & visit ==""
+
 gen redcap_event_name_kenya = ""
 replace redcap_event_name_kenya= "visit_a_arm_1" if visit == "a"
 replace redcap_event_name_kenya= "visit_b_arm_1" if visit == "b"
@@ -103,9 +109,13 @@ preserve
 	}
 	format dob %td
 	replace date_of_birth = . if  id_wide =="KF184"
+	replace date_of_birth = . if  id_wide =="KF159"
+	replace date_of_birth = . if  id_wide =="KF160"
+	replace date_of_birth = . if  id_wide =="KF161"
+
 	replace where =""	if visit !="a"
 	replace occupation =. if occupation ==99	
-	keep id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv	result_igg_denv malariapositive_dum denvpcrresults_dum  date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
+	keep  value_iggchikviggod_ value_iggdenviggod_ id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv	result_igg_denv malariapositive_dum denvpcrresults_dum  date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
 	*repellent mosquito_coil mosquito_net mosquito_bites mosquitoes_day mosquitoes_night water_collection illness_today number_illnesses  duration hospitalized_1 number_hospitalizations_1 reason_1 when_1 where_1 duration_1 
 	order id_wide redcap_event_name_kenya city cohort house_number child_number result_igg_chikv result_igg_denv malariapositive_dum date_of_birth age_calc gender child_height child_weight phone_number occupation kid_highest_level_education mom_highest_level_education number_siblings travel where stay_overnight outdoor_activity time_outdoors mosquito_bite_frequency avoid_mosquitoes 
 	*repellent mosquito_coil mosquito_net mosquito_bites mosquitoes_day mosquitoes_night water_collection illness_today number_illnesses  duration hospitalized_1 number_hospitalizations_1 reason_1 when_1 where_1 duration_1 
@@ -113,6 +123,9 @@ preserve
 	rename redcap_event_name_kenya redcap_event_name
 	rename malariapositive_dum result_microscopy_malaria
 	rename denvpcrresults_dum result_pcr_denv
+
+	rename value_iggdenviggod_  value_igg_denv
+	rename value_iggchikviggod_  value_igg_chikv
 	
 	outsheet using  "redcap_import_kenya.csv", comma names replace
 restore
@@ -120,10 +133,12 @@ restore
 preserve
 	rename stanfordchikvigg_ result_igg_chikv	
 	rename stanforddenvigg_  result_igg_denv
-	keep id_wide redcap_event_name_stanford city cohort house_number child_number  result_igg_denv result_igg_chikv	
+	keep value_iggstanfordchikvod_ value_iggstanforddenvod_  id_wide redcap_event_name_stanford city cohort house_number child_number  result_igg_denv result_igg_chikv	
 	order id_wide redcap_event_name_stanford city cohort house_number child_number  result_igg_denv result_igg_chikv 
 	rename id_wide studyid
 	rename redcap_event_name_stanford redcap_event_name
+	rename value_iggstanforddenvod_   value_igg_denv
+	rename value_iggstanfordchikvod_  value_igg_chikv
 	outsheet using  "redcap_import_stanford.csv", comma names replace
 restore
 

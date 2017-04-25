@@ -105,6 +105,7 @@ clear
 cd "`output'"
 foreach dataset in "kisumu_hcc.dta"  "kisuma_aic.dta" "chulaimbo_aic.dta" "msambweni_aic.dta" "nganja_hcc.dta" "chulaimbo_hcc.dta" "milalani_hcc.dta" "ukunda_aic.dta" "ukunda_hcc.dta" {
 			use `dataset', clear
+			*use kisumu_hcc, clear
 			rename *, lower
 			dropmiss, force obs
 			dropmiss, force 
@@ -118,23 +119,34 @@ capture  tostring chikviggod_*, replace force
 			capture destring datesamplecollected_a, replace
 			capture recast int datesamplecollected_a
 			
-			foreach var in   stanfordchikvod_a chikviggod_a denviggod_a stanforddenviggod_a stanfordchikvod_b chikviggod_b denviggod_b stanforddenviggod_b chikviggod_c denviggod_c stanforddenviggod_c stanfordchikvod_d chikviggod_d denviggod_d stanforddenviggod_d chikviggod_e denviggod_e denviggod_f{
-			gen value_igg`var' = `var'
-			tostring value_igg`var', replace force
-			replace value_igg`var' = lower(value_igg`var')
-			replace value_igg`var' = subinstr(value_igg`var', "pos", "", .)
-			replace value_igg`var' = subinstr(value_igg`var', "neg", "", .)
-			replace value_igg`var' = subinstr(value_igg`var', "rpt", "", .)
-			replace value_igg`var' = subinstr(value_igg`var', "no sample", "", .)
-			replace value_igg`var' = subinstr(value_igg`var', "no serum", "", .)
-			destring value_igg`var', replace 
-			 }
+			foreach var in chikviggod_a denviggod_a stanfordchikvod_a stanforddenvod_a chikviggod_b denviggod_b stanfordchikvod_b stanforddenvod_b chikviggod_c denviggod_c chikviggod_d denviggod_d{			
+					capture gen `var' = .
+					gen value_igg`var' = `var'
+					tostring value_igg`var', replace force
+					replace value_igg`var' =itrim(trim(value_igg`var'))
+					replace value_igg`var' = lower(value_igg`var')
+					replace value_igg`var' = subinstr(value_igg`var', "pos", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "neg", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "rpt", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "no sample", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "no serum", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "pending", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "not followed", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "not enough serum", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "refused", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "no aic serum", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "-", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', " ", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "_", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "retest", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "repeat", "", .)
+					replace value_igg`var' = subinstr(value_igg`var', "equivocal", "", .)					 
+					destring value_igg`var', replace force
+					}			 
 			
-
-
-						foreach var in  denviggod_b  denvigg_f  studyid_a denviggod_b chikviggod_a  chikviggod_a denviggod_a denviggod_a  denviggod_b chikviggod_b chikviggod_c denviggod_c denviggod_e denviggod_f stanfordchikvod_d stanfordchikvod_d n datesamplecollected stanforddenvod_a p s u w ab stanforddenvigg_f stanfordchikvod_a  stanfordchikvod_b  chikvigg_e  denvigg_e followupaliquotid_f  antigenused_d chikvigg_d  chikviggod_d chikvigg_f chikviggod_f stanfordchikvigg_d  stanforddenvigg_d antigenused_e initialaliquotid_e chikvpcr_e{
-						capture tostring `var', replace 
-						
+             
+						foreach var in  denviggod_b  denvigg_f  studyid_a denviggod_b chikviggod_a  chikviggod_a denviggod_a denviggod_a  denviggod_b chikviggod_b chikviggod_c denviggod_c denviggod_e denviggod_f stanfordchikvod_d stanfordchikvod_d n datesamplecollected stanforddenvod_a p s u w ab stanforddenvigg_f stanfordchikvod_a  stanfordchikvod_b  chikvigg_e  denvigg_e followupaliquotid_f  antigenused_d chikvigg_d  chikviggod_d chikvigg_f chikviggod_f stanfordchikvigg_d  stanforddenvigg_d antigenused_e initialaliquotid_e chikvpcr_e stanforddenvod_b{
+						capture tostring `var', replace 						
 						}
 
 			foreach var in chikviggod_a denviggod_b {
@@ -322,7 +334,13 @@ isid studyid_a
 replace antigenused_d = antigenused_b_d if antigenused_d ==""
 drop antigenused_b_d 
  
-reshape long stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_  initialaliquotid_ correctsampleid_ duplicateid_ followupaliquotid_ stanfordchikvod2_ stanfordchikod_,  i(id_wide) j(VISIT) string
+reshape long  value_iggchikviggod_ value_iggdenviggod_ value_iggstanfordchikvod_ value_iggstanforddenvod_ stanfordchikvigg2_ chikvigg_ denvigg_  stanforddenvigg_  datesamplecollected_ datesamplerun_ studyid_ followupaquotid_ chikviggod_ denviggod_ stanfordchikvod_  stanfordchikvigg_ stanforddenvod_ aliquotid_  chikvpcr_ chikvigm_ denvpcr_ denvigm_ stanforddenviggod_ followupid_ antigenused_  initialaliquotid_ correctsampleid_ duplicateid_ followupaliquotid_ stanfordchikvod2_ stanfordchikod_,  i(id_wide) j(VISIT) string
+
+foreach var in value_iggchikviggod_ value_iggdenviggod_ value_iggstanfordchikvod_ value_iggstanforddenvod_ {
+	replace `var' = `var'/10 if `var' >10
+	replace `var' = `var'/10 if `var' >10
+}
+
 encode id_wide, gen(id_wide_int)
 drop id_visit id_wide_visit
 rename VISIT visit
@@ -478,7 +496,7 @@ restore
 		keep abvisit visit id_wide
 		merge 1:1 id_wide visit using prevalent
 		keep if abvisit ==3 & stanfordchikvigg_ !=.
-		keep studyid  id_wide site visit visit_int antigenused_ id_city city stanforddenvigg_ stanfordchikvigg_  cohort id_cohort datesamplecollected_ datesamplecol~_ *od*
+		keep value* studyid  id_wide site visit visit_int antigenused_ id_city city stanforddenvigg_ stanfordchikvigg_  cohort id_cohort datesamplecollected_ datesamplecol~_ *od*
 		export excel using "prevalent_visitab_chikv", firstrow(variables) replace
 	
 	*denv matched prevalence
@@ -495,7 +513,7 @@ restore
 		
 		merge 1:1 id_wide visit using prevalent		
 		keep if abvisit ==3 & stanforddenvigg_ !=.
-		keep visit_int  id_cohort id_city studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
+		keep value* visit_int  id_cohort id_city studyid  id_wide site visit antigenused_ city cohort  datesamplecollected_   stanforddenvigg_ stanfordchikvigg_  visit datesamplecol~_
 		export excel using "prevalent_visitab_denv", firstrow(variables) replace
 		
 		*denv prevlanece
@@ -515,7 +533,7 @@ replace city = "msambweni" if city =="nganja"
 
 save  prevalent, replace
 
-keep id_city id_cohort visit_int studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ datesamplecollected_   antigenused_ 
+keep value* id_city id_cohort visit_int studyid id_wide visit city cohort site stanforddenvigg_ stanfordchikvigg_ chikvigg_ denvigg_ datesamplecollected_   antigenused_ 
 keep if stanforddenvigg_	!= .|stanfordchikvigg_	!= .|chikvigg_	!= .|denvigg_!= .
 encode city, gen(city_int)
 
