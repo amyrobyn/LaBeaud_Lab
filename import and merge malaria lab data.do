@@ -29,7 +29,7 @@ import excel "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Databa
 
 **
 		use malaria_coast_hcc, clear
-		drop  id_wide id_city id_cohort id_visit id_childnumber
+		drop id_wide id_city id_cohort id_visit id_childnumber
 				gen dataset = "coast_hcc_malaria"
 				rename *, lower
 				ds, has(type string) 
@@ -76,7 +76,7 @@ use malaria_coast_aic, clear
 				replace visit_fu ="h" if id_visit =="G" 
 				tab visit_fu id_visit , m
 				
-				egen studyid_fu = concat(id_city id_cohort visit_fu  id_childnum)
+				egen studyid_fu = concat(id_city id_cohort visit_fu id_childnum)
 				preserve
 					keep studyid_fu actualfollowdate followed spp2 countul2 gametocytes2 treatment2  pos_neg1 visit_fu  
 					rename studyid_fu  studyid
@@ -303,9 +303,9 @@ append using "malaria_coast_hcc" "malaria_coast_aic" "malaria_Obama" "malaria_Ch
 			}
 
 		order *200
-		egen parasite_count2= rowtotal(pf200 pm200 po200 pv200 missing200 ni200 none200 pm_pf200 po_pf200)
-		replace parasite_count2 = . if pf200 ==. & pm200 ==. & po200 ==. & pv200 ==. & ni200==. & none200==. & pm_pf200==. & po_pf200==.
-		 replace parasite_count =  parasite_count2 if parasite_count ==.
+		egen parasite_count2= rowtotal(pf200 pm200 po200 pv200 missing200 ni200 none200 pm_pf200 po_pf200) if pf200 !=. | pm200 !=. | po200 !=. | pv200 !=. | ni200 !=. | none200 !=. | pm_pf200 !=. | po_pf200 !=.
+		replace parasite_count =  parasite_count2 if parasite_count ==.
+		drop parasite_count2
 
 		gen  malariapositive_dum = .
 		replace malariapositive_dum = 0 if parasite_count==0
@@ -418,65 +418,64 @@ replace FEVER =0 if temp <38
 tab fever
 
 preserve
-keep if city =="ukunda" 
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic ukunda acute
-fsum malariapositive_dum   
+	keep if city =="ukunda" 
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic ukunda acute
+	fsum malariapositive_dum   
 restore
 
 preserve
-keep if city =="msambweni" 
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic msambweni acute
-fsum malariapositive_dum   
-  return list , all
- restore
+	keep if city =="msambweni" 
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic msambweni acute
+	fsum malariapositive_dum   
+restore
  
 
 
 preserve
-keep if city =="kisumu" 
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic kisumu initial
-fsum malariapositive_dum   
+	keep if city =="kisumu" 
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic kisumu initial
+	fsum malariapositive_dum   
 restore
 
 preserve
-keep if city =="chulaimbo" 
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic chulaimbo initial
-fsum malariapositive_dum   
+	keep if city =="chulaimbo" 
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic chulaimbo initial
+	fsum malariapositive_dum   
 restore
 
 preserve
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic initial
-fsum malariapositive_dum   
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic initial
+	fsum malariapositive_dum   
 restore
 
 preserve
-keep if fever ==1
-keep if acute ==1 
-keep if id_cohort =="f"
-*aic acute febrile
-fsum malariapositive_dum   
+	keep if fever ==1
+	keep if acute ==1 
+	keep if id_cohort =="f"
+	*aic acute febrile
+	fsum malariapositive_dum   
 restore	
 
 preserve
-keep if id_cohort =="c"
-*hcc
-fsum malariapositive_dum   
+	keep if id_cohort =="c"
+	*hcc
+	fsum malariapositive_dum   
 restore	
 
 preserve
-keep if id_cohort =="c"
-*hcc by city 
-bysort city: fsum malariapositive_dum   
+	keep if id_cohort =="c"
+	*hcc by city 
+	bysort city: fsum malariapositive_dum   
 restore	
 
 bysort  malaria_dataset : fsum malariapositive_dum   
@@ -552,10 +551,12 @@ replace species_cat = "pf/po" if species_cat =="po_pf"
 replace species_cat = "ni" if species_cat =="none"
 replace species_cat = "" if species_cat =="neg"
 
-gen gion = "_"
-egen cohort_city  = concat (id_cohort gion  city)
-table1, vars(species_cat cat \ ) by(cohort_city ) saving("species.xls", replace)
-drop cohort_city  
+preserve
+keep if malariapositive_dum !=. 
+	gen gion = "_"
+	egen cohort_city  = concat (id_cohort gion  city)
+	table1, vars(species_cat cat \ ) by(cohort_city ) saving("species.xls", replace)
+restore
 
 keep studyid site fever id_wide id_visit id_cohort  malariapositive_dum    pos_neg malariapositive_dum ni200 none200 pf200 pm200 po200 pv200 pm_pf200 po_pf200 malariatreatment1 malaria_dataset parasitelevel_desc gametocytes parasite_count species_cat sickle_result  city  acute
 save malaria_merged, replace
