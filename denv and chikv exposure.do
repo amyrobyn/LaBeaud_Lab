@@ -74,6 +74,7 @@ save visit_a, replace
 use visit_a
 drop _merge
 merge 1:1 id_wide using exposed_group  
+tab _merge 
 
 keep age phonenumber gps_x_long gps_y_lat gender dob child_name interviewername ctname cfthname othinterviewername firstname secondname familyname hoc_surname hoc_fname hoc_mname hoc_lname hoc_othername hoh_surname hoh_fname hoh_mname hoh_lname hoh_othername child_othername school_name thirdname surname interviewer_name childsname mothername fathername childname1 childname2 childname3 childname_long   id_wide city stanforddenvigg_ stanfordchikvigg_ denvexposed chikvexposed denv_chikv_exposed chikv_denv_unexposed site exposed_group
 *cut down the exposed_group==0 to match the other groups by age. 
@@ -87,4 +88,5 @@ bysort exposed_group city: sum age, d
 
 outsheet using "C:\Users\amykr\Box Sync\U24 Project\data\particpants_$S_DATE.csv" if denvexposed==1 |chikvexposed ==1 | chikv_denv_unexposed ==1 |chikv_denv_unexposed==1, comma names replace
 order id_wide
-merge 1:1 id_wide  using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\pedsql\pedsql"
+*here we are just looking at exposed vs not exposed so there is one row for each person. match that to many pedsql visits. if we want to make it 1:1 we can look at prior exposure vs incidence.
+merge 1:m id_wide using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\pedsql\pedsql"
