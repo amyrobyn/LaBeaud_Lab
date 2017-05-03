@@ -17,7 +17,7 @@ local importwestaic "C:\Users\amykr\Box Sync\DENV CHIKV project\West Cleaned\AIC
 import excel "`importcoastaic'5 coast_aic_FU_Dec 02 2016.xls", sheet("#LN00030") firstrow clear
 save "coast_aic_fu", replace
 
-import excel "`importcoastaic'\5 coast_aic_intinial_Dec 02 2016.xls", sheet("#LN00029") firstrow clear
+import excel "`importcoastaic'\Coast_AicInitial-27Apr2017.xls", sheet("Sheet1") firstrow clear
 save "Coast_AIC_Initial", replace
 
 import excel "`importwesthcc'west_HCC_Initial.xlsx", sheet("Sheet1") firstrow clear
@@ -524,7 +524,8 @@ keep if id_city == "u" |id_city == "g"|id_city == "l"
 dropmiss, force
 dropmiss, obs force
 lookfor childnumber
-keep id_wide id_visit id_cohort id_city species prev density gametocytes id_childnumber
+
+keep id_wide id_visit id_cohort id_city species prev density gametocytes id_childnumber interviewdate 
 egen studyid = concat(id_city id_cohort id_visit id_childnumber)
 order studyid  id_wide id_city id_cohort id_visit id_childnumber species prev density gametocytes
 outsheet using "C:\Users\amykr\Box Sync\DENV CHIKV project\Lab Data\Malaria Database\Malaria Latest\coast\coast_hcc_malaria.csv", replace comma names
