@@ -10,3 +10,4 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 importRecords(rcon, df, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), 
               returnData = FALSE, logfile = "", proj = NULL,
               batch.size = -1)
+

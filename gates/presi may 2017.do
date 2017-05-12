@@ -10,7 +10,7 @@ capture log close
 set scrollbufsize 100000
 set more 1
 set scrollbufsize 100000
-cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\may_2017_presi\CSV files for graphing2\CSV files for graphing"
+cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\may_2017_presi"
 log using "presentation figures may 2017.smcl", text replace 
 
 insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\gates data for amy v2.csv", comma clear names
@@ -32,6 +32,13 @@ set matsize 800
 set emptycells drop
 rename *_mt_* **
 
+
+reshape long ab_ , i(child_id month) j(ab) s
+rename ab_ ab_conc
+*export excel using "noah_data", firstrow(variables) nolabel replace
+outsheet using noah_data.csv, comma replace names
+
+stop 
 *prenatal infected vs uninfected for PnPs 19F
 	preserve
 	keep ab_pnps19f month infected_prenatal 
@@ -60,7 +67,8 @@ rename *_mt_* **
 	preserve
 	keep ab_pnps6b month ever_infected 
 		gen log_ab_pnps6b= log(ab_pnps6b)
-		mean log_ab_pnps6b, over(month ever_infected )
+		mean log_ab_pnps6b, over(month ever_infected)
+		
 		ereturn display, eform(geo_mean)
 	restore
 stop
@@ -220,7 +228,7 @@ stop
 	preserve
 	keep ab_pnps19f month ever_polyparasitic
 		gen log_ab_pnps19f= log(ab_pnps19f)
-		mean  log_ab_pnps19f, over(month ever_polyparasitic)
+		mean log_ab_pnps19f, over(month ever_polyparasitic)
 		ereturn display, eform(geo_mean)
 	restore
 
