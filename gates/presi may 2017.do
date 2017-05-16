@@ -34,10 +34,14 @@ rename *_mt_* **
 
 
 reshape long ab_ , i(child_id month) j(ab) s
+
+foreach name in  infected_prenatal infected_delivery ever_infected ever_malaria ever_schisto ever_hookworm ever_filaria ever_any_sth ever_polyparasitic{
+rename `name' strata_`name'
+}
+reshape long strata_ , i(child_id month ab ab_) j(strata) s
 rename ab_ ab_conc
 *export excel using "noah_data", firstrow(variables) nolabel replace
 outsheet using noah_data.csv, comma replace names
-
 stop 
 *prenatal infected vs uninfected for PnPs 19F
 	preserve
