@@ -1,3 +1,6 @@
+*5-16-17 notes
+*looking for tribe and village- empty
+
 /********************************************************************
  *amy krystosik                  							  		*
  *samples for christian
@@ -33,5 +36,5 @@ order studyid id_wide cohort  visit christian_groups age gender malariapositive_
 
 tab christian_groups 
 
-table1, vars(age conts\) by(christian_groups) 
+*table1, vars(age conts\) by(christian_groups) 
 export excel using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\all linked and cleaned data\data\christian_samples.xls", firstrow(variables) replace

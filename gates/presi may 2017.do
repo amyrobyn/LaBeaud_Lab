@@ -2,7 +2,7 @@
  *Author: Amy Krystosik			               							  					*
  *Function: Noah Gates figures for Final May presenation 									*
  *Org: LaBeaud Lab, Stanford School of Medicine, Pediatrics 			  					*
- *Last updated: May 8, 2017  									  							*
+ *Last updated: May 15, 2017  									  							*
  *Notes: 																					*
  *******************************************************************************************/ 
 
@@ -13,7 +13,7 @@ set scrollbufsize 100000
 cd "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\may_2017_presi"
 log using "presentation figures may 2017.smcl", text replace 
 
-insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\gates data for amy v2.csv", comma clear names
+insheet using "C:\Users\amykr\Box Sync\Amy Krystosik's Files\Gates\may_2017_presi\gates data for amy v2.csv", comma clear names
 
 foreach months in 25 30 35 36 6 12 18 24 0{
 rename *`months'_months *_months_`months'
@@ -42,7 +42,14 @@ reshape long strata_ , i(child_id month ab ab_) j(strata) s
 rename ab_ ab_conc
 *export excel using "noah_data", firstrow(variables) nolabel replace
 outsheet using noah_data.csv, comma replace names
-stop 
+
+**************************************sent data to R for graphing**************************************
+/*
+
+
+
+
+
 *prenatal infected vs uninfected for PnPs 19F
 	preserve
 	keep ab_pnps19f month infected_prenatal 
@@ -236,8 +243,6 @@ stop
 		ereturn display, eform(geo_mean)
 	restore
 
-
-stop
 outsheet using long.csv, comma names replace
 
 *xtset infected week
