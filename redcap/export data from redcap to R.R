@@ -1,11 +1,14 @@
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 #install.packages("REDCapR")
 library(REDCapR)
 library(RCurl)
 library(dplyr)
 library(redcapAPI)
+library(rJava) 
 library(WriteXLS) # Writing Excel files
+library(readxl) # Excel file reading
+library(xlsx) # Writing Excel files
 
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
@@ -17,31 +20,73 @@ R01_lab_results <- redcap_read(
   token       = Redcap.token
 )$data
 
-save(R01_lab_results,file="R01_lab_results.Rda")
-load("R01_lab_results.Rda")
+
+save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
+load("R01_lab_results_2017-05-25")
+
 n_distinct(R01_lab_results$person_id, na.rm = FALSE)
 
-records_to_delete<-read.csv("to delete.csv", header = TRUE, sep = ",", quote = "\"",
-                            dec = ".", fill = TRUE, comment.char = "")
-records_to_delete<-subset(records_to_delete,!duplicated(records_to_delete$person_id))
+#if patient doesn't have form patient information, create the row
 
-f <- "records_to_delete.xls"
-write.xlsx(as.data.frame(records_to_delete), f, sheetName = "delete", col.names = TRUE,
+patient_information<- subset(R01_lab_results, redcap_event_name == "patient_informatio_arm_1",select = c(person_id, redcap_event_name, cohort, site, city, house_number, child_number, participant_status, patient_information_complete))
+glimpse(patient_information)
+patient_information <- within(patient_information, site[city==1] <- 2)
+patient_information <- within(patient_information, site[city==2] <- 2)
+patient_information <- within(patient_information, site[city==3] <- 1)
+patient_information <- within(patient_information, site[city==4] <- 1)
+glimpse(patient_information)
+
+
+f <- "no_patient_information.xls"
+write.xlsx(as.data.frame(no_patient_information), f, sheetName = "Chulaimbo", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
 
 
-records_to_delete_array<- simplify2array(by(records_to_delete, records_to_delete$person_id, as.matrix))
+R01_lab_results <- within(R01_lab_results, sample_igg_denv_stfd[!is.na(result_igg_denv_stfd)] <- 1)
+R01_lab_results <- within(R01_lab_results, sample_igg_chikv_stfd[!is.na(result_igg_chikv_stfd)] <- 1)
+R01_lab_results <- within(R01_lab_results, sample_igg_chikv_kenya[!is.na(result_igg_chikv_kenya)] <- 1)
+
+R01_lab_results <- within(R01_lab_results, sample_igg_denv_kenya[!is.na(result_igg_denv_kenya)] <- 1)
 
 
+R01_lab_results <- within(R01_lab_results, sample_pcr_denv_kenya[!is.na(result_pcr_denv_kenya)] <- 1)
 
+R01_lab_results <- within(R01_lab_results, sample_pcr_chikv_kenya[!is.na(result_pcr_chikv_kenya)] <- 1)
 
+R01_lab_results <- within(R01_lab_results, sample_pcr_denv_stfd[!is.na(result_pcr_denv_stfd)] <- 1)
 
-R01_lab_results2 <- R01_lab_results[!R01_lab_results$person_id %in% records_to_delete_array, ]
-n_distinct(R01_lab_results2$person_id, na.rm = FALSE)
+R01_lab_results <- within(R01_lab_results, sample_pcr_chikv_stfd[!is.na(result_pcr_chikv_stfd)] <- 1)
+
+R01_lab_results <- within(R01_lab_results, sample_microscopy_malaria_kenya[!is.na(result_microscopy_malaria_kenya)] <- 1)
+
+myVectorOfStrings <- c("person_id", "redcap", "complete", "result")
+matchExpression <- paste(myVectorOfStrings, collapse = "|")
+form_complete<-R01_lab_results %>% select(matches(matchExpression))
+
+form_complete <- within(form_complete, igg_chikv_kenya_complete[!is.na(result_igg_chikv_kenya)] <- 1)
+form_complete <- within(form_complete, igg_chikv_kenya_complete[igg_chikv_kenya_complete==0] <- "")
+
+form_complete <- within(form_complete, igg_denv_kenya_complete[!is.na(result_igg_denv_kenya)] <- 1)
+form_complete <- within(form_complete, igg_denv_kenya_complete[igg_denv_kenya_complete==0] <- "")
+
+form_complete <- within(form_complete, igg_denv_stanford_complete[!is.na(result_igg_denv_stfd)] <- 1)
+form_complete <- within(form_complete, igg_denv_stanford_complete[igg_denv_stanford_complete==0] <- "")
+
+form_complete <- within(form_complete, igg_chikv_stanford_complete[!is.na(result_igg_chikv_stfd)] <- 1)
+form_complete <- within(form_complete, igg_chikv_stanford_complete[igg_chikv_stanford_complete==0] <- "")
+
+form_complete <- within(form_complete, pcr_chikv_stanford_complete[!is.na(result_pcr_chikv_stfd)] <- 1)
+form_complete <- within(form_complete, pcr_chikv_stanford_complete[pcr_chikv_stanford_complete==0] <- "")
+
+form_complete <- within(form_complete, pcr_denv_stanford_complete[!is.na(result_pcr_denv_stfd)] <- 1)
+form_complete <- within(form_complete, pcr_denv_stanford_complete[pcr_denv_stanford_complete==0] <- "")
+
+form_complete <- within(form_complete, microscopy_malaria_kenya_complete[!is.na(result_microscopy_malaria_kenya)] <- 1)
+form_complete <- within(form_complete, microscopy_malaria_kenya_complete[microscopy_malaria_kenya_complete==0] <- "")
+
+form_complete2 <- form_complete[c ("person_id", "redcap_event_name","microscopy_malaria_kenya_complete","pcr_denv_stanford_complete" , "pcr_chikv_stanford_complete", "igg_chikv_stanford_complete", "igg_denv_stanford_complete", "igg_denv_kenya_complete", "igg_chikv_kenya_complete") ] 
 
 ## S3 method for class 'redcapApiConnection' THis method will require reformatting all the dates to meet redcap standards.
-importRecords(rcon, R01_lab_results2, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), 
+importRecords(rcon, patient_information, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), 
               returnData = FALSE, logfile = "", proj = NULL,
               batch.size = -1)
-
-
