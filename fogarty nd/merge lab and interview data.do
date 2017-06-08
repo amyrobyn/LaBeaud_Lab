@@ -7,12 +7,12 @@ set more 1
 
 
 *merge lab and interview data
-insheet using "FogartyNDCHIKV_DATA_2017-05-22_1115.csv", clear
+insheet using "FogartyNDCHIKV_DATA_2017-06-07_1251.csv", clear
 duplicates tag participant_id , gen(dup)
 keep participant_id	redcap_event_name date
 save records, replace
 
-insheet using "lab results.csv", clear comma
+insheet using "exp 6.csv", clear comma
 *drop if  sampleid == "41" |sampleid == "42" 	
 *replace participant_id = "SG0062" if participant_id == "SG062" 
 *replace participant_id = "SG0065" if participant_id == "SG065" 
@@ -60,16 +60,16 @@ order participant_id _merge
 sort _merge
 
 rename reading_mother result_mother	
-gen lab_results_mother	=1
+gen lab_results_mother	=1 if  result_mother 	!=.
 drop testresult_mother
 
 rename reading_child result_child
-gen lab_results_child = 1
+gen lab_results_child = 1 if result_child  !=.
 drop testresult_child
 
-gen date_tested_child = "5/19/2017"
+gen date_tested_child = "5/19/2017" if result_child  != .
 
-gen date_tested_mother= "5/19/2017"
+gen date_tested_mother= "5/19/2017" if result_mother != .
 
 gen date_collected_mother = date
 gen date_collected_child = date
@@ -79,22 +79,23 @@ rename sampleid_child elisa_lab_number_child
 rename rep1chikv_mother od_mother	
 rename rep1chikv_child od_child
 
-gen lab_tech_name_mother = 2
-gen lab_tech_name_child = 2
-gen mother_lab_results_complete	 =1 
-gen child_lab_results_0c57_complete	 =1 
+gen lab_tech_name_mother = 2 if result_mother != .
+gen lab_tech_name_child = 2 if  result_child  !=.
 
-gen isr_mother_neg_control = 0.18877551
-gen od_mother_neg_control = 0.074
+gen mother_lab_results_complete	 = 1 if result_mother != .
+gen child_lab_results_0c57_complete	 = 1 if  result_child  !=.
 
-gen isr_child_neg_control = 0.18877551
-gen od_child_neg_control = 0.074
+gen isr_mother_neg_control = 0.161702128 if  result_mother 	!=.
+gen od_mother_neg_control = 0.057 if  result_mother 	!=.
 
-gen isr_mother_pos_control = 3.137755102
-gen od_mother_pos_control = 1.23
+gen isr_child_neg_control =  0.161702128 if result_child  != .
+gen od_child_neg_control = 0.057 if result_child  != .
 
-gen isr_child_pos_control = 3.137755102
-gen od_child_pos_control = 1.23
+gen isr_mother_pos_control = 3.197163121 if  result_mother 	!=.
+gen od_mother_pos_control = 1.127 if  result_mother 	!=.
+
+gen isr_child_pos_control = 3.197163121 if result_child != .
+gen od_child_pos_control = 1.127 if result_child != .
 
 
 order participant_id redcap_event_name 

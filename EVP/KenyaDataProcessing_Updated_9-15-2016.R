@@ -13,12 +13,15 @@
 #Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre7') # for 32-bit version
 R_LIBS_USER="C:/Program Files/R/R-3.3.2/library"
 Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7') # for 64-bit version
-install.packages(c("readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
+install.packages(c("plyr","xlsx", "readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
 #if (Sys.getenv("JAVA_HOME")!="")
 #  Sys.setenv(JAVA_HOME="")
 ### Packages :
+library(plyr)
+library(xlsx)
 library(rJava) 
 library(WriteXLS) # Writing Excel files
+library(write.xlsx)
 library(readxl) # Excel file reading
 library(xlsx) # Writing Excel files
 library(plyr) # Data frame manipulation
@@ -144,11 +147,14 @@ MsamClimate$RHTempAnomaly = (MsamClimate$TempAnom & MsamClimate$RHAnom)
   ## Kisumu and Chulaimbo rain was recorded together:
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/Climate West/Climate West Latest")
 twoSites <- read_excel("Rainfall_Daily Data_Oct 3 2016.xlsx", sheet = 1) 
-
-twoSites <- twoSites[,-(1:3)]
+glimpse(twoSites)
 
 chulaimbo_dailyrain <- twoSites[,1:2]; names(chulaimbo_dailyrain)[2] <- paste("Rainfall")
-kisumu_dailyrain <- twoSites[,-2]; names(kisumu_dailyrain)[2] <- paste("Rainfall")
+glimpse(chulaimbo_dailyrain)
+kisumu_dailyrain <- twoSites[,1:3]
+kisumu_dailyrain <- kisumu_dailyrain[,-2]
+names(kisumu_dailyrain)[2] <- paste("Rainfall")
+glimpse(kisumu_dailyrain)
 
   # Chulaimbo
 chul_hospitalTemp <- read_excel("Temperature_Daily data_Oct 3 2016.xlsx", sheet = 1) 
@@ -195,12 +201,13 @@ ChulClimate <- rbind(ChulClimate_Hospital, ChulClimate_Village)
 Chulaimbo_DailyCom <- ddply(ChulClimate, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T), MinTemp = min(Temp, na.rm = T),
                       Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
-Chulaimbo_DailyCom$Date <- as.Date(Chulaimbo_DailyCom$Date); chulaimbo_dailyrain$Date <- as.Date(chulaimbo_dailyrain$Date)
-
+Chulaimbo_DailyCom$Date <- as.POSIXct(as.Date(Chulaimbo_DailyCom$Date))
+chulaimbo_dailyrain$Date <- chulaimbo_dailyrain$Date
+glimpse(chulaimbo_dailyrain)
 ChulaimboClimate <- merge(Chulaimbo_DailyCom, chulaimbo_dailyrain, by = "Date", all = TRUE)
 
 ChulaimboClimate[is.na(ChulaimboClimate$Rainfall),7] <- 0
-
+glimpse(ChulaimboClimate)
 # Starting to make the anomaly data
 ChulaimboRainMean <- mean(ChulaimboClimate$Rainfall); ChulaimboRainSD <- sqrt(var(ChulaimboClimate$Rainfall))
 
@@ -325,8 +332,7 @@ UkundaClimate$Month <- as.yearmon(UkundaClimate$Date)
 
   # Save Daily Summaries
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
-#setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/monthly summaries")
-
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/monthly summaries")
 f = "ChulaimboDailyClimateData.xls"
 write.xlsx(ChulaimboClimate, f, sheetName = "Climate Data, Daily Scale", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)
@@ -341,7 +347,7 @@ write.xlsx(UkundaClimate, f, sheetName = "Climate Data, Daily Scale", col.names 
            row.names = FALSE, append = FALSE, showNA = TRUE)
 
 # Creating monthly summaries of all the data
-glimpse(ChulaimboMonthlyClimate)
+glimpse(ChulaimboClimate)
 ChulaimboMonthlyClimate <- ddply(ChulaimboClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                                  AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                                  OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
