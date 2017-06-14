@@ -22,8 +22,19 @@ R01_lab_results <- redcap_read(
 
 
 save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
-load("R01_lab_results_2017-05-25")
+load("R01_lab_results_2017-06-09")
 
+
+# based on variable values
+coast <- R01_lab_results[ which(R01_lab_results$site=='1' ), ]
+
+# export data frame to Stata binary format 
+library(foreign)
+write.csv(coast, file = "coast.csv")
+write.table(coast, "coast.txt", sep="\t")
+write.dta(coast, "coast.dta")
+table(coast$city)
+table(coast$result_igg_denv_stfd)
 n_distinct(R01_lab_results$person_id, na.rm = FALSE)
 
 #if patient doesn't have form patient information, create the row
