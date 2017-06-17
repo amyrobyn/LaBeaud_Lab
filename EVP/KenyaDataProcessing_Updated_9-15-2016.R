@@ -14,9 +14,11 @@
 R_LIBS_USER="C:/Program Files/R/R-3.3.2/library"
 Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7') # for 64-bit version
 install.packages(c("plyr","xlsx", "readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
-#if (Sys.getenv("JAVA_HOME")!="")
-#  Sys.setenv(JAVA_HOME="")
+install.packages("tidyverse")
+install.packages("xlsx")
+
 ### Packages :
+library(xlsx)
 library(plyr)
 library(xlsx)
 library(rJava) 
@@ -37,37 +39,48 @@ library(reshape2) # reshape datasets
 library(reshape)
 
 ### Data
-
 ## Climate Data
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/Climate Coast") # Always set where you're grabbing stuff from
-# Ukunda 
-Diani <- read_excel("Diani_Rainfall.xls")
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/Climate Coast/Climate Coast Latest") # Always set where you're grabbing stuff from
+
+# Ukunda
+Diani <- read_excel("Coast daily rainfall Mar 2017.xls", sheet = "Ukunda")
 Ukunda_Rain <- Diani
 Ukunda_Rain$Date <- as.Date(Ukunda_Rain$Date)
 
-Diani <-  read_excel("Diani_Temp.xls")
+Diani <-  read_excel("Daily climate data temp dewpoint and humidity for Ukunda Feb 2017.xls")
 Diani$Date <- as.Date(Diani$Date)
 
 # Renaming the variables
-names(Diani)[2] <- "Temp"; names(Diani)[3] <- "RH"; names(Diani)[4] <- "DewPt"
+#names(Diani)[2] <- "Temp"; names(Diani)[5] <- "RH"; names(Diani)[8] <- "DewPt"
 
 # Collating all of the individual day's information together
-Ukunda_Daily <- ddply(Diani, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
-                     Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+#Ukunda_Daily <- ddply(Diani, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
+ #                    Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
 names(Ukunda_Rain)[2] <- "rain"
-UkundaClimate <- merge(Ukunda_Rain, Ukunda_Daily, by = "Date", all.y = TRUE)
-UkundaClimate[is.na(UkundaClimate$rain),2] <- 0 # Entering 0 for the rain fall amounts where there was none
+UkundaClimate <- merge(Ukunda_Rain, Diani, by = "Date", all.y = TRUE)
+#UkundaClimate[is.na(UkundaClimate$rain),2] <- 0 # Entering 0 for the rain fall amounts where there was none
 
 # Removing the observations with missing or no data
-UkundaClimate <- UkundaClimate[-(which(UkundaClimate$RH == "NaN")),]
+#UkundaClimate <- UkundaClimate[-(which(UkundaClimate$RH == "NaN")),]
 
 # Creating the anomaly data (data that's farther than 1.5 SD from the mean)
-UkundaRainMean <- mean(UkundaClimate$rain); UkundaRainSD <- sqrt(var(UkundaClimate$rain))
+UkundaRainMean <- mean(UkundaClimate$rain,  na.rm=TRUE) 
+UkundaRainSD <- sqrt(var(UkundaClimate$rain,  na.rm=TRUE))
 
 UkundaClimate$RainfallAnomaly <- sapply(UkundaClimate$rain, # Logical values indicating if the rain exceeds 1.5 sd of the mean
                                         function(x, m , sd) (x > m + 1.5*sd), 
                                         m = UkundaRainMean, sd = UkundaRainSD)
+table(UkundaClimate$RainfallAnomaly)
+
+names(UkundaClimate)[3] <- "Temp"
+names(UkundaClimate)[4] <- "MinTemp"
+names(UkundaClimate)[5] <- "MaxTemp"
+names(UkundaClimate)[9] <- "DewPt"
+names(UkundaClimate)[6] <- "RH"
+UkundaClimate$DewPt<-as.numeric(UkundaClimate$DewPt)
+UkundaClimate$DewPt<-as.numeric(UkundaClimate$Temp)
+UkundaClimate$RH<-as.numeric(UkundaClimate$RH)
 
 UkundaClimate$TempRange <- UkundaClimate$MaxTemp - UkundaClimate$MinTemp
 
@@ -86,7 +99,7 @@ UkundaClimate$DewDiffAnomaly <- sapply(UkundaClimate$DewDiff,
                                        m = UkundaDewDiffMean, sd = UkundaDewDiffSD)
 
 UkundaTempMean <- mean(UkundaClimate$Temp); UkundaTempSD <- sqrt(var(UkundaClimate$Temp))
-UkundaRHMean <- mean(UkundaClimate$RH); UkundaRHSD <- sqrt(var(UkundaClimate$RH))
+UkundaRHMean <- mean(UkundaClimate$RH, na.rm=TRUE); UkundaRHSD <- sqrt(var(UkundaClimate$RH,  na.rm=TRUE))
 
 UkundaClimate$TempAnom <- sapply(UkundaClimate$Temp, 
                                  function(x, m , sd) (x < m + 1.5*sd),
@@ -98,28 +111,28 @@ UkundaClimate$RHAnom <- sapply(UkundaClimate$RH,
 UkundaClimate$RHTempAnomaly = (UkundaClimate$TempAnom & UkundaClimate$RHAnom)
 
 # Msambweni
-Msam <- read_excel("Msambweni_Rainfall.xls")
+Msam <- read_excel("Coast daily rainfall Mar 2017.xls", sheet = "Msambweni")
 Msam_Rain <- Msam
 Msam_Rain$Date <- as.Date(Msam_Rain$Date)
 names(Msam_Rain)[2] <- "rain2"
-Msam <-  read_excel("Msambweni_Temperature.xls")
+Msam <-  read_excel("Daily climate data temp dewpoint and humidity for Msambweni Feb 2017.xls")
 Msam$Date <- as.Date(Msam$Date)
 
 # Renaming the day data
-names(Msam)[2] <- "Temp"; names(Msam)[3] <- "RH"; names(Msam)[4] <- "DewPt"
+names(Msam)[2] <- "Temp"; names(Msam)[5] <- "RH"; names(Msam)[8] <- "DewPt"
 
 # Collating day data
-Msam_Daily <- ddply(Msam, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
-                      Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
-MsamClimate <- merge(Msam_Rain, Msam_Daily, by = "Date", all = TRUE)
+#Msam_Daily <- ddply(Msam, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
+ #                     Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+MsamClimate <- merge(Msam_Rain, Msam, by = "Date", all = TRUE)
 
-MsamClimate[is.na(MsamClimate$rain2),2] <- 0 # Entering 0 for the rain fall amounts where there was none
+#MsamClimate[is.na(MsamClimate$rain2),2] <- 0 # Entering 0 for the rain fall amounts where there was none
 # Creating the anomalies
-MsamRainMean <- mean(MsamClimate$rain2); MsamRainSD <- sqrt(var(MsamClimate$rain2))
+MsamRainMean <- mean(MsamClimate$rain2, na.rm=TRUE); MsamRainSD <- sqrt(var(MsamClimate$rain2, na.rm=TRUE))
 MsamClimate$RainfallAnomaly <- sapply(MsamClimate$rain2, # Logical values indicating if the rain exceeds 1.5 sd of the mean
                                         function(x, m , sd) (x > m + 1.5*sd), 
                                         m = MsamRainMean, sd = MsamRainSD)
-MsamClimate$TempRange <- MsamClimate$MaxTemp - MsamClimate$MinTemp
+MsamClimate$TempRange <- MsamClimate$Temp_max - MsamClimate$Temp_min
 MsamRangeMean <- mean(MsamClimate$TempRange, na.rm=TRUE)
 MsamRangeSD <- sqrt(var(MsamClimate$TempRange, na.rm=TRUE))
 MsamClimate$RangeAnomaly <- sapply(MsamClimate$TempRange, 
@@ -149,10 +162,11 @@ setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/Climate West/Clim
 twoSites <- read_excel("Rainfall_Daily Data_Oct 3 2016.xlsx", sheet = 1) 
 glimpse(twoSites)
 
-chulaimbo_dailyrain <- twoSites[,1:2]; names(chulaimbo_dailyrain)[2] <- paste("Rainfall")
+chulaimbo_dailyrain <- twoSites[, c (5, 6) ] 
+names(chulaimbo_dailyrain)[2] <- paste("Rainfall")
 glimpse(chulaimbo_dailyrain)
-kisumu_dailyrain <- twoSites[,1:3]
-kisumu_dailyrain <- kisumu_dailyrain[,-2]
+
+kisumu_dailyrain <- twoSites[,c(5,7)]
 names(kisumu_dailyrain)[2] <- paste("Rainfall")
 glimpse(kisumu_dailyrain)
 
@@ -167,10 +181,10 @@ chul_hospitalDewPt <- read_excel("DewPt_Daily data_Oct 3 2016.xlsx", sheet = 1)
 chul_villageDewPt <- read_excel("DewPt_Daily data_Oct 3 2016.xlsx", sheet = 2) 
 
 # Eliminating extraneous columns and rows (filled mostly with NA's)
-a <- c(2, 4:18)
+a <- c(5:19)
 
-chul_hospitalTemp <- chul_hospitalTemp[,-(5:18)] 
-chul_villageTemp <- chul_villageTemp[,-(5:18)]
+chul_hospitalTemp <- chul_hospitalTemp[,-(5:19)] 
+chul_villageTemp <- chul_villageTemp[,-(5:19)]
 chul_hospitalRH <- chul_hospitalRH[,-a] 
 chul_villageRH <- chul_villageRH[,-a]
 chul_hospitalDewPt <- chul_hospitalDewPt[,-a] 
@@ -178,13 +192,14 @@ chul_villageDewPt <- chul_villageDewPt[,-a]
 
 # Renaming variable for ease of use
 names(chul_hospitalTemp)[2] <- paste("MaxTemp"); names(chul_hospitalTemp)[4] <- paste("MinTemp")
-
 names(chul_hospitalTemp)[3] <- paste("Temp")
 names(chul_villageTemp)[2] <- paste("MaxTemp"); names(chul_villageTemp)[4] <- paste("MinTemp")
 names(chul_villageTemp)[3] <- paste("Temp")
 
-names(chul_hospitalRH)[2] <- paste("RH"); names(chul_villageRH)[2] <- paste("RH")
-names(chul_hospitalDewPt)[2] <- paste("DewPt"); names(chul_villageDewPt)[2] <- paste("DewPt")
+names(chul_hospitalRH)[2] <- paste("MaxRH");names(chul_hospitalRH)[3] <- paste("RH"); names(chul_hospitalRH)[4] <- paste("MinRH")
+names(chul_hospitalDewPt)[2] <- paste("MinDewPt"); names(chul_hospitalDewPt)[3] <- paste("DewPt"); names(chul_hospitalDewPt)[4] <- paste("MaxDewPt")
+names(chul_villageDewPt)[2] <- paste("MinDewPt"); names(chul_villageDewPt)[3] <- paste("DewPt"); names(chul_villageDewPt)[4] <- paste("MaxDewPt")
+names(chul_villageRH)[2] <- paste("MinRH"); names(chul_villageRH)[3] <- paste("RH"); names(chul_villageRH)[4] <- paste("MaxRH")
 
 # Merging subsite data
 ChulClimate_Hospital <- merge(chul_hospitalTemp, chul_hospitalRH, by = "Date", all = TRUE)
@@ -203,13 +218,16 @@ Chulaimbo_DailyCom <- ddply(ChulClimate, ~Date, summarise,  MaxTemp = max(Temp, 
 
 Chulaimbo_DailyCom$Date <- as.POSIXct(as.Date(Chulaimbo_DailyCom$Date))
 chulaimbo_dailyrain$Date <- chulaimbo_dailyrain$Date
+names(chulaimbo_dailyrain)[1] <- paste("Date")
+names(chulaimbo_dailyrain)[2] <- paste("Rainfall")
 glimpse(chulaimbo_dailyrain)
-ChulaimboClimate <- merge(Chulaimbo_DailyCom, chulaimbo_dailyrain, by = "Date", all = TRUE)
 
-ChulaimboClimate[is.na(ChulaimboClimate$Rainfall),7] <- 0
+ChulaimboClimate <- merge(Chulaimbo_DailyCom, chulaimbo_dailyrain, by = "Date", all = TRUE)
+#ChulaimboClimate[is.na(ChulaimboClimate$Rainfall),7] <- 0
 glimpse(ChulaimboClimate)
+
 # Starting to make the anomaly data
-ChulaimboRainMean <- mean(ChulaimboClimate$Rainfall); ChulaimboRainSD <- sqrt(var(ChulaimboClimate$Rainfall))
+ChulaimboRainMean <- mean(ChulaimboClimate$Rainfall, na.rm = T); ChulaimboRainSD <- sqrt(var(ChulaimboClimate$Rainfall, na.rm = T))
 
 ChulaimboClimate$RainfallAnomaly <- sapply(ChulaimboClimate$Rainfall, # Logical values indicating if the rain exceeds 1.5 sd of the mean
                                       function(x, m , sd) (x > m + 1.5*sd), 
@@ -251,11 +269,11 @@ kisumu_estateRH <- read_excel("RH_Daily data_Oct 3 2016.xlsx", sheet = 4)
 kisumu_hospitalDewPt <- read_excel("DewPt_Daily data_Oct 3 2016.xlsx", sheet = 3) 
 kisumu_estateDewPt <- read_excel("DewPt_Daily data_Oct 3 2016.xlsx", sheet = 4) 
 
-a <- c(2, 4:18)
+a <- c(5:19)
 
 # Removing the extraneous columns and rows
-kisumu_hospitalTemp <- kisumu_hospitalTemp[,-(5:18)] 
-kisumu_estateTemp <- kisumu_estateTemp[,-(5:18)]
+kisumu_hospitalTemp <- kisumu_hospitalTemp[,-(5:19)] 
+kisumu_estateTemp <- kisumu_estateTemp[,-a]
 kisumu_hospitalRH <- kisumu_hospitalRH[,-a] 
 kisumu_estateRH <- kisumu_estateRH[,-a]
 kisumu_hospitalDewPt <- kisumu_hospitalDewPt[,-a] 
@@ -283,14 +301,17 @@ KisumuClimate <- rbind(KisumuClimate_Hospital, KisumuClimate_estate)
 Kisumu_DailyCom <- ddply(KisumuClimate, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T), MinTemp = min(Temp, na.rm = T),
                             Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
-Kisumu_DailyCom$Date <- as.Date(Kisumu_DailyCom$Date); kisumu_dailyrain$Date <- as.Date(kisumu_dailyrain$Date)
-
+Kisumu_DailyCom$Date <- as.Date(Kisumu_DailyCom$Date)
+names(kisumu_dailyrain)[1] <- paste("Date")
+kisumu_dailyrain$Date <- as.Date(kisumu_dailyrain$Date)
+glimpse(kisumu_dailyrain)
 KisumuClimate <- merge(Kisumu_DailyCom, kisumu_dailyrain, by = "Date", all = TRUE)
-
-KisumuClimate[is.na(KisumuClimate$Rainfall),7] <- 0
+glimpse(KisumuClimate)
+#KisumuClimate[is.na(KisumuClimate$Rainfall),7] <- 0
 
 # Creating anomaly data
-KisumuRainMean <- mean(KisumuClimate$Rainfall, na.rm = T); KisumuRainSD <- sqrt(var(KisumuClimate$Rainfall, na.rm = T))
+KisumuRainMean <- mean(KisumuClimate$Rainfall, na.rm = T) 
+KisumuRainSD <- sqrt(var(KisumuClimate$Rainfall, na.rm = T))
 
 KisumuClimate$RainfallAnomaly <- sapply(KisumuClimate$Rainfall, # Logical values indicating if the rain exceeds 1.5 sd of the mean
                                            function(x, m , sd) (x > m + 1.5*sd), 
@@ -330,8 +351,8 @@ KisumuClimate$Month <- as.yearmon(KisumuClimate$Date)
 MsamClimate$Month <- as.yearmon(MsamClimate$Date)
 UkundaClimate$Month <- as.yearmon(UkundaClimate$Date)
 
-  # Save Daily Summaries
-setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
+# Save Daily Summaries
+#setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/monthly summaries")
 f = "ChulaimboDailyClimateData.xls"
 write.xlsx(ChulaimboClimate, f, sheetName = "Climate Data, Daily Scale", col.names = TRUE,
@@ -356,7 +377,7 @@ ChulaimboMonthlyClimate <- ddply(ChulaimboClimate, ~Month, summarise, AvgTemp = 
                                  RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
                                  TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
                                  RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
-glimpse(KisumuMonthlyClimate)
+glimpse(KisumuClimate)
 KisumuMonthlyClimate <- ddply(KisumuClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                                  AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                                  OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
@@ -365,16 +386,17 @@ KisumuMonthlyClimate <- ddply(KisumuClimate, ~Month, summarise, AvgTemp = mean(T
                                  RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
                                  TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
                                  RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
-
+glimpse(MsamClimate)
 MsamMonthlyClimate <- ddply(MsamClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
-                              AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
-                              OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
-                              AvgTempRange =mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
+                              AvgMaxTemp = mean(Temp_max, na.rm = T), AvgMinTemp = mean(Temp_min, na.rm = T), 
+                              OverallMaxTemp = max(Temp_max, na.rm = T), OverallMinTemp = min(Temp_min, na.rm = T),
+                              AvgTempRange =mean((Temp_max - Temp_min), na.rm = T), AvgRH = mean(RH, na.rm = T),
                               AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain2),
                               RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
                               TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
                               RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
 
+glimpse(UkundaClimate)
 UkundaMonthlyClimate <- ddply(UkundaClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                             AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                             OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
@@ -385,7 +407,7 @@ UkundaMonthlyClimate <- ddply(UkundaClimate, ~Month, summarise, AvgTemp = mean(T
                             RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
 
 
-  #Saving the Monthly Summaries
+#Saving the Monthly Summaries
 f = "ChulaimboMonthlyClimateData.xls"
 write.xlsx(ChulaimboMonthlyClimate, f, sheetName = "ChulaimboMonthlyClimateData", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)

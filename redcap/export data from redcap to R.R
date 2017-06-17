@@ -22,8 +22,24 @@ R01_lab_results <- redcap_read(
 
 
 save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
-load("R01_lab_results_2017-06-09")
+load("R01_lab_results_2017-06-15")
 
+myVectorOfStrings <- c("person_id", "redcap", "dem_")
+matchExpression <- paste(myVectorOfStrings, collapse = "|")
+demography<-R01_lab_results %>% select(matches(matchExpression))
+glimpse(demography)
+
+myVectorOfStrings <- c("person_id", "redcap", "house_number", "child_number")
+matchExpression <- paste(myVectorOfStrings, collapse = "|")
+house<-R01_lab_results %>% select(matches(matchExpression))
+house <- house[ which(house$redcap_event_name =='patient_informatio_arm_1' ), ]
+glimpse(house)
+table(house$house_number)
+table(house$child_number)
+
+setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/West Cleaned/Demography/Demography Latest")
+Demography_Data29mar2017 <- read_excel("Demography_Data29mar2017.xls")
+glimpse(Demography_Data29mar2017)
 
 # based on variable values
 coast <- R01_lab_results[ which(R01_lab_results$site=='1' ), ]
