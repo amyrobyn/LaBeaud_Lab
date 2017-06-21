@@ -20,12 +20,13 @@ R01_lab_results <- redcap_read(
   token       = Redcap.token
 )$data
 
-
 save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
-load("R01_lab_results_2017-06-15")
+load("R01_lab_results")
 
-myVectorOfStrings <- c("person_id", "redcap", "dem_")
-matchExpression <- paste(myVectorOfStrings, collapse = "|")
+aic<-subset(R01_lab_results, redcap_event_name!="patient_informatio_arm_1", select=c(person_id, redcap_event_name, submissiondate:durationhospitalized5))
+aic <- Filter(function(aic)!all(is.na(aic)), aic)
+aic <- within(aic, version <- NA)
+table(aic$version)
 demography<-R01_lab_results %>% select(matches(matchExpression))
 glimpse(demography)
 
@@ -114,6 +115,6 @@ form_complete <- within(form_complete, microscopy_malaria_kenya_complete[microsc
 form_complete2 <- form_complete[c ("person_id", "redcap_event_name","microscopy_malaria_kenya_complete","pcr_denv_stanford_complete" , "pcr_chikv_stanford_complete", "igg_chikv_stanford_complete", "igg_denv_stanford_complete", "igg_denv_kenya_complete", "igg_chikv_kenya_complete") ] 
 
 ## S3 method for class 'redcapApiConnection' THis method will require reformatting all the dates to meet redcap standards.
-importRecords(rcon, patient_information, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), 
+importRecords(rcon, aic, overwriteBehavior = "overwrite", returnContent = c("count", "ids", "nothing"), 
               returnData = FALSE, logfile = "", proj = NULL,
               batch.size = -1)
