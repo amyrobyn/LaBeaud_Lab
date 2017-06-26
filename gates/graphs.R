@@ -35,14 +35,14 @@ smallf <- list(
 )
 
 l = list(
-  orientation = 'h',
-  traceorder = 'reversed',
+  orientation = 'v',
+  traceorder = 'normal',
   font = list(
     family = "Arial",
     size = 15,
     color = "rgb(68, 68, 68)", 
-    x = 0, 
-    y = -0.2)
+    x = 0.8, 
+    y = 0.5)
 ) 
 
 
@@ -51,23 +51,43 @@ x <- list(
   ticks = "outside",
   tick0 = 0,
   dtick = 6,
-  ticklen = 5,
-  tickwidth = 2,
+  ticklen = 0,
+  tickwidth = 0,
   tickfont = smallf,
   tickcolor = toRGB("black"),
   title = "Age (Months)",
-  titlefont = smallf
-)
-
-t <- list(
-  title = "Antibody over Time",
-  titlefont = f
-)
+  titlefont = smallf, 
+  domain = c(0, 0.7)
+  )
 
 
 df<-read.csv("noah_data.csv", header = TRUE, sep = ",", quote = "\"",
          dec = ".", fill = TRUE, comment.char = "")
 #loop over strata and ab
+
+df$ab_name<-revalue(df$ab, c("dptcrm"="Anti-diphtheria toxoid (dptcrm)",
+              "hibprp"="anti-<i>H. influenzae<i> type B",
+              "pnps1"="<i>S. pneumoniae</i> 1",
+              "pnps14"="<i>S. pneumoniae</i> 14", 
+              "pnps18c"="<i>S. pneumoniae<i> 18c",
+              "pnps19f"="<i>S. pneumoniae</i> 19F",
+              "pnps23f"="<i>S. pneumoniae</i> 23f",
+              "pnps5"="<i>S. pneumoniae</i> 5",
+              "pnps6b"="<i>S. pneumoniae</i> 6b",
+              "pnps7"="<i>S. pneumoniae</i> 7",
+              "pnps9v"="<i>S. pneumoniae</i> 9v"))
+       
+df$strata<-revalue(df$strata, c(
+              "ever_any_sth"="Ever Positive for STH",
+              "ever_filaria"="Ever Filaria Positive",
+              "ever_hookworm"="Ever Hookworm Positive",
+              "ever_infected"="Ever Infected", 
+              "ever_malaria"="Ever Malaria Positive",
+              "ever_polyparasitic"="Ever Polyparasitic",
+              "ever_schisto"="Ever Schistosomiasis Positive",
+              "infected_delivery"="Infected at Delivery",
+              "infected_prenatal"="Prenatal Infection"))
+
 strata<-unique(df$strata)
 ab<-unique(df$ab)
 
@@ -85,9 +105,22 @@ for (i in 1:length(strata)){
                      se_ln_antibody = (sd(ln_ab_conc, na.rm = T)/sqrt(n())))
   
         y <- list(
-          title = paste("GMC of ",ab[j], sep = ""),
+          title = paste("Anti ", ab[j], " IgG (GMC)", sep = ""),
+          titlefont = f, 
+          type = "log",
+          autotick = FALSE,
+          ticks = "outside",
+          tick0 = 0,
+          dtick = 1,
+          ticklen = 2,
+          tickwidth = 2
+        )
+        
+        t <- list(
+          title = paste(" ", ab_name[j], " by ", strata[i],"", sep = ""),
           titlefont = f
         )
+        
 
     infected <- GMC[which(GMC$strata_  ==1 ), ] 
     infected$geo_mean <- exp(infected$mean_ln_antibody)
@@ -102,19 +135,22 @@ for (i in 1:length(strata)){
     
     p<-  plot_ly() %>%
         add_lines(x = infected$month, y = infected$geo_mean, 
-                  color = I("black"), name = strata[i]) %>%
+                  color = I("black"), name = "infected") %>%
         add_ribbons(x = infected$month, ymin = infected$lower, ymax = infected$upper,
-                    line = list(color="transparent"), showlegend=T, name = "Infected 95% CI") %>%
+                    line = list(color = 'rgba(31, 119, 180, 0.3)', width = 0 ),
+                    fillcolor = 'rgba(31, 119, 180, 0.3)',
+                    showlegend=T, name = "95% CI") %>%
         
         add_lines(x = uninfected$month, y = uninfected$geo_mean, 
                   color = I("black"), name = "Uninfected", type = "scatter", line = list(dash="dash") ) %>%
         add_ribbons(x = uninfected$month, ymin = uninfected$lower, ymax = uninfected$upper,
-                    line = list(color="#A020F066"), showlegend=T,
-                    name = "Uninfected 95% CI")%>%
-        layout(xaxis = x, yaxis = y, title = paste("Antibody GMC over time", sep = ""), titlefont = f,  legend = l, margin = m)
+                    line = list(color = 'rgba(214, 39, 40, 0.3)', width = 0 ),
+                    fillcolor = 'rgba(214, 39, 40, 0.3)',
+                    showlegend=T,
+                    name = "95% CI")%>%
+        layout(xaxis = x, yaxis = y, title = paste(" ", ab[j], " by ", strata[i],"", sep = ""), titlefont = f,  legend = l, margin = m)
 
-    api_create(p, filename = paste("r-docs/Noah AB Graphs/", ab[j], "_", strata[i], sep = ""))
-    
+    api_create(p, filename = paste("r-docs/Noah AB graphs June 26 2017/", ab[j], "_", strata[i], sep = ""))
 
       }
 }
