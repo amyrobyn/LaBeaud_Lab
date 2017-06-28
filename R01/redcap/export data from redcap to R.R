@@ -20,6 +20,10 @@ R01_lab_results <- redcap_read(
   token       = Redcap.token
 )$data
 
+rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
+myData <- exportRecords(rcon)
+
+
 save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
 load("R01_lab_results")
 

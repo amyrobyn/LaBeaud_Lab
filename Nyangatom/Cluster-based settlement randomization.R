@@ -41,6 +41,13 @@ dfList<-lapply(dfList, function(x) {
 cluster_based_settlement_randomization <- do.call("rbind", dfList)
 cluster_based_settlement_randomization<-cluster_based_settlement_randomization[c(1, 4, 2, 3, 6)]
 
-f <- "cluster_based_settlement_randomization.xls"
-write.xlsx(as.data.frame(cluster_based_settlement_randomization), f, sheetName = "cluster_based_settlement_randomization", col.names = TRUE,
+
+Gnangatom_Villages_Clustered_with_Coords_matchesGPX <- read.csv("Gnangatom_Villages_Clustered_with_Coords_matchesGPX.csv")
+Gnangatom_Villages_Clustered_with_Coords_matchesGPX_random<-data.table(Gnangatom_Villages_Clustered_with_Coords_matchesGPX, key="name")[
+  data.table(cluster_based_settlement_randomization, key="settlement_village_ID"),
+  allow.cartesian=TRUE
+  ]
+
+f <- "Gnangatom_Villages_Clustered_with_Coords_matchesGPX_random.xls"
+write.xlsx(as.data.frame(Gnangatom_Villages_Clustered_with_Coords_matchesGPX_random), f, sheetName = "randomized_rank", col.names = TRUE,
            row.names = FALSE, append = FALSE, showNA = TRUE)

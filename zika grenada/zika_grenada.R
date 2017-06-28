@@ -1,5 +1,5 @@
 #install.packages(c("REDCapR", "tableone")
-
+library(data.table)
 library(tableone)
 library(plyr)
 library(REDCapR)
@@ -18,6 +18,16 @@ ds <- redcap_read(
   token       = Redcap.token
 )$data
 attach(ds)
+
+preg_cohort <- read.csv("Zika Results .csv")
+preg_cohort$ID.Code<-as.factor(preg_cohort$ID.Code)
+table(preg_cohort$interpreted_colors.1)
+
+merged<-data.table(ds, key="mom_id_orig_study")[
+  data.table(preg_cohort, key="ID.Code"),
+  allow.cartesian=TRUE
+  ]
+
 delivery_date <- ymd(as.character(ds$delivery_date ))
 delivery_date[ds$delivery_date=="2007-01-15"]<-"2017-01-15"
 prenancy_date<-ds$delivery_date - 280
@@ -115,3 +125,9 @@ table(ds$hospitalized_denv)
                                                                                                                                                                                                    
 f <- "ds.csv"
 write.csv(as.data.frame(ds), f )
+
+
+tetracore
+pos
+maybe
+neg
