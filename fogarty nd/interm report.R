@@ -21,4 +21,8 @@ chikvnd <- redcap_read(
 
 save(chikvnd,file=paste("chikvnd",Sys.Date(),sep = "_"))
 n_distinct(chikvnd$participant_id, chikvnd$redcap_event_name, na.rm = FALSE)
+
+n_occur <- data.frame(table(chikvnd$participant_id))
+dup<-chikvnd[chikvnd$participant_id %in% n_occur$Var1[n_occur$Freq > 1],]
+
 table(chikvnd$sex, exclude=NULL)
