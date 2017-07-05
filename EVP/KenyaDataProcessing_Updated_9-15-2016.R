@@ -55,7 +55,7 @@ Diani$Date <- as.Date(Diani$Date)
 
 # Collating all of the individual day's information together
 #Ukunda_Daily <- ddply(Diani, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
- #                    Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+#                    Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
 names(Ukunda_Rain)[2] <- "rain"
 UkundaClimate <- merge(Ukunda_Rain, Diani, by = "Date", all.y = TRUE)
@@ -105,8 +105,8 @@ UkundaClimate$TempAnom <- sapply(UkundaClimate$Temp,
                                  function(x, m , sd) (x < m + 1.5*sd),
                                  m = UkundaTempMean, sd = UkundaTempSD)
 UkundaClimate$RHAnom <- sapply(UkundaClimate$RH, 
-                                 function(x, m , sd) (x < m + 1.5*sd),
-                                 m = UkundaRHMean, sd = UkundaRHSD)
+                               function(x, m , sd) (x < m + 1.5*sd),
+                               m = UkundaRHMean, sd = UkundaRHSD)
 
 UkundaClimate$RHTempAnomaly = (UkundaClimate$TempAnom & UkundaClimate$RHAnom)
 
@@ -123,41 +123,41 @@ names(Msam)[2] <- "Temp"; names(Msam)[5] <- "RH"; names(Msam)[8] <- "DewPt"
 
 # Collating day data
 #Msam_Daily <- ddply(Msam, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T),MinTemp = min(Temp, na.rm = T),
- #                     Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+#                     Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 MsamClimate <- merge(Msam_Rain, Msam, by = "Date", all = TRUE)
 
 #MsamClimate[is.na(MsamClimate$rain2),2] <- 0 # Entering 0 for the rain fall amounts where there was none
 # Creating the anomalies
 MsamRainMean <- mean(MsamClimate$rain2, na.rm=TRUE); MsamRainSD <- sqrt(var(MsamClimate$rain2, na.rm=TRUE))
 MsamClimate$RainfallAnomaly <- sapply(MsamClimate$rain2, # Logical values indicating if the rain exceeds 1.5 sd of the mean
-                                        function(x, m , sd) (x > m + 1.5*sd), 
-                                        m = MsamRainMean, sd = MsamRainSD)
+                                      function(x, m , sd) (x > m + 1.5*sd), 
+                                      m = MsamRainMean, sd = MsamRainSD)
 MsamClimate$TempRange <- MsamClimate$Temp_max - MsamClimate$Temp_min
 MsamRangeMean <- mean(MsamClimate$TempRange, na.rm=TRUE)
 MsamRangeSD <- sqrt(var(MsamClimate$TempRange, na.rm=TRUE))
 MsamClimate$RangeAnomaly <- sapply(MsamClimate$TempRange, 
-                                     function(x, m , sd) (x > m + 1.5*sd),
-                                     m = MsamRangeMean, sd = MsamRangeSD)
+                                   function(x, m , sd) (x > m + 1.5*sd),
+                                   m = MsamRangeMean, sd = MsamRangeSD)
 MsamClimate$DewDiff <- MsamClimate$Temp - MsamClimate$DewPt
 
 MsamDewDiffMean <- mean(MsamClimate$DewDiff, na.rm=TRUE); MsamDewDiffSD <- sqrt(var(MsamClimate$DewDiff, na.rm=TRUE))
 
 MsamClimate$DewDiffAnomaly <- sapply(MsamClimate$DewDiff, 
-                                       function(x, m , sd) (x < m - 1.5*sd),
-                                       m = MsamDewDiffMean, sd = MsamDewDiffSD)
+                                     function(x, m , sd) (x < m - 1.5*sd),
+                                     m = MsamDewDiffMean, sd = MsamDewDiffSD)
 MsamTempMean <- mean(MsamClimate$Temp, na.rm=TRUE); MsamTempSD <- sqrt(var(MsamClimate$Temp, na.rm=TRUE))
 MsamRHMean <- mean(MsamClimate$RH, na.rm=TRUE); MsamRHSD <- sqrt(var(MsamClimate$RH, na.rm=TRUE))
 
 MsamClimate$TempAnom <- sapply(MsamClimate$Temp, 
-                                 function(x, m , sd) (x < m + 1.5*sd),
-                                 m = MsamTempMean, sd = MsamTempSD)
-MsamClimate$RHAnom <- sapply(MsamClimate$RH, 
                                function(x, m , sd) (x < m + 1.5*sd),
-                               m = MsamRHMean, sd = MsamRHSD)
+                               m = MsamTempMean, sd = MsamTempSD)
+MsamClimate$RHAnom <- sapply(MsamClimate$RH, 
+                             function(x, m , sd) (x < m + 1.5*sd),
+                             m = MsamRHMean, sd = MsamRHSD)
 
 MsamClimate$RHTempAnomaly = (MsamClimate$TempAnom & MsamClimate$RHAnom)
 
-  ## Kisumu and Chulaimbo rain was recorded together:
+## Kisumu and Chulaimbo rain was recorded together:
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Climate Data/Climate West/Climate West Latest")
 twoSites <- read_excel("Rainfall_Daily Data_Oct 3 2016.xlsx", sheet = 1) 
 glimpse(twoSites)
@@ -170,7 +170,7 @@ kisumu_dailyrain <- twoSites[,c(5,7)]
 names(kisumu_dailyrain)[2] <- paste("Rainfall")
 glimpse(kisumu_dailyrain)
 
-  # Chulaimbo
+# Chulaimbo
 chul_hospitalTemp <- read_excel("Temperature_Daily data_Oct 3 2016.xlsx", sheet = 1) 
 chul_villageTemp <- read_excel("Temperature_Daily data_Oct 3 2016.xlsx", sheet = 2) 
 
@@ -214,7 +214,7 @@ ChulClimate <- rbind(ChulClimate_Hospital, ChulClimate_Village)
 
 # Combining the Hospital and Village Data
 Chulaimbo_DailyCom <- ddply(ChulClimate, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T), MinTemp = min(Temp, na.rm = T),
-                      Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+                            Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
 Chulaimbo_DailyCom$Date <- as.POSIXct(as.Date(Chulaimbo_DailyCom$Date))
 chulaimbo_dailyrain$Date <- chulaimbo_dailyrain$Date
@@ -230,36 +230,36 @@ glimpse(ChulaimboClimate)
 ChulaimboRainMean <- mean(ChulaimboClimate$Rainfall, na.rm = T); ChulaimboRainSD <- sqrt(var(ChulaimboClimate$Rainfall, na.rm = T))
 
 ChulaimboClimate$RainfallAnomaly <- sapply(ChulaimboClimate$Rainfall, # Logical values indicating if the rain exceeds 1.5 sd of the mean
-                                      function(x, m , sd) (x > m + 1.5*sd), 
-                                      m = ChulaimboRainMean, sd = ChulaimboRainSD)
+                                           function(x, m , sd) (x > m + 1.5*sd), 
+                                           m = ChulaimboRainMean, sd = ChulaimboRainSD)
 ChulaimboClimate$TempRange <- ChulaimboClimate$MaxTemp - ChulaimboClimate$MinTemp
 
 ChulaimboRangeMean <- mean(ChulaimboClimate$TempRange, na.rm = T); ChulaimboRangeSD <- sqrt(var(ChulaimboClimate$TempRange, na.rm = T))
 
 ChulaimboClimate$RangeAnomaly <- sapply(ChulaimboClimate$TempRange, 
-                                   function(x, m , sd) (x > m + 1.5*sd),
-                                   m = ChulaimboRangeMean, sd = ChulaimboRangeSD)
+                                        function(x, m , sd) (x > m + 1.5*sd),
+                                        m = ChulaimboRangeMean, sd = ChulaimboRangeSD)
 ChulaimboClimate$DewDiff <- ChulaimboClimate$Temp - ChulaimboClimate$DewPt
 
 ChulaimboDewDiffMean <- mean(ChulaimboClimate$DewDiff, na.rm = T); ChulaimboDewDiffSD <- sqrt(var(ChulaimboClimate$DewDiff, na.rm = T))
 
 ChulaimboClimate$DewDiffAnomaly <- sapply(ChulaimboClimate$DewDiff, 
-                                     function(x, m , sd) (x < m - 1.5*sd),
-                                     m = ChulaimboDewDiffMean, sd = ChulaimboDewDiffSD)
+                                          function(x, m , sd) (x < m - 1.5*sd),
+                                          m = ChulaimboDewDiffMean, sd = ChulaimboDewDiffSD)
 
 ChulaimboTempMean <- mean(ChulaimboClimate$Temp, na.rm = T); ChulaimboTempSD <- sqrt(var(ChulaimboClimate$Temp, na.rm = T))
 ChulaimboRHMean <- mean(ChulaimboClimate$RH, na.rm = T); ChulaimboRHSD <- sqrt(var(ChulaimboClimate$RH, na.rm = T))
 
 ChulaimboClimate$TempAnom <- sapply(ChulaimboClimate$Temp, 
-                               function(x, m , sd) (x < m + 1.5*sd),
-                               m = ChulaimboTempMean, sd = ChulaimboTempSD)
+                                    function(x, m , sd) (x < m + 1.5*sd),
+                                    m = ChulaimboTempMean, sd = ChulaimboTempSD)
 ChulaimboClimate$RHAnom <- sapply(ChulaimboClimate$RH, 
-                             function(x, m , sd) (x < m + 1.5*sd),
-                             m = ChulaimboRHMean, sd = ChulaimboRHSD)
+                                  function(x, m , sd) (x < m + 1.5*sd),
+                                  m = ChulaimboRHMean, sd = ChulaimboRHSD)
 
 ChulaimboClimate$RHTempAnomaly = (ChulaimboClimate$TempAnom & ChulaimboClimate$RHAnom)
 
-  # Kisumu
+# Kisumu
 kisumu_hospitalTemp <- read_excel("Temperature_Daily data_Oct 3 2016.xlsx", sheet = 3) 
 kisumu_estateTemp <- read_excel("Temperature_Daily data_Oct 3 2016.xlsx", sheet = 4) 
 
@@ -299,7 +299,7 @@ KisumuClimate <- rbind(KisumuClimate_Hospital, KisumuClimate_estate)
 
 # Combining the Obama Hospital and Estate data together
 Kisumu_DailyCom <- ddply(KisumuClimate, ~Date, summarise,  MaxTemp = max(Temp, na.rm = T), MinTemp = min(Temp, na.rm = T),
-                            Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
+                         Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
 Kisumu_DailyCom$Date <- as.Date(Kisumu_DailyCom$Date)
 names(kisumu_dailyrain)[1] <- paste("Date")
@@ -314,34 +314,34 @@ KisumuRainMean <- mean(KisumuClimate$Rainfall, na.rm = T)
 KisumuRainSD <- sqrt(var(KisumuClimate$Rainfall, na.rm = T))
 
 KisumuClimate$RainfallAnomaly <- sapply(KisumuClimate$Rainfall, # Logical values indicating if the rain exceeds 1.5 sd of the mean
-                                           function(x, m , sd) (x > m + 1.5*sd), 
-                                           m = KisumuRainMean, sd = KisumuRainSD)
+                                        function(x, m , sd) (x > m + 1.5*sd), 
+                                        m = KisumuRainMean, sd = KisumuRainSD)
 
 KisumuClimate$TempRange <- KisumuClimate$MaxTemp - KisumuClimate$MinTemp
 
 KisumuRangeMean <- mean(KisumuClimate$TempRange, na.rm = T); KisumuRangeSD <- sqrt(var(KisumuClimate$TempRange, na.rm = T))
 
 KisumuClimate$RangeAnomaly <- sapply(KisumuClimate$TempRange, 
-                                        function(x, m , sd) (x > m + 1.5*sd),
-                                        m = KisumuRangeMean, sd = KisumuRangeSD)
+                                     function(x, m , sd) (x > m + 1.5*sd),
+                                     m = KisumuRangeMean, sd = KisumuRangeSD)
 
 KisumuClimate$DewDiff <- KisumuClimate$Temp - KisumuClimate$DewPt
 
 KisumuDewDiffMean <- mean(KisumuClimate$DewDiff, na.rm = T); KisumuDewDiffSD <- sqrt(var(KisumuClimate$DewDiff, na.rm = T))
 
 KisumuClimate$DewDiffAnomaly <- sapply(KisumuClimate$DewDiff, 
-                                          function(x, m , sd) (x < m - 1.5*sd),
-                                          m = KisumuDewDiffMean, sd = KisumuDewDiffSD)
+                                       function(x, m , sd) (x < m - 1.5*sd),
+                                       m = KisumuDewDiffMean, sd = KisumuDewDiffSD)
 
 KisumuTempMean <- mean(KisumuClimate$Temp, na.rm = T); KisumuTempSD <- sqrt(var(KisumuClimate$Temp, na.rm = T))
 KisumuRHMean <- mean(KisumuClimate$RH, na.rm = T); KisumuRHSD <- sqrt(var(KisumuClimate$RH, na.rm = T))
 
 KisumuClimate$TempAnom <- sapply(KisumuClimate$Temp, 
-                                    function(x, m , sd) (x < m + 1.5*sd),
-                                    m = KisumuTempMean, sd = KisumuTempSD)
+                                 function(x, m , sd) (x < m + 1.5*sd),
+                                 m = KisumuTempMean, sd = KisumuTempSD)
 KisumuClimate$RHAnom <- sapply(KisumuClimate$RH, 
-                                  function(x, m , sd) (x < m + 1.5*sd),
-                                  m = KisumuRHMean, sd = KisumuRHSD)
+                               function(x, m , sd) (x < m + 1.5*sd),
+                               m = KisumuRHMean, sd = KisumuRHSD)
 
 KisumuClimate$RHTempAnomaly = (KisumuClimate$TempAnom & KisumuClimate$RHAnom)
 # Saving Daily Summaries
@@ -379,32 +379,32 @@ ChulaimboMonthlyClimate <- ddply(ChulaimboClimate, ~Month, summarise, AvgTemp = 
                                  RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
 glimpse(KisumuClimate)
 KisumuMonthlyClimate <- ddply(KisumuClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
-                                 AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
-                                 OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
-                                 AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                                 AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall),
-                                 RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
-                                 TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
-                                 RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
-glimpse(MsamClimate)
-MsamMonthlyClimate <- ddply(MsamClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
-                              AvgMaxTemp = mean(Temp_max, na.rm = T), AvgMinTemp = mean(Temp_min, na.rm = T), 
-                              OverallMaxTemp = max(Temp_max, na.rm = T), OverallMinTemp = min(Temp_min, na.rm = T),
-                              AvgTempRange =mean((Temp_max - Temp_min), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain2),
+                              AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
+                              OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
+                              AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
+                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall),
                               RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
                               TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
                               RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
-
-glimpse(UkundaClimate)
-UkundaMonthlyClimate <- ddply(UkundaClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
-                            AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
-                            OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
-                            AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                            AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain),
+glimpse(MsamClimate)
+MsamMonthlyClimate <- ddply(MsamClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
+                            AvgMaxTemp = mean(Temp_max, na.rm = T), AvgMinTemp = mean(Temp_min, na.rm = T), 
+                            OverallMaxTemp = max(Temp_max, na.rm = T), OverallMinTemp = min(Temp_min, na.rm = T),
+                            AvgTempRange =mean((Temp_max - Temp_min), na.rm = T), AvgRH = mean(RH, na.rm = T),
+                            AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain2),
                             RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
                             TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
                             RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
+
+glimpse(UkundaClimate)
+UkundaMonthlyClimate <- ddply(UkundaClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
+                              AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
+                              OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
+                              AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
+                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain),
+                              RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
+                              TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
+                              RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
 
 
 #Saving the Monthly Summaries
@@ -622,9 +622,9 @@ Ovitrap2 <- Ovitrap2[-dim(Ovitrap2)[1], -dim(Ovitrap2)[2]] # last one is totals 
 Ovitrap1$Date <- as.yearmon(as.Date(as.POSIXct(Ovitrap1$Date), origin = "1900-01-01"))
 Ovitrap2$Date <- as.yearmon(as.Date(as.POSIXct(Ovitrap2$Date), origin = "1900-01-01"))
 
-  # Double checking everything was processed okay
-  head(Ovitrap1)
-  head(Ovitrap2)
+# Double checking everything was processed okay
+head(Ovitrap1)
+head(Ovitrap2)
 
 Ovitrap2$Site[Ovitrap2$Site=="nganja"] <- "Msambweni"
 Ovitrap2$Site[Ovitrap2$Site=="Nganja"] <- "Msambweni"
@@ -828,9 +828,9 @@ Larval1$Date <- as.yearmon(as.Date(as.POSIXct(Larval1$Date), origin = "1900-01-0
 Larval2$Date <- as.yearmon(as.Date(as.POSIXct(Larval2$Date), origin = "1900-01-01"))
 
 
-  # Double checking everything was processed correctly
-  head(Larval1)
-  head(Larval2)
+# Double checking everything was processed correctly
+head(Larval1)
+head(Larval2)
 Larval2$Site[Larval2$Site=="Milalani"] <- "Msambweni"
 Larval2$Site[Larval2$Site=="Nganja"] <- "Msambweni"
 Larval2$Site[Larval2$Site=="Milalani"] <- "Msambweni"
@@ -983,7 +983,7 @@ Pupae2$Date <- as.yearmon(as.Date(as.POSIXct(Pupae2$Date), origin = "1900-01-01"
 Pupae1[is.na(Pupae1)] <- 0
 Pupae2[is.na(Pupae2)] <- 0
 
-  # Double checking everything is processed correctly
+# Double checking everything is processed correctly
 head(Pupae1)
 head(Pupae2)
 
@@ -1317,8 +1317,8 @@ ProkopackU <- Prokopack2[which(Prokopack2[,1] == "ukunda"),]
 glimpse(ProkopackU)
 
 # Double checking everything was processed correctly
-  head(Prokopack1)
-  head(Prokopack2)
+head(Prokopack1)
+head(Prokopack2)
 
 # Separation into site specific data sets
 table(Prokopack2$Site)
@@ -1568,8 +1568,8 @@ OvitrapC$'AedessppIndoor'<-as.double(OvitrapC$'Aedes spp, Indoor')
 OvitrapC$'AedessppOutdoor'<-as.double(OvitrapC$'Aedes spp, Outdoor')
 glimpse(OvitrapC)
 MonthlyOvitrapC <- ddply(OvitrapC, ~OvitrapC$Date, summarise, 
-                                Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
-                                ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
+                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(MonthlyOvitrapC)
 
 glimpse(OvitrapK)
@@ -1613,13 +1613,13 @@ LarvalC$'AedessppOutdoor'<-as.double(LarvalC$'Aedes spp, Outdoor')
 glimpse(LarvalC)
 MonthlyLarvalC <- ddply(LarvalC, ~Date, summarise, 
                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
-                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
+                        ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 glimpse(LarvalK)
 LarvalK$'AedessppIndoor'<-as.double(LarvalK$'Aedes spp, Indoor')
 LarvalK$'AedessppOutdoor'<-as.double(LarvalK$'Aedes spp, Outdoor')
 MonthlyLarvalK <- ddply(LarvalK, ~Date, summarise, 
                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
-                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
+                        ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(LarvalM)
 LarvalM$'AedessppIndoor'<-as.double(LarvalM$'Aedes spp, Indoor')
@@ -1627,7 +1627,7 @@ LarvalM$'AedessppOutdoor'<-as.double(LarvalM$'Aedes spp, Outdoor')
 glimpse(LarvalM)
 MonthlyLarvalM <- ddply(LarvalM, ~Date, summarise, 
                         Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
-                         ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
+                        ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 glimpse(LarvalU)
 LarvalU$'AedessppIndoor'<-as.double(LarvalU$'Aedes spp, Indoor')
@@ -1718,7 +1718,7 @@ ProkopackU$AedessppIndoor<-as.double(ProkopackU$'Aedes spp, Indoor')
 ProkopackU$AedessppOutdoor<-as.double(ProkopackU$'Aedes spp, Outdoor')
 glimpse(ProkopackU)
 MonthlyProkopackU <- ddply(ProkopackU, ~ProkopackU$Date, summarise, 
-                            Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
+                           Ttl_Aedes.spp.Indoor = sum(AedessppIndoor),
                            ttl_Aedes_spp_Outdoor = sum(AedessppOutdoor)) 
 
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project/Personalized Datasets/Amy/built environement hcc/vector and climate")

@@ -128,12 +128,8 @@ table(ds$hospitalized_denv)
 #Assuming 250 (50%) of the 500 of the pregnant women will be ZIKV infected, 
 #20% of whom will be symptomatic with an estimated 50% MTCT rate, we will have power of 90% to detect 
 #a difference if the rate is 25% for asymptomatic mothers and 75% if the rate is 30% for asymptomatics.
-                                                                                                                                                                                                   
+
 f <- "ds.csv"
 write.csv(as.data.frame(ds), f )
 
 
-tetracore
-pos
-maybe
-neg
