@@ -10,19 +10,18 @@ library(xlsx) # Writing Excel files
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
+#Redcap.token <- "82F1C4081DEF007B8D4DE287426046E1"
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-
 
 #export data from redcap to R (must be connected via cisco VPN)
 R01_lab_results <- redcap_read(
   redcap_uri  = REDcap.URL,
-  token       = Redcap.token
+  token       = Redcap.token,
+  batch_size = 300
 )$data
 
-rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-myData <- exportRecords(rcon)
-
+write.csv2(R01_lab_results, file= "redcap_backup.csv", row.names=FALSE, na="", sep=",")
 
 save(R01_lab_results,file=paste("R01_lab_results",Sys.Date(),sep = "_"))
 load("R01_lab_results")
