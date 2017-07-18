@@ -1,9 +1,14 @@
 library(data.table)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long") # Always set where you're grabbing stuff from
 log<-read.csv("R01CHIKVDENVProject_Logging_2017-07-06_1732.csv", header = TRUE, sep = ",",   fill = TRUE )
+glimpse(log)
+table(log$Username)
+
 colnames(log)[4] <- "list"
 #logSubset <- log[grep("Updated", log$Action),]
 logSubset<-filter(log, grepl('Update', Action))
+table(logSubset$Username)
+
 logSubset<-filter(logSubset, grepl('CC0008006', Action))
 logSubset<-filter(logSubset, grepl('sample_igg_denv_stfd', list))
 
