@@ -71,3 +71,4 @@ symptoms$symptomatic<-NA
 symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum>0] <- 1)
 symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum==0] <- 0)
 table(symptoms$symptomatic, exclude=NULL)
+
