@@ -12,6 +12,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
 #R01_lab_results.backup<-R01_lab_results
+#save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
+load("R01_lab_results.backup.rda")
 R01_lab_results<-R01_lab_results.backup
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
 table(R01_lab_results$id_cohort)
@@ -45,7 +47,7 @@ symptoms<-as.data.frame(symptoms)
 #symptoms <-symptoms[!(is.na(symptoms$all_symptoms) | symptoms$all_symptoms==" "), ]
 lev <- levels(factor(symptoms$all_symptoms))
 lev <- unique(unlist(strsplit(lev, " ")))
-mnames <- gsub(" ", "_", paste("aic_symptom", lev, sep = "."))
+mnames <- gsub(" ", "_", paste("aic_symptom", lev, sep = "_"))
 result <- matrix(data = "0", nrow = length(symptoms$all_symptoms), ncol = length(lev))
 char.aic_symptom <- as.character(symptoms$all_symptoms)
 for (i in 1:length(lev)) {
@@ -56,19 +58,40 @@ colnames(result) <- mnames
 symptoms <- cbind(symptoms,result)
 
 as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
-symptoms<-symptoms[c(1:8, 10:42)]
+ids <- c("person_id", "redcap_event_name", "symptoms", "symptoms_aic", "id_cohort", "id_city", "id_visit", "all_symptoms")
+ids <- symptoms[ids]
+symptoms<-symptoms[ , !(names(symptoms) %in% "aic_symptom_")]
+aic_symptom_<-grep("aic_symptom_", names(symptoms), value = TRUE)
+symptoms<-symptoms[ , (names(symptoms) %in% aic_symptom_)]
+symptoms <-as.data.frame(sapply(symptoms, as.numeric.factor))
 
-symptoms[, c(9:41)] <- sapply(symptoms[, c(9:41)], as.numeric.factor)
-
-attach(symptoms)
 symptom_sum<-rowSums(symptoms[, grep("\\baic_symptom", names(symptoms))])
 table(symptom_sum)
 symptoms<-symptoms[ , grepl( "aic_symptom" , names(symptoms) ) ]
 symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))]))
 table(symptoms$symptom_sum)
-
 symptoms$symptomatic<-NA
 symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum>0] <- 1)
 symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum==0] <- 0)
 table(symptoms$symptomatic, exclude=NULL)
 
+#export to box.
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/reports")
+symptoms<-as.data.frame(cbind(ids, symptoms))
+
+aic_symptoms<-subset(symptoms, id_cohort=="F")
+aic_symptoms <-aic_symptoms[!sapply(aic_symptoms, function (x) all(is.na(x) | x == ""))]
+aic_R01_lab_results<-subset(R01_lab_results, id_cohort=="F")
+aic_R01_lab_results <-aic_R01_lab_results[!sapply(aic_R01_lab_results, function (x) all(is.na(x) | x == ""))]
+
+aic_dummy_symptoms <- merge(aic_symptoms, aic_R01_lab_results, by=c("person_id", "redcap_event_name"))
+
+names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event_name'] <- 'redcap_event'
+#double check to de-identify data
+identifiers<-grep("name|gps", names(aic_dummy_symptoms), value = TRUE)
+aic_dummy_symptoms_de_identified<-aic_dummy_symptoms[ , !(names(aic_dummy_symptoms) %in% identifiers)]
+names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event'] <- 'redcap_event_name'
+
+
+f <- "aic_dummy_symptoms_de_identified.csv"
+write.csv(as.data.frame(aic_dummy_symptoms_de_identified), f )
