@@ -23,7 +23,7 @@ R01_lab_results$id_visit<-as.integer(factor(R01_lab_results$redcap_event_name))
 R01_lab_results$id_visit<-R01_lab_results$id_visit-1
 table(R01_lab_results$redcap_event_name, R01_lab_results$id_visit)
 
-symptoms<-R01_lab_results[which(R01_lab_results$visit > 0), c("person_id", "redcap_event_name","symptoms", "symptoms_aic", "id_cohort", "id_city", "id_visit")]
+symptoms<-R01_lab_results[which(R01_lab_results$id_visit > 0), c("person_id", "redcap_event_name","symptoms", "symptoms_aic", "id_cohort", "id_city", "id_visit")]
 #symptoms<-R01_lab_results[which(R01_lab_results$visit > 0), c("person_id", "redcap_event_name","symptoms", "symptoms_aic")]
 symptoms<-as.data.frame(symptoms)
 table(symptoms$redcap_event_name, symptoms$id_visit)
@@ -84,13 +84,13 @@ aic_symptoms <-aic_symptoms[!sapply(aic_symptoms, function (x) all(is.na(x) | x 
 aic_R01_lab_results<-subset(R01_lab_results, id_cohort=="F")
 aic_R01_lab_results <-aic_R01_lab_results[!sapply(aic_R01_lab_results, function (x) all(is.na(x) | x == ""))]
 
-aic_dummy_symptoms <- merge(aic_symptoms, aic_R01_lab_results, by=c("person_id", "redcap_event_name"))
+aic_dummy_symptoms <- merge(aic_R01_lab_results, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 
 names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event_name'] <- 'redcap_event'
 #double check to de-identify data
 identifiers<-grep("name|gps", names(aic_dummy_symptoms), value = TRUE)
 aic_dummy_symptoms_de_identified<-aic_dummy_symptoms[ , !(names(aic_dummy_symptoms) %in% identifiers)]
-names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event'] <- 'redcap_event_name'
+names(aic_dummy_symptoms_de_identified)[names(aic_dummy_symptoms_de_identified) == 'redcap_event'] <- 'redcap_event_name'
 
 
 f <- "aic_dummy_symptoms_de_identified.csv"

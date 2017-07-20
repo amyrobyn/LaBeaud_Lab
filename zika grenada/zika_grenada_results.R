@@ -48,6 +48,7 @@ names(preg_cohort) <- sub('ï..ID.Code','mom_id_orig_study',names(preg_cohort))
 ds <- join(ds, preg_cohort, by='mom_id_orig_study', type='left', match='all')
 table(ds$Results, exclude=NULL)
 
+
 #We will want to know how many kids were Zika exposed (8/206. 7/8 confirmed) 
 table(ever_had_zikv, confirmed_blood_test)
 table(pregnant, confirmed_blood_test) #kids were Zika exposed (8/206. 7/8 confirmed) 
@@ -59,7 +60,6 @@ table(symptom_sum)
 symptoms<-ds[ , grepl( "symptoms___" , names(ds) ) ]
 ds$symptom_sum <- as.integer(rowSums(ds[ , grep("symptoms___" , names(ds))]))
 table(ds$symptom_sum)
-
 ds$symptomatic<-NA
 ds <- within(ds, symptomatic[ds$symptom_sum>0] <- 1)
 ds <- within(ds, symptomatic[ds$symptom_sum==0] <- 0)
@@ -142,6 +142,10 @@ table(ds$hospitalized_denv)
 #Assuming 250 (50%) of the 500 of the pregnant women will be ZIKV infected, 
 #20% of whom will be symptomatic with an estimated 50% MTCT rate, we will have power of 90% to detect 
 #a difference if the rate is 25% for asymptomatic mothers and 75% if the rate is 30% for asymptomatics.
+attach(ds)
+table(ds$Results)
+table(Results, symptomatic)
+table(pregnant, symptomatic, exclude = NULL)
 
-f <- "ds.csv"
+f <- "zika_grenada_results.csv"
 write.csv(as.data.frame(ds), f )
