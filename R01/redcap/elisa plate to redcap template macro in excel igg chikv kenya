@@ -9,33 +9,33 @@ Sub import_template()
     Range("P12").Select
     ActiveCell.FormulaR1C1 = "redcap_event_name"
     Range("Q12").Select
-    ActiveCell.FormulaR1C1 = "sample_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "sample_igg_chikv_kenya"
     Range("R12").Select
-    ActiveCell.FormulaR1C1 = "aliquot_id_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "aliquot_id_igg_chikv_kenya"
     Range("S12").Select
-    ActiveCell.FormulaR1C1 = "name_tech_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "name_tech_igg_chikv_kenya"
     Range("T12").Select
     ActiveWindow.SmallScroll ToRight:=4
     Range("U12").Select
-    ActiveCell.FormulaR1C1 = "date_tested_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "date_tested_igg_chikv_kenya"
     Range("V12").Select
-    ActiveCell.FormulaR1C1 = "antigen_used_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "antigen_used_igg_chikv_kenya"
     Range("W12").Select
-    ActiveCell.FormulaR1C1 = "other_antigen_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "other_antigen_igg_chikv_kenya"
     Range("X12").Select
     ActiveWindow.SmallScroll ToRight:=4
-    ActiveCell.FormulaR1C1 = "value__igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "value__igg_chikv_kenya"
     Range("Y12").Select
-    ActiveCell.FormulaR1C1 = "result__igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "result__igg_chikv_kenya"
     Range("Z12").Select
-    ActiveCell.FormulaR1C1 = "notes_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "notes_igg_chikv_kenya"
     Range("AA12").Select
     ActiveWindow.SmallScroll ToRight:=5
-    ActiveCell.FormulaR1C1 = "igg_denv_kenya_complete"
+    ActiveCell.FormulaR1C1 = "igg_chikv_kenya_complete"
     Range("AB12").Select
-    ActiveCell.FormulaR1C1 = "pos_control_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "pos_control_igg_chikv_kenya"
     Range("AC12").Select
-    ActiveCell.FormulaR1C1 = "neg_control_igg_denv_kenya"
+    ActiveCell.FormulaR1C1 = "neg_control_igg_chikv_kenya"
     Range("AD12").Select
     ActiveCell.FormulaR1C1 = ""
     Columns("O:O").Select
