@@ -66,4 +66,3 @@ survfit3<-survfit(Surv(time, result_igg_chikv_kenya) ~ 1, data=survival)
 str(survfit3)
 survfit4<-survfit(Surv(time, result_igg_denv_kenya) ~ 1, data=survival)
 str(survfit4)
-
