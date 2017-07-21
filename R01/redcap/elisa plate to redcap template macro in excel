@@ -1,0 +1,173 @@
+Sub import_template()
+'
+' import_template Macro
+'
+
+'
+    Range("O12").Select
+    ActiveCell.FormulaR1C1 = "person_id"
+    Range("P12").Select
+    ActiveCell.FormulaR1C1 = "redcap_event_name"
+    Range("Q12").Select
+    ActiveCell.FormulaR1C1 = "sample_igg_denv_kenya"
+    Range("R12").Select
+    ActiveCell.FormulaR1C1 = "aliquot_id_igg_denv_kenya"
+    Range("S12").Select
+    ActiveCell.FormulaR1C1 = "name_tech_igg_denv_kenya"
+    Range("T12").Select
+    Windows("Copy of 19th May ELISA results ENGS.xlsx").Activate
+    Range("U12").Select
+    ActiveCell.FormulaR1C1 = "date_tested_igg_denv_kenya"
+    Range("V12").Select
+    ActiveCell.FormulaR1C1 = "antigen_used_igg_denv_kenya"
+    Range("W12").Select
+    ActiveCell.FormulaR1C1 = "other_antigen_igg_denv_kenya"
+    Range("X12").Select
+    Windows("Copy of 19th May ELISA results ENGS.xlsx").Activate
+    ActiveCell.FormulaR1C1 = "value__igg_denv_kenya"
+    Range("Y12").Select
+    ActiveCell.FormulaR1C1 = "result__igg_denv_kenya"
+    Range("Z12").Select
+    ActiveCell.FormulaR1C1 = "notes_igg_denv_kenya"
+    Range("AA12").Select
+    ActiveWindow.SmallScroll ToRight:=5
+    ActiveCell.FormulaR1C1 = "igg_denv_kenya_complete"
+    Range("AB12").Select
+    ActiveCell.FormulaR1C1 = "pos_control_igg_denv_kenya"
+    Range("AC12").Select
+    ActiveCell.FormulaR1C1 = "neg_control_igg_denv_kenya"
+    Range("AD12").Select
+    ActiveCell.FormulaR1C1 = ""
+    Columns("O:O").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range("O12").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Columns("T:T").Select
+    Selection.Delete Shift:=xlToLeft
+    Range("O12").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Columns("AA:AA").EntireColumn.AutoFit
+    ActiveWindow.SmallScroll ToRight:=-4
+    Columns("O:AB").Select
+    Columns("O:AB").EntireColumn.AutoFit
+    Range("R13").Select
+    ActiveCell.FormulaR1C1 = "=R[9]C[-17]"
+    Range("R13").Select
+    Selection.AutoFill Destination:=Range("R13:R46"), Type:=xlFillDefault
+    Range("R13:R46").Select
+    Range("R37").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+    Range("R37").Select
+    ActiveCell.FormulaR1C1 = "=R[-15]C[-10]"
+    Range("R37").Select
+    Selection.AutoFill Destination:=Range("R37:R65"), Type:=xlFillDefault
+    Range("R37:R65").Select
+    Range("R58").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+    Range("R57").Select
+    Range(Selection, Selection.End(xlUp)).Select
+    Range("S13").Select
+    ActiveCell.FormulaR1C1 = "=R[-11]C[-17]"
+    Range("T13").Select
+    ActiveCell.FormulaR1C1 = "=R[-10]C[-18]"
+    Range("U13").Select
+    ActiveCell.FormulaR1C1 = "=R[-9]C[-19]"
+    Range("W13").Select
+    ActiveCell.FormulaR1C1 = "=R[9]C[-18]"
+    Range("W13").Select
+    Selection.AutoFill Destination:=Range("W13:W46"), Type:=xlFillDefault
+    Range("W13:W46").Select
+    Range("W37").Select
+    ActiveCell.FormulaR1C1 = "=R[-15]C[-11]"
+    Range("W37").Select
+    Selection.AutoFill Destination:=Range("W37:W57"), Type:=xlFillDefault
+    Range("W37:W57").Select
+    Range("W13").Select
+    Selection.AutoFill Destination:=Range("W13:X13"), Type:=xlFillDefault
+    Range("W13:X13").Select
+    Range("X13").Select
+    Selection.AutoFill Destination:=Range("X13:X57")
+    Range("X13:X57").Select
+    Range("W37").Select
+    Selection.AutoFill Destination:=Range("W37:X37"), Type:=xlFillDefault
+    Range("W37:X37").Select
+    Range("X37").Select
+    Selection.AutoFill Destination:=Range("X37:X57")
+    Range("X37:X57").Select
+    Range("Y13").Select
+    ActiveCell.FormulaR1C1 = _
+        "=R[32]C[-17] & "" "" & R[32]C[-14] & "" "" & R[32]C[-13]"
+    Range("Y13").Select
+    Columns("Y:Y").EntireColumn.AutoFit
+    ActiveCell.FormulaR1C1 = _
+        "=R[32]C[-17] & ""="" & R[32]C[-14] & "" "" & R[32]C[-13]"
+    Range("Y13").Select
+    ActiveCell.FormulaR1C1 = _
+        "=R[32]C[-17] & ""="" & R[32]C[-14] & "". "" & R[32]C[-13]"
+    Range("Y13").Select
+    Range("Z13").Select
+    ActiveCell.FormulaR1C1 = "1"
+    Range("AA13").Select
+    ActiveCell.FormulaR1C1 = "=R[35]C[-18]"
+    Range("AB13").Select
+    ActiveCell.FormulaR1C1 = "=R[36]C[-19]"
+    Range("Z14").Select
+    ActiveCell.FormulaR1C1 = "1"
+    Range("AA13").Select
+    ActiveCell.FormulaR1C1 = "=R48C9"
+    Range("AB13").Select
+    ActiveCell.FormulaR1C1 = "=R49C9"
+    Range("AA13:AB13").Select
+    Selection.AutoFill Destination:=Range("AA13:AB57")
+    Range("AA13:AB57").Select
+    Range("Z13:Z14").Select
+    Selection.AutoFill Destination:=Range("Z13:Z57")
+    Range("Z13:Z57").Select
+    Range("Y13").Select
+    ActiveCell.FormulaR1C1 = "=R45C8 & ""="" & R45C11 & "". "" & R[32]C12"
+    Range("Y13").Select
+    ActiveCell.FormulaR1C1 = "=R45C8 & ""="" & R45C11 & "". "" & R45C12"
+    Range("Y13").Select
+    Selection.AutoFill Destination:=Range("Y13:Y57")
+    Range("Y13:Y57").Select
+    Range("U13").Select
+    ActiveCell.FormulaR1C1 = "=R4C2"
+    Range("U13").Select
+    Selection.AutoFill Destination:=Range("U13:U57")
+    Range("U13:U57").Select
+    Range("T13").Select
+    ActiveCell.FormulaR1C1 = "=R3C2"
+    Range("T13").Select
+    Selection.AutoFill Destination:=Range("T13:T57")
+    Range("T13:T57").Select
+    Range("S13").Select
+    ActiveCell.FormulaR1C1 = "=R2C2"
+    Range("S13").Select
+    Selection.AutoFill Destination:=Range("S13:S57")
+    Range("S13:S57").Select
+    Range("O13").Select
+    ActiveCell.FormulaR1C1 = "=LEFT(RC[3],2)&RIGHT(RC[3],4)"
+    Range("O13").Select
+    Selection.AutoFill Destination:=Range("O13:O57")
+    Range("O13:O57").Select
+    Range("P13").Select
+    ActiveCell.FormulaR1C1 = "=""visit_""&RIGHT(LEFT(RC[2],3),1)"
+    Range("P13").Select
+    ActiveCell.FormulaR1C1 = "=""visit_""&RIGHT(LEFT(RC[2],3),1)&""_arm_1_"""
+    Range("P13").Select
+    ActiveCell.FormulaR1C1 = _
+        "=""visit_""& LOWER(RIGHT(LEFT(RC[2],3),1))&""_arm_1_"""
+    Range("P13").Select
+    Selection.AutoFill Destination:=Range("P13:P57")
+    Range("P13:P57").Select
+    Range("Q13").Select
+    ActiveCell.FormulaR1C1 = "1"
+    Range("Q14").Select
+    ActiveCell.FormulaR1C1 = "1"
+    Range("Q13:Q14").Select
+    Selection.AutoFill Destination:=Range("Q13:Q57")
+    Range("Q13:Q57").Select
+    Range("Q14").Select
+End Sub
