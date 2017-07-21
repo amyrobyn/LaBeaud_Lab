@@ -15,7 +15,7 @@ Sub import_template()
     Range("S12").Select
     ActiveCell.FormulaR1C1 = "name_tech_igg_denv_kenya"
     Range("T12").Select
-    Windows("Copy of 19th May ELISA results ENGS.xlsx").Activate
+    ActiveWindow.SmallScroll ToRight:=4
     Range("U12").Select
     ActiveCell.FormulaR1C1 = "date_tested_igg_denv_kenya"
     Range("V12").Select
@@ -23,7 +23,7 @@ Sub import_template()
     Range("W12").Select
     ActiveCell.FormulaR1C1 = "other_antigen_igg_denv_kenya"
     Range("X12").Select
-    Windows("Copy of 19th May ELISA results ENGS.xlsx").Activate
+    ActiveWindow.SmallScroll ToRight:=4
     ActiveCell.FormulaR1C1 = "value__igg_denv_kenya"
     Range("Y12").Select
     ActiveCell.FormulaR1C1 = "result__igg_denv_kenya"
@@ -70,6 +70,11 @@ Sub import_template()
     Range(Selection, Selection.End(xlUp)).Select
     Range("S13").Select
     ActiveCell.FormulaR1C1 = "=R[-11]C[-17]"
+    Range("S14").Select
+    ActiveWindow.Zoom = 90
+    ActiveWindow.Zoom = 80
+    ActiveWindow.Zoom = 70
+    ActiveWindow.Zoom = 60
     Range("T13").Select
     ActiveCell.FormulaR1C1 = "=R[-10]C[-18]"
     Range("U13").Select
@@ -84,7 +89,18 @@ Sub import_template()
     Range("W37").Select
     Selection.AutoFill Destination:=Range("W37:W57"), Type:=xlFillDefault
     Range("W37:W57").Select
+    ActiveWindow.ScrollRow = 18
+    ActiveWindow.ScrollRow = 17
+    ActiveWindow.ScrollRow = 16
+    ActiveWindow.ScrollRow = 15
+    ActiveWindow.ScrollRow = 14
+    ActiveWindow.ScrollRow = 13
+    ActiveWindow.ScrollRow = 12
+    ActiveWindow.ScrollRow = 11
+    ActiveWindow.ScrollRow = 10
+    ActiveWindow.ScrollRow = 9
     Range("W13").Select
+    ActiveWindow.SmallScroll ToRight:=2
     Selection.AutoFill Destination:=Range("W13:X13"), Type:=xlFillDefault
     Range("W13:X13").Select
     Range("X13").Select
@@ -158,7 +174,7 @@ Sub import_template()
     ActiveCell.FormulaR1C1 = "=""visit_""&RIGHT(LEFT(RC[2],3),1)&""_arm_1_"""
     Range("P13").Select
     ActiveCell.FormulaR1C1 = _
-        "=""visit_""& LOWER(RIGHT(LEFT(RC[2],3),1))&""_arm_1_"""
+        "=""visit_""& LOWER(RIGHT(LEFT(RC[2],3),1))&""_arm_1"""
     Range("P13").Select
     Selection.AutoFill Destination:=Range("P13:P57")
     Range("P13:P57").Select
@@ -166,8 +182,20 @@ Sub import_template()
     ActiveCell.FormulaR1C1 = "1"
     Range("Q14").Select
     ActiveCell.FormulaR1C1 = "1"
-    Range("Q13:Q14").Select
+    
+        Range("Q13:Q14").Select
     Selection.AutoFill Destination:=Range("Q13:Q57")
     Range("Q13:Q57").Select
-    Range("Q14").Select
+    
+        ActiveWorkbook.Save
+    Range("O12:AB57").Select
+    Selection.Copy
+    Workbooks.Add
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    ChDir "C:\Users\amykr\Desktop"
+    ActiveWorkbook.SaveAs Filename:= _
+        "C:\Users\amykr\Desktop\to import to redcap.csv", FileFormat:=xlCSVUTF8, _
+        CreateBackup:=False
+
 End Sub
