@@ -13,7 +13,7 @@ R01_lab_results <- redcap_read(
   redcap_uri  = REDcap.URL,  
   token       = Redcap.token,  batch_size = 300)$data
 
-hcc_kids<-R01_lab_results[-which(R01_lab_results$cohort ==2))  , ]
+hcc_kids<-R01_lab_results[-which(R01_lab_results$cohort ==2)  , ]
 
 save(R01_lab_results, file="R01_lab_results.rda") #save the data to your local working directory.
 
@@ -25,10 +25,11 @@ child_demography<-read.csv("your_filename.csv")
 house_demography<-read.csv("your_filename.csv")
 
 #merge the hcc data with the demography data
-merged<-merge(child_demography, child_demography, full = TRUE)
-
-merged<-merge(merge, hcc_kids, full = TRUE)
-merged<-merged[-which(is.na(merged$redcap_event_name))  , ]
+merged<-  merge(x = child_demography, y = house_demography, by.x = c("house_id"), by.y = c("house_id"), all.x = TRUE)
+  
+merged<-  merge(x = merged, y = hcc_kids, by.x = c("house_id"), by.y = c("house_id"), all.y = TRUE)
+  #keep those with a redcap event name 
+  merged<-merged[-which(is.na(merged$redcap_event_name))  , ]
 
 #export to csv
 f <- "your file name.csv"
