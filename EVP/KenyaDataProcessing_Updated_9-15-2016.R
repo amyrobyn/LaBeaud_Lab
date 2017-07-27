@@ -13,9 +13,9 @@
 #Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\jre7') # for 32-bit version
 R_LIBS_USER="C:/Program Files/R/R-3.3.2/library"
 Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7') # for 64-bit version
-install.packages(c("plyr","xlsx", "readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
-install.packages("tidyverse")
-install.packages("xlsx")
+#install.packages(c("plyr","xlsx", "readxl", "xlsx", "plyr","dplyr", "zoo", "AICcmodavg","MuMIn", "car", "sjPlot", "visreg", "datamart", "reshape2", "rJava", "WriteXLS", "xlsx", "readxl"))
+#install.packages("tidyverse")
+#install.packages("xlsx")
 
 ### Packages :
 library(xlsx)
@@ -58,7 +58,7 @@ Diani$Date <- as.Date(Diani$Date)
 #                    Temp = mean(Temp, na.rm = T), RH = mean(RH, na.rm = T), DewPt = mean(DewPt, na.rm = T))
 
 names(Ukunda_Rain)[2] <- "rain"
-UkundaClimate <- merge(Ukunda_Rain, Diani, by = "Date", all.y = TRUE)
+UkundaClimate <- merge(Ukunda_Rain, Diani, by = "Date", all = TRUE)
 #UkundaClimate[is.na(UkundaClimate$rain),2] <- 0 # Entering 0 for the rain fall amounts where there was none
 
 # Removing the observations with missing or no data
@@ -373,38 +373,38 @@ ChulaimboMonthlyClimate <- ddply(ChulaimboClimate, ~Month, summarise, AvgTemp = 
                                  AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                                  OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
                                  AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                                 AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall),
-                                 RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
-                                 TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
-                                 RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
+                                 AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall, na.rm = T),
+                                 RainfallAnomalies = sum(RainfallAnomaly, na.rm = T), TempRangeAnomalies = sum(RangeAnomaly, na.rm = T),
+                                 TempDewPtDiffAnomalies = sum(DewDiffAnomaly, na.rm = T), TempAnomalies = sum(TempAnom, na.rm = T),
+                                 RHAnomalies = sum(RHAnom, na.rm = T), RHTempAnomalies = sum(RHTempAnomaly, na.rm = T)) 
 glimpse(KisumuClimate)
 KisumuMonthlyClimate <- ddply(KisumuClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                               AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                               OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
                               AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall),
-                              RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
-                              TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
-                              RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
+                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(Rainfall, na.rm = T),
+                              RainfallAnomalies = sum(RainfallAnomaly, na.rm = T), TempRangeAnomalies = sum(RangeAnomaly, na.rm = T),
+                              TempDewPtDiffAnomalies = sum(DewDiffAnomaly, na.rm = T), TempAnomalies = sum(TempAnom, na.rm = T),
+                              RHAnomalies = sum(RHAnom, na.rm = T), RHTempAnomalies = sum(RHTempAnomaly, na.rm = T)) 
 glimpse(MsamClimate)
 MsamMonthlyClimate <- ddply(MsamClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                             AvgMaxTemp = mean(Temp_max, na.rm = T), AvgMinTemp = mean(Temp_min, na.rm = T), 
                             OverallMaxTemp = max(Temp_max, na.rm = T), OverallMinTemp = min(Temp_min, na.rm = T),
                             AvgTempRange =mean((Temp_max - Temp_min), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                            AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain2),
-                            RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
-                            TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
-                            RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
+                            AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain2, na.rm = T),
+                            RainfallAnomalies = sum(RainfallAnomaly, na.rm = T), TempRangeAnomalies = sum(RangeAnomaly, na.rm = T),
+                            TempDewPtDiffAnomalies = sum(DewDiffAnomaly, na.rm = T), TempAnomalies = sum(TempAnom, na.rm = T),
+                            RHAnomalies = sum(RHAnom, na.rm = T), RHTempAnomalies = sum(RHTempAnomaly, na.rm = T)) 
 
 glimpse(UkundaClimate)
 UkundaMonthlyClimate <- ddply(UkundaClimate, ~Month, summarise, AvgTemp = mean(Temp, na.rm = T), 
                               AvgMaxTemp = mean(MaxTemp, na.rm = T), AvgMinTemp = mean(MinTemp, na.rm = T), 
                               OverallMaxTemp = max(MaxTemp, na.rm = T), OverallMinTemp = min(MinTemp, na.rm = T),
                               AvgTempRange = mean((MaxTemp - MinTemp), na.rm = T), AvgRH = mean(RH, na.rm = T),
-                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain),
+                              AvgDewPt = mean(DewPt, na.rm = T), TtlRainfall = sum(rain, na.rm = T),
                               RainfallAnomalies = sum(RainfallAnomaly), TempRangeAnomalies = sum(RangeAnomaly),
-                              TempDewPtDiffAnomalies = sum(DewDiffAnomaly), TempAnomalies = sum(TempAnom),
-                              RHAnomalies = sum(RHAnom), RHTempAnomalies = sum(RHTempAnomaly)) 
+                              TempDewPtDiffAnomalies = sum(DewDiffAnomaly, na.rm = T), TempAnomalies = sum(TempAnom, na.rm = T),
+                              RHAnomalies = sum(RHAnom, na.rm = T), RHTempAnomalies = sum(RHTempAnomaly, na.rm = T)) 
 
 
 #Saving the Monthly Summaries
