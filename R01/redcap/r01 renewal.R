@@ -1,9 +1,9 @@
 #install.packages(c("REDCapR", "epiR", "epitools", "epicalc"))
 library(redcapAPI)
 library(REDCapR)
-library("epiR")
-library("epitools")
-library("epicalc")
+library(epiR)
+library(epitools)
+library(epicalc)
 library(dplyr)
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
@@ -13,13 +13,11 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-R01_lab_results <- redcap_read(
-  redcap_uri  = REDcap.URL,
-  token       = Redcap.token,
-  batch_size = 300
-)$data
-
-
+#R01_lab_results <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 300)$data
+R01_lab_results.backup<-R01_lab_results
+save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
+load("R01_lab_results.backup.rda")
+R01_lab_results<-R01_lab_results.backup
 
 #The 1-2% of fevers due to CHIKV and DENV- is that per year or is that total? 
 #Also, we need to figure out how much of our acute DENV was symptomatic vs. mildly/asymptomatic, etc.

@@ -67,6 +67,9 @@ data$visit_type<-as.factor(data$visit_type)
 table(data$cohort)
 table(data$cohort_id)
 
+table(data$cohort_id, data$gender, data$redcap_event_name)
+table(data$cohort_id, data$gender_aic, data$redcap_event_name)
+
 table(R01_lab_results$visit_type)
 table(R01_lab_results$follow_up_visit_num)
 
@@ -74,14 +77,15 @@ table(R01_lab_results$follow_up_visit_num)
 tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "cohort_id", data = data)
 print(tableOne, quote = TRUE)
 
+n_distinct(hcc$person_id, na.rm = FALSE)
+n_distinct(aic$person_id, na.rm = FALSE)
+
 
 # based on variable values
 coast <- R01_lab_results[ which(R01_lab_results$site=='1' ), ]
 table(coast$city)
 table(coast$result_igg_denv_stfd)
 n_distinct(coast$person_id, na.rm = FALSE)
-
-
 
 west <- R01_lab_results[ which(R01_lab_results$site=='2' ), ]
 table(west$city)
