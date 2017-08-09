@@ -12,7 +12,8 @@
   #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   load("R01_lab_results.backup.rda")
   R01_lab_results<-R01_lab_results.backup
-
+  R01_lab_results$child_number
+  
 #reshape data to wide. 
   R01_lab_results_wide<-reshape(R01_lab_results, direction = "wide", idvar = "person_id", timevar = "redcap_event_name", sep = "_")
 

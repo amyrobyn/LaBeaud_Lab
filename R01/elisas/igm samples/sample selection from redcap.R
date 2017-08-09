@@ -13,7 +13,7 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 300)$data
-save(R01_lab_results, file="R01_lab_results.rda")
+#save(R01_lab_results, file="R01_lab_results.rda")
 load("R01_lab_results.rda")
 
 R01_lab_results_wide<-reshape(R01_lab_results, direction = "wide", idvar = "person_id", timevar = "redcap_event_name", sep = "_")
@@ -243,9 +243,10 @@ R01_lab_results_wide$denv_igm_sample_g <- ifelse(isPos(gh_denv_stfd_igg_p) & !is
     igm_sample_long$visit<-gsub("_", "", igm_sample_long$visit)
     
     igm_sample_long <-igm_sample_long[which(igm_sample_long$visit!='p' )  , ]
-
+    igm_sample_long$cohort<-substr(igm_sample_long$person_id, 2, 2)
     
 #export to csv
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/gina dabba")
-f <- "igm_samples_7-24-17.csv"
+f <- "igm_samples_8-8-17.csv"
 write.csv(as.data.frame(igm_sample_long), f, na="")
+

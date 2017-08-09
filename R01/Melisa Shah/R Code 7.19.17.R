@@ -29,7 +29,7 @@ table(aic$id_cohort)
 
 R01_lab_results_a <-R01_lab_results[which(R01_lab_results$redcap_event_name!='visit_a_arm_1' )  , ]
 
-village_table<-table(R01_lab_results_a$village_aic, R01_lab_results$result_microscopy_malaria_kenya)
+village_table<-as.data.frame(table(R01_lab_results_a$village_aic, R01_lab_results_a$result_microscopy_malaria_kenya))
 villages<-as.data.frame(village_table)
 
 village<-as.data.frame(table(R01_lab_results$village_aic))
@@ -40,4 +40,4 @@ plot(village)
 #export to csv
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah")
 f <- "villages.csv"
-write.csv(as.data.frame(village), f )
+write.csv(as.data.frame(village_table), f )
