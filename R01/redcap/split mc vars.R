@@ -183,9 +183,9 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   aic_dummy_symptoms<-aic_dummy_symptoms[ , !(names(aic_dummy_symptoms) %in% identifiers)]
   
 #export to csv
-  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-  f <- "aic_dummy_symptoms_de_identified.csv"
-  write.csv(as.data.frame(aic_dummy_symptoms), f )
+  #setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+  #f <- "aic_dummy_symptoms_de_identified.csv"
+  #write.csv(as.data.frame(aic_dummy_symptoms), f )
 
 #analysis
   attach(aic_dummy_symptoms)
@@ -297,41 +297,47 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
 #incidence by year
   library("zoo")
   library("lubridate")
+  library(tidyr)
   load("R01_lab_results.backup.rda")
   R01_lab_results<-R01_lab_results.backup
-  interview_dates<-R01_lab_results[, grepl("person_id|redcap_event_name|interview_date", names(R01_lab_results))]
-
-    #aic
-      interview_dates$interview_date_aic_2 <-ymd(interview_dates$interview_date_aic)
-      #table(interview_dates$interview_date_aic_2)
-      #table(interview_dates$interview_date_aic)
-      interview_dates$month_year_aic <- as.yearmon(interview_dates$interview_date_aic_2)
-      interview_dates$year_aic <- year(as.Date(interview_dates$interview_date_aic_2, origin = '1900-1-1'))
-      #table(interview_dates$month_year_aic)
-    #hcc
-      interview_dates$interview_date_2 <- ymd(interview_dates$interview_date)
-      #table(interview_dates$interview_date_2)
-      interview_dates$month_year_hcc <- as.yearmon(interview_dates$interview_date_2)
-      interview_dates$year_hcc <- year(as.Date(interview_dates$interview_date_2, origin = '1900-1-1'))
-
-      #table(interview_dates$month_year_hcc)
+  interview_dates<-R01_lab_results[, grepl("person_id|redcap_event_name|date", names(R01_lab_results))]
+interview_dates<-interview_dates[,order(colnames(interview_dates))]
+interview_dates[is.na(interview_dates)] = ''
+date<-unite(interview_dates, int_date, interview_date:interview_date_aic, sep='')
+date<-date[which(date$redcap_event_name!="patient_informatio_arm_1"),]
+interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_name"), all = TRUE)
+    #dates
+      interview_dates$int_date_2 <-ymd(interview_dates$int_date)
+      table(interview_dates$int_date_2)
+      #table(interview_dates$int_date)
+      interview_dates$month_year <- as.yearmon(interview_dates$int_date_2)
+      interview_dates$year <- year(as.Date(interview_dates$int_date_2, origin = '1900-1-1'))
+      #table(interview_dates$month_year, exclude = NULL)
     #merge
       names(interview_dates)[names(interview_dates) == 'redcap_event_name'] <- 'redcap_event'
       aic_dummy_symptoms <- merge(interview_dates, aic_dummy_symptoms,  by=c("person_id", "redcap_event"), all = TRUE)
-      R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
-      
+      aic_dummy_symptoms$id_cohort<-substr(aic_dummy_symptoms$person_id, 2, 2)
 #infected by month
-  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$month_year_aic)
-  table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$month_year_aic)
-  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$month_year_aic)
-  table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$month_year_aic)
+  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
+  table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
+  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$month_year, exclude =NULL)
+  table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$month_year, exclude =NULL)
 #infected by year
-  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year_aic)
-  table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$year_aic)
-  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$year_aic)
-  table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$year_aic)
+  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year,  exclude = NULL)
+  table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$year, exclude = NULL)
+  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$year, exclude = NULL)
+  table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$year, exclude = NULL)
+  missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
+
+    #export to csv
+      setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+      f <- "missing_date.csv"
+      write.csv(as.data.frame(missing_date), f )
+    
+  infected_pcr_denv_stfd_igg<-aic_dummy_symptoms[which(aic_dummy_symptoms$infected_denv_stfd==1),]
+  
   #survival with time.
-  aic_dummy_symptoms$month_year_aic_date<-as.numeric(as.Date(aic_dummy_symptoms$month_year_aic))-16071
-  surv_month_infected_denv_stfd <- survfit(Surv(month_year_aic_date, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
-  ggplot(aic_dummy_symptoms, aes(time = month_year_aic_date, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
-  table(aic_dummy_symptoms$month_year_aic_date)
+    aic_dummy_symptoms$month_year_date<-as.numeric(as.Date(aic_dummy_symptoms$month_year))-16071
+    surv_month_infected_denv_stfd <- survfit(Surv(month_year_date, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
+    ggplot(aic_dummy_symptoms, aes(time = month_year_date, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
+    table(aic_dummy_symptoms$month_year_date)
