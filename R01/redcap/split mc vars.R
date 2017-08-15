@@ -14,8 +14,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
 #R01_lab_results.backup<-R01_lab_results
 #save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
-load("R01_lab_results.backup.rda")
-R01_lab_results<-R01_lab_results.backup
+#load("R01_lab_results.backup.rda")
+#R01_lab_results<-R01_lab_results.backup
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
@@ -175,6 +175,16 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   aic_dummy_symptoms <- merge(pcr, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 #merge tested samples 
   aic_dummy_symptoms <- merge(tested_long, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+#merge prevalence
+  prevalence<-R01_lab_results[, grepl("person_id|redcap_event_name|prev_", names(R01_lab_results))]
+  aic_dummy_symptoms <- merge(prevalence, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+  
+  aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0] <- 1)
+  aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0] <- 1)
+  
+  table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
+  table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr)
+
 
 #double check to de-identify data
   #take name out of event.
@@ -317,19 +327,126 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
       names(interview_dates)[names(interview_dates) == 'redcap_event_name'] <- 'redcap_event'
       aic_dummy_symptoms <- merge(interview_dates, aic_dummy_symptoms,  by=c("person_id", "redcap_event"), all = TRUE)
       aic_dummy_symptoms$id_cohort<-substr(aic_dummy_symptoms$person_id, 2, 2)
+      
 #infected by month
   table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
   table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
   table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$month_year, exclude =NULL)
   table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$month_year, exclude =NULL)
 #infected by year
-  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year,  exclude = NULL)
-  table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$year, exclude = NULL)
-  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$year, exclude = NULL)
-  table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$year, exclude = NULL)
-  missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
+  aic_dummy_symptoms$id_city<-substr(aic_dummy_symptoms$person_id, 1, 1)
+  aic_dummy_symptoms_df=as.data.frame(aic_dummy_symptoms)
+#site
+  aic_dummy_symptoms_df$site<-NA
 
+  table(aic_dummy_symptoms$id_city)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="G"] <- "C")
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="U"] <- "C")
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="L"] <- "C")
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="M"] <- "C")
+
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="C"] <- "W")
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="R"] <- "W")
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, site[aic_dummy_symptoms_df$id_city=="K"] <- "W")
+##rural
+  aic_dummy_symptoms_df$rural<-NA
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="G"] <- 1)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="U"] <- 0)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="L"] <- 1)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="M"] <- 1)
+  
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="C"] <- 1)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="R"] <- 1)
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, rural[aic_dummy_symptoms_df$id_city=="K"] <- 0)
+
+#cohort
+  aic_dummy_symptoms_df <- within(aic_dummy_symptoms_df, id_cohort[aic_dummy_symptoms_df$id_cohort=="M"] <- "F")
+
+    aic_dummy_symptoms<-aic_dummy_symptoms_df
+  table(aic_dummy_symptoms_df$rural, exclude = NULL)
+#seroprevalence
+  #denv
+  table(aic_dummy_symptoms$denv_prevalence)
+  table(aic_dummy_symptoms$chikv_prevalence)
+  #extract first event
+  #infected_denv_kenya
+  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year, exclude = NULL)
+  Ranks <- with(aic_dummy_symptoms, ave(infected_denv_kenya, person_id, infected_denv_kenya, FUN = function(x) 
+      rank(x, ties.method="first")))
+    infected_denv_kenya<-  aic_dummy_symptoms[Ranks == 1, ]
+
+  #infected_chikv_kenya
+    table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$year, exclude = NULL)
+    Ranks <- with(aic_dummy_symptoms, ave(infected_chikv_kenya, person_id, infected_chikv_kenya, FUN = function(x) 
+      rank(x, ties.method="first")))
+    infected_chikv_kenya<-  aic_dummy_symptoms[Ranks == 1, ]
+    table(infected_chikv_kenya$infected_chikv_kenya,  exclude = NULL)
+
+  #infected_denv_stfd
+    table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$year, exclude = NULL)
+      Ranks <- with(aic_dummy_symptoms, ave(infected_denv_stfd, person_id, infected_denv_stfd, FUN = function(x) 
+      rank(x, ties.method="first")))
+    infected_denv_stfd<-  aic_dummy_symptoms[Ranks == 1, ]
+    table(infected_denv_stfd$infected_denv_stfd,  exclude = NULL)
+
+  library(tableone)
+  ## Create Table 1 stratified by infection 
+  vars <- c("infected_denv_stfd", "site", "id_city", "id_cohort", "year", "rural")
+  factorVars <- c("infected_denv_stfd", "site", "id_city", "id_cohort", "year", "rural")
+  infected_denv_stfd_hcc<-infected_denv_stfd[infected_denv_stfd$id_cohort =="C", ]
+  infected_denv_stfd_aic<-infected_denv_stfd[infected_denv_stfd$id_cohort =="F", ]
+  tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_denv_stfd", data = infected_denv_stfd_hcc)
+  print(tableOne, quote = TRUE)
+  tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_denv_stfd", data = infected_denv_stfd_aic)
+  print(tableOne, quote = TRUE)
+  
+  #infected_chikv_stfd
+    table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$year, exclude = NULL)
+    Ranks <- with(aic_dummy_symptoms, ave(infected_chikv_stfd, person_id, infected_chikv_stfd, FUN = function(x) 
+      rank(x, ties.method="first")))
+    infected_chikv_stfd<-  aic_dummy_symptoms[Ranks == 1, ]
+    table(infected_chikv_stfd$infected_chikv_stfd,  exclude = NULL)
+    table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$year,  exclude = NULL)
+    table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$id_cohort,  exclude = NULL)
+    table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$site,  exclude = NULL)
+#table one
+  #incidence
+    vars <- c("infected_chikv_stfd", "site", "id_city", "id_cohort")
+    factorVars <- c("infected_chikv_stfd", "site", "id_city", "id_cohort")
+    infected_chikv_stfd_hcc<-infected_chikv_stfd[infected_chikv_stfd$id_cohort =="C", ]
+    infected_chikv_stfd_aic<-infected_chikv_stfd[infected_chikv_stfd$id_cohort =="F", ]
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = infected_chikv_stfd_hcc)
+    print(tableOne, quote = TRUE)
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = infected_chikv_stfd_aic)
+    print(tableOne, quote = TRUE)
+  #prevalence chikv
+    vars <- c("prev_chikv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
+    factorVars <- c("prev_chikv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
+    infected_chikv_stfd_hcc<-aic_dummy_symptoms[aic_dummy_symptoms$id_cohort =="C", ]
+    infected_chikv_stfd_aic<-aic_dummy_symptoms[aic_dummy_symptoms$id_cohort =="F", ]
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_igg_stfd_all_pcr", data = aic_dummy_symptoms)
+    print(tableOne, quote = TRUE)
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_igg_stfd_all_pcr", data = aic_dummy_symptoms)
+    print(tableOne, quote = TRUE)
+  #prevalence denv
+    vars <- c("prev_denv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
+    factorVars <- c("prev_denv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
+    infected_denv_stfd_hcc<-aic_dummy_symptoms[aic_dummy_symptoms$id_cohort =="C", ]
+    infected_denv_stfd_aic<-aic_dummy_symptoms[aic_dummy_symptoms$id_cohort =="F", ]
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = aic_dummy_symptoms)
+    print(tableOne, quote = TRUE)
+    tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = aic_dummy_symptoms)
+    print(tableOne, quote = TRUE)
+    
+    
+        
     #export to csv
+    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+    f <- "test.csv"
+    write.csv(as.data.frame(aic_dummy_symptoms), f )
+#missing dates export
+  missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
+  #export to csv
       setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
       f <- "missing_date.csv"
       write.csv(as.data.frame(missing_date), f )
