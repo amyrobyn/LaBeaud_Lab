@@ -14,7 +14,7 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 300)$data
 #save(R01_lab_results, file="R01_lab_results.rda")
-load("R01_lab_results.rda")
+#load("R01_lab_results.rda")
 
 R01_lab_results_wide<-reshape(R01_lab_results, direction = "wide", idvar = "person_id", timevar = "redcap_event_name", sep = "_")
 #R01_lab_results_wide <-R01_lab_results_wide[!sapply(R01_lab_results_wide, function (x) all(is.na(x) | x == ""| x == "NA"))]
