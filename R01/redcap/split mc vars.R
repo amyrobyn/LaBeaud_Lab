@@ -14,9 +14,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
 #R01_lab_results.backup<-R01_lab_results
 #save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
-#load("R01_lab_results.backup.rda")
-#R01_lab_results<-R01_lab_results.backup
-
+load("R01_lab_results.backup.rda")
+R01_lab_results<-R01_lab_results.backup
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
@@ -181,7 +180,16 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0] <- 1)
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0] <- 1)
+#merge malaria results
+  malaria<-R01_lab_results[, grepl("person_id|redcap_event_name|malaria", names(R01_lab_results))]
+  aic_dummy_symptoms <- merge(malaria, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+#merge demographics
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart", names(R01_lab_results))]
+  aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+  summary(R01_lab_results$heart_rate)
+  summary(aic_dummy_symptoms$heart_rate)
   
+  table(aic_dummy_symptoms$microscopy_malaria_pf_kenya___1)
   table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
   table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr)
 
@@ -442,8 +450,11 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
         
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-    f <- "test.csv"
+    f <- "redcap_data_cleaned.csv"
     write.csv(as.data.frame(aic_dummy_symptoms), f )
+    #save as r data frame for use in other analysis. 
+    save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
+    
 #missing dates export
   missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
   #export to csv
