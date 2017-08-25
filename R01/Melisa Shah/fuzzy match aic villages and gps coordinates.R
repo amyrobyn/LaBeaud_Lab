@@ -34,9 +34,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
   aic_gps<-aic_gps[, c("village_aic", "aic_village_gps_altitude", "aic_village_gps_longitude", "aic_village_gps_lattitude")]
 #merge redcap data and aic gps data
-  aic_village_merge<-stringdist_inner_join(aic_gps,R01_lab_results_village_aic, by="village_aic")
+  aic_village_merge<-stringdist_inner_join(aic_gps,R01_lab_results_village_aic, by="village_aic", distance_col = "distance")
 #export to csv
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project DEIDENTIFIED/gps/village gps points")
 f <- "aic_village_merge.csv"
 write.csv(as.data.frame(aic_village_merge), f )
-
