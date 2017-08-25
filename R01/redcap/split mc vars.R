@@ -184,7 +184,7 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   malaria<-R01_lab_results[, grepl("person_id|redcap_event_name|malaria", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(malaria, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 #merge demographics
-  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart", names(R01_lab_results))]
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|rdt", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
   summary(aic_dummy_symptoms$heart_rate)
