@@ -28,13 +28,13 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
   colnames(aic_gps_1)[2] <- "aic_village_gps_longitude"
   colnames(aic_gps_1)[3] <- "aic_village_gps_lattitude"
   
-  aic_gps_2<-read.csv("C:/Users/amykr/Box Sync/DENV CHIKV project DEIDENTIFIED/gps/village gps points/aic village merge 1.csv")
+  aic_gps_2<-read.csv("C:/Users/amykr/Box Sync/DENV CHIKV project DEIDENTIFIED/gps/village gps points/aic village points-R01CHIKVDENVProject_DATA_2017-08-29_1106.csv")
   aic_gps_2<-aic_gps_2[which(aic_gps_2$aic_village_gps_lattitude !="" | aic_gps_2$aic_village_gps_longitude!="" ), ]
   aic_gps<-rbind.fill(aic_gps_1, aic_gps_2)
 
   aic_gps<-aic_gps[, c("village_aic", "aic_village_gps_altitude", "aic_village_gps_longitude", "aic_village_gps_lattitude")]
 #merge redcap data and aic gps data
-  aic_village_merge<-stringdist_inner_join(aic_gps,R01_lab_results_village_aic, by="village_aic", distance_col = "distance")
+  aic_village_merge<-stringdist_full_join(aic_gps, R01_lab_results_village_aic, by="village_aic", distance_col = "distance", ignore_case = TRUE)
 #export to csv
 setwd("C:/Users/amykr/Box Sync/DENV CHIKV project DEIDENTIFIED/gps/village gps points")
 f <- "aic_village_merge.csv"

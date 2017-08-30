@@ -16,6 +16,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
 R01_lab_results<-R01_lab_results.backup
+
+
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)

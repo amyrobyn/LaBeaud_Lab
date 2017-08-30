@@ -8,9 +8,14 @@ set scrollbufsize 100000
 set more 1
 
 local tables "C:\Users\amykr\Box Sync\Amy Krystosik's Files\ASTMH 2017 abstracts\priyanka- fogarty nd\tables\"
-insheet using "FogartyNDCHIKV_DATA_2017-04-08_1027.csv", comma clear
+insheet using "chikv_nd_subjects.csv", comma clear
+
 describe
-	ds, has(type byte) 
+	ds, has(type string) 
+		foreach var of varlist `r(varlist)' { 
+			replace `var' = "" if `var' =="NA"
+		}
+		ds, has(type byte) 
 		foreach var of varlist `r(varlist)' { 
 			replace `var' = . if `var' ==99
 		}
@@ -19,6 +24,7 @@ describe
 			replace `var' = . if `var' ==99
 		}
 
+destring _all, replace
 
 replace gestational_age_weeks = . if gestational_age_weeks==99
 replace gestational_age_days = . if gestational_age_days==99
@@ -53,6 +59,7 @@ tab result_mother ever_had_chikv, m
 
 tab pregnant result_mother, m
 
+capture drop preg_chikvpos 
 gen preg_chikvpos = .
 replace preg_chikvpos = 1 if result_mother==1 & pregnant ==1
 replace preg_chikvpos = 0 if pregnant == 0 | result_mother==0

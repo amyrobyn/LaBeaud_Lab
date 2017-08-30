@@ -27,7 +27,7 @@ duration <- 280
 zika_start<- ymd(as.character("2016-06-12"))
 zika_end <- ymd(as.character("2016-10-01"))
 
-f <- "REDCap_export_june19.csv"
+f <- "REDCap_export_aug30.csv"
 write.csv(as.data.frame(ds), f )
 table(redcap_event_name)
 
