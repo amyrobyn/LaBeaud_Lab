@@ -55,6 +55,7 @@ library(dplyr)
   cases <- within(cases, malaria[cases$malaria_results>0] <- 1)
   cases <- within(cases, malaria[cases$result_rdt_malaria_kenya==1] <- 1)
   cases <- within(cases, malaria[cases$rdt_result==1] <- 1)
+  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1)
   table(cases$malaria)
 
   #by pcr or igg seroc?
