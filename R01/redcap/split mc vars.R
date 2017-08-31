@@ -471,3 +471,20 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
     surv_month_infected_denv_stfd <- survfit(Surv(month_year_date, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
     ggplot(aic_dummy_symptoms, aes(time = month_year_date, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
     table(aic_dummy_symptoms$month_year_date)
+
+        aic_dummy_symptoms$age = aic_dummy_symptoms$age_calc  # your new merged column start with x
+        aic_dummy_symptoms$age[!is.na(aic_dummy_symptoms$aic_calculated_age)] = aic_dummy_symptoms$aic_calculated_age[!is.na(aic_dummy_symptoms$aic_calculated_age)]  # merge with y
+        aic_dummy_symptoms$age<-round(aic_dummy_symptoms$age)
+        
+        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age , exclude = NULL)
+        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age , exclude = NULL)
+        
+        aic_dummy_symptoms$age_group<-NA
+        aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age<=5] <- 1)
+        aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>5 & age<=10] <- 2)
+        aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>10 & age<=15] <- 3)
+        aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>15] <- 4)
+        table(aic_dummy_symptoms$age_group, exclude = NULL)
+        
+        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, exclude = NULL)
+        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group , exclude = NULL)
