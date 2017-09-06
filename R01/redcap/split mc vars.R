@@ -504,8 +504,11 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
     tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = aic_dummy_symptoms)
     print(tableOne, quote = TRUE)
     
+    (114/(114+3052))*100
+    268-114
+    6494-3052
+    (154/(154+3442))*100
     
-        
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
@@ -541,6 +544,6 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
         aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>10 & age<=15] <- 3)
         aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>15] <- 4)
         table(aic_dummy_symptoms$age_group, exclude = NULL)
-        
-        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, exclude = NULL)
-        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group , exclude = NULL)
+      table(aic_dummy_symptoms$id_cohort)  
+        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort, exclude = NULL)
+        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort , exclude = NULL)
