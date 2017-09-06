@@ -23,6 +23,8 @@ R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
 R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
 
+
+
 n_distinct(R01_lab_results$person_id)
 table(aic_dummy_symptoms$id_cohort, aic_dummy_symptoms$redcap_event_name, exclude = NULL)
 
@@ -179,12 +181,64 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
 #merge prevalence
   prevalence<-R01_lab_results[, grepl("person_id|redcap_event_name|prev_", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(prevalence, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
-  
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0] <- 1)
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0] <- 1)
 #merge malaria results
   malaria<-R01_lab_results[, grepl("person_id|redcap_event_name|malaria", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(malaria, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+#merge pedsql data
+  load("pedsql_merge.rda")
+  aic_dummy_symptoms <- merge(aic_dummy_symptoms, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
+  glimpse(R01_lab_results)  
+  
+#create acute variable
+  R01_lab_results$acute<-NA
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==1] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==2] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==3] <- 0)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==4] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==5] <- 1)
+  #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$kid_highest_level_education_aic!=""] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$occupation_aic!=""] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$oth_educ_level_aic!=""] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$mom_highest_level_education_aic!=""] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$roof_type!=""] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$pregnant!=""] <- 1)
+  #if it is visit a,call it acute
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$redcap_event=="visit_a_arm_1" & id_cohort=="F"] <- 1)
+  #if they have fever, call it acute
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$aic_symptom_fever==1] <- 1)
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$temp>=38] <- 1)
+  #otherwise, it is not acute
+  R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$acute!=1 & !is.na(R01_lab_results$gender_aic) ] <- 0)
+  
+  table(R01_lab_results$acute)
+#make pairs of acute and convalescent pedsql visits.  
+  R01_lab_results$event<-
+  R01_lab_results$event <-as.numeric(as.factor(as.character(R01_lab_results$redcap_event_name)))
+  table(R01_lab_results$event, R01_lab_results$redcap_event_name)
+  
+
+  ab_pair<-ifelse(R01_lab_results$event==1&acute==1 & )
+
+  #pedsql
+  table(R01_lab_results$redcap_event_name, R01_lab_results$acute)
+  #i need acute at visit 1 and conv at visit 2. 
+  pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
+    table(pedsql$acute, exclude = NULL)
+  pedsql_acute<-pedsql[which(pedsql$acute==1), ]
+  colnames(pedsql_acute) <- colnames(pedsql_acute, prefix = "acute_")
+  
+  pedsql_conv<-pedsql[which(pedsql$acute!=0), ]
+  colnames(pedsql_conv) <- colnames(pedsql_conv, prefix = "conv_")
+  colnames(pedsql_conv)
+  
+  ds<-cbind(pedsql_acute, pedsql_conv)
+  <- merge(pedsql_acute, pedsql_conv, by=c("person_id"))
+  pedsql_child <- pedsql[, !grepl("parent", names(pedsql) ) ]
+  pedsql_parent <- pedsql[, !grepl("child", names(pedsql) ) ]
+  
 #merge demographics
   demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|rdt", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -305,10 +359,10 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   aic_dummy_symptoms <- within(aic_dummy_symptoms, visit[visit==9] <- NA)
   table(aic_dummy_symptoms$visit)  
 
-  ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_chikv_kenya, color = factor(symptomatic))) + geom_km()
-  ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_kenya, color = factor(symptomatic))) + geom_km()
-  ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_chikv_stfd, color = factor(symptomatic))) + geom_km()
-  ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
+  #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_chikv_kenya, color = factor(symptomatic))) + geom_km()
+  #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_kenya, color = factor(symptomatic))) + geom_km()
+  #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_chikv_stfd, color = factor(symptomatic))) + geom_km()
+  #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
   
   survival_infected_chikv_kenya <- survfit(Surv(visit, infected_chikv_kenya)~symptomatic, data=aic_dummy_symptoms)
   survival_infected_denv_kenya <- survfit(Surv(visit, infected_denv_kenya)~symptomatic, data=aic_dummy_symptoms)
@@ -374,6 +428,8 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
 
     aic_dummy_symptoms<-aic_dummy_symptoms_df
   table(aic_dummy_symptoms_df$rural, exclude = NULL)
+  
+  
 #seroprevalence
   #denv
   table(aic_dummy_symptoms$denv_prevalence)
@@ -471,7 +527,7 @@ interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_
     surv_month_infected_denv_stfd <- survfit(Surv(month_year_date, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
     ggplot(aic_dummy_symptoms, aes(time = month_year_date, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
     table(aic_dummy_symptoms$month_year_date)
-
+#incidence by age age group
         aic_dummy_symptoms$age = aic_dummy_symptoms$age_calc  # your new merged column start with x
         aic_dummy_symptoms$age[!is.na(aic_dummy_symptoms$aic_calculated_age)] = aic_dummy_symptoms$aic_calculated_age[!is.na(aic_dummy_symptoms$aic_calculated_age)]  # merge with y
         aic_dummy_symptoms$age<-round(aic_dummy_symptoms$age)

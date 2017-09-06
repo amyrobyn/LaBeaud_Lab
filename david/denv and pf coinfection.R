@@ -19,7 +19,7 @@ table(R01_lab_results$site)
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
 
-#create diagram of patients
+  #create acute variable
   cases$acute<-NA
   cases <- within(cases, acute[cases$visit_type==1] <- 1)
   cases <- within(cases, acute[cases$visit_type==2] <- 1)
@@ -27,18 +27,22 @@ table(R01_lab_results$site)
   cases <- within(cases, acute[cases$visit_type==4] <- 1)
   cases <- within(cases, acute[cases$visit_type==5] <- 1)
   #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
-    cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$roof_type!=""] <- 1)
-    cases <- within(cases, acute[cases$pregnant!=""] <- 1)
-#if it is visit a,call it acute
-    cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1"] <- 1)
-#if they have fever, call it acute
-    cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
-
-#create diagram of patients
+  cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$roof_type!=""] <- 1)
+  cases <- within(cases, acute[cases$pregnant!=""] <- 1)
+  #if it is visit a,call it acute
+  cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1" & id_cohort=="F"] <- 1)
+  #if they have fever, call it acute
+  cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
+  cases <- within(cases, acute[cases$temp>=38] <- 1)
+  #otherwise, it is not acute
+  cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
+  
+  table(cases$acute)
+  #create diagram of patients
 library(dplyr)
     n_distinct(R01_lab_results$person_id, na.rm = FALSE) #9479 patients reviewed
     n_distinct(cases$person_id, na.rm = FALSE) #3734 patients included in study (aic, west)
@@ -120,3 +124,11 @@ print(tableOne,
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
 f <- "cases.csv"
 write.csv(as.data.frame(cases), f )
+#pedsql
+    pedsql <- cases[, grepl("person_id|redcap_event|pedsql|acute", names(cases) ) ]
+    pedsql_acute<-pedsql[which(pedsql$acute==1), ]
+    pedsql_conv<-pedsql[which(pedsql$acute!=1), ]
+    table(pedsql$acute, exclude = NULL)
+    pedsql_child <- pedsql[, !grepl("parent", names(pedsql) ) ]
+    pedsql_parent <- pedsql[, !grepl("child", names(pedsql) ) ]
+    
