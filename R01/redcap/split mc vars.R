@@ -12,10 +12,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-#R01_lab_results.backup<-R01_lab_results
-#save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
+#save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
-R01_lab_results<-R01_lab_results.backup
 
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
@@ -167,8 +165,8 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
     names(seroconverter_long)[names(seroconverter_long) == 'chikv_kenya_igg'] <- 'seroc_chikv_kenya_igg'
     names(seroconverter_long)[names(seroconverter_long) == 'denv_stfd_igg'] <- 'seroc_denv_stfd_igg'
     names(seroconverter_long)[names(seroconverter_long) == 'chikv_stfd_igg'] <- 'seroc_chikv_stfd_igg'
-    
-    head(seroconverter_long)
+
+head(seroconverter_long)
 
 #merge symptoms to redcap data
   aic_dummy_symptoms <- merge(seroconverter_long, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -186,11 +184,6 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
 #merge malaria results
   malaria<-R01_lab_results[, grepl("person_id|redcap_event_name|malaria", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(malaria, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
-#merge pedsql data
-  load("pedsql_merge.rda")
-  aic_dummy_symptoms <- merge(aic_dummy_symptoms, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
-  glimpse(R01_lab_results)  
-  
 #create acute variable
   R01_lab_results$acute<-NA
   R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==1] <- 1)
@@ -214,33 +207,8 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$acute!=1 & !is.na(R01_lab_results$gender_aic) ] <- 0)
   
   table(R01_lab_results$acute)
-#make pairs of acute and convalescent pedsql visits.  
-  R01_lab_results$event<-
-  R01_lab_results$event <-as.numeric(as.factor(as.character(R01_lab_results$redcap_event_name)))
-  table(R01_lab_results$event, R01_lab_results$redcap_event_name)
-  
-
-  ab_pair<-ifelse(R01_lab_results$event==1&acute==1 & )
-
-  #pedsql
-  table(R01_lab_results$redcap_event_name, R01_lab_results$acute)
-  #i need acute at visit 1 and conv at visit 2. 
-  pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
-    table(pedsql$acute, exclude = NULL)
-  pedsql_acute<-pedsql[which(pedsql$acute==1), ]
-  colnames(pedsql_acute) <- colnames(pedsql_acute, prefix = "acute_")
-  
-  pedsql_conv<-pedsql[which(pedsql$acute!=0), ]
-  colnames(pedsql_conv) <- colnames(pedsql_conv, prefix = "conv_")
-  colnames(pedsql_conv)
-  
-  ds<-cbind(pedsql_acute, pedsql_conv)
-  <- merge(pedsql_acute, pedsql_conv, by=c("person_id"))
-  pedsql_child <- pedsql[, !grepl("parent", names(pedsql) ) ]
-  pedsql_parent <- pedsql[, !grepl("child", names(pedsql) ) ]
-  
 #merge demographics
-  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|rdt", names(R01_lab_results))]
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
   summary(aic_dummy_symptoms$heart_rate)
@@ -255,6 +223,7 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
     names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event_name'] <- 'redcap_event'
   identifiers<-grep("name|gps", names(aic_dummy_symptoms), value = TRUE)
   aic_dummy_symptoms<-aic_dummy_symptoms[ , !(names(aic_dummy_symptoms) %in% identifiers)]
+  names(aic_dummy_symptoms)[names(aic_dummy_symptoms) == 'redcap_event'] <- 'redcap_event_name'
   
 #export to csv
   #setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
@@ -262,7 +231,6 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   #write.csv(as.data.frame(aic_dummy_symptoms), f )
 
 #analysis
-  attach(aic_dummy_symptoms)
   table(aic_dummy_symptoms$seroc_denv_kenya_igg, aic_dummy_symptoms$seroc_denv_stfd_igg, exclude=NULL)
   
   aic_dummy_symptoms$id_cohort<-substr(aic_dummy_symptoms$person_id, 2, 2)
@@ -288,6 +256,8 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   aic_dummy_symptoms$infected_denv_stfd[aic_dummy_symptoms$tested_denv_stfd_igg ==1 |aic_dummy_symptoms$result_pcr_denv_kenya==0|aic_dummy_symptoms$result_pcr_denv_stfd==0]<-0
   aic_dummy_symptoms$infected_denv_stfd[aic_dummy_symptoms$seroc_denv_stfd_igg==1|aic_dummy_symptoms$result_pcr_denv_kenya==1|aic_dummy_symptoms$result_pcr_denv_stfd==1]<-1
   table(aic_dummy_symptoms$infected_denv_stfd)  
+  table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$redcap_event_name)  
+  
 #stfd chikv igg seroconverters or PCR positives as infected.
   aic_dummy_symptoms$infected_chikv_stfd[aic_dummy_symptoms$tested_chikv_stfd_igg ==1 |aic_dummy_symptoms$result_pcr_chikv_kenya==0]<-0
   aic_dummy_symptoms$infected_chikv_stfd[aic_dummy_symptoms$seroc_chikv_stfd_igg==1|aic_dummy_symptoms$result_pcr_chikv_kenya==1]<-1
@@ -373,25 +343,19 @@ seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|e
   library("lubridate")
   library(tidyr)
   load("R01_lab_results.backup.rda")
-  R01_lab_results<-R01_lab_results.backup
-  interview_dates<-R01_lab_results[, grepl("person_id|redcap_event_name|date", names(R01_lab_results))]
-interview_dates<-interview_dates[,order(colnames(interview_dates))]
-interview_dates[is.na(interview_dates)] = ''
-date<-unite(interview_dates, int_date, interview_date:interview_date_aic, sep='')
-date<-date[which(date$redcap_event_name!="patient_informatio_arm_1"),]
-interview_dates<- merge(interview_dates, date,  by=c("person_id", "redcap_event_name"), all = TRUE)
+      interview_dates<-R01_lab_results[, grepl("person_id|redcap_event_name|interview_date", names(R01_lab_results))]
+      interview_dates<-interview_dates[, !grepl("u24", names(interview_dates))]
+      interview_dates[is.na(interview_dates)] = ''
+      interview_dates<-unite(interview_dates, int_date, interview_date_aic:interview_date, sep='')
+      aic_dummy_symptoms<- merge(interview_dates, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+
     #dates
-      interview_dates$int_date_2 <-ymd(interview_dates$int_date)
-      table(interview_dates$int_date_2)
-      #table(interview_dates$int_date)
-      interview_dates$month_year <- as.yearmon(interview_dates$int_date_2)
-      interview_dates$year <- year(as.Date(interview_dates$int_date_2, origin = '1900-1-1'))
+      aic_dummy_symptoms$int_date <-ymd(aic_dummy_symptoms$int_date)
+      n_distinct(aic_dummy_symptoms$int_date)
+      aic_dummy_symptoms$month_year <- as.yearmon(aic_dummy_symptoms$int_date)
+      aic_dummy_symptoms$year <- year(as.Date(aic_dummy_symptoms$int_date, origin = '1900-1-1'))
       #table(interview_dates$month_year, exclude = NULL)
-    #merge
-      names(interview_dates)[names(interview_dates) == 'redcap_event_name'] <- 'redcap_event'
-      aic_dummy_symptoms <- merge(interview_dates, aic_dummy_symptoms,  by=c("person_id", "redcap_event"), all = TRUE)
-      aic_dummy_symptoms$id_cohort<-substr(aic_dummy_symptoms$person_id, 2, 2)
-      
+
 #infected by month
   table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
   table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$month_year, exclude =NULL)
