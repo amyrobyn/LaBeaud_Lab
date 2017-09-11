@@ -143,7 +143,6 @@ names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
 
   cases<-cases_pedsql
   
-  
 #plot paired outcomes over time.
   library("ggplot2")
   ggplot(aes(x = redcap_event_name, y =pedsql_child_school_mean, color=strata), data = cases) + geom_point()+geom_line()

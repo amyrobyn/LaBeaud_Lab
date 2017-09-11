@@ -472,13 +472,16 @@ head(seroconverter_long)
     268-114
     6494-3052
     (154/(154+3442))*100
+    aic_dummy_symptoms<-aic_dummy_symptoms[,order(colnames(aic_dummy_symptoms))]
+    
+    aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
     
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
     write.csv(as.data.frame(aic_dummy_symptoms), f )
     #save as r data frame for use in other analysis. 
-    save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
+      save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
     
 #missing dates export
   missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
