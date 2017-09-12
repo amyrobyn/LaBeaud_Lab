@@ -209,6 +209,7 @@ head(seroconverter_long)
   table(R01_lab_results$acute)
 #merge demographics
   demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart", names(R01_lab_results))]
+  demographics<-demographics[, !grepl("u24", names(demographics))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
   summary(aic_dummy_symptoms$heart_rate)
@@ -216,7 +217,10 @@ head(seroconverter_long)
   table(aic_dummy_symptoms$microscopy_malaria_pf_kenya___1)
   table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
   table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr)
-
+#merge mosquito
+  mosquito<-R01_lab_results[, grepl("person_id|redcap_event_name|mosq|bednet|outdoor", names(R01_lab_results))]
+  mosquito<-mosquito[, !grepl("u24", names(mosquito))]
+  aic_dummy_symptoms <- merge(mosquito, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 
 #double check to de-identify data
   #take name out of event.
@@ -473,8 +477,11 @@ head(seroconverter_long)
     6494-3052
     (154/(154+3442))*100
     aic_dummy_symptoms<-aic_dummy_symptoms[,order(colnames(aic_dummy_symptoms))]
+    aic_dummy_symptoms$gender[is.na(aic_dummy_symptoms$gender)] = ''
+    aic_dummy_symptoms$gender_aic[is.na(aic_dummy_symptoms$gender_aic)] = ''
     
     aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
+    aic_dummy_symptoms$gender_all
     
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
