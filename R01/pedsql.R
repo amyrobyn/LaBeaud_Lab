@@ -315,3 +315,4 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       pedsql_pairs_acute<-reshape(pedsql_pairs_long_bind, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
 #save for use in othres
       save(pedsql_pairs_acute,file="pedsql_pairs_acute.rda")
+      

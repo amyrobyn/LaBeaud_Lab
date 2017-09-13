@@ -15,13 +15,12 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
 
-
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
 R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
-
-
+# number of individuals per household
+  tapply(R01_lab_results$number_people_in_house, R01_lab_results$id_city, summary)
 
 n_distinct(R01_lab_results$person_id)
 table(aic_dummy_symptoms$id_cohort, aic_dummy_symptoms$redcap_event_name, exclude = NULL)
@@ -482,6 +481,7 @@ head(seroconverter_long)
     
     aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
     aic_dummy_symptoms$gender_all
+    aic_dummy_symptoms$gender_all[aic_dummy_symptoms$gender_all==''] = NA
     
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
@@ -508,7 +508,7 @@ head(seroconverter_long)
         aic_dummy_symptoms$age = aic_dummy_symptoms$age_calc  # your new merged column start with x
         aic_dummy_symptoms$age[!is.na(aic_dummy_symptoms$aic_calculated_age)] = aic_dummy_symptoms$aic_calculated_age[!is.na(aic_dummy_symptoms$aic_calculated_age)]  # merge with y
         aic_dummy_symptoms$age<-round(aic_dummy_symptoms$age)
-        
+        table(aic_dummy_symptoms$infected_denv_stfd)
         table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age , exclude = NULL)
         table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age , exclude = NULL)
         
