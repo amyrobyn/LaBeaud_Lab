@@ -78,6 +78,8 @@ table(ds$exposed, exclude = NULL)
 table(ds$confirmed_blood_test, ds$pregnant, exclude = NULL)
 table(ds$pregnant, exclude = NULL)
 table(ds$confirmed_blood_test, exclude = NULL)
+ds[ds==99]<-NA
+table(ds$plantar_reflex)
 
 #cases<-subset(ds, pregnant=="1" | !is.na(exposed))
 
