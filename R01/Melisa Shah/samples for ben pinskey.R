@@ -34,6 +34,8 @@ melisa_samples$nodes<-as.factor(melisa_samples$nodes)
       table(melisa_samples$nodes, exclude = NULL)
       melisa_samples <- within(melisa_samples, nodes[melisa_samples$nodes==""] <- NA)
       melisa_samples <- within(melisa_samples, lymphadenopathy[!is.na(melisa_samples$nodes) & melisa_samples$nodes!="normal"] <- 1)
+      
+      melisa_samples <- within(melisa_samples, oth_nodes[melisa_samples$oth_nodes==""] <- NA)
       melisa_samples <- within(melisa_samples, lymphadenopathy[!is.na(melisa_samples$oth_nodes) & melisa_samples$oth_nodes!="normal"] <- 1)
       melisa_samples <- within(melisa_samples, lymphadenopathy[melisa_samples$aic_pe_large_lymph_nodes==1] <- 1)
 
@@ -41,7 +43,8 @@ melisa_samples$nodes<-as.factor(melisa_samples$nodes)
     #arthralgia 
       melisa_samples$arthralgia<-NA
       melisa_samples<- within(melisa_samples, arthralgia[aic_symptom_joint_pains==1] <- 1)
-      melisa_samples<- within(melisa_samples, arthralgia[!is.na(melisa_samples$joints) & melisa_samples$joints!="normal"] <- 1)
+      melisa_samples <- within(melisa_samples, joints[melisa_samples$joints==""] <- NA)
+      melisa_samples<- within(melisa_samples, arthralgia[!is.na(melisa_samples$joints) & melisa_samples$joints!="normal"& melisa_samples$joints!=""] <- 1)
       
 #create variable for melisa samples
       melisa_samples$melisa_sample<-NA
