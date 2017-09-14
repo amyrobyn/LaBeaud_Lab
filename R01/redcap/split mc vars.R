@@ -11,8 +11,8 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-#save(R01_lab_results,file="R01_lab_results.backup.rda")
+R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
@@ -51,6 +51,7 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
       gsub("none", "", x)
     })
     symptoms<-as.data.frame(symptoms)
+    
     
     #create dummy vars for all symptoms
         symptoms<-as.data.frame(symptoms)
@@ -95,6 +96,39 @@ table(symptoms$symptomatic, symptoms$visit_type, symptoms$id_cohort, exclude=NUL
 
 aic_symptoms<-subset(symptoms, id_cohort!="C")
 
+#parce the physical exam results
+      #subset physical_exam
+        physical_exam<-R01_lab_results[which(R01_lab_results$id_visit > 0), c("person_id", "redcap_event_name","head_neck_exam", "id_visit")]
+        physical_exam<-as.data.frame(physical_exam)    
+      
+      #create dummy vars for all physical_exam
+        physical_exam<-as.data.frame(physical_exam)
+        lev <- levels(factor(physical_exam$head_neck_exam))
+        lev <- unique(unlist(strsplit(lev, " ")))
+        mnames <- gsub(" ", "_", paste("aic_pe", lev, sep = "_"))
+        result <- matrix(data = "0", nrow = length(physical_exam$head_neck_exam), ncol = length(lev))
+        char.aic_pe <- as.character(physical_exam$head_neck_exam)
+        for (i in 1:length(lev)) {
+          result[grep(lev[i], char.aic_pe, fixed = TRUE), i] <- "1"
+        }
+        result <- data.frame(result, stringsAsFactors = TRUE)
+        colnames(result) <- mnames
+        physical_exam <- cbind(physical_exam,result)
+        
+        as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
+        ids <- c("person_id", "redcap_event_name", "head_neck_exam")
+        ids <- physical_exam[ids]
+        physical_exam<-physical_exam[ , !(names(physical_exam) %in% "aic_pe_")]
+        aic_pe<-grep("aic_pe_", names(physical_exam), value = TRUE)
+        physical_exam<-physical_exam[ , (names(physical_exam) %in% aic_pe)]
+        physical_exam <-as.data.frame(sapply(physical_exam, as.numeric.factor))
+    #create binary var for nodes      
+        physical_exam$node<-NA
+        table(physical_exam$aic_pe_large_lymph_nodes)
+        
+      physical_exam<-as.data.frame(cbind(ids, physical_exam))
+      table(physical_exam$head_neck_exam, physical_exam$aic_pe_large_lymph_nodes)
+      
 #tested
       tested<-R01_lab_results[, grepl("person_id|redcap_event|tested_", names(R01_lab_results))]
       tested<-tested[, !grepl("date", names(tested))]
@@ -170,6 +204,9 @@ head(seroconverter_long)
 #merge symptoms to redcap data
   aic_dummy_symptoms <- merge(seroconverter_long, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   aic_dummy_symptoms<-aic_dummy_symptoms[, grepl("person_id|redcap|visit|symptom|seroc|temp", names(aic_dummy_symptoms))]
+#merge pe parsed data
+  aic_dummy_symptoms <- merge(physical_exam, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+  table(aic_dummy_symptoms$aic_pe_large_lymph_nodes)
 #merge pcr results
   pcr<-R01_lab_results[, grepl("person_id|redcap_event_name|result_pcr", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(pcr, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -207,11 +244,12 @@ head(seroconverter_long)
   
   table(R01_lab_results$acute)
 #merge demographics
-  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart", names(R01_lab_results))]
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|nodes|cdna", names(R01_lab_results))]
   demographics<-demographics[, !grepl("u24", names(demographics))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
   summary(aic_dummy_symptoms$heart_rate)
+  table(aic_dummy_symptoms$nodes)
   
   table(aic_dummy_symptoms$microscopy_malaria_pf_kenya___1)
   table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
@@ -480,7 +518,6 @@ head(seroconverter_long)
     aic_dummy_symptoms$gender_aic[is.na(aic_dummy_symptoms$gender_aic)] = ''
     
     aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
-    aic_dummy_symptoms$gender_all
     aic_dummy_symptoms$gender_all[aic_dummy_symptoms$gender_all==''] = NA
     
     #export to csv
@@ -521,3 +558,4 @@ head(seroconverter_long)
       table(aic_dummy_symptoms$id_cohort)  
         table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort, exclude = NULL)
         table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort , exclude = NULL)
+        
