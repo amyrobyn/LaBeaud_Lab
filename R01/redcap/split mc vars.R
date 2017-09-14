@@ -11,10 +11,9 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-save(R01_lab_results,file="R01_lab_results.backup.rda")
+#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+#save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
-
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
@@ -27,7 +26,6 @@ table(aic_dummy_symptoms$id_cohort, aic_dummy_symptoms$redcap_event_name, exclud
 
 table(aic_dummy_symptoms$id_cohort, exclude = NULL)
 table(aic_dummy_symptoms$redcap_event_name, exclude = NULL)
-
 
 R01_lab_results$id_visit<-as.integer(factor(R01_lab_results$redcap_event_name))
 R01_lab_results$id_visit<-R01_lab_results$id_visit-1
@@ -244,7 +242,7 @@ head(seroconverter_long)
   
   table(R01_lab_results$acute)
 #merge demographics
-  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|nodes|cdna", names(R01_lab_results))]
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|nodes|cdna|date_symptom_onset|joints", names(R01_lab_results))]
   demographics<-demographics[, !grepl("u24", names(demographics))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
