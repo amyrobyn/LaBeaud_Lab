@@ -2,7 +2,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
 #load data that has been cleaned previously
   load("aic_dummy_symptoms.clean.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
   R01_lab_results<-aic_dummy_symptoms
-
 R01_lab_results$site <-NA
   R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="R"] <- "C")
   R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="C"] <- "west")
@@ -52,9 +51,9 @@ library("dplyr")
     table(cases$infected_denv_stfd, cases$acute, exclude=NULL) #93 denv infected (seroconverter or PCR +)
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
     cases$malaria<-NA
-    cases <- within(cases, malaria[cases$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
     cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
     cases <- within(cases, malaria[cases$rdt_result==0] <- 0)#rdt
+    cases <- within(cases, malaria[cases$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
     cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==0] <- 0)#microscopy. this goes last so that it overwrites all the other's if it exists.
 
     cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
@@ -72,13 +71,15 @@ library("dplyr")
     table(cases$pcr_denv)
     
   table(cases$seroc_denv_stfd_igg, cases$pcr_denv)#87 by pcr, 6 by igg seroconversion.
-  table(cases$infected_denv_stfd, cases$malaria)
+  table(cases$infected_denv_stfd, cases$malaria, exclude = NULL)
+  table(cases$infected_denv_stfd, exclude = NULL)
+  #some need to be malaria tested to be included in sample
+  not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
+table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
+  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
 #keep only those tested for both malaria and denv.
   cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
   cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
-    #some need to be malaria tested to be included in sample
-    not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
-    not_malaria_tested$person_id
 #flow chart of subjects.    
   length(cases$person_id)#1480 acute visits tested for both denv and malaria.
   n_distinct(cases$person_id)#1765 unique subjects.

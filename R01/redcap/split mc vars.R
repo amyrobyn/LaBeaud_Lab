@@ -202,9 +202,11 @@ head(seroconverter_long)
 #merge symptoms to redcap data
   aic_dummy_symptoms <- merge(seroconverter_long, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   aic_dummy_symptoms<-aic_dummy_symptoms[, grepl("person_id|redcap|visit|symptom|seroc|temp", names(aic_dummy_symptoms))]
+  
+  
 #merge pe parsed data
-  aic_dummy_symptoms <- merge(physical_exam, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
-  table(aic_dummy_symptoms$aic_pe_large_lymph_nodes)
+  aic_dummy_symptoms <- merge(physical_exam, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+
 #merge pcr results
   pcr<-R01_lab_results[, grepl("person_id|redcap_event_name|result_pcr", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(pcr, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -283,9 +285,11 @@ head(seroconverter_long)
 
 #use tested = 1 as the zero for infection.
 #kenya denv igg seroconverters or PCR positives as infected.
+  
   aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$tested_denv_kenya_igg ==1 | aic_dummy_symptoms$result_pcr_denv_kenya==0|aic_dummy_symptoms$result_pcr_denv_stfd==0]<-0
   aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$seroc_denv_kenya_igg==1|aic_dummy_symptoms$result_pcr_denv_kenya==1|aic_dummy_symptoms$result_pcr_denv_stfd==1]<-1
-  table(aic_dummy_symptoms$infected_denv_kenya)  
+  table(aic_dummy_symptoms$infected_denv_kenya)
+  table(aic_dummy_symptoms$result_pcr_denv_kenya)  
 #kenya chikv igg seroconverters or PCR positives as infected.
   aic_dummy_symptoms$infected_chikv_kenya[aic_dummy_symptoms$tested_chikv_kenya_igg ==1 |aic_dummy_symptoms$result_pcr_chikv_kenya==0]<-0
   aic_dummy_symptoms$infected_chikv_kenya[aic_dummy_symptoms$seroc_chikv_kenya_igg==1|aic_dummy_symptoms$result_pcr_chikv_kenya==1]<-1
@@ -517,7 +521,7 @@ head(seroconverter_long)
     
     aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
     aic_dummy_symptoms$gender_all[aic_dummy_symptoms$gender_all==''] = NA
-    
+
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
@@ -556,4 +560,3 @@ head(seroconverter_long)
       table(aic_dummy_symptoms$id_cohort)  
         table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort, exclude = NULL)
         table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort , exclude = NULL)
-        
