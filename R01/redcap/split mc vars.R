@@ -217,6 +217,7 @@ head(seroconverter_long)
   aic_dummy_symptoms <- merge(prevalence, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0] <- 1)
   aic_dummy_symptoms <- within(aic_dummy_symptoms, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0] <- 1)
+
 #merge malaria results
   malaria<-R01_lab_results[, grepl("person_id|redcap_event_name|malaria", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(malaria, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -376,11 +377,12 @@ head(seroconverter_long)
   #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_kenya, color = factor(symptomatic))) + geom_km()
   #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_chikv_stfd, color = factor(symptomatic))) + geom_km()
   #ggplot(aic_dummy_symptoms, aes(time = visit, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
-  
+#incidence  
   survival_infected_chikv_kenya <- survfit(Surv(visit, infected_chikv_kenya)~symptomatic, data=aic_dummy_symptoms)
   survival_infected_denv_kenya <- survfit(Surv(visit, infected_denv_kenya)~symptomatic, data=aic_dummy_symptoms)
   survival_infected_chikv_stfd <- survfit(Surv(visit, infected_chikv_stfd)~symptomatic, data=aic_dummy_symptoms)
   survival_infected_denv_stfd <- survfit(Surv(visit, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
+
 #incidence by year
   library("zoo")
   library("lubridate")
@@ -443,10 +445,10 @@ head(seroconverter_long)
   table(aic_dummy_symptoms$chikv_prevalence)
   #extract first event
   #infected_denv_kenya
-  table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year, exclude = NULL)
-  Ranks <- with(aic_dummy_symptoms, ave(infected_denv_kenya, person_id, infected_denv_kenya, FUN = function(x) 
-      rank(x, ties.method="first")))
-    infected_denv_kenya<-  aic_dummy_symptoms[Ranks == 1, ]
+    table(aic_dummy_symptoms$infected_denv_kenya, aic_dummy_symptoms$year, exclude = NULL)
+    Ranks <- with(aic_dummy_symptoms, ave(infected_denv_kenya, person_id, infected_denv_kenya, FUN = function(x) 
+        rank(x, ties.method="first")))
+      infected_denv_kenya<-  aic_dummy_symptoms[Ranks == 1, ]
 
   #infected_chikv_kenya
     table(aic_dummy_symptoms$infected_chikv_kenya, aic_dummy_symptoms$year, exclude = NULL)
@@ -522,13 +524,6 @@ head(seroconverter_long)
     aic_dummy_symptoms<-unite(aic_dummy_symptoms, gender_all, gender_aic:gender, sep='')
     aic_dummy_symptoms$gender_all[aic_dummy_symptoms$gender_all==''] = NA
 
-    #export to csv
-    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-    f <- "redcap_data_cleaned.csv"
-    write.csv(as.data.frame(aic_dummy_symptoms), f )
-    #save as r data frame for use in other analysis. 
-      save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
-    
 #missing dates export
   missing_date<-aic_dummy_symptoms[which((aic_dummy_symptoms$infected_denv_stfd!="" & is.na(aic_dummy_symptoms$year)) | (aic_dummy_symptoms$infected_chikv_stfd!="" & is.na(aic_dummy_symptoms$year))) , ]
   #export to csv
@@ -543,6 +538,23 @@ head(seroconverter_long)
     surv_month_infected_denv_stfd <- survfit(Surv(month_year_date, infected_denv_stfd)~symptomatic, data=aic_dummy_symptoms)
     ggplot(aic_dummy_symptoms, aes(time = month_year_date, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
     table(aic_dummy_symptoms$month_year_date)
+#denominator is only those tested for chikv by pcr or igg at stfd
+    aic_dummy_symptoms$tested_chikv<-NA
+    aic_dummy_symptoms<- within(aic_dummy_symptoms, tested_chikv[infected_chikv_stfd==1 |tested_chikv_stfd_igg==1 | !is.na(result_pcr_chikv_kenya)| !is.na(result_pcr_chikv_stfd)] <- 1)
+    table(aic_dummy_symptoms$infected_chikv_stfd, exclude = NULL)
+    table(aic_dummy_symptoms$tested_chikv, exclude = NULL)
+    table(aic_dummy_symptoms$tested_chikv, aic_dummy_symptoms$infected_chikv_stfd, exclude = NULL)
+    (19/3938)*100 #incidence chikv
+    
+    #denominator is only those tested for denv by pcr or igg at stfd
+    aic_dummy_symptoms$tested_denv<-NA
+    aic_dummy_symptoms<- within(aic_dummy_symptoms, tested_denv[infected_denv_stfd==1 |tested_denv_stfd_igg==1 | !is.na(result_pcr_denv_kenya) | !is.na(result_pcr_denv_stfd)] <- 1)
+    
+    table(aic_dummy_symptoms$tested_denv, exclude = NULL)
+    table(aic_dummy_symptoms$infected_denv_stfd, exclude = NULL)
+    (137/3676)*100 #incidence denv
+    
+    table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$tested_denv, exclude = NULL)
 #incidence by age age group
         aic_dummy_symptoms$age = aic_dummy_symptoms$age_calc  # your new merged column start with x
         aic_dummy_symptoms$age[!is.na(aic_dummy_symptoms$aic_calculated_age)] = aic_dummy_symptoms$aic_calculated_age[!is.na(aic_dummy_symptoms$aic_calculated_age)]  # merge with y
@@ -558,5 +570,49 @@ head(seroconverter_long)
         aic_dummy_symptoms <- within(aic_dummy_symptoms, age_group[age>15] <- 4)
         table(aic_dummy_symptoms$age_group, exclude = NULL)
       table(aic_dummy_symptoms$id_cohort)  
-        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort, exclude = NULL)
-        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group, aic_dummy_symptoms$id_cohort , exclude = NULL)
+      #get incidence by age group numberator and denominator 
+        table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$age_group, exclude = NULL)
+        table(aic_dummy_symptoms$tested_denv, aic_dummy_symptoms$age_group, exclude = NULL)
+        table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$age_group, exclude = NULL)
+        table(aic_dummy_symptoms$tested_chikv, aic_dummy_symptoms$age_group, exclude = NULL)
+        
+        #get incidence by cohort numberator and denominator 
+          table(aic_dummy_symptoms$infected_denv_stfd, aic_dummy_symptoms$id_cohort, exclude = NULL)
+          table(aic_dummy_symptoms$tested_denv, aic_dummy_symptoms$id_cohort, exclude = NULL)
+          137/(3676)*100#incidence denv
+          135/(2991)*100#aic incidence denv
+          (2/685)*100 #hcc incidence denv
+          table(aic_dummy_symptoms$infected_chikv_stfd, aic_dummy_symptoms$id_cohort, exclude = NULL)
+          table(aic_dummy_symptoms$tested_chikv, aic_dummy_symptoms$id_cohort, exclude = NULL)
+          19/(3938)*100#incidence chikv
+          14/(3252)*100#aic incidence chikv
+          (5/686)*100#hcc incidence chikv
+          table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
+        #some need age  to be included in sample
+          no_age<-aic_dummy_symptoms[which(is.na(aic_dummy_symptoms$age_group) & aic_dummy_symptoms$infected_denv_stfd==1), ]
+          table(is.na(aic_dummy_symptoms$age_group) & aic_dummy_symptoms$infected_denv_stfd==1)
+          table(no_age$person_id, no_age$redcap_event_name)
+#prevalence
+          table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr)
+          (195/6992)*100#prevalence of chikv.
+          table(aic_dummy_symptoms$prev_chikv_igg_stfd_all_pcr, aic_dummy_symptoms$site)
+          (145/(145+2958))*100#prevalence of chikv west
+          (50/(50+3839))*100#prevalence of chikv coast
+          table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr)
+          (268/6748)*100#prevalence of denv.
+          table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr, aic_dummy_symptoms$site)
+          (154/(154+3442))*100#prevalence of denv coast
+          (114/(114+3038))*100#prevalence of denv west
+          
+          table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr, aic_dummy_symptoms$rural)
+          (103/(103+3184))*100#prevalence of denv urban
+          (165/(165+3296))*100#prevalence of denv rural
+          
+
+#export to csv
+        setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+        f <- "redcap_data_cleaned.csv"
+        write.csv(as.data.frame(aic_dummy_symptoms), f )
+        #save as r data frame for use in other analysis. 
+        save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
+        
