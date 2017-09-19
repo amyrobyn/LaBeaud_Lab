@@ -78,8 +78,13 @@ library("dplyr")
     table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
     table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
 #keep only those tested for both malaria and denv.
+    #just tested for denv not malaria
+    #just tested for malaria not denv
+    
   cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
-  cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
+  table(cases$tested_denv_stfd_igg, cases$malaria, cases$acute, exclude = NULL)
+
+    cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
 #flow chart of subjects.    
   length(cases$person_id)#1480 acute visits tested for both denv and malaria.
   n_distinct(cases$person_id)#1765 unique subjects.
@@ -131,8 +136,8 @@ library("dplyr")
 cases$strata<-NA
 cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
 cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
+cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(result_microscopy_malaria_kenya) & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 &  !is.na(result_microscopy_malaria_kenya) & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
 table(cases$strata)
 save(cases,file="cases.rda")
 load("cases.rda")
