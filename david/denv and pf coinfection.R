@@ -74,9 +74,9 @@ library("dplyr")
   table(cases$infected_denv_stfd, cases$malaria, exclude = NULL)
   table(cases$infected_denv_stfd, exclude = NULL)
   #some need to be malaria tested to be included in sample
-  not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
-table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
-  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
+    not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
+    table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
+    table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
 #keep only those tested for both malaria and denv.
   cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
   cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
@@ -138,13 +138,18 @@ save(cases,file="cases.rda")
 load("cases.rda")
 names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
 
-#merge with pedsql data
+#merge with paired pedsql data (acute and convalescent)
 library("plyr")
   load("pedsql_pairs_acute.rda")
   names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute'] <- 'redcap_event_name'
   cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" )
   table(cases_pedsql$pedsql_child_social_mean_acute, cases_pedsql$strata)
-
+  cases<-cases_pedsql
+#merge with unpaired pedsql data
+  load("pedsql.rda")
+  names(pedsql)[names(pedsql) == 'redcap_event'] <- 'redcap_event_name'
+  cases_pedsql <- join(cases, pedsql,  by=c("person_id", "redcap_event_name"), match = "all" )
+  table(cases_pedsql$pedsql_child_social_mean, cases_pedsql$strata)
   cases<-cases_pedsql
 #plot paired outcomes over time.
   library("ggplot2")
@@ -156,14 +161,12 @@ library("plyr")
   
   library("tableone")
   cases <- within(cases, outcome_hospitalized[cases$outcome_hospitalized==8] <-NA )
-
   #demographics
     dem_vars <- c("id_city", "aic_calculated_age", "gender_all") 
     dem_factorVars <- c("id_city")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
     #summary(dem_tableOne)
     print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal="aic_calculated_age", quote = TRUE, includeNA=TRUE)
-  
 
   #mosquito
     cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
@@ -177,18 +180,39 @@ library("plyr")
 
     table(cases$mosquito_bites_aic)
     mosq_tableOne <- CreateTableOne(vars = mosq_vars, strata = "strata", factorVars=mosq_factorVars, data = cases)
-    #summary(mosq_tableOne)
+  #summary(mosq_tableOne)
     print(mosq_tableOne, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = TRUE, includeNA=TRUE)
 
-  #pedsql
+  #pedsql paired
     pedsql_vars <- c("pedsql_child_school_mean_acute", "pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
   
     pedsql_tableOne <- CreateTableOne(vars = pedsql_vars, strata = "strata", data = cases)
-    #summary(pedsql_tableOne)
+    #print table one (assume non normal distribution)
     print(pedsql_tableOne, 
           exact = c(),
           nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
           , quote = TRUE, includeNA=TRUE)
+    #print table one (assume normal distribution)
+    print(pedsql_tableOne, 
+          exact = c(),
+          #nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv"),
+          quote = TRUE, includeNA=TRUE)
+#pedsql unpaired
+    pedsql_vars <- c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean")
+    
+    pedsql_tableOne <- CreateTableOne(vars = pedsql_vars, strata = "strata", data = cases)
+    #print table one (assume non normal distribution)
+    print(pedsql_tableOne, 
+          exact = c(),
+          nonnormal=c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean")
+          , quote = TRUE, includeNA=TRUE)
+    #print table one (assume normal distribution)
+    
+    print(pedsql_tableOne, 
+          exact = c(),
+          #nonnormal=c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean"), 
+          quote = TRUE, includeNA=TRUE)
+    
     
   #symptoms
     symptom_vars <- c("outcome_hospitalized", "aic_symptom_abdominal_pain", "aic_symptom_bone_pains", "aic_symptom_chiils", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite" , "aic_symptom_diarrhea", "aic_symptom_sick_feeling", "aic_symptom_general_body_ache" , "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_other", "aic_symptom_shortness_of_breath" , "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_bloody_urine", "aic_symptom_bloody_stool", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_fits", "aic_symptom_muscle_pains", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes" , "aic_symptom_itchiness", "aic_symptom_bruises", "aic_symptom_impaired_mental_status", "aic_symptom_bloody_nose", "aic_symptom_bleeding_gums", "aic_symptom_eyes_sensitive_to_light", "aic_symptom_bloody_vomit", "aic_symptom_seizures", "aic_symptom_CHIILS", "aic_symptom_RUNNY_NOSE", "aic_symptom_LOSS_OF_APPETITE", "aic_symptom_DIARRHEA", "aic_symptom_COUGH", "aic_symptom_VOMITING", "aic_symptom_FEVER", "aic_symptom_OTHER", "aic_symptom_BONE_PAINS", "aic_symptom_HEADACHE", "aic_symptom_RED_EYES", "aic_symptom_BLOODY_URINE", "aic_symptom_GENERAL_BODY_ACHE" , "aic_symptom_DIZZINESS", "aic_symptom_JOINT_PAINS", "aic_symptom_SORE_THROAT", "aic_symptom_USEA",  "aic_symptom_99", "aic_symptom_RASH",  "aic_symptom_SICK_FEELING", "aic_symptom_ITCHINESS", "aic_symptom_SHORTNESS_OF_BREATH" , "aic_symptom_EARACHE", "aic_symptom_BLOODY_STOOL", "aic_symptom_PAIN_BEHIND_EYES", "aic_symptom_SEIZURES", "aic_symptom_IMPAIRED_MENTAL_STATUS" , "aic_symptom_MUSCLE_PAINS", "aic_symptom_diarrh",  "temp", "heart_rate")
