@@ -15,6 +15,7 @@ table(R01_lab_results$site)
 
 # subset of the variables
   cases<-R01_lab_results[which(R01_lab_results$id_cohort=="F" | R01_lab_results$id_cohort=="M" ), ]
+  cases <- as.data.frame(cases)
   cases<-cases[which(cases$site=="west"), ]
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
@@ -40,7 +41,6 @@ table(R01_lab_results$site)
   cases <- within(cases, acute[cases$temp>=38] <- 1)
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
-  
   table(cases$acute)
   #create diagram of patients
 library("dplyr")
@@ -61,7 +61,6 @@ library("dplyr")
     cases <- within(cases, malaria[cases$result_rdt_malaria_kenya==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
     cases <- within(cases, malaria[cases$rdt_result==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
     table(cases$malaria)
-
   #by pcr or igg seroc?
     cases$pcr_denv<-NA
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==0] <- 0)
@@ -124,21 +123,25 @@ library("dplyr")
     
       table(aic_dummy_symptoms$tested_chikv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
       table(aic_dummy_symptoms$tested_denv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
-  
-#create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
-      cases$strata_all<-NA
-      cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==1] <- "malaria_pos_&_denv_pos")
-      cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==0] <- "malaria_pos_&_denv_neg")
-      cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==0] <- "malaria_neg_&_denv neg")
-      cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==1] <- "malaria_neg_&_denv_pos")
-      table(cases$strata_all)
-#create strata: 1 = pf+ & denv + | 2 = pf + denv - | 3= pf- & denv - | 4= pf - & denv + 
-cases$strata<-NA
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(result_microscopy_malaria_kenya) & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
-cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 &  !is.na(result_microscopy_malaria_kenya) & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
-table(cases$strata)
+#repate analyasis for both pf and malaria
+      
+    #create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
+          cases$strata_all<-NA
+          cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==1] <- "malaria_pos_&_denv_pos")
+          cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==0] <- "malaria_pos_&_denv_neg")
+          cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==0] <- "malaria_neg_&_denv neg")
+          cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==1] <- "malaria_neg_&_denv_pos")
+          table(cases$strata_all)
+          
+    #create strata: 1 = pf+ & denv + | 2 = pf + denv - | 3= pf- & denv - | 4= pf - & denv + 
+          #d+, pf+, m+ / d+ pf- m - / d+pf-, m+ / d-p-m+ / d-pf-m- / d-pf+m+
+    cases$strata<-NA
+      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
+      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
+      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 &  !is.na(result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
+      table(cases$strata)  
+
 save(cases,file="cases.rda")
 load("cases.rda")
 names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
@@ -163,15 +166,76 @@ library("plyr")
 
 ## Create Table 1 stratified by denv/pf status.
   ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
-  
   library("tableone")
-  cases <- within(cases, outcome_hospitalized[cases$outcome_hospitalized==8] <-NA )
+  cases <- as.matrix.data.frame(cases)
+  cases <- data.frame(cases)
+  
+  cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-NA )
   #demographics
-    dem_vars <- c("id_city", "aic_calculated_age", "gender_all") 
+  
+  #ses- create an index
+  cases <- within(cases, kid_highest_level_education_aic[cases$kid_highest_level_education_aic==9|cases$kid_highest_level_education_aic==5] <- NA)
+  cases <- within(cases, mom_highest_level_education_aic[cases$mom_highest_level_education_aic==9|cases$mom_highest_level_education_aic==5] <- NA)
+  cases <- within(cases, roof_type[cases$roof_type==9|cases$roof_type==4] <- NA)
+  cases <- within(cases, latrine_type[cases$latrine_type==9|cases$latrine_type==6] <- NA)
+  cases <- within(cases, floor_type[cases$floor_type==9|cases$floor_type==5] <- NA)
+
+  cases <- within(cases, drinking_water_source[cases$drinking_water_source==9|cases$drinking_water_source==6] <- NA)
+  cases$drinking_water_source<-  as.numeric(as.character(cases$drinking_water_source))
+  class(cases$drinking_water_source)
+  
+  class(cases$light_source)
+  table(cases$light_source)
+  cases$light_source<-  as.numeric(as.character(cases$light_source))
+  
+  cases <- within(cases, light_source[cases$light_source==9|cases$light_source==7] <- NA)
+  cases <- within(cases, light_source[cases$light_source==1] <- 30)
+  cases <- within(cases, light_source[cases$light_source==3] <- 20)
+  cases <- within(cases, light_source[cases$light_source==2|cases$light_source==4|cases$light_source==5|cases$light_source==6] <- 10)
+  cases$light_source <- cases$light_source/10 
+  table(cases$light_source)
+  class(cases$light_source)
+  
+  
+  cases$telephone<-  as.numeric(as.character(cases$telephone))
+  cases <- within(cases, telephone[cases$telephone==8] <- NA)
+  class(cases$telephone)
+  
+  
+  cases$radio<-  as.numeric(as.character(cases$radio))
+  cases <- within(cases, radio[cases$radio==8] <- NA)
+  class(cases$radio)
+  
+
+  cases$television<-  as.numeric(as.character(cases$television))
+  cases <- within(cases, television[cases$television==8] <- NA)
+  class(cases$television)
+  
+  
+  cases$bicycle<-  as.numeric(as.character(cases$bicycle))
+  cases <- within(cases, bicycle[cases$bicycle==8] <- NA)
+  class(cases$bicycle)
+  
+  cases$motor_vehicle<-  as.numeric(as.character(cases$motor_vehicle))
+  cases <- within(cases, motor_vehicle[cases$motor_vehicle==8] <- NA)
+  class(cases$motor_vehicle)
+  
+  cases$domestic_worker<-  as.numeric(as.character(cases$domestic_worker))
+  cases <- within(cases, domestic_worker[cases$domestic_worker==8] <- NA)
+  class(cases$domestic_worker)
+  table(cases$domestic_worker)
+  
+  ses<-(cases[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(cases))])
+  cases$ses_sum<-rowSums(cases[, c("telephone","radio","television","bicycle","motor_vehicle", "domestic_worker")], na.rm = TRUE)
+  table(cases$ses_sum)
+
+    class(cases$aic_calculated_age)
+  cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
     dem_factorVars <- c("id_city")
+    dem_vars=c("id_city", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
     #summary(dem_tableOne)
-    print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal="aic_calculated_age", quote = TRUE, includeNA=TRUE)
+    print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age","ses_sum"), quote = TRUE, includeNA=TRUE)
 
   #mosquito
     cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
@@ -231,7 +295,7 @@ library("plyr")
           ),
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)
-    
+
 #export to csv
   setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
   f <- "cases.csv"

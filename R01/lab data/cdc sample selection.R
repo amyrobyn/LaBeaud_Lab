@@ -52,7 +52,7 @@ R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
         aic_seroconverters<-aic_seroconverters[which(aic_seroconverters$this_year ==TRUE)  , ]
         table(aic_seroconverters$this_year, aic_seroconverters$interview_date_aic)
         table(aic_seroconverters$person_id, aic_seroconverters$redcap_event_name)
-        aic_seroconverters_short<-aic_seroconverters[, grepl("person_id|redcap_event_name|date|result_igg|seroc|igg_antigen|igg_value|id_city|id_cohort", names(aic_seroconverters))]
+        aic_seroconverters_short<-aic_seroconverters[, grepl("person_id|redcap_event_name|date|result_igg|seroc|antigen_used_igg|igg_value|id_city|id_cohort", names(aic_seroconverters))]
         aic_seroconverters_short<-aic_seroconverters_short[, !grepl("malaria|micro|peds|u24|other|birth", names(aic_seroconverters_short))]
         aic_seroconverters_short<-aic_seroconverters_short[,order(colnames(aic_seroconverters_short))]
         aic_seroconverters_short<-aic_seroconverters_short[order(-(grepl('id', names(aic_seroconverters_short)))+1L)]
@@ -64,7 +64,7 @@ R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
       write.csv(as.data.frame(aic_seroconverters_short), f , na = "")
 #All HCC positives for prevalence confirmation
     hcc_pos<- R01_lab_results[which(R01_lab_results$id_cohort=="C" )  , ]
-    hcc_pos<-hcc_pos[, grepl("person_id|redcap_event_name|date|result_igg|result_pcr|igg_antigen|igg_value|id_city|id_cohort", names(hcc_pos))]
+    hcc_pos<-hcc_pos[, grepl("person_id|redcap_event_name|date|result_igg|result_pcr|antigen_used_igg|igg_value|id_city|id_cohort", names(hcc_pos))]
     hcc_pos<-hcc_pos[, !grepl("malaria|micro|peds|u24|ufi|aic|other|birth|serum|cdna|urine|submission", names(hcc_pos))]
     hcc_pos<-hcc_pos[,order(colnames(hcc_pos))]
     hcc_pos<-hcc_pos[order(-(grepl('id|redcap|result', names(hcc_pos)))+1L)]
@@ -94,13 +94,46 @@ R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
     #total n =     
       561 + 807    
       
-both<-merge(hcc_discordant_chikv, hcc_discordant_denv, by=c("person_id", "redcap_event_name", "id_city"), all = TRUE, suffixes = c(".chikv", ".denv"))
+both<-merge(hcc_discordant_chikv, hcc_discordant_denv, by=c("person_id", "redcap_event_name", "id_city", "interview_date"), all = TRUE, suffixes = c(".chikv", ".denv"))
 table(both$discordant_chikv, both$discordant_denv, exclude = NULL)
-both<-both[,order(colnames(both))]
-both<-both[order(-(grepl('antigen', names(both)))+1L)]
-both<-both[order(-(grepl('id_city|result_igg', names(both)))+1L)]
-both<-both[order(-(grepl('discordant', names(both)))+1L)]
-both<-both[order(-(grepl('person_id|redcap_event_name', names(both)))+1L)]
+table(both$discordant_chikv, both$discordant_denv, exclude = NULL)
+table(both$date_tested_igg_chikv_kenya)
+table(both$date_tested_igg_denv_kenya)
+both_discordant_hcc<-both[which(both$discordant_chikv==1 & both$discordant_denv==1),]
+
+both_discordant_hcc$interview_date <-ymd(both_discordant_hcc$interview_date)
+#date tested
+    library(zoo)
+    
+    both_discordant_hcc <- within(both_discordant_hcc, date_tested_igg_chikv_kenya[both_discordant_hcc$date_tested_igg_chikv_kenya==""] <- NA)
+    both_discordant_hcc <- within(both_discordant_hcc, date_tested_igg_denv_kenya[both_discordant_hcc$date_tested_igg_denv_kenya==""] <- NA)
+    
+    both_discordant_hcc$interview_year_month <-as.yearmon(both_discordant_hcc$interview_date)
+    both_discordant_hcc$month_year_tested_igg_chikv_stfd <-as.yearmon(both_discordant_hcc$date_tested_igg_chikv_stfd)
+    both_discordant_hcc$month_year_tested_igg_chikv_kenya <-as.yearmon(both_discordant_hcc$date_tested_igg_chikv_kenya)
+    
+    both_discordant_hcc$month_year_tested_igg_denv_stfd <-as.yearmon(both_discordant_hcc$date_tested_igg_denv_stfd)
+    both_discordant_hcc$month_year_tested_igg_denv_kenya <-as.yearmon(both_discordant_hcc$date_tested_igg_denv_kenya)
+    
+    table(both_discordant_hcc$interview_year_month, exclude = NULL)
+    table(both_discordant_hcc$month_year_tested_igg_chikv_kenya, exclude = NULL)
+    table(both_discordant_hcc$month_year_tested_igg_chikv_stfd, exclude = NULL)
+    
+    table(both_discordant_hcc$month_year_tested_igg_denv_kenya, exclude = NULL)
+    table(both_discordant_hcc$month_year_tested_igg_denv_stfd, exclude = NULL)
+    
+#antigen used
+    table(both_discordant_hcc$antigen_used_igg_chikv_kenya)
+    table(both_discordant_hcc$antigen_used_igg_denv_kenya)
+    table(both_discordant_hcc$antigen_used_igg_chikv_stfd)
+    table(both_discordant_hcc$antigen_used_igg_denv_stfd)
+    
+#order dataset
+    both_discordant_hcc<-both_discordant_hcc[,order(colnames(both_discordant_hcc))]
+    both_discordant_hcc<-both_discordant_hcc[order(-(grepl('antigen', names(both_discordant_hcc)))+1L)]
+    both_discordant_hcc<-both_discordant_hcc[order(-(grepl('id_city|result_igg', names(both_discordant_hcc)))+1L)]
+    both_discordant_hcc<-both_discordant_hcc[order(-(grepl('discordant', names(both_discordant_hcc)))+1L)]
+    both_discordant_hcc<-both_discordant_hcc[order(-(grepl('person_id|redcap_event_name', names(both_discordant_hcc)))+1L)]
 
   #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
@@ -114,7 +147,4 @@ both<-both[order(-(grepl('person_id|redcap_event_name', names(both)))+1L)]
     
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "cdc_samples_hcc_both_chikv_denv.csv"
-    write.csv(as.data.frame(both), f , na = "")
-    
-    
-    
+    write.csv(as.data.frame(both_discordant_hcc), f , na = "")

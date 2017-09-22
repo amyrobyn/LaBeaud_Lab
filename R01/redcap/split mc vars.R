@@ -53,6 +53,30 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
     
     #create dummy vars for all symptoms
         symptoms<-as.data.frame(symptoms)
+        symptoms$all_symptoms<-tolower(symptoms$all_symptoms)
+        
+        symptoms$all_symptoms <- gsub('abdomil_pain', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdominal_pa', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdomin', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdomina', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdominal_pai', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdominal_p', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abdo', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abd', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abpin', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abpi', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abpal_p', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abpa', 'abp', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('abp', 'abdominal_pain', symptoms$all_symptoms)
+        
+        symptoms$all_symptoms <- gsub('chiils', 'chills', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('diarrh', 'diarrhea', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('diarrheaea', 'diarrhea', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('usea', 'nausea', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('nanausea', 'nausea', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('ras', 'rash', symptoms$all_symptoms)
+
+        
         #symptoms <-symptoms[!(is.na(symptoms$all_symptoms) | symptoms$all_symptoms==" "), ]
         lev <- levels(factor(symptoms$all_symptoms))
         lev <- unique(unlist(strsplit(lev, " ")))
@@ -74,9 +98,27 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
         symptoms<-symptoms[ , (names(symptoms) %in% aic_symptom_)]
         symptoms <-as.data.frame(sapply(symptoms, as.numeric.factor))
         
-        symptom_sum<-rowSums(symptoms[, grep("\\baic_symptom", names(symptoms))])
-        symptoms<-symptoms[ , grepl( "aic_symptom" , names(symptoms) ) ]
-        symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))]))
+      #collapse the symptoms that are the same.
+        symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1] <- 1)
+        symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_seizures==1] <- 1)
+        
+        symptoms$bleeding<-NA
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_nose==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_urine==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_stool==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_vomit==1] <- 1)
+        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bruises==1] <- 1)
+        
+        symptoms$body_ache<-NA
+        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_general_body_ache==1] <- 1)
+        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==1] <- 1)
+        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
+        table(symptoms$body_ache)
+
+        symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache" , names(symptoms) ) ]
+        symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
         table(symptoms$symptom_sum, exclude=NULL)
         symptoms$symptomatic<-NA
         symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum>0] <- 1)
@@ -86,7 +128,6 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
   table(symptoms$symptomatic, exclude=NULL)
 #export to box.
 symptoms<-as.data.frame(cbind(ids, symptoms))
-
 
 table(symptoms$symptomatic, symptoms$redcap_event_name, symptoms$id_cohort, exclude=NULL)
 table(symptoms$symptomatic, symptoms$visit_type, symptoms$id_cohort, exclude=NULL)
@@ -120,6 +161,7 @@ aic_symptoms<-subset(symptoms, id_cohort!="C")
         aic_pe<-grep("aic_pe_", names(physical_exam), value = TRUE)
         physical_exam<-physical_exam[ , (names(physical_exam) %in% aic_pe)]
         physical_exam <-as.data.frame(sapply(physical_exam, as.numeric.factor))
+
     #create binary var for nodes      
         physical_exam$node<-NA
         table(physical_exam$aic_pe_large_lymph_nodes)
@@ -164,7 +206,7 @@ aic_symptoms<-subset(symptoms, id_cohort!="C")
     
     head(tested_long)
     
-    
+
 #seroconversion
 seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|ef_|fg_|gh_", names(R01_lab_results))]
     seroconverter<-seroconverter[which(seroconverter$redcap_event_name=="patient_informatio_arm_1"),]
@@ -201,12 +243,23 @@ head(seroconverter_long)
 
 #merge symptoms to redcap data
   aic_dummy_symptoms <- merge(seroconverter_long, aic_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
-  aic_dummy_symptoms<-aic_dummy_symptoms[, grepl("person_id|redcap|visit|symptom|seroc|temp", names(aic_dummy_symptoms))]
+  aic_dummy_symptoms<-aic_dummy_symptoms[, grepl("person_id|redcap|visit|symptom|seroc|temp|body_ache|bleeding", names(aic_dummy_symptoms))]
   
-  
-#merge pe parsed data
-  aic_dummy_symptoms <- merge(physical_exam, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
+  #merge pe parsed data
+    aic_dummy_symptoms <- merge(physical_exam, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 
+  #warning signs (dengue)
+    aic_dummy_symptoms$dengue_warning_signs<-rowSums(aic_dummy_symptoms[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain", names(aic_dummy_symptoms))], na.rm = TRUE)
+    table(aic_dummy_symptoms$dengue_warning_signs)
+    #add enlarged liver, and hepatomegaly to dengue warning signs. i didn't find this.
+    
+  #probable dengue
+    aic_dummy_symptoms$probable_dengue<-rowSums(aic_dummy_symptoms[, grep("/body_ache|aic_symptom_vomiting|aic_symptom_nausea", names(aic_dummy_symptoms))], na.rm = TRUE)
+    table(aic_dummy_symptoms$probable_dengue)
+
+  #severe malaria
+    aic_dummy_symptoms$severe_malaria<-aic_dummy_symptoms$aic_symptom_shortness_of_breath
+    table(aic_dummy_symptoms$severe_malaria)
 #merge pcr results
   pcr<-R01_lab_results[, grepl("person_id|redcap_event_name|result_pcr", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(pcr, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -245,7 +298,7 @@ head(seroconverter_long)
   
   table(R01_lab_results$acute)
 #merge demographics
-  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|nodes|cdna|date_symptom_onset|joints", names(R01_lab_results))]
+  demographics<-R01_lab_results[, grepl("person_id|redcap_event_name|gender|age|temp|hospital|heart|nodes|cdna|date_symptom_onset|joints|educ|roof|latrine|floor|source|window|telephone|radio|television|bicycle|motor|domestic", names(R01_lab_results))]
   demographics<-demographics[, !grepl("u24", names(demographics))]
   aic_dummy_symptoms <- merge(demographics, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
   summary(R01_lab_results$heart_rate)
@@ -615,4 +668,3 @@ head(seroconverter_long)
         write.csv(as.data.frame(aic_dummy_symptoms), f )
         #save as r data frame for use in other analysis. 
         save(aic_dummy_symptoms,file="aic_dummy_symptoms.clean.rda")
-        
