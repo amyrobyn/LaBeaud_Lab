@@ -41,12 +41,12 @@ table(R01_lab_results$site)
   cases <- within(cases, acute[cases$temp>=38] <- 1)
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
-  table(cases$acute)
+  table(cases$acute)#2694 acute febrile visits from aic west
   #create diagram of patients
 library("dplyr")
     n_distinct(R01_lab_results$person_id, na.rm = FALSE) #9479 patients reviewed
     n_distinct(cases$person_id, na.rm = FALSE) #3734 patients included in study (aic, west)
-    table(cases$acute, exclude = NULL)#3972 acute visits
+    table(cases$acute, exclude = NULL)#2694 acute febrile visits
 #table of denv at acute visit. 
     table(cases$infected_denv_stfd, cases$acute, exclude=NULL) #93 denv infected (seroconverter or PCR +)
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
@@ -76,20 +76,27 @@ library("dplyr")
     not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
     table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
     table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
-#keep only those tested for both malaria and denv.
-    #just tested for denv not malaria
-    #just tested for malaria not denv
-    
-  cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
-  table(cases$tested_denv_stfd_igg, cases$malaria, cases$acute, exclude = NULL)
+#keep only acute
+  cases<-cases[which(cases$acute==1), ]
 
+#keep only those tested for both malaria and denv.
+  #define denv testing as pcr or paired igg.
+    cases$tested_malaria<-NA
+    cases <- within(cases, tested_malaria[!is.na(cases$malaria)] <- 1)
+    cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
+    cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
+#count just tested for denv not malaria  #just tested for malaria not denv
+    table(cases$tested_malaria, exclude = NULL)#malaria tested = 1946. NA = 748
+    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1791. NA = 903
+    table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 166 not malaria tested but denv tested. 321 malaria tested but not denv tested. 582 tested for neither. 1625 tested for both
+  #keep only those tested for both
     cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
 #flow chart of subjects.    
-  length(cases$person_id)#1480 acute visits tested for both denv and malaria.
-  n_distinct(cases$person_id)#1765 unique subjects.
+  length(cases$person_id)#1625 acute visits tested for both denv and malaria.
+  n_distinct(cases$person_id)#1573 unique subjects.
 #denv and any malaria  
 #Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
-  table(cases$malaria, cases$infected_denv_stfd)#689 negative for both; 40 positive for both; 83 positive for denv; 748 malaria positive.
+  table(cases$malaria, cases$infected_denv_stfd)#662 negative for both; 46 positive for both; 86 positive for denv; 923 malaria positive.
   cases$malaria_species<-NA
   
   cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
@@ -97,7 +104,14 @@ library("dplyr")
   table(cases_malariawide$species, cases_malariawide$microscopy_malaria)
   
 #denv and pf malaria
-  table(cases$microscopy_malaria_pf_kenya___1, cases$infected_denv_stfd)
+  table(cases$result_microscopy_malaria_kenya, cases$tested_denv_stfd_igg) #1213
+
+microscopy_tested<-cases[which(!is.na(cases$result_microscopy_malaria_kenya) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
+
+  table(microscopy_tested$microscopy_malaria_pf_kenya___1, microscopy_tested$infected_denv_stfd)
+484+21+25+683  
+  table(cases$result_microscopy_malaria_kenya)#502+711
+  
   489+24 # pf malaria
 #denv and non pf.
   non_pf_malaria<-NA
@@ -224,13 +238,14 @@ library("plyr")
   cases <- within(cases, domestic_worker[cases$domestic_worker==8] <- NA)
   class(cases$domestic_worker)
   table(cases$domestic_worker)
-  
+
   ses<-(cases[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(cases))])
   cases$ses_sum<-rowSums(cases[, c("telephone","radio","television","bicycle","motor_vehicle", "domestic_worker")], na.rm = TRUE)
   table(cases$ses_sum)
 
     class(cases$aic_calculated_age)
-  cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
+    cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
+    library("tableone")
     dem_factorVars <- c("id_city")
     dem_vars=c("id_city", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
