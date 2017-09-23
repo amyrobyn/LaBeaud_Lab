@@ -75,7 +75,10 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
         symptoms$all_symptoms <- gsub('usea', 'nausea', symptoms$all_symptoms)
         symptoms$all_symptoms <- gsub('nanausea', 'nausea', symptoms$all_symptoms)
         symptoms$all_symptoms <- gsub('ras', 'rash', symptoms$all_symptoms)
-
+        symptoms$all_symptoms <- gsub('rashh', 'rash', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('99', '', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub('none', '', symptoms$all_symptoms)
+        symptoms$all_symptoms <- gsub("\\<a\\>", '', symptoms$all_symptoms)
         
         #symptoms <-symptoms[!(is.na(symptoms$all_symptoms) | symptoms$all_symptoms==" "), ]
         lev <- levels(factor(symptoms$all_symptoms))
@@ -116,6 +119,7 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
         symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==1] <- 1)
         symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
         table(symptoms$body_ache)
+        variable.names(symptoms)
 
         symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache" , names(symptoms) ) ]
         symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
