@@ -183,7 +183,7 @@ library("plyr")
   library("tableone")
   cases <- as.matrix.data.frame(cases)
   cases <- data.frame(cases)
-  
+
   cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-NA )
   #demographics
   
@@ -246,6 +246,10 @@ library("plyr")
     class(cases$aic_calculated_age)
     cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
     library("tableone")
+    cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
+    cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
+    cases[1:100] <- sapply(cases[1:100], as.numeric)
+                           
     dem_factorVars <- c("id_city")
     dem_vars=c("id_city", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
