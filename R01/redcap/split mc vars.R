@@ -18,7 +18,7 @@ R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
 R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
-# number of individuals per household
+#number of individuals per household
   tapply(R01_lab_results$number_people_in_house, R01_lab_results$id_city, summary)
 
 n_distinct(R01_lab_results$person_id)
@@ -120,8 +120,10 @@ symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
         symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
         table(symptoms$body_ache)
         variable.names(symptoms)
-
-        symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache" , names(symptoms) ) ]
+        symptoms$nausea_vomitting<-NA
+        symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==1|symptoms$aic_symptom_vomiting| symptoms$aic_symptom_bloody_vomit==1] <- 1)
+        
+        symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache|nausea_vomitting" , names(symptoms) ) ]
         symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
         table(symptoms$symptom_sum, exclude=NULL)
         symptoms$symptomatic<-NA
@@ -143,7 +145,6 @@ aic_symptoms<-subset(symptoms, id_cohort!="C")
       #subset physical_exam
         physical_exam<-R01_lab_results[which(R01_lab_results$id_visit > 0), c("person_id", "redcap_event_name","head_neck_exam", "id_visit")]
         physical_exam<-as.data.frame(physical_exam)    
-      
       #create dummy vars for all physical_exam
         physical_exam<-as.data.frame(physical_exam)
         lev <- levels(factor(physical_exam$head_neck_exam))
@@ -252,18 +253,30 @@ head(seroconverter_long)
   #merge pe parsed data
     aic_dummy_symptoms <- merge(physical_exam, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 
-  #warning signs (dengue)
-    aic_dummy_symptoms$dengue_warning_signs<-rowSums(aic_dummy_symptoms[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain", names(aic_dummy_symptoms))], na.rm = TRUE)
-    table(aic_dummy_symptoms$dengue_warning_signs)
+  #probable dengue
+    aic_dummy_symptoms$probable_dengue<-rowSums(aic_dummy_symptoms[, grep("/body_ache|aic_symptom_vomiting|aic_symptom_nausea|bleeding|impaired_mental_status|hepatomegaly|rash", names(aic_dummy_symptoms))], na.rm = TRUE)
+    table(aic_dummy_symptoms$probable_dengue, aic_dummy_symptoms$infected_denv_stfd)
+    table(aic_dummy_symptoms$infected_denv_stfd)
+    #warning signs (dengue)
+    aic_dummy_symptoms$dengue_warning_signs<-rowSums(aic_dummy_symptoms[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain|hepatomegaly", names(aic_dummy_symptoms))], na.rm = TRUE)
+    table(aic_dummy_symptoms$dengue_warning_signs, aic_dummy_symptoms$probable_dengue)
+    table(aic_dummy_symptoms$dengue_warning_signs, aic_dummy_symptoms$probable_dengue, aic_dummy_symptoms$infected_denv_stfd)
     #add enlarged liver, and hepatomegaly to dengue warning signs. i didn't find this.
     
-  #probable dengue
-    aic_dummy_symptoms$probable_dengue<-rowSums(aic_dummy_symptoms[, grep("/body_ache|aic_symptom_vomiting|aic_symptom_nausea", names(aic_dummy_symptoms))], na.rm = TRUE)
-    table(aic_dummy_symptoms$probable_dengue)
-
+    
   #severe malaria
     aic_dummy_symptoms$severe_malaria<-aic_dummy_symptoms$aic_symptom_shortness_of_breath
     table(aic_dummy_symptoms$severe_malaria)
+#merge ufi to database          
+    ufi<-R01_lab_results[, grepl("person_id|redcap_event_name|ufi", names(R01_lab_results))]
+      #UFI CHIKV
+          R01_lab_results$chikv_result_ufi_pos<-NA
+          R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 1 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 1
+          R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 0 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 0
+        #UFI DENV
+        R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 1] <- 1
+        R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 0] <- 0
+    aic_dummy_symptoms <- merge(ufi, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
 #merge pcr results
   pcr<-R01_lab_results[, grepl("person_id|redcap_event_name|result_pcr", names(R01_lab_results))]
   aic_dummy_symptoms <- merge(pcr, aic_dummy_symptoms,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -344,9 +357,10 @@ head(seroconverter_long)
 #use tested = 1 as the zero for infection.
 #kenya denv igg seroconverters or PCR positives as infected.
   
-  aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$tested_denv_kenya_igg ==1 | aic_dummy_symptoms$result_pcr_denv_kenya==0|aic_dummy_symptoms$result_pcr_denv_stfd==0]<-0
-  aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$seroc_denv_kenya_igg==1|aic_dummy_symptoms$result_pcr_denv_kenya==1|aic_dummy_symptoms$result_pcr_denv_stfd==1]<-1
+  aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$tested_denv_kenya_igg ==1 | aic_dummy_symptoms$result_pcr_denv_kenya==0|aic_dummy_symptoms$result_pcr_denv_stfd==0|aic_dummy_symptoms$denv_result_ufi==0]<-0
+  aic_dummy_symptoms$infected_denv_kenya[aic_dummy_symptoms$seroc_denv_kenya_igg==1|aic_dummy_symptoms$result_pcr_denv_kenya==1|aic_dummy_symptoms$result_pcr_denv_stfd==1|aic_dummy_symptoms$denv_result_ufi==1]<-1
   table(aic_dummy_symptoms$infected_denv_kenya)
+    827/(6723+827)*100
   table(aic_dummy_symptoms$result_pcr_denv_kenya)  
 #kenya chikv igg seroconverters or PCR positives as infected.
   aic_dummy_symptoms$infected_chikv_kenya[aic_dummy_symptoms$tested_chikv_kenya_igg ==1 |aic_dummy_symptoms$result_pcr_chikv_kenya==0]<-0
@@ -664,7 +678,6 @@ head(seroconverter_long)
           table(aic_dummy_symptoms$prev_denv_igg_stfd_all_pcr, aic_dummy_symptoms$rural)
           (103/(103+3184))*100#prevalence of denv urban
           (165/(165+3296))*100#prevalence of denv rural
-          
 
 #export to csv
         setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
