@@ -45,6 +45,16 @@ R01_lab_results<-aic_dummy_symptoms
     R01_lab_results$pcr_chikv[R01_lab_results$pcr_chikv == 0] <- "negative"
     R01_lab_results$pcr_chikv<-as.factor(R01_lab_results$pcr_chikv)
     
+    table(R01_lab_results$pcr_chikv)
+    table(R01_lab_results$chikv_result_ufi_pos)
+    41/(41+372)*100
+    
+    table(R01_lab_results$pcr_denv)
+    125/(2290+125)*100
+    table(R01_lab_results$denv_result_ufi)
+    38/(38+438)*100
+    
+    
 #create vectors of true and predicted values
   #chikv 9/99
     truth_chikv<-R01_lab_results$chikv_result_ufi_pos
@@ -56,4 +66,14 @@ R01_lab_results<-aic_dummy_symptoms
   confusionMatrix(predicted_chikv,truth_chikv,  positive="positive")
   
   confusionMatrix(predicted_denv,truth_denv,  positive="positive")
+  
+#convert wide to long the results by pathogen.
+    result_ufi<-ufi[, grepl("person_id|redcap_event_name|_result_ufi", names(ufi))]
+    v.names=c('_result_ufi')
+    pathogens = c("denv", "lepto", "chikv", "plasmodium", "onn", "pf", "plasmodium_2", "zika2", "yfv", "wnv", "hhv6", "zika", "yfv_wnv", "chikv_2", "rvf", "mayaro", "onn_2", "onn_3", "chikv")    
+    
+    result_ufi_long<-reshape(result_ufi, idvar = c("person_id", "redcap_event_name"), varying = 3:21,  direction = "long", timevar = "pathogen", times=pathogens, v.names=v.names)
+    table(result_ufi_long$`_result_ufi`, result_ufi_long$pathogen)
+    plot(result_ufi_long$`_result_ufi`)
+    
   

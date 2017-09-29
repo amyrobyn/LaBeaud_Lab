@@ -39,6 +39,17 @@ pedsql[pedsql=="4" ] <- 0
 #select child vars
 pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
 pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
+#total child score
+  pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
+  pedsql_child_total$not_missing_child<-rowSums(!is.na(pedsql_child_total))
+  pedsql_child_total$not_missing_child<-pedsql_child_total$not_missing_child-2
+  table(pedsql_child_total$not_missing_child)
+  pedsql_child_total$pedsql_child_total_sum<-rowSums(pedsql_child_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child_total))], na.rm = TRUE)
+  pedsql_child_total$pedsql_child_total_mean<-round(pedsql_child_total$pedsql_child_total_sum/pedsql_child_total$not_missing_child)
+  pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_mean[pedsql_child_total$not_missing_child<(15/2)] <- NA)
+  table(pedsql_child_total$pedsql_child_total_mean)
+  hist(pedsql_child_total$pedsql_child_total_mean)
+  
 #physical vars
 #Mean score = Sum of the items over the number of items answered
     pedsql_child_physical<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work", names(pedsql_child))]
@@ -108,6 +119,17 @@ pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
 #parents
 #select partent variables from pedsql
 pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(pedsql))]
+
+#total parent score
+  pedsql_parent_total<- pedsql_parent[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent))]
+  pedsql_parent_total$not_missing_parent<-rowSums(!is.na(pedsql_parent_total))
+  pedsql_parent_total$not_missing_parent<-pedsql_parent_total$not_missing_parent-2
+  table(pedsql_parent_total$not_missing_parent)
+  pedsql_parent_total$pedsql_parent_total_sum<-rowSums(pedsql_parent_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent_total))], na.rm = TRUE)
+  pedsql_parent_total$pedsql_parent_total_mean<-round(pedsql_parent_total$pedsql_parent_total_sum/pedsql_parent_total$not_missing_parent)
+  pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_mean[pedsql_parent_total$not_missing_parent<(15/2)] <- NA)
+  table(pedsql_parent_total$pedsql_parent_total_mean)
+
 #physical vars
 #Mean score = Sum of the items over the number of items answered
     pedsql_parent_physical<- pedsql_parent[, grepl("person_id|redcap_event_name|walk|run|play|lift|work", names(pedsql_parent))]
@@ -211,6 +233,14 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
 #make pairs of acute and convalescent pedsql visits.       
       pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
       pedsql<- pedsql[which(pedsql$redcap_event!="patient_informatio_arm_1"), ]
+#cast to wide with acute and convalesent as the "time"
+      pedsql<- within(pedsql, acute[acute ==1] <- "acute")
+      pedsql<- within(pedsql, acute[acute==0] <- "conv")
+      pedsql<- within(pedsql, acute[is.na(acute)] <- "unkn")
+      table(pedsql$acute, exclude=NULL)
+      pedsql<-reshape(pedsql, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
+      pedsql<-pedsql[order(-(grepl('person_id|redcap|mean', names(pedsql)))+1L)]
+      pedsql<-pedsql[order(-(grepl('person_id|redcap|emotional', names(pedsql)))+1L)]
+      
 #save for use in other projects
       save(pedsql,file="pedsql.rda")
-      

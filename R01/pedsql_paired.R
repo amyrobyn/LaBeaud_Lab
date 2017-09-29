@@ -1,9 +1,9 @@
 #install.packages(c("REDCapR", "mlr"))
 #install.packages(c("dummies"))
-library(dplyr)
-library(plyr)
-library(redcapAPI)
-library(REDCapR)
+  library(dplyr)
+  library(plyr)
+  library(redcapAPI)
+  library(REDCapR)
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
@@ -39,6 +39,22 @@ pedsql[pedsql=="4" ] <- 0
 #select child vars
 pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
 pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
+
+#total child score
+  pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
+  pedsql_child_total$not_missing_child<-rowSums(!is.na(pedsql_child_total))
+  pedsql_child_total$not_missing_child<-pedsql_child_total$not_missing_child-2
+  table(pedsql_child_total$not_missing_child)
+  pedsql_child_total$pedsql_child_total_sum<-rowSums(pedsql_child_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child_total))], na.rm = TRUE)
+  pedsql_child_total$pedsql_child_total_mean<-round(pedsql_child_total$pedsql_child_total_sum/pedsql_child_total$not_missing_child)
+  pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_mean[pedsql_child_total$not_missing_child<(15/2)] <- NA)
+  table(pedsql_child_total$pedsql_child_total_mean)
+  
+  #merge back to database
+    pedsql_child_total<-pedsql_child_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_total))]
+    pedsql_merge<-pedsql
+    pedsql_merge <- merge(pedsql_child_total, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
+    hist(pedsql_child_total$pedsql_child_total_mean, breaks=110)
 #physical vars
 #Mean score = Sum of the items over the number of items answered
     pedsql_child_physical<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work", names(pedsql_child))]
@@ -54,7 +70,6 @@ pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
     hist(pedsql_child_physical$pedsql_child_physical_mean, breaks=110)
 #merge back to database
     pedsql_child_physical<-pedsql_child_physical[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_physical))]
-    pedsql_merge<-pedsql
     pedsql_merge <- merge(pedsql_child_physical, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
     
 #emotional vars
@@ -104,10 +119,24 @@ pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
 #merge back to database
     pedsql_child_school<-pedsql_child_school[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_school))]
     pedsql_merge <- merge(pedsql_child_school, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
-    
 #parents
 #select partent variables from pedsql
 pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(pedsql))]
+
+#total parent score
+  pedsql_parent_total<- pedsql_parent[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent))]
+  pedsql_parent_total$not_missing_parent<-rowSums(!is.na(pedsql_parent_total))
+  pedsql_parent_total$not_missing_parent<-pedsql_parent_total$not_missing_parent-2
+  table(pedsql_parent_total$not_missing_parent)
+  pedsql_parent_total$pedsql_parent_total_sum<-rowSums(pedsql_parent_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent_total))], na.rm = TRUE)
+  pedsql_parent_total$pedsql_parent_total_mean<-round(pedsql_parent_total$pedsql_parent_total_sum/pedsql_parent_total$not_missing_parent)
+  pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_mean[pedsql_parent_total$not_missing_parent<(15/2)] <- NA)
+  table(pedsql_parent_total$pedsql_parent_total_mean)
+  
+  #merge back to database
+    pedsql_parent_total<-pedsql_parent_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_total))]
+    pedsql_merge <- merge(pedsql_parent_total, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
+    hist(pedsql_parent_total$pedsql_parent_total_mean, breaks = 110)
 #physical vars
 #Mean score = Sum of the items over the number of items answered
     pedsql_parent_physical<- pedsql_parent[, grepl("person_id|redcap_event_name|walk|run|play|lift|work", names(pedsql_parent))]
@@ -212,13 +241,13 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
       
       pedsql_wide<-reshape(pedsql, direction = "wide", idvar = "person_id", timevar = "redcap_event", sep = "_")
-      pedsql_wide$pairs_ab<-ifelse(pedsql_wide$acute_visit_a_arm_1 ==1 & pedsql_wide$acute_visit_b_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_bc<-ifelse(pedsql_wide$acute_visit_b_arm_1==1 & pedsql_wide$acute_visit_c_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_cd<-ifelse(pedsql_wide$acute_visit_c_arm_1==1 & pedsql_wide$acute_visit_d_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_de<-ifelse(pedsql_wide$acute_visit_d_arm_1==1 & pedsql_wide$acute_visit_e_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_ef<-ifelse(pedsql_wide$acute_visit_e_arm_1==1 & pedsql_wide$acute_visit_f_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_fg<-ifelse(pedsql_wide$acute_visit_f_arm_1==1 & pedsql_wide$acute_visit_g_arm_1==0, 1, 0)    
-      pedsql_wide$pairs_gh<-ifelse(pedsql_wide$acute_visit_g_arm_1==1 & pedsql_wide$acute_visit_h_arm_1==0, 1, 0)    
+      pedsql_wide$pairs_ab<-ifelse(pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
+      pedsql_wide$pairs_bc<-ifelse(pedsql_wide$acute_visit_b_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1) & pedsql_wide$acute_visit_c_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1), 1, 0)    
+      pedsql_wide$pairs_cd<-ifelse(pedsql_wide$acute_visit_c_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1) & pedsql_wide$acute_visit_d_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1), 1, 0)    
+      pedsql_wide$pairs_de<-ifelse(pedsql_wide$acute_visit_d_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1) & pedsql_wide$acute_visit_e_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1), 1, 0)    
+      pedsql_wide$pairs_ef<-ifelse(pedsql_wide$acute_visit_e_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1) & pedsql_wide$acute_visit_f_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1), 1, 0)    
+      pedsql_wide$pairs_fg<-ifelse(pedsql_wide$acute_visit_f_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1) & pedsql_wide$acute_visit_g_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1), 1, 0)    
+      pedsql_wide$pairs_gh<-ifelse(pedsql_wide$acute_visit_g_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1) & pedsql_wide$acute_visit_h_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_h_arm_1), 1, 0)    
       table(pedsql_wide$pairs_ab)
       table(pedsql_wide$pairs_bc)
       table(pedsql_wide$pairs_cd)
@@ -226,7 +255,6 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       table(pedsql_wide$pairs_ef)
       table(pedsql_wide$pairs_fg)
       table(pedsql_wide$pairs_gh)
-      
       table(pedsql_wide$pedsql_child_school_mean_visit_a_arm_1, pedsql_wide$pedsql_child_school_mean_visit_b_arm_1, pedsql_wide$pairs_ab)
       pedsql_wide_ab<-pedsql_wide[which(pedsql_wide$pairs_ab==1)  , ]
       plot(pedsql_wide_ab$pedsql_child_school_mean_visit_a_arm_1, pedsql_wide_ab$pedsql_child_school_mean_visit_b_arm_1, type ="p") 
@@ -235,32 +263,33 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       pedsql_pairs<- pedsql_pairs[, !grepl("u24", names(pedsql_pairs) ) ]
       pedsql_pairs$pair_sum <- as.integer(rowSums(pedsql_pairs[ , grep("pairs" , names(pedsql_pairs))], na.rm =TRUE))
       table(pedsql_pairs$pair_sum)
-      #order
+#order
       pedsql_pairs<-pedsql_pairs[,order(colnames(pedsql_pairs))]
 
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_g$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_h$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_f$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_e$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_d$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_c$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_b$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_a$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('_p$', names(pedsql_pairs)))+1L)]
-      pedsql_pairs<-pedsql_pairs[order(-(grepl('person_id', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_h_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_g_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_f_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_e_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_d_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_c_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_b_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_a_arm_1', names(pedsql_pairs)))+1L)]
+      pedsql_pairs<-pedsql_pairs[order(-(grepl('patient_informatio_arm_1', names(pedsql_pairs)))+1L)]
       
-      #remove acute and put in seperate data frame
+
+#remove acute and put in seperate data frame
       acute<- as.data.frame(pedsql_pairs[, grepl("person_id|acute", names(pedsql_pairs) ) ])
       pedsql_pairs<- pedsql_pairs[, !grepl("acute", names(pedsql_pairs) ) ]
       
+#reshape
       nameVec <- names(pedsql_pairs)
-      v.names=c("pedsql_child_emotional_mean", "pedsql_child_physical_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean") 
-      #pedsql_pairs<-pedsql_pairs[c("person_id", "pair_sum", "pairs_ab", "pairs_bc",   "pairs_cd",   "pairs_de",   "pairs_ef",   "pairs_fg",   "pairs_gh",   "acute_patient_informatio_arm_1",   "acute_visit_a_arm_1",   "acute_visit_b_arm_1",   "acute_visit_c_arm_1",   "acute_visit_d_arm_1",   "acute_visit_e_arm_1",   "acute_visit_f_arm_1",   "acute_visit_g_arm_1",   "acute_visit_h_arm_1",   "pedsql_child_emotional_mean_patient_informatio_arm_1",   "pedsql_child_emotional_mean_visit_a_arm_1",   "pedsql_child_emotional_mean_visit_b_arm_1",   "pedsql_child_emotional_mean_visit_c_arm_1",   "pedsql_child_emotional_mean_visit_d_arm_1",   "pedsql_child_emotional_mean_visit_e_arm_1",   "pedsql_child_emotional_mean_visit_f_arm_1",   "pedsql_child_emotional_mean_visit_g_arm_1",   "pedsql_child_emotional_mean_visit_h_arm_1",   "pedsql_child_physical_mean_patient_informatio_arm_1",   "pedsql_child_physical_mean_visit_a_arm_1",   "pedsql_child_physical_mean_visit_b_arm_1",   "pedsql_child_physical_mean_visit_c_arm_1",   "pedsql_child_physical_mean_visit_d_arm_1",   "pedsql_child_physical_mean_visit_e_arm_1",   "pedsql_child_physical_mean_visit_f_arm_1",   "pedsql_child_physical_mean_visit_g_arm_1",   "pedsql_child_physical_mean_visit_h_arm_1",   "pedsql_child_school_mean_patient_informatio_arm_1",   "pedsql_child_school_mean_visit_a_arm_1",   "pedsql_child_school_mean_visit_b_arm_1",   "pedsql_child_school_mean_visit_c_arm_1",   "pedsql_child_school_mean_visit_d_arm_1",   "pedsql_child_school_mean_visit_e_arm_1",   "pedsql_child_school_mean_visit_f_arm_1",   "pedsql_child_school_mean_visit_g_arm_1",   "pedsql_child_school_mean_visit_h_arm_1",   "pedsql_child_social_mean_patient_informatio_arm_1",   "pedsql_child_social_mean_visit_a_arm_1",   "pedsql_child_social_mean_visit_b_arm_1",   "pedsql_child_social_mean_visit_c_arm_1",   "pedsql_child_social_mean_visit_d_arm_1",   "pedsql_child_social_mean_visit_e_arm_1",   "pedsql_child_social_mean_visit_f_arm_1",   "pedsql_child_social_mean_visit_g_arm_1",   "pedsql_child_social_mean_visit_h_arm_1",   "pedsql_parent_emotional_mean_patient_informatio_arm_1",  "pedsql_parent_emotional_mean_visit_a_arm_1",   "pedsql_parent_emotional_mean_visit_b_arm_1",   "pedsql_parent_emotional_mean_visit_c_arm_1",   "pedsql_parent_emotional_mean_visit_d_arm_1",   "pedsql_parent_emotional_mean_visit_e_arm_1",   "pedsql_parent_emotional_mean_visit_f_arm_1",   "pedsql_parent_emotional_mean_visit_g_arm_1",   "pedsql_parent_emotional_mean_visit_h_arm_1",   "pedsql_parent_physical_mean_patient_informatio_arm_1",  "pedsql_parent_physical_mean_visit_a_arm_1",   "pedsql_parent_physical_mean_visit_b_arm_1",   "pedsql_parent_physical_mean_visit_c_arm_1",   "pedsql_parent_physical_mean_visit_d_arm_1",   "pedsql_parent_physical_mean_visit_e_arm_1",   "pedsql_parent_physical_mean_visit_f_arm_1",   "pedsql_parent_physical_mean_visit_g_arm_1",   "pedsql_parent_physical_mean_visit_h_arm_1",   "pedsql_parent_school_mean_patient_informatio_arm_1",   "pedsql_parent_school_mean_visit_a_arm_1",   "pedsql_parent_school_mean_visit_b_arm_1",   "pedsql_parent_school_mean_visit_c_arm_1",   "pedsql_parent_school_mean_visit_d_arm_1",   "pedsql_parent_school_mean_visit_e_arm_1",   "pedsql_parent_school_mean_visit_f_arm_1",   "pedsql_parent_school_mean_visit_g_arm_1",   "pedsql_parent_school_mean_visit_h_arm_1",   "pedsql_parent_social_mean_patient_informatio_arm_1",  "pedsql_parent_social_mean_visit_a_arm_1",  "pedsql_parent_social_mean_visit_b_arm_1",   "pedsql_parent_social_mean_visit_c_arm_1",   "pedsql_parent_social_mean_visit_d_arm_1",   "pedsql_parent_social_mean_visit_e_arm_1",   "pedsql_parent_social_mean_visit_f_arm_1",   "pedsql_parent_social_mean_visit_g_arm_1",   "pedsql_parent_social_mean_visit_h_arm_1" )]
-  #reshape
-      pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying = c(9:80),  direction = "long", timevar = "redcap_event_name", times = c("patient_informatio_arm_1", "visit_a_arm_1", "visit_b_arm_1", "visit_c_arm_1", "visit_d_arm_1", "visit_e_arm_1", "visit_f_arm_1", "visit_g_arm_1", "visit_h_arm_1"), v.names=v.names)
-      acute_long<-reshape(acute, idvar = "person_id", varying = c(2:10),  direction = "long", timevar = "redcap_event_name", times = c("patient_informatio_arm_1", "visit_a_arm_1", "visit_b_arm_1", "visit_c_arm_1", "visit_d_arm_1", "visit_e_arm_1", "visit_f_arm_1", "visit_g_arm_1", "visit_h_arm_1"), v.names="acute")
+      v.names=c("pedsql_child_emotional_mean", "pedsql_child_physical_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_total_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean") 
+      times = c("patient_informatio_arm_1", "visit_a_arm_1", "visit_b_arm_1", "visit_c_arm_1", "visit_d_arm_1", "visit_e_arm_1", "visit_f_arm_1", "visit_g_arm_1", "visit_h_arm_1")
       
-      #merge back to database
+      pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying=c(1:90),  direction = "long", timevar = "redcap_event_name", times = times,       v.names=v.names )
+      acute_long<-reshape(acute, idvar = "person_id", varying=c(1:9),  direction = "long", timevar = "redcap_event_name", times =times, v.names="acute")
+      
+#merge back to database
         pedsql_pairs_long <- merge(acute_long, pedsql_pairs_long,  by=c("person_id", "redcap_event_name"), all = TRUE)
         table(acute_long$acute)
         table(pedsql_pairs_long$acute, exclude = NULL)
@@ -300,8 +329,13 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
         n_distinct(pedsql_pairs_long_bind$person_id)
         
 #acute and convalescent
-      pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute ==1] <- "acute")
-      pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute==0] <- "conv")
+      pedsql_pairs_long<- within(pedsql_pairs_long, acute[acute ==1] <- "acute")
+      pedsql_pairs_long<- within(pedsql_pairs_long, acute[acute==0] <- "conv")
+      table(pedsql_pairs_long$acute)
+
+      pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute ==1] <- "acute_paired")
+      pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute==0] <- "conv_paired")
+
 #count repeat patients
       pedsql_pairs_long_bind$count<-with(pedsql_pairs_long_bind, ave(as.character(person_id), person_id, FUN = seq_along))
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, count[count==2] <- 1)
@@ -310,9 +344,31 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, count[count==5] <- 3)
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, count[count==6] <- 3)
       table(pedsql_pairs_long_bind$count)
+      
+      table(pedsql_pairs_long$redcap_event_name)
 
+#replace this variable with a count of the acute visits by patient. then look for the  matching conv.
+      pedsql_pairs_long$count<-with(pedsql_pairs_long, ave(as.character(person_id), person_id, FUN = seq_along))
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==1] <- 0)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==2] <- 1)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==3] <- 1)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==4] <- 2)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==5] <- 2)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==6] <- 3)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==7] <- 3)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==8] <- 4)
+      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==9] <- 4)
+      table(pedsql_pairs_long$count, pedsql_pairs_long$redcap_event_name)
+      
+      
 #cast to wide with acute and convalesent as the "time"
       pedsql_pairs_acute<-reshape(pedsql_pairs_long_bind, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
-#save for use in othres
+      pedsql_acute<-reshape(pedsql_pairs_long, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
+      
+#save for use in others
       save(pedsql_pairs_acute,file="pedsql_pairs_acute.rda")
       
+#export to csv
+      setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+      f <- "paired_pedsql.csv"
+      write.csv(as.data.frame(pedsql_pairs_acute), f)

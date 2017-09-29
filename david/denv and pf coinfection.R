@@ -163,16 +163,22 @@ names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
 #merge with paired pedsql data (acute and convalescent)
 library("plyr")
   load("pedsql_pairs_acute.rda")
-  names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute'] <- 'redcap_event_name'
-  cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" )
-  table(cases_pedsql$pedsql_child_social_mean_acute, cases_pedsql$strata)
+  names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
+  cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
+  cases_pedsql<-cases_pedsql[order(-(grepl('person_id|redcap|pedsql_', names(cases_pedsql)))+1L)]
+
+  table(cases_pedsql$pedsql_parent_social_mean_acute_paired,cases_pedsql$pedsql_parent_social_mean_conv_paired)
+
   cases<-cases_pedsql
+  cases<-cases[order(-(grepl('person_id|redcap|pedsql_', names(cases)))+1L)]
+  
 #merge with unpaired pedsql data
   load("pedsql.rda")
   names(pedsql)[names(pedsql) == 'redcap_event'] <- 'redcap_event_name'
-  cases_pedsql <- join(cases, pedsql,  by=c("person_id", "redcap_event_name"), match = "all" )
-  table(cases_pedsql$pedsql_child_social_mean, cases_pedsql$strata)
+  cases_pedsql <- join(cases, pedsql,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
+  table(cases_pedsql$pedsql_child_social_mean_acute, cases_pedsql$strata)
   cases<-cases_pedsql
+
 #plot paired outcomes over time.
   library("ggplot2")
   ggplot(aes(x = redcap_event_name, y =pedsql_child_emotional_mean_acute, color=strata), data = cases) + geom_point()+geom_line()
@@ -183,8 +189,9 @@ library("plyr")
   library("tableone")
   cases <- as.matrix.data.frame(cases)
   cases <- data.frame(cases)
-
+  cases$outcome_hospitalized<-as.numeric(as.character(cases$outcome_hospitalized))
   cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-NA )
+  table(cases$outcome_hospitalized)
   #demographics
   
   #ses- create an index
@@ -249,6 +256,8 @@ library("plyr")
     cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
     cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
     cases[1:100] <- sapply(cases[1:100], as.numeric)
+    cases<-cases[order(-(grepl('person_id|redcap', names(cases)))+1L)]
+    
                            
     dem_factorVars <- c("id_city")
     dem_vars=c("id_city", "gender_all","aic_calculated_age","ses_sum")
@@ -277,27 +286,33 @@ library("plyr")
     print(mosq_tableOne, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = TRUE, includeNA=TRUE)
 
   #pedsql paired
+    table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
+
+    pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
+    pedsql_paired_tableOne <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
+    summary(pedsql_paired_tableOne)
+    #print table one (assume non normal distribution)
+      print(pedsql_paired_tableOne, 
+            exact = c(),
+            nonnormal=c("pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
+            , quote = TRUE, includeNA=TRUE)
+    #print table one (assume normal distribution)
+      print(pedsql_paired_tableOne, 
+            exact = c(),
+            #nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv"),
+            quote = TRUE, includeNA=TRUE)
+#pedsql unpaired
+    cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
+    cases<-cases[order(-(grepl('person_id|redcap|strata', names(cases)))+1L)]
+    
     pedsql_vars <- c("pedsql_child_school_mean_acute", "pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
-  
+    
     pedsql_tableOne <- CreateTableOne(vars = pedsql_vars, strata = "strata", data = cases)
+    summary(pedsql_tableOne)
     #print table one (assume non normal distribution)
     print(pedsql_tableOne, 
           exact = c(),
           nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
-          , quote = TRUE, includeNA=TRUE)
-    #print table one (assume normal distribution)
-    print(pedsql_tableOne, 
-          exact = c(),
-          #nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv"),
-          quote = TRUE, includeNA=TRUE)
-#pedsql unpaired
-    pedsql_vars <- c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean")
-    
-    pedsql_tableOne <- CreateTableOne(vars = pedsql_vars, strata = "strata", data = cases)
-    #print table one (assume non normal distribution)
-    print(pedsql_tableOne, 
-          exact = c(),
-          nonnormal=c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean")
           , quote = TRUE, includeNA=TRUE)
     #print table one (assume normal distribution)
     
