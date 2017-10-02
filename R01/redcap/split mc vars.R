@@ -17,6 +17,9 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 #save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
+table(R01_lab_results$outcome_hospitalized)
+table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized)
+
 
 # parse the id -----------------------------------------------------------------
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
@@ -132,6 +135,8 @@ table(symptoms$symptomatic, exclude=NULL)
 symptoms<-as.data.frame(cbind(ids, symptoms))
 symptoms$id_cohort<-substr(symptoms$person_id, 2, 2)
 aic_symptoms<-subset(symptoms, id_cohort!="C")
+aic_symptoms<-aic_symptoms[, !grepl("id_cohort", names(aic_symptoms))]
+
 # create binary physical vars -----------------------------------------------------------------
 #parce the physical exam results
 #subset physical_exam
@@ -264,11 +269,12 @@ names(seroconverter_long)[names(seroconverter_long) == 'denv_stfd_igg'] <- 'sero
 names(seroconverter_long)[names(seroconverter_long) == 'chikv_stfd_igg'] <- 'seroc_chikv_stfd_igg'
 
 head(seroconverter_long)
+
 # merging the created data sets back to main -----------------------------------------------------------------
-R01_lab_results <- merge(seroconverter_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
-R01_lab_results <- merge(aic_symptoms, R01_lab_results, by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
-R01_lab_results <- merge(physical_exam, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge pe parsed data
-R01_lab_results <- merge(tested_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge tested samples 
+  R01_lab_results <- merge(seroconverter_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
+  R01_lab_results <- merge(aic_symptoms, R01_lab_results, by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
+  R01_lab_results <- merge(physical_exam, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge pe parsed data
+  R01_lab_results <- merge(tested_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge tested samples 
 # dengue : probable and warning -----------------------------------------------------------------
 R01_lab_results$probable_dengue<-rowSums(R01_lab_results[, grep("/body_ache|aic_symptom_vomitfg|aic_symptom_nausea|bleeding|impaired_mental_status|hepatomegaly|rash", names(R01_lab_results))], na.rm = TRUE)    #probable dengue
 R01_lab_results$dengue_warning_signs<-rowSums(R01_lab_results[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain|hepatomegaly|splenomegaly|edema", names(R01_lab_results))], na.rm = TRUE)#warning signs (dengue)
@@ -308,6 +314,23 @@ R01_lab_results <- within(R01_lab_results, prev_denv_igg_stfd_all_pcr[prev_denv_
 table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
 table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
 
+# seroprevalence
+  table(R01_lab_results$result_igg_denv_stfd)
+    8185  + 222   + 10 
+    222/8417*100
+  table(R01_lab_results$result_igg_chikv_stfd)
+    9134+  225+   16 
+    225/9375*100
+    
+  table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$site, exclude=NULL)
+  62/(6024+62+13)*100
+  163/(3110+163+3)*100
+  table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$site, exclude=NULL)
+  189/(4961+189+9)*100
+  33/(3224+33+1)*100
+  
+table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
+  table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
 # acute -----------------------------------------------------------------
     #create acute variable
       R01_lab_results$acute<-NA
@@ -344,9 +367,11 @@ table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
 # incidence -----------------------------------------------------------------
     table(R01_lab_results$seroc_denv_kenya_igg, R01_lab_results$seroc_denv_stfd_igg, exclude=NULL)
     
+    table(R01_lab_results$seroc_denv_stfd_igg, R01_lab_results$acute ,exclude=NULL)
+    table(R01_lab_results$seroc_chikv_stfd_igg, R01_lab_results$acute ,exclude=NULL)
+
     R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
-    R01_lab_results$R01_lab_results<-substr(R01_lab_results$person_id, 1, 1)
-    
+    R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
     #use tested = 1 as the zero for infection.
     #kenya denv igg seroconverters or PCR positives as infected.
       R01_lab_results$infected_denv_kenya[R01_lab_results$tested_denv_kenya_igg ==1 | R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0|R01_lab_results$denv_result_ufi==0]<-0
@@ -367,9 +392,10 @@ table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
     174/(174+3899)*100
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$redcap_event_name)  
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$id_cohort)
-      2/(2 +683)*100 #hcc inc
       172/(172 +3216)*100#aic inc
-      
+    table(R01_lab_results$seroc_denv_stfd_igg, R01_lab_results$id_cohort)  
+    table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)  
+    2/685*100 #hcc seroconverters
     
     #stfd chikv igg seroconverters or PCR positives as infected.
       R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi_pos==0|R01_lab_results$chikv_2_result_ufi==0]<-0
@@ -378,8 +404,13 @@ table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
       119/(119+4032)*100
       
       table(R01_lab_results$infected_chikv_stfd, R01_lab_results$id_cohort)  
-      5/(686)*100 #hcc inc
       114/(3465)*100#aic inc
+      114+3351
+      table(R01_lab_results$seroc_chikv_stfd_igg, R01_lab_results$id_cohort)  
+      table(R01_lab_results$tested_chikv_stfd_igg, R01_lab_results$id_cohort)  
+      5/686*100 #hcc seroconverters
+      table(R01_lab_results$seroc_chikv_stfd_igg, R01_lab_results$site)  
+      
       
       #chikv or denv incidence
     R01_lab_results$infected_denv_chikv_stfd[R01_lab_results$infected_chikv_stfd==0 |R01_lab_results$infected_denv_stfd==0]<-0
@@ -521,9 +552,10 @@ table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
     
     R01_lab_results<-R01_lab_results_df
     table(R01_lab_results_df$rural, exclude = NULL)
+    table(R01_lab_results_df$site, exclude = NULL)
+    table(R01_lab_results_df$site,R01_lab_results_df$seroc_chikv_stfd_igg, exclude = NULL)
     
-    
-    #seroprevalence
+    #prevalence
     #denv
     table(R01_lab_results$denv_prevalence)
     table(R01_lab_results$chikv_prevalence)
