@@ -323,11 +323,11 @@ table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
     225/9375*100
     
   table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$site, exclude=NULL)
-  62/(6024+62+13)*100
-  163/(3110+163+3)*100
+  62/(6024+62+13)*100#chikv seroprevalence coast
+  163/(3110+163+3)*100#chikv seroprevalence west
   table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$site, exclude=NULL)
-  189/(4961+189+9)*100
-  33/(3224+33+1)*100
+  189/(4961+189+9)*100#denv coast
+  33/(3224+33+1)*100#denv west
   
 table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
   table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
@@ -367,9 +367,6 @@ table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
 # incidence -----------------------------------------------------------------
     table(R01_lab_results$seroc_denv_kenya_igg, R01_lab_results$seroc_denv_stfd_igg, exclude=NULL)
     
-    table(R01_lab_results$seroc_denv_stfd_igg, R01_lab_results$acute ,exclude=NULL)
-    table(R01_lab_results$seroc_chikv_stfd_igg, R01_lab_results$acute ,exclude=NULL)
-
     R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
     R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
     #use tested = 1 as the zero for infection.
@@ -392,7 +389,8 @@ table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
     174/(174+3899)*100
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$redcap_event_name)  
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$id_cohort)
-      172/(172 +3216)*100#aic inc
+    table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)
+    172/(172 + 3216)*100#aic inc
     table(R01_lab_results$seroc_denv_stfd_igg, R01_lab_results$id_cohort)  
     table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)  
     2/685*100 #hcc seroconverters
@@ -703,10 +701,12 @@ table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
     #get incidence by age group numberator and denominator 
     #denv
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$id_cohort, exclude = NULL)
+    table(R01_lab_results$tested_denv, R01_lab_results$id_cohort, exclude = NULL)
     table(R01_lab_results$infected_denv_stfd, R01_lab_results$age_group, exclude = NULL)
     table(R01_lab_results$tested_denv, R01_lab_results$age_group, exclude = NULL)
     #chikv
     table(R01_lab_results$infected_chikv_stfd, R01_lab_results$age_group, exclude = NULL)
+    table(R01_lab_results$tested_chikv, R01_lab_results$id_cohort, exclude = NULL)
     table(R01_lab_results$infected_chikv_stfd, R01_lab_results$id_cohort, exclude = NULL)
     table(R01_lab_results$tested_chikv, R01_lab_results$age_group, exclude = NULL)
     #denv or chikv
