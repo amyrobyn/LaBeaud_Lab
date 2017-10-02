@@ -23,8 +23,8 @@ load("R01_lab_results.backup.rda")
 
 pedsql<- R01_lab_results[, grepl("person_id|redcap_event_name|pedsql", names(R01_lab_results))]
 #remove missing
-pedsql[pedsql=="99" ] <- NA
-pedsql[pedsql=="98" ] <- NA
+  pedsql[pedsql=="99" ] <- NA
+  pedsql[pedsql=="98" ] <- NA
 #reverse scoring: Step 1: Transform Score.
 #Items are reversed scored and linearly transformed to a 0-100 scale as
 #follows: 0=100, 1=75, 2=50, 3=25, 4=0.
@@ -37,8 +37,8 @@ pedsql[pedsql=="4" ] <- 0
 
 #children
 #select child vars
-pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
-pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
+  pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
+  pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
 
 #total child score
   pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
@@ -121,7 +121,7 @@ pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
     pedsql_merge <- merge(pedsql_child_school, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
 #parents
 #select partent variables from pedsql
-pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(pedsql))]
+  pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(pedsql))]
 
 #total parent score
   pedsql_parent_total<- pedsql_parent[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent))]
@@ -213,7 +213,6 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       names(pedsql_merge)[names(pedsql_merge) == 'redcap_event_name'] <- 'redcap_event'
       
       R01_lab_results <- merge(R01_lab_results_no_pedsql, pedsql_merge,  by=c("person_id", "redcap_event"), all = TRUE)
-      glimpse(R01_lab_results)  
 #create acute variable
       R01_lab_results$acute<-NA
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==1] <- 1)
@@ -329,10 +328,6 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
         n_distinct(pedsql_pairs_long_bind$person_id)
         
 #acute and convalescent
-      pedsql_pairs_long<- within(pedsql_pairs_long, acute[acute ==1] <- "acute")
-      pedsql_pairs_long<- within(pedsql_pairs_long, acute[acute==0] <- "conv")
-      table(pedsql_pairs_long$acute)
-
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute ==1] <- "acute_paired")
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, acute[acute==0] <- "conv_paired")
 
@@ -345,26 +340,9 @@ pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(peds
       pedsql_pairs_long_bind<- within(pedsql_pairs_long_bind, count[count==6] <- 3)
       table(pedsql_pairs_long_bind$count)
       
-      table(pedsql_pairs_long$redcap_event_name)
-
-#replace this variable with a count of the acute visits by patient. then look for the  matching conv.
-      pedsql_pairs_long$count<-with(pedsql_pairs_long, ave(as.character(person_id), person_id, FUN = seq_along))
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==1] <- 0)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==2] <- 1)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==3] <- 1)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==4] <- 2)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==5] <- 2)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==6] <- 3)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==7] <- 3)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==8] <- 4)
-      pedsql_pairs_long<- within(pedsql_pairs_long, count[count==9] <- 4)
-      table(pedsql_pairs_long$count, pedsql_pairs_long$redcap_event_name)
-      
-      
 #cast to wide with acute and convalesent as the "time"
       pedsql_pairs_acute<-reshape(pedsql_pairs_long_bind, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
-      pedsql_acute<-reshape(pedsql_pairs_long, direction = "wide", idvar = c("person_id", "count"), timevar = "acute", sep = "_")
-      
+
 #save for use in others
       save(pedsql_pairs_acute,file="pedsql_pairs_acute.rda")
       

@@ -23,286 +23,291 @@ R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
 R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
 
 n_distinct(R01_lab_results$person_id)
+table(R01_lab_results$id_cohort, R01_lab_results$redcap_event_name)
 
 R01_lab_results$id_visit<-as.integer(factor(R01_lab_results$redcap_event_name))
 R01_lab_results$id_visit<-R01_lab_results$id_visit-1
 # create binary symptom vars -----------------------------------------------------------------
-  #subset symptoms
-    symptoms<-R01_lab_results[which(R01_lab_results$id_visit > 0), c("person_id", "redcap_event_name","symptoms", "symptoms_aic", "id_cohort", "id_city", "id_visit", "visit_type")]
-    symptoms<-as.data.frame(symptoms)
-    symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
-        symptoms <- lapply(symptoms, function(x) {
-        gsub(",NA", "", x)
-      })
-      symptoms <- lapply(symptoms, function(x) {
-        gsub("NA", "", x)
-      })
-      symptoms <- lapply(symptoms, function(x) {
-        gsub(",none", "", x)
-      })
-      symptoms <- lapply(symptoms, function(x) {
-        gsub("none", "", x)
-      })
-      symptoms<-as.data.frame(symptoms)
-      
-    
-    #create dummy vars for all symptoms
-        symptoms<-as.data.frame(symptoms)
-        symptoms$all_symptoms<-tolower(symptoms$all_symptoms)
-        
-        symptoms$all_symptoms <- gsub('abdomil_pain', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdominal_pa', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdomin', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdomina', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdominal_pai', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdominal_p', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abdo', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abd', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abpin', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abpi', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abpal_p', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abpa', 'abp', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('abp', 'abdominal_pain', symptoms$all_symptoms)
-        
-        symptoms$all_symptoms <- gsub('chiils', 'chills', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('diarrh', 'diarrhea', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('diarrheaea', 'diarrhea', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('usea', 'nausea', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('nanausea', 'nausea', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('ras', 'rash', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('rashh', 'rash', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('99', '', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub('none', '', symptoms$all_symptoms)
-        symptoms$all_symptoms <- gsub("\\<a\\>", '', symptoms$all_symptoms)
-        
-        #symptoms <-symptoms[!(is.na(symptoms$all_symptoms) | symptoms$all_symptoms==" "), ]
-        lev <- levels(factor(symptoms$all_symptoms))
-        lev <- unique(unlist(strsplit(lev, " ")))
-        mnames <- gsub(" ", "_", paste("aic_symptom", lev, sep = "_"))
-        result <- matrix(data = "0", nrow = length(symptoms$all_symptoms), ncol = length(lev))
-        char.aic_symptom <- as.character(symptoms$all_symptoms)
-        for (i in 1:length(lev)) {
-          result[grep(lev[i], char.aic_symptom, fixed = TRUE), i] <- "1"
-        }
-        result <- data.frame(result, stringsAsFactors = TRUE)
-        colnames(result) <- mnames
-        symptoms <- cbind(symptoms,result)
-        
-        as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
-        ids <- c("person_id", "redcap_event_name", "all_symptoms")
-        ids <- symptoms[ids]
-        symptoms<-symptoms[ , !(names(symptoms) %in% "aic_symptom_")]
-        aic_symptom_<-grep("aic_symptom_", names(symptoms), value = TRUE)
-        symptoms<-symptoms[ , (names(symptoms) %in% aic_symptom_)]
-        symptoms <-as.data.frame(sapply(symptoms, as.numeric.factor))
-        
-      #collapse the symptoms that are the same.
-        symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1] <- 1)
-        symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_seizures==1] <- 1)
-        
-        symptoms$bleeding<-NA
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_nose==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_urine==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_stool==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_vomit==1] <- 1)
-        symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bruises==1] <- 1)
-        
-        symptoms$body_ache<-NA
-        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_general_body_ache==1] <- 1)
-        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==1] <- 1)
-        symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
-        table(symptoms$body_ache)
-        variable.names(symptoms)
-        symptoms$nausea_vomitting<-NA
-        symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==1|symptoms$aic_symptom_vomiting| symptoms$aic_symptom_bloody_vomit==1] <- 1)
-        
-        symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache|nausea_vomitting" , names(symptoms) ) ]
-        symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
-        table(symptoms$symptom_sum, exclude=NULL)
-        symptoms$symptomatic<-NA
-        symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum>0] <- 1)
-        symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum==0] <- 0)
-        
+#subset symptoms
+symptoms<-R01_lab_results[which(R01_lab_results$id_visit > 0), c("person_id", "redcap_event_name","symptoms", "symptoms_aic", "id_cohort", "id_city", "id_visit", "visit_type")]
+symptoms<-as.data.frame(symptoms)
+symptoms$all_symptoms<-paste(symptoms$symptoms, symptoms$symptoms_aic , sep=" ")
+symptoms <- lapply(symptoms, function(x) {
+  gsub(",NA", "", x)
+})
+symptoms <- lapply(symptoms, function(x) {
+  gsub("NA", "", x)
+})
+symptoms <- lapply(symptoms, function(x) {
+  gsub(",none", "", x)
+})
+symptoms <- lapply(symptoms, function(x) {
+  gsub("none", "", x)
+})
+symptoms<-as.data.frame(symptoms)
+
+
+#create dummy vars for all symptoms
+symptoms<-as.data.frame(symptoms)
+symptoms$all_symptoms<-tolower(symptoms$all_symptoms)
+
+symptoms$all_symptoms <- gsub('abdomil_pain', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdominal_pa', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdomin', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdomina', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdominal_pai', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdominal_p', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abdo', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abd', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abpin', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abpi', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abpal_p', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abpa', 'abp', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('abp', 'abdominal_pain', symptoms$all_symptoms)
+
+symptoms$all_symptoms <- gsub('chiils', 'chills', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('diarrh', 'diarrhea', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('diarrheaea', 'diarrhea', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('usea', 'nausea', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('nanausea', 'nausea', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('ras', 'rash', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('rashh', 'rash', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('99', '', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub('none', '', symptoms$all_symptoms)
+symptoms$all_symptoms <- gsub("\\<a\\>", '', symptoms$all_symptoms)
+
+#symptoms <-symptoms[!(is.na(symptoms$all_symptoms) | symptoms$all_symptoms==" "), ]
+lev <- levels(factor(symptoms$all_symptoms))
+lev <- unique(unlist(strsplit(lev, " ")))
+mnames <- gsub(" ", "_", paste("aic_symptom", lev, sep = "_"))
+result <- matrix(data = "0", nrow = length(symptoms$all_symptoms), ncol = length(lev))
+char.aic_symptom <- as.character(symptoms$all_symptoms)
+for (i in 1:length(lev)) {
+  result[grep(lev[i], char.aic_symptom, fixed = TRUE), i] <- "1"
+}
+result <- data.frame(result, stringsAsFactors = TRUE)
+colnames(result) <- mnames
+symptoms <- cbind(symptoms,result)
+
+as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
+ids <- c("person_id", "redcap_event_name", "all_symptoms")
+ids <- symptoms[ids]
+symptoms<-symptoms[ , !(names(symptoms) %in% "aic_symptom_")]
+aic_symptom_<-grep("aic_symptom_", names(symptoms), value = TRUE)
+symptoms<-symptoms[ , (names(symptoms) %in% aic_symptom_)]
+symptoms <-as.data.frame(sapply(symptoms, as.numeric.factor))
+
+#collapse the symptoms that are the same.
+symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1] <- 1)
+symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_seizures==1] <- 1)
+
+symptoms$bleeding<-NA
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_nose==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_urine==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_stool==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_vomit==1] <- 1)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bruises==1] <- 1)
+
+symptoms$body_ache<-NA
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_general_body_ache==1] <- 1)
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==1] <- 1)
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
+table(symptoms$body_ache)
+variable.names(symptoms)
+symptoms$nausea_vomitting<-NA
+symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==1|symptoms$aic_symptom_vomiting| symptoms$aic_symptom_bloody_vomit==1] <- 1)
+
+symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache|nausea_vomitting" , names(symptoms) ) ]
+symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
+table(symptoms$symptom_sum, exclude=NULL)
+symptoms$symptomatic<-NA
+symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum>0] <- 1)
+symptoms <- within(symptoms, symptomatic[symptoms$symptom_sum==0] <- 0)
+
 #how much of our acute DENV was symptomatic vs. mildly/asymptomatic, etc.
-  table(symptoms$symptomatic, exclude=NULL)
+table(symptoms$symptomatic, exclude=NULL)
 #export to box.
-  symptoms<-as.data.frame(cbind(ids, symptoms))
-  symptoms$id_cohort<-substr(symptoms$person_id, 2, 2)
-  aic_symptoms<-subset(symptoms, id_cohort!="C")
+symptoms<-as.data.frame(cbind(ids, symptoms))
+symptoms$id_cohort<-substr(symptoms$person_id, 2, 2)
+aic_symptoms<-subset(symptoms, id_cohort!="C")
 # create binary physical vars -----------------------------------------------------------------
-  #parce the physical exam results
-      #subset physical_exam
-        physical_exam<-R01_lab_results[which(R01_lab_results$redcap_event_name!="patient_informatio_arm_1"), c("person_id", "redcap_event_name","head_neck_exam", "skin", "neuro", "abdomen", "chest", "heart", "nodes", "joints")]
-        physical_exam<-as.data.frame(physical_exam)    
-        physical_exam$all_exam<-paste(physical_exam$head_neck_exam, physical_exam$skin, physical_exam$neuro, physical_exam$abdomen, physical_exam$joints, physical_exam$nodes, physical_exam$heart, physical_exam$chest, physical_exam$abdomen, sep=" ")
-        physical_exam <- lapply(physical_exam, function(x) {
-          gsub(",NA", "", x)
-        })
-        physical_exam <- lapply(physical_exam, function(x) {
-          gsub("NA", "", x)
-        })
-        physical_exam <- lapply(physical_exam, function(x) {
-          gsub(",none", "", x)
-        })
-        physical_exam <- lapply(physical_exam, function(x) {
-          gsub("none", "", x)
-        })
-        physical_exam<-as.data.frame(physical_exam)
+#parce the physical exam results
+#subset physical_exam
+physical_exam<-R01_lab_results[which(R01_lab_results$redcap_event_name!="patient_informatio_arm_1"), c("person_id", "redcap_event_name","head_neck_exam", "skin", "neuro", "abdomen", "chest", "heart", "nodes", "joints")]
+physical_exam<-as.data.frame(physical_exam)    
+physical_exam$all_exam<-paste(physical_exam$head_neck_exam, physical_exam$skin, physical_exam$neuro, physical_exam$abdomen, physical_exam$joints, physical_exam$nodes, physical_exam$heart, physical_exam$chest, physical_exam$abdomen, sep=" ")
+physical_exam <- lapply(physical_exam, function(x) {
+  gsub(",NA", "", x)
+})
+physical_exam <- lapply(physical_exam, function(x) {
+  gsub("NA", "", x)
+})
+physical_exam <- lapply(physical_exam, function(x) {
+  gsub(",none", "", x)
+})
+physical_exam <- lapply(physical_exam, function(x) {
+  gsub("none", "", x)
+})
+physical_exam<-as.data.frame(physical_exam)
 
-      #create dummy vars for all physical_exam
-        lev <- levels(factor(physical_exam$all_exam))
-        lev <- unique(unlist(strsplit(lev, " ")))
-        mnames <- gsub(" ", "_", paste("aic_pe", lev, sep = "_"))
-        result <- matrix(data = "0", nrow = length(physical_exam$all_exam), ncol = length(lev))
-        char.aic_pe <- as.character(physical_exam$all_exam)
-        for (i in 1:length(lev)) {
-          result[grep(lev[i], char.aic_pe, fixed = TRUE), i] <- "1"
-        }
-        result <- data.frame(result, stringsAsFactors = TRUE)
-        colnames(result) <- mnames
-        physical_exam <- cbind(physical_exam,result)
-        
-        as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
-        ids <- c("person_id", "redcap_event_name", "all_exam")
-        ids <- physical_exam[ids]
-        physical_exam<-physical_exam[ , !(names(physical_exam) %in% "aic_pe_")]
-        aic_pe<-grep("aic_pe_", names(physical_exam), value = TRUE)
-        physical_exam<-physical_exam[ , (names(physical_exam) %in% aic_pe)]
-        physical_exam <-as.data.frame(sapply(physical_exam, as.numeric.factor))
+#create dummy vars for all physical_exam
+lev <- levels(factor(physical_exam$all_exam))
+lev <- unique(unlist(strsplit(lev, " ")))
+mnames <- gsub(" ", "_", paste("aic_pe", lev, sep = "_"))
+result <- matrix(data = "0", nrow = length(physical_exam$all_exam), ncol = length(lev))
+char.aic_pe <- as.character(physical_exam$all_exam)
+for (i in 1:length(lev)) {
+  result[grep(lev[i], char.aic_pe, fixed = TRUE), i] <- "1"
+}
+result <- data.frame(result, stringsAsFactors = TRUE)
+colnames(result) <- mnames
+physical_exam <- cbind(physical_exam,result)
 
-    #create binary var for nodes      
-        physical_exam$node<-NA
-        table(physical_exam$aic_pe_large_lymph_nodes)
-        
-      physical_exam<-as.data.frame(cbind(ids, physical_exam))
+as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
+ids <- c("person_id", "redcap_event_name", "all_exam")
+ids <- physical_exam[ids]
+physical_exam<-physical_exam[ , !(names(physical_exam) %in% "aic_pe_")]
+aic_pe<-grep("aic_pe_", names(physical_exam), value = TRUE)
+physical_exam<-physical_exam[ , (names(physical_exam) %in% aic_pe)]
+physical_exam <-as.data.frame(sapply(physical_exam, as.numeric.factor))
+
+#create binary var for nodes      
+physical_exam$node<-NA
+table(physical_exam$aic_pe_large_lymph_nodes)
+
+physical_exam<-as.data.frame(cbind(ids, physical_exam))
 
 # reshape testing vars -----------------------------------------------------------------
-      #tested
-      tested<-R01_lab_results[, grepl("person_id|redcap_event|tested_", names(R01_lab_results))]
-      tested<-tested[, !grepl("date", names(tested))]
-      
-      tested<-tested[which(tested$redcap_event_name=="patient_informatio_arm_1"),]
-      colnames(tested)<-sub("tested_*","", colnames(tested))    
-      colnames(tested)<-sub("*_2","", colnames(tested))    
-      #order
-    tested<-tested[,order(colnames(tested))]
-    
-    tested<-tested[order(-(grepl('gh_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('fg_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('ef_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('de_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('cd_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('bc_$', names(tested)))+1L)]
-    tested<-tested[order(-(grepl('ab_$', names(tested)))+1L)]
-    
-    nameVec <- names(tested)
-    v.names=c('chikv_kenya_igg', 'chikv_stfd_igg', 'denv_kenya_igg', 'denv_stfd_igg')
-    times = c("ab_", "bc_", "cd_", "de_", "ef_", "fg_", "gh_")    
-    tested_long<-reshape(tested, idvar = "person_id", varying = 1:28,  direction = "long", timevar = "visit", times=times, v.names=v.names)
-    table(tested$ab_chikv_stfd_igg)
-    table(tested$bc_chikv_stfd_igg)
-    table(tested_long$chikv_stfd_igg, tested_long$visit)
-    
+#tested
+tested<-R01_lab_results[, grepl("person_id|redcap_event|tested_", names(R01_lab_results))]
+tested<-tested[, !grepl("date", names(tested))]
 
-    tested_long <- within(tested_long, visit[visit=="ab_"] <- "visit_a_arm_1")
-    tested_long <- within(tested_long, visit[visit=="bc_"] <- "visit_b_arm_1")
-    tested_long <- within(tested_long, visit[visit=="cd_"] <- "visit_c_arm_1")
-    tested_long <- within(tested_long, visit[visit=="de_"] <- "visit_d_arm_1")
-    tested_long <- within(tested_long, visit[visit=="ef_"] <- "visit_e_arm_1")
-    tested_long <- within(tested_long, visit[visit=="fg_"] <- "visit_f_arm_1")
-    tested_long <- within(tested_long, visit[visit=="gh_"] <- "visit_g_arm_1")
-    tested_long$redcap_event_name<-tested_long$visit
-    names(tested_long)[names(tested_long) == 'denv_kenya_igg'] <- 'tested_denv_kenya_igg'
-    names(tested_long)[names(tested_long) == 'chikv_kenya_igg'] <- 'tested_chikv_kenya_igg'
-    names(tested_long)[names(tested_long) == 'denv_stfd_igg'] <- 'tested_denv_stfd_igg'
-    names(tested_long)[names(tested_long) == 'chikv_stfd_igg'] <- 'tested_chikv_stfd_igg'
-    
-    head(tested_long)
+tested<-tested[which(tested$redcap_event_name=="patient_informatio_arm_1"),]
+colnames(tested)<-sub("tested_*","", colnames(tested))    
+colnames(tested)<-sub("*_2","", colnames(tested))    
+#order
+tested<-tested[,order(colnames(tested))]
+
+tested<-tested[order(-(grepl('gh_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('fg_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('ef_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('de_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('cd_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('bc_$', names(tested)))+1L)]
+tested<-tested[order(-(grepl('ab_$', names(tested)))+1L)]
+
+nameVec <- names(tested)
+v.names=c('chikv_kenya_igg', 'chikv_stfd_igg', 'denv_kenya_igg', 'denv_stfd_igg')
+times = c("ab_", "bc_", "cd_", "de_", "ef_", "fg_", "gh_")    
+tested_long<-reshape(tested, idvar = "person_id", varying = 1:28,  direction = "long", timevar = "visit", times=times, v.names=v.names)
+table(tested$ab_chikv_stfd_igg)
+table(tested$bc_chikv_stfd_igg)
+table(tested_long$chikv_stfd_igg, tested_long$visit)
+
+
+tested_long <- within(tested_long, visit[visit=="ab_"] <- "visit_a_arm_1")
+tested_long <- within(tested_long, visit[visit=="bc_"] <- "visit_b_arm_1")
+tested_long <- within(tested_long, visit[visit=="cd_"] <- "visit_c_arm_1")
+tested_long <- within(tested_long, visit[visit=="de_"] <- "visit_d_arm_1")
+tested_long <- within(tested_long, visit[visit=="ef_"] <- "visit_e_arm_1")
+tested_long <- within(tested_long, visit[visit=="fg_"] <- "visit_f_arm_1")
+tested_long <- within(tested_long, visit[visit=="gh_"] <- "visit_g_arm_1")
+tested_long$redcap_event_name<-tested_long$visit
+names(tested_long)[names(tested_long) == 'denv_kenya_igg'] <- 'tested_denv_kenya_igg'
+names(tested_long)[names(tested_long) == 'chikv_kenya_igg'] <- 'tested_chikv_kenya_igg'
+names(tested_long)[names(tested_long) == 'denv_stfd_igg'] <- 'tested_denv_stfd_igg'
+names(tested_long)[names(tested_long) == 'chikv_stfd_igg'] <- 'tested_chikv_stfd_igg'
+
+head(tested_long)
 # reshape sereoconverter vars -----------------------------------------------------------------
-  #seroconversion
-    seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|ef_|fg_|gh_", names(R01_lab_results))]
-    seroconverter<-seroconverter[, !grepl("malaria|tested", names(seroconverter))]
-    seroconverter<-seroconverter[which(seroconverter$redcap_event_name=="patient_informatio_arm_1"),]
-      
-    #order
-      seroconverter<-seroconverter[,order(colnames(seroconverter))]
-        
-      seroconverter<-seroconverter[order(-(grepl('gh_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('fg_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('ef_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('de_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('cd_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('bc_$', names(seroconverter)))+1L)]
-      seroconverter<-seroconverter[order(-(grepl('ab_$', names(seroconverter)))+1L)]
-  
-    nameVec <- names(seroconverter)
-    v.names=c('chikv_kenya_igg', 'chikv_stfd_igg', 'denv_kenya_igg', 'denv_stfd_igg')
-    times = c("ab_", "bc_", "cd_", "de_", "ef_", "fg_", "gh_")    
-    seroconverter_long<-reshape(seroconverter, idvar = "person_id", varying = 1:28,  direction = "long", timevar = "visit", times=times, v.names=v.names)
-    
-    table(seroconverter$ab_chikv_stfd_igg)
-    table(seroconverter$ab_denv_stfd_igg)
-    table(seroconverter$bc_chikv_stfd_igg)
-    table(seroconverter$bc_denv_stfd_igg)
-    table(seroconverter_long$chikv_stfd_igg, seroconverter_long$visit)
-    table(seroconverter_long$denv_stfd_igg, seroconverter_long$visit)
-    
-    seroconverter_long <- within(seroconverter_long, visit[visit=="ab_"] <- "visit_a_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="bc_"] <- "visit_b_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="cd_"] <- "visit_c_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="de_"] <- "visit_d_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="ef_"] <- "visit_e_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="fg_"] <- "visit_f_arm_1")
-    seroconverter_long <- within(seroconverter_long, visit[visit=="gh_"] <- "visit_g_arm_1")
-    seroconverter_long$redcap_event_name<-seroconverter_long$visit
-    names(seroconverter_long)[names(seroconverter_long) == 'denv_kenya_igg'] <- 'seroc_denv_kenya_igg'
-    names(seroconverter_long)[names(seroconverter_long) == 'chikv_kenya_igg'] <- 'seroc_chikv_kenya_igg'
-    names(seroconverter_long)[names(seroconverter_long) == 'denv_stfd_igg'] <- 'seroc_denv_stfd_igg'
-    names(seroconverter_long)[names(seroconverter_long) == 'chikv_stfd_igg'] <- 'seroc_chikv_stfd_igg'
+#seroconversion
+seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|ef_|fg_|gh_", names(R01_lab_results))]
+seroconverter<-seroconverter[, !grepl("malaria|tested", names(seroconverter))]
+seroconverter<-seroconverter[which(seroconverter$redcap_event_name=="patient_informatio_arm_1"),]
+
+#order
+seroconverter<-seroconverter[,order(colnames(seroconverter))]
+
+seroconverter<-seroconverter[order(-(grepl('gh_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('fg_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('ef_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('de_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('cd_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('bc_$', names(seroconverter)))+1L)]
+seroconverter<-seroconverter[order(-(grepl('ab_$', names(seroconverter)))+1L)]
+
+nameVec <- names(seroconverter)
+v.names=c('chikv_kenya_igg', 'chikv_stfd_igg', 'denv_kenya_igg', 'denv_stfd_igg')
+times = c("ab_", "bc_", "cd_", "de_", "ef_", "fg_", "gh_")    
+seroconverter_long<-reshape(seroconverter, idvar = "person_id", varying = 1:28,  direction = "long", timevar = "visit", times=times, v.names=v.names)
+
+table(seroconverter$ab_chikv_stfd_igg)
+table(seroconverter$ab_denv_stfd_igg)
+table(seroconverter$bc_chikv_stfd_igg)
+table(seroconverter$bc_denv_stfd_igg)
+table(seroconverter_long$chikv_stfd_igg, seroconverter_long$visit)
+table(seroconverter_long$denv_stfd_igg, seroconverter_long$visit)
+
+seroconverter_long <- within(seroconverter_long, visit[visit=="ab_"] <- "visit_a_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="bc_"] <- "visit_b_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="cd_"] <- "visit_c_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="de_"] <- "visit_d_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="ef_"] <- "visit_e_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="fg_"] <- "visit_f_arm_1")
+seroconverter_long <- within(seroconverter_long, visit[visit=="gh_"] <- "visit_g_arm_1")
+seroconverter_long$redcap_event_name<-seroconverter_long$visit
+names(seroconverter_long)[names(seroconverter_long) == 'denv_kenya_igg'] <- 'seroc_denv_kenya_igg'
+names(seroconverter_long)[names(seroconverter_long) == 'chikv_kenya_igg'] <- 'seroc_chikv_kenya_igg'
+names(seroconverter_long)[names(seroconverter_long) == 'denv_stfd_igg'] <- 'seroc_denv_stfd_igg'
+names(seroconverter_long)[names(seroconverter_long) == 'chikv_stfd_igg'] <- 'seroc_chikv_stfd_igg'
 
 head(seroconverter_long)
 # merging the created data sets back to main -----------------------------------------------------------------
-    R01_lab_results <- merge(seroconverter_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
-    R01_lab_results <- merge(aic_symptoms, R01_lab_results, by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
-    R01_lab_results <- merge(physical_exam, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge pe parsed data
-    R01_lab_results <- merge(tested_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge tested samples 
+R01_lab_results <- merge(seroconverter_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
+R01_lab_results <- merge(aic_symptoms, R01_lab_results, by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
+R01_lab_results <- merge(physical_exam, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge pe parsed data
+R01_lab_results <- merge(tested_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge tested samples 
 # dengue : probable and warning -----------------------------------------------------------------
-    R01_lab_results$probable_dengue<-rowSums(R01_lab_results[, grep("/body_ache|aic_symptom_vomitfg|aic_symptom_nausea|bleeding|impaired_mental_status|hepatomegaly|rash", names(R01_lab_results))], na.rm = TRUE)    #probable dengue
-    R01_lab_results$dengue_warning_signs<-rowSums(R01_lab_results[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain|hepatomegaly|splenomegaly|edema", names(R01_lab_results))], na.rm = TRUE)#warning signs (dengue)
-    R01_lab_results$dengue_warning<-ifelse(R01_lab_results$probable_dengue >= 2 & R01_lab_results$dengue_warning_signs >0 , 1, 0)#dengue with warning signs   
-      table(R01_lab_results$dengue_warning_signs, R01_lab_results$probable_dengue)
+R01_lab_results$probable_dengue<-rowSums(R01_lab_results[, grep("/body_ache|aic_symptom_vomitfg|aic_symptom_nausea|bleeding|impaired_mental_status|hepatomegaly|rash", names(R01_lab_results))], na.rm = TRUE)    #probable dengue
+R01_lab_results$dengue_warning_signs<-rowSums(R01_lab_results[, grep("aic_symptom_impaired_mental_status|bleeding|aic_symptom_vomiting|aic_symptom_abdominal_pain|hepatomegaly|splenomegaly|edema", names(R01_lab_results))], na.rm = TRUE)#warning signs (dengue)
+R01_lab_results$dengue_warning<-ifelse(R01_lab_results$probable_dengue >= 2 & R01_lab_results$dengue_warning_signs >0 , 1, 0)#dengue with warning signs   
+table(R01_lab_results$dengue_warning_signs, R01_lab_results$probable_dengue)
 # PCR -----------------------------------------------------------------
-      #PCR DENV or chikv
-      R01_lab_results$denv_chikv_result_pcr[R01_lab_results$result_pcr_denv_kenya == 0|R01_lab_results$result_pcr_denv_stfd == 0|R01_lab_results$result_pcr_chikv_kenya == 0|R01_lab_results$result_pcr_chikv_stfd == 0] <- 0
-      R01_lab_results$denv_chikv_result_pcr[R01_lab_results$result_pcr_denv_kenya == 1|R01_lab_results$result_pcr_denv_stfd == 1|R01_lab_results$result_pcr_chikv_kenya == 1|R01_lab_results$result_pcr_chikv_stfd == 1] <- 1
-      table(R01_lab_results$denv_chikv_result_pcr)
-      125/(2415)*100
-      
+#PCR DENV or chikv
+R01_lab_results$denv_chikv_result_pcr[R01_lab_results$result_pcr_denv_kenya == 0|R01_lab_results$result_pcr_denv_stfd == 0|R01_lab_results$result_pcr_chikv_kenya == 0|R01_lab_results$result_pcr_chikv_stfd == 0] <- 0
+R01_lab_results$denv_chikv_result_pcr[R01_lab_results$result_pcr_denv_kenya == 1|R01_lab_results$result_pcr_denv_stfd == 1|R01_lab_results$result_pcr_chikv_kenya == 1|R01_lab_results$result_pcr_chikv_stfd == 1] <- 1
+table(R01_lab_results$denv_chikv_result_pcr)
+125/(2415)*100
+
 # UFI -----------------------------------------------------------------
-      #UFI CHIKV
-        R01_lab_results$chikv_result_ufi_pos<-NA
-        R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 0 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 0
-        R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 1 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 1
-        
-      R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 0|R01_lab_results$chikv_2_result_ufi == 0] <- 0
-      R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 1 |R01_lab_results$chikv_2_result_ufi == 1] <- 1
-      table(R01_lab_results$chikv_result_ufi_pos)
-      
-      #UFI DENV
-      R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 1] <- 1
-      R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 0] <- 0
-      table(R01_lab_results$denv_result_ufi)
-      #UFI DENV or chikv
-      R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 0|R01_lab_results$chikv_result_ufi_pos==0] <- 0
-      R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 1|R01_lab_results$chikv_result_ufi_pos==1] <- 1
-      table(R01_lab_results$denv_chikv_result_ufi)
-      133/(133+344)*100
-      
+#UFI CHIKV
+R01_lab_results$chikv_result_ufi_pos<-NA
+R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 0 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 0
+R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 1 & R01_lab_results$ufiresult_ufi___14!=1 ] <- 1
+
+R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 0|R01_lab_results$chikv_2_result_ufi == 0] <- 0
+R01_lab_results$chikv_result_ufi_pos[R01_lab_results$chikv_result_ufi == 1 |R01_lab_results$chikv_2_result_ufi == 1] <- 1
+table(R01_lab_results$chikv_result_ufi_pos)
+
+#UFI DENV
+R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 1] <- 1
+R01_lab_results$denv_result_ufi[R01_lab_results$denv_result_ufi == 0] <- 0
+table(R01_lab_results$denv_result_ufi)
+#UFI DENV or chikv
+R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 0|R01_lab_results$chikv_result_ufi_pos==0] <- 0
+R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 1|R01_lab_results$chikv_result_ufi_pos==1] <- 1
+table(R01_lab_results$denv_chikv_result_ufi)
+133/(133+344)*100
+
 # prevalence
-      R01_lab_results <- within(R01_lab_results, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0|R01_lab_results$chikv_result_ufi_pos==1] <- 1)
-      R01_lab_results <- within(R01_lab_results, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0|R01_lab_results$denv_result_ufi==1] <- 1)
+R01_lab_results <- within(R01_lab_results, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0|R01_lab_results$chikv_result_ufi_pos==1] <- 1)
+R01_lab_results <- within(R01_lab_results, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0|R01_lab_results$denv_result_ufi==1] <- 1)
+
+table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
+table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
+
 # acute -----------------------------------------------------------------
     #create acute variable
       R01_lab_results$acute<-NA
@@ -592,10 +597,6 @@ head(seroconverter_long)
     tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = R01_lab_results)
     print(tableOne, quote = TRUE)
     
-    (114/(114+3052))*100
-    268-114
-    6494-3052
-    (154/(154+3442))*100
     R01_lab_results<-R01_lab_results[,order(colnames(R01_lab_results))]
     R01_lab_results$gender[is.na(R01_lab_results$gender)] = ''
     R01_lab_results$gender_aic[is.na(R01_lab_results$gender_aic)] = ''

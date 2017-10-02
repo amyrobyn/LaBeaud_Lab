@@ -41,8 +41,9 @@ table(R01_lab_results$site)
   cases <- within(cases, acute[cases$temp>=38] <- 1)
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
-  table(cases$acute)#2694 acute febrile visits from aic west
-  #create diagram of patients
+  afi<-  sum(cases$acute==1, na.rm = TRUE)
+  
+#create diagram of patients
 library("dplyr")
     n_distinct(R01_lab_results$person_id, na.rm = FALSE) #9479 patients reviewed
     n_distinct(cases$person_id, na.rm = FALSE) #3734 patients included in study (aic, west)
@@ -151,9 +152,16 @@ microscopy_tested<-cases[which(!is.na(cases$result_microscopy_malaria_kenya) & c
           #d+, pf+, m+ / d+ pf- m - / d+pf-, m+ / d-p-m+ / d-pf-m- / d-pf+m+
     cases$strata<-NA
       cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
+      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
+      
       cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
+      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
+      
       cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==0 & cases$malaria!=1 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+      
       cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 &  !is.na(result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
+      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==0 & cases$malaria!=1 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
       table(cases$strata)  
 
 save(cases,file="cases.rda")
