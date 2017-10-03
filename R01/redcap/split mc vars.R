@@ -13,8 +13,8 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-#save(R01_lab_results,file="R01_lab_results.backup.rda")
+R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+save(R01_lab_results,file="R01_lab_results.backup.rda")
 load("R01_lab_results.backup.rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 table(R01_lab_results$outcome_hospitalized)

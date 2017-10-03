@@ -1,8 +1,7 @@
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 #load data that has been cleaned previously
-  load("aic_dummy_symptoms.clean.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
-  R01_lab_results<-aic_dummy_symptoms
-R01_lab_results$site <-NA
+  load("R01_lab_results.clean.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
+  R01_lab_results$site <-NA
   R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="R"] <- "C")
   R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="C"] <- "west")
   R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="K"] <- "west")
@@ -41,15 +40,15 @@ table(R01_lab_results$site)
   cases <- within(cases, acute[cases$temp>=38] <- 1)
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
-  afi<-  sum(cases$acute==1, na.rm = TRUE)
-  
+
 #create diagram of patients
 library("dplyr")
-    n_distinct(R01_lab_results$person_id, na.rm = FALSE) #9479 patients reviewed
-    n_distinct(cases$person_id, na.rm = FALSE) #3734 patients included in study (aic, west)
-    table(cases$acute, exclude = NULL)#2694 acute febrile visits
-#table of denv at acute visit. 
-    table(cases$infected_denv_stfd, cases$acute, exclude=NULL) #93 denv infected (seroconverter or PCR +)
+  n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9479 patients reviewed
+  aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #1992 patients included in study (aic, west)
+  afi<-  sum(cases$acute==1, na.rm = TRUE)#2714 afi's
+  #table of denv at acute visit. 
+  denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
+
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
     cases$malaria<-NA
     cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
@@ -84,60 +83,59 @@ library("dplyr")
   #define denv testing as pcr or paired igg.
     cases$tested_malaria<-NA
     cases <- within(cases, tested_malaria[!is.na(cases$malaria)] <- 1)
-    cases <- within(cases, tested_denv_stfd_igg[cases$infected_denv_stfd==1 |cases$tested_denv_stfd_igg==1 | !is.na(cases$pcr_denv)] <- 1)
+    cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
     cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
 #count just tested for denv not malaria  #just tested for malaria not denv
-    table(cases$tested_malaria, exclude = NULL)#malaria tested = 1946. NA = 748
-    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1791. NA = 903
+    table(cases$tested_malaria, exclude = NULL)#malaria tested = 2123. NA = 748
+    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1792. NA = 903
     table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 166 not malaria tested but denv tested. 321 malaria tested but not denv tested. 582 tested for neither. 1625 tested for both
+    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1772 teste for both
+    denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#538
+    denv_not_tested_malaria_tested <-  sum(is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#351
+    denv_tested_malaria_not_tested <-  sum(!is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#52
+    
   #keep only those tested for both
     cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
 #flow chart of subjects.    
-  length(cases$person_id)#1625 acute visits tested for both denv and malaria.
-  n_distinct(cases$person_id)#1573 unique subjects.
+  n_events_tested<-  sum(length(cases$person_id))#1772 acute visits tested for both denv and malaria.
+  n_subjects_tested<-  sum(n_distinct(cases$person_id), na.rm = TRUE)#1707 unique subjects.
+  
 #denv and any malaria  
 #Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
-  table(cases$malaria, cases$infected_denv_stfd)#662 negative for both; 46 positive for both; 86 positive for denv; 923 malaria positive.
+  #What I would like is the cases defined as follows:
+  #DENV: positive by RT-PCR, or IgG seroconversion (I've run your code but there are symptoms variables that give me errors.says they don't exist). Can you also query how many seroconverted bc, de, fg?
+  #this is the same way i have defined infection for desiree.
+  
+  table(cases$malaria, cases$infected_denv_stfd)
+  denv_pos_malaria_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria==0, na.rm = TRUE)#56
+  denv_pos_malaria_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria==1, na.rm = TRUE)#63
+  denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#691
+  denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#962
+  
   cases$malaria_species<-NA
   
   cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
-  cases_malariawide<-reshape(cases_malariawide, idvar = c("person_id", "redcap_event_name"), varying = 1:5,  direction = "long", timevar = "species", times=c("pf","pm","pv","po", "ni"), v.names=c("microscopy_malaria"))
+  cases_malariawide<-cases_malariawide[,order(colnames(cases_malariawide))]
+  cases_malariawide<-reshape(cases_malariawide, idvar = c("person_id", "redcap_event_name"), varying = 1:5,  direction = "long", timevar = "species", times=c("ni", "pf","pm","po","pv"), v.names=c("microscopy_malaria"))
   table(cases_malariawide$species, cases_malariawide$microscopy_malaria)
   
-#denv and pf malaria
-  table(cases$result_microscopy_malaria_kenya, cases$tested_denv_stfd_igg) #1213
+  cases$malaria_pf<-NA
+  cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==0 & cases$malaria!=1] <- 0)#rdt
+  cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==1] <- 1)#rdt
 
-microscopy_tested<-cases[which(!is.na(cases$result_microscopy_malaria_kenya) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
+  cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1] <- 0)#rdt
+  cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==1] <- 1)#rdt
+  
+  table(cases$malaria_pf)#malaria pos/neg
+  table(cases$malaria)#pf pos/neg
+  
+  table(cases$malaria_pf, cases$infected_denv_stfd)
+  denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#35
+  denv_pos_pf_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==1, na.rm = TRUE)#40
+  denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#497
+  denv_neg_pf_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==1, na.rm = TRUE)#719
+  
 
-  table(microscopy_tested$microscopy_malaria_pf_kenya___1, microscopy_tested$infected_denv_stfd)
-484+21+25+683  
-  table(cases$result_microscopy_malaria_kenya)#502+711
-  
-  489+24 # pf malaria
-#denv and non pf.
-  non_pf_malaria<-NA
-  cases <- within(cases, non_pf_malaria[cases$malaria==1 &cases$microscopy_malaria_pf_kenya___1 !=1] <- 1)
-  table(cases$non_pf_malaria, cases$infected_denv_stfd)
-  22+312 #non pf malaria +
-#denv and all malaria.
-  table(cases$malaria, cases$infected_denv_stfd, exclude = NULL)
-  table(cases$malaria)
-  table(cases$infected_denv_stfd, exclude = NULL)
-  
-#What I would like is the cases defined as follows:
-#DENV: positive by RT-PCR, or IgG seroconversion (I've run your code but there are symptoms variables that give me errors.says they don't exist). Can you also query how many seroconverted bc, de, fg?
-    #this is the same way i have defined infection for desiree.
-      table(aic_dummy_symptoms$seroc_denv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
-      table(aic_dummy_symptoms$seroc_chikv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
-    
-      table(aic_dummy_symptoms$result_pcr_chikv_kenya, aic_dummy_symptoms$redcap_event_name)    
-      table(aic_dummy_symptoms$result_pcr_denv_kenya, aic_dummy_symptoms$redcap_event_name)    
-    
-      table(aic_dummy_symptoms$result_pcr_chikv_stfd, aic_dummy_symptoms$redcap_event_name)    
-      table(aic_dummy_symptoms$result_pcr_denv_stfd, aic_dummy_symptoms$redcap_event_name)    
-    
-      table(aic_dummy_symptoms$tested_chikv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
-      table(aic_dummy_symptoms$tested_denv_stfd_igg, aic_dummy_symptoms$redcap_event_name)    
 #repate analyasis for both pf and malaria
       
     #create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
@@ -348,7 +346,7 @@ library("plyr")
 
 #export to csv
   setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-  f <- "cases.csv"
+  f <- "david_denv_pf_cohort.csv"
   write.csv(as.data.frame(cases), f )
 #save data frame
-  save(cases,file="david_cases.rda")
+  save(cases,file="david_denv_pf_cohort.rda")
