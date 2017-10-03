@@ -130,6 +130,7 @@ library("dplyr")
   table(cases$malaria)#pf pos/neg
   
   table(cases$malaria_pf, cases$infected_denv_stfd)
+  denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
   denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#35
   denv_pos_pf_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==1, na.rm = TRUE)#40
   denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#497
