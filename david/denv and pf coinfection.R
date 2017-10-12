@@ -46,6 +46,13 @@ library("dplyr")
   n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9479 patients reviewed
   aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #1992 patients included in study (aic, west)
   afi<-  sum(cases$acute==1, na.rm = TRUE)#2714 afi's
+  #redefine infected_denv_stfd to exclude ufi. 
+  #stfd denv igg seroconverters or PCR positives as infected.
+    R01_lab_results$infected_denv_stfd<-NA
+    R01_lab_results$infected_denv_stfd[R01_lab_results$tested_denv_stfd_igg ==1 |R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0]<-0
+    R01_lab_results$infected_denv_stfd[R01_lab_results$seroc_denv_stfd_igg==1|R01_lab_results$result_pcr_denv_kenya==1|R01_lab_results$result_pcr_denv_stfd==1]<-1
+    table(R01_lab_results$infected_denv_stfd)  
+    
   #table of denv at acute visit. 
   denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
 
