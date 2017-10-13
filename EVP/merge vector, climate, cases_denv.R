@@ -47,11 +47,11 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   denv$month_year<-as.Date(denv$month_year)
 #lag vectors by two weeks  
   Monthlyvector$month_year<-as.Date(Monthlyvector$month_year)
-  Monthlyvector$month_year_lag<-Monthlyvector$month_year-60
+  Monthlyvector$month_year_lag<-Monthlyvector$month_year-31
 
 #lag rain by one month  
   MonthlyClimate$month_year<-as.Date(MonthlyClimate$month_year)
-  MonthlyClimate$month_year_lag<-MonthlyClimate$month_year-30
+  MonthlyClimate$month_year_lag<-MonthlyClimate$month_year-93
 
   MonthlyClimate$month_year_lag<- as.yearmon(MonthlyClimate$month_year_lag)
   Monthlyvector$month_year_lag<- as.yearmon(Monthlyvector$month_year_lag)
@@ -68,9 +68,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   save(vector_climate_cases, file="vector_climate_cases.rda")
   write.csv(as.data.frame(vector_climate_cases), "vector_climate_cases.csv")
   
-  table(vector_climate_cases$infected_denv_chikv_stfd)
-  load("vector_climate_cases.rda")
-  
   vector_climate_cases_gps <-vector_climate_cases[which(!is.na(vector_climate_cases$aic_village_gps_lattitude)&!is.na(vector_climate_cases$aic_village_gps_longitude)), ]
   write.csv(as.data.frame(vector_climate_cases_gps), "vector_climate_cases_gps.csv")
 #  Create Table 1 stratified by trt (omit strata argument for overall table) -------------------------------------------------------------
@@ -84,8 +81,8 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
 
   #  summary(tableOne_denv_chikv)
   print(tableOne_denv, 
-        nonnormal = c( "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies"),
-        exact = c("month_year", "study_site", "month_year_lag", 'roof_type' , "floor_type","latrine_type","light_source","drinking_water_source", "id_cohort"),
+        nonnormal = c( "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies","age"),
+        exact = c("month_year", "study_site", "month_year_lag", 'roof_type' , "floor_type","latrine_type","light_source","drinking_water_source", "id_cohort","age_group","gender_all"),
         cramVars = c("id_cohort"), quote = TRUE)
   
   
@@ -96,63 +93,124 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   library(MASS)
   glm_nb<-glm.nb(infected_denv_stfd_monthly~ study_site + Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + number_windows + roof_type + floor_type + latrine_type + light_source + drinking_water_source +gender_all+age_group, data = vector_climate_cases)
   summary(glm_nb)
+  exp(coef(glm_nb))  
+
+  glm_binary_denv_chikv<-glm(infected_denv_chikv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source + drinking_water_source  +gender_all+age_group, family = binomial, data = vector_climate_cases)  
+  summary(glm_binary_denv_chikv)
+  exp(coef(glm_binary_denv_chikv))  
+
+  glm_binary_denv<-glm(infected_denv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source + drinking_water_source  +gender_all+age_group, family = binomial, data = vector_climate_cases)  
+  summary(glm_binary_denv)
+  exp(confint(glm_binary_denv))
   
-  glm_binary<-glm(infected_denv_chikv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source + drinking_water_source  +gender_all+age_group, family = binomial, data = vector_climate_cases)  
-  summary(glm_binary)
+  glm_binary_chikv<-glm(infected_chikv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source + drinking_water_source  +gender_all+age_group, family = binomial, data = vector_climate_cases)  
+  summary(glm_binary_chikv)
+  exp(confint(glm_binary_chikv))
+  
   hist(vector_climate_cases$infected_denv_stfd_monthly)
   hist(vector_climate_cases$infected_chikv_stfd_monthly)
   hist(vector_climate_cases$infected_denv_chikv_stfd)
   
 # gps data -------------------------------------------------------------
-  R01_lab_results$aic_village_gps_altitude
   #denv
     gps_denv<-vector_climate_cases[ , grepl( "gps|latit|longit|house_id|house_number|infected_denv|infected_chikv" , names(vector_climate_cases) ) ]
-  
     library(sp)
     gps_denv <-gps_denv[which(!is.na(gps_denv$aic_village_gps_lattitude)&!is.na(gps_denv$aic_village_gps_longitude)), ]
     coordinates(gps_denv) <- ~aic_village_gps_longitude + aic_village_gps_lattitude
     class(gps_denv)
     
+summary(gps_denv$aic_village_gps_lattitude)
+summary(gps_denv$aic_village_gps_longitude)
+    gps_denv.utm <-gps_denv[which(gps_denv$aic_village_gps_lattitude>100|gps_denv$aic_village_gps_longitude>100), ]
+    gps_denv.wgs <-gps_denv[which(gps_denv$aic_village_gps_lattitude<100|gps_denv$aic_village_gps_longitude<100), ]
+    
     require(raster)
-    projection(gps_denv) = "+init=espg:4326" # WGS84 coords
+#    projection(gps_denv) = "+init=espg:4326" # WGS84 coords
+#    projection(gps_denv) ="+proj=utm +zone=37 +datum=WGS84"
     shapefile(gps_denv, "gps_denv.shp")
     
-# plot data -------------------------------------------------------------
-  library(plotly)
-  
-  t <- list(
-    family = "sans serif",
-    size = 28,
-    color = 'black')
-  
-plot_ly(climate, x = ~date_collected, y = ~rainfall_hobo,  name = 'rainfall hobo' )%>%
-#  add_lines(y = ~temp_mean_hobo, name = 'Mean Temp Hobo') %>%
-#   add_lines(y = ~rh_mean_hobo, name = 'rh_mean_hobo') %>%
-#   add_lines(y = ~climate$dewpt_mean_hobo, name = 'dewpt_mean_hobo',type = 'lines') %>%
-    layout(yaxis = list(title = 'Climate variables'), 
-     margin = list(b = 160), xaxis = list(type ="date", nticks = 30, tickangle =45)
-   )
-
-
 ##---------------  mosquito, temp, cases plot
-p3 <- plot_ly() %>% 
-  add_trace(data=denv, x = ~month_year, y = ~infected_denv_stfd, name = 'DENV',type = 'scatter', mode = 'lines', yaxis = "y2") %>%
-  #add_trace(data=climate, x = ~date_collected, y = ~temp_mean_hobo, type = 'scatter', mode = 'lines', name='Mean temperature', yaxis = "y")%>%
-  #add_trace(data=climate, x = ~date_collected, y = ~rainfall_hobo, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
-  add_trace(data=ovi, x = ~ovi$year_month, y = ~ovi$egg_count, type = 'bar', name = 'Ovitrap', yaxis = "y")%>%
-  add_trace(data=prokopack, x = ~prokopack$year_month, y = ~prokopack$prokpack_sum, type = 'bar', name = 'Prokopack', yaxis = "y")%>%
-  add_trace(data=larva_long_aedes, x = ~larva_long_aedes$month_year, y = ~larva_long_aedes$larva_sum, type = 'bar', name = 'Larva', yaxis = "y")%>%
-  add_trace(data=bg, x = ~bg$month_year, y = ~bg$bg_aedes_sum, type = 'bar', name = 'BG', yaxis = "y")%>%
-  add_trace(data=hlc, x = ~hlc$month_year, y = ~hlc$hlc_aedes_sum, type = 'bar', name = 'HLC', yaxis = "y")%>%
+load("vector_climate_cases.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate_mean.rda")
+
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/Monthlyvector.rda")
+
+vector_climate_cases<-  vector_climate_cases[which(!is.na(vector_climate_cases$month_year)), ]
+vector_climate_cases$month_year<-as.Date(vector_climate_cases$month_year)
+
+chikv<-  chikv[which(!is.na(chikv$month_year)), ]
+chikv$month_year<-as.Date(chikv$month_year)
+
+denv<-  denv[which(!is.na(denv$month_year)), ]
+denv$month_year<-as.Date(denv$month_year)
+
+Monthlyvector<-  Monthlyvector[which(!is.na(Monthlyvector$month_year)), ]
+Monthlyvector$month_year<-as.Date(Monthlyvector$month_year)
+
+MonthlyClimate<-  MonthlyClimate[which(!is.na(MonthlyClimate$month_year)), ]
+MonthlyClimate$month_year<-as.Date(MonthlyClimate$month_year)
+
+MonthlyClimate_mean<-  MonthlyClimate_mean[which(!is.na(MonthlyClimate_mean$month_year)), ]
+MonthlyClimate_mean$month_year<-as.Date(MonthlyClimate_mean$month_year)
+
+# plot data -------------------------------------------------------------
+library(plotly)
+
+t <- list(
+  family = "sans serif",
+  size = 36,
+  color = 'black')
+f <- list(
+  family = "sans serif",
+  size = 28,
+  color = 'black')
+
+m <- list(
+  l = 100,
+  r = 100,
+  b = 150,
+  t = 100,
+  pad = 4
+)
+
+disease <- plot_ly() %>% 
+  add_trace(data=chikv, x = ~month_year, y = ~infected_chikv_stfd_monthly, name = 'CHIKV',type = 'bar', yaxis = "y") %>%
+  add_trace(data=denv, x = ~month_year, y = ~infected_denv_stfd_monthly, name = 'DENV',type = 'bar', yaxis = "y") %>%
   layout(
-          title = 'Total Aedes aegypti, temperature, and rainfall in Kenya 2014-2017',
-          margin = list(b = 160), 
-          xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
-          yaxis = list(side = 'left', title = 'Aedes Mosquito (count)', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
-          yaxis2 = list(side = 'right', overlaying = "y", title = 'Dengue Cases/Month', showgrid = FALSE, zeroline = FALSE),
-          barmode = 'stack'
-                        )
-         
+          title = 'Incident Cases DENV & CHIKV: PCR/IgG',
+          xaxis = list(type ="date", nticks = 15, tickangle =45,title = ""),
+          yaxis = list(side = 'left', title = 'Total Cases/Month', showgrid = FALSE, zeroline = FALSE),
+          barmode="stack",
+          titlefont=t, font=f, autosize=T, margin = m)
+
+
+climate <- plot_ly() %>% 
+  add_trace(data=MonthlyClimate_mean, x = ~month_year, y = ~AvgTempRange, type = 'scatter', mode = 'lines', name='Temperature Range', yaxis = "y")%>%
+  add_trace(data=MonthlyClimate_mean, x = ~month_year, y = ~TtlRainfall, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y2")%>%
+  layout(
+    title = 'Climate in four sites in Kenya, 2014-2017',
+    xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
+    yaxis = list(side = 'left', title = 'Total Rain (mm)', showgrid = FALSE, zeroline = FALSE),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Temp range (Degrees Celcius)', showgrid = FALSE, zeroline = FALSE),
+    titlefont=t, font=f, autosize=T, margin = m)
+
+vector <- plot_ly() %>% 
+  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.Indoor.ovi+ttl_Aedes_spp_Outdoor.ovi, type = 'bar', name = 'Ovitrap', yaxis = "y2")%>%
+  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y2")%>%
+  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp_in.proko+Ttl_Aedes.spp_out.proko, type = 'bar', name = 'Prokopack', yaxis = "y")%>%
+  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.bg, type = 'bar', name = 'BG', yaxis = "y")%>%
+  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.hlc, type = 'bar', name = 'HLC', yaxis = "y")%>%
+  layout(
+    title = 'Total Aedes spp. count in four sites in Kenya 2014-2017',
+    margin = list(b = 160), 
+    xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
+    yaxis = list(side = 'left', title = 'Adult Aedes Mosquito (count)', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Immature Aedes Mosquito (count)', showgrid = FALSE, zeroline = FALSE),
+    barmode = 'stack'
+  )
+
+
       p3
       
 ##--------------- z scores: mosquito, temp, cases plot

@@ -23,17 +23,17 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate")
   
 #plot climate
   library(plotly)
-  plot_ly(climate, x = ~date_collected, y = ~rainfall_hobo, type = 'scatter', mode="lines", name = 'rainfall hobo')%>%
-    add_trace(y = ~temp_mean_hobo, name = 'Mean Temp Hobo',type = 'scatter', mode="lines", yaxis = "y2") %>%
-    add_trace(y = ~temp_max_hobo, name = 'Max Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
-    add_trace(y = ~temp_min_hobo, name = 'Min Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
-    #add_trace(y = ~rh_mean_hobo, name = 'rh_mean_hobo',type = 'scatter',mode="lines") %>%
-    #add_trace(y = ~climate$dewpt_mean_hobo, name = 'dewpt_mean_hobo',type = 'scatter',mode="lines") %>%
-    layout(title = 'Total Aedes aegypti, temperature, and rainfall in Kenya 2014-2017',
-                     xaxis = list(title = "Date"),
-                     yaxis = list(side = 'left', title = 'Temp (C)', showgrid = FALSE, zeroline = TRUE), barmode='relative',
-                     yaxis2 = list(side = 'right', overlaying = "y", title = 'Mean temperature (degrees C)', 
-                                   showgrid = FALSE, zeroline = FALSE, range = c(15, 33)))
+  plot_hobo<-plot_ly(climate, x = ~date_collected, y = ~rainfall_hobo, type = 'scatter', mode="lines", name = 'rainfall hobo')%>%
+            add_trace(y = ~temp_mean_hobo, name = 'Mean Temp Hobo',type = 'scatter', mode="lines", yaxis = "y2") %>%
+            add_trace(y = ~temp_max_hobo, name = 'Max Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
+            add_trace(y = ~temp_min_hobo, name = 'Min Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
+            #add_trace(y = ~rh_mean_hobo, name = 'rh_mean_hobo',type = 'scatter',mode="lines") %>%
+            #add_trace(y = ~climate$dewpt_mean_hobo, name = 'dewpt_mean_hobo',type = 'scatter',mode="lines") %>%
+            layout(title = 'Total Aedes aegypti, temperature, and rainfall in Kenya 2014-2017',
+                             xaxis = list(title = "Date"),
+                             yaxis = list(side = 'left', title = 'Temp (C)', showgrid = FALSE, zeroline = TRUE), barmode='relative',
+                             yaxis2 = list(side = 'right', overlaying = "y", title = 'Mean temperature (degrees C)', 
+                                           showgrid = FALSE, zeroline = FALSE, range = c(15, 33)))
   
   #   add_trace(data=temp, x = ~Date, y = ~upper, name = 'Max temp', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2")%>%
   #   add_trace(data=temp, x = ~Date, y = ~lower, name = 'Min temp', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2")%>%
@@ -298,12 +298,22 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate")
         
         save(obamaMonthlyClimate,file="obamaMonthlyClimate.rda")
         
-        
+
+        MonthlyClimate_mean <- ddply(climate, ~month_collected , summarise, AvgTemp = mean(temp_mean_hobo, na.rm = T), 
+                                     AvgMaxTemp = mean(temp_max_hobo, na.rm = T), AvgMinTemp = mean(temp_min_hobo, na.rm = T), 
+                                     OverallMaxTemp = max(temp_max_hobo, na.rm = T), OverallMinTemp = min(temp_min_hobo, na.rm = T),
+                                     AvgTempRange = mean((temp_max_hobo - temp_min_hobo), na.rm = T), AvgRH = mean(rh_mean_hobo, na.rm = T),
+                                     AvgDewPt = mean(dewpt_mean_hobo, na.rm = T), TtlRainfall = sum(rainfall_hobo, na.rm = T),
+                                     study_site = "all") 
+        table(round(MonthlyClimate_mean$AvgTempRange))
         
 # merge the villages back -------------------------------------------------
   MonthlyClimate<-rbind(obamaMonthlyClimate, chulaimboMonthlyClimate, UkundaMonthlyClimate, msambweniMonthlyClimate, kisumuMonthlyClimate)
         
 # save climate data -------------------------------------------------------------
   MonthlyClimate$month_year<-MonthlyClimate$month_collected
-  save(MonthlyClimate,file="MonthlyClimate.rda")
+        MonthlyClimate$month_year<-MonthlyClimate$month_collected
+        MonthlyClimate_mean$month_year<-MonthlyClimate_mean$month_collected
+        save(MonthlyClimate_mean,file="MonthlyClimate_mean.rda")
+        save(MonthlyClimate,file="MonthlyClimate.rda")
         
