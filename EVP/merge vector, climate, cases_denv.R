@@ -25,6 +25,16 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   R01_lab_results$study_site<-tolower(R01_lab_results$study_site)
   table(R01_lab_results$study_site)
   
+  Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==1] <- "u")
+  Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==2] <- "m")
+  Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==3] <- "c")
+  Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==4] <- "k")
+  
+  table(Monthlyvector$study_site)
+  table(MonthlyClimate$study_site)
+  table(R01_lab_results$study_site)
+  
+  
   denv <- ddply(R01_lab_results, .(month_year, study_site),
                 summarise, infected_denv_stfd_monthly = sum(infected_denv_stfd, na.rm = TRUE))
   chikv <- ddply(R01_lab_results, .(month_year, study_site),
@@ -50,7 +60,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   
   names(MonthlyClimate)[names(MonthlyClimate) == 'month_year'] <- 'month_year_climate'
   
-  
   vector_climate_cases<-Monthlyvector
   vector_climate_cases<-merge(vector_climate_cases, R01_lab_results, by.x = c("month_year_lag","study_site"), by.y = c("month_year","study_site"), all = T) 
   vector_climate_cases<-merge(vector_climate_cases, MonthlyClimate, by.x = c("month_year","study_site"), by.y = c("month_year_lag","study_site"), all = T)
@@ -59,25 +68,39 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   save(vector_climate_cases, file="vector_climate_cases.rda")
   write.csv(as.data.frame(vector_climate_cases), "vector_climate_cases.csv")
   
+  table(vector_climate_cases$infected_denv_chikv_stfd)
   load("vector_climate_cases.rda")
-#  model data-------------------------------------------------------------
-  names <- c('roof_type' ,'house_id', "house_number", "study_site","floor_type","dem_water_source","latrine_type","light_source","dem_cooking_fuel")
-  vector_climate_cases[,names] <- lapply(vector_climate_cases[,names] , factor)
-
   
-  library(MASS)
-  glm_nb<-glm.nb(infected_denv_stfd_monthly~ study_site + Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + number_windows + roof_type + floor_type + latrine_type + light_source, data = vector_climate_cases)
-  summary(glm_nb)
-  
-  glm_binary<-glm(infected_denv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source, family = binomial, data = vector_climate_cases)  
-  summary(glm_binary)
-  hist(vector_climate_cases$infected_denv_stfd_monthly)
+  vector_climate_cases_gps <-vector_climate_cases[which(!is.na(vector_climate_cases$aic_village_gps_lattitude)&!is.na(vector_climate_cases$aic_village_gps_longitude)), ]
+  write.csv(as.data.frame(vector_climate_cases_gps), "vector_climate_cases_gps.csv")
 #  Create Table 1 stratified by trt (omit strata argument for overall table) -------------------------------------------------------------
   library(tableone)
-  vars <- c("month_year", "study_site", "month_year_lag", "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies", 'roof_type' , "floor_type","latrine_type","light_source","dem_cooking_fuel","dem_water_source", "id_cohort")
-  factorVars <- c("study_site",'roof_type',"floor_type","latrine_type","light_source","dem_cooking_fuel","dem_water_source", "id_cohort")
-  tableOne <- CreateTableOne(vars = vars, factorVars=factorVars, strata = "infected_denv_stfd", data = vector_climate_cases)
-  tableOne
+  table(vector_climate_cases$study_site)  
+  vars <- c("month_year", "study_site", "month_year_lag", "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies", 'roof_type' , "floor_type","latrine_type","light_source", "id_cohort","drinking_water_source")
+  factorVars <- c("study_site",'roof_type',"floor_type","latrine_type","light_source", "id_cohort","drinking_water_source")
+  tableOne_denv <- CreateTableOne(vars = vars, factorVars=factorVars, strata = "infected_denv_stfd", data = vector_climate_cases)
+  summary(tableOne_denv)
+  print(tableOne_denv, 
+        nonnormal = c( "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies"),
+        exact = c("month_year", "study_site", "month_year_lag", 'roof_type' , "floor_type","latrine_type","light_source","drinking_water_source", "id_cohort"),
+        cramVars = c("id_cohort"), quote = TRUE)
+  
+  
+#  model data-------------------------------------------------------------
+  names <- c('roof_type' ,'house_id', "house_number", "study_site","floor_type","latrine_type","light_source","drinking_water_source")
+  vector_climate_cases[,names] <- lapply(vector_climate_cases[,names] , factor)
+
+  table(vector_climate_cases$infected_denv_stfd_monthly)
+  library(MASS)
+  glm_nb<-glm.nb(infected_denv_stfd_monthly~ study_site + Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + number_windows + roof_type + floor_type + latrine_type + light_source + drinking_water_source, data = vector_climate_cases)
+  summary(glm_nb)
+  
+  glm_binary<-glm(infected_denv_stfd~ study_site +  Ttl_Aedes.spp.Indoor.ovi + ttl_Aedes_spp_Outdoor.ovi + Ttl_Aedes.spp.bg + Ttl_Aedes.spp_in.proko + Ttl_Aedes.spp_out.proko + Ttl_Aedes.spp.hlc + Ttl_Aedes.spp.larva + AvgTemp + AvgMaxTemp + AvgMinTemp + OverallMaxTemp + OverallMinTemp + AvgTempRange + AvgRH + AvgDewPt + TtlRainfall + RainfallAnomalies + TempRangeAnomalies + TempDewPtDiffAnomalies + TempAnomalies + RHAnomalies + RHTempAnomalies + roof_type + number_windows + floor_type + latrine_type + light_source + drinking_water_source, family = binomial, data = vector_climate_cases)  
+  summary(glm_binary)
+  hist(vector_climate_cases$infected_denv_stfd_monthly)
+  hist(vector_climate_cases$infected_chikv_stfd_monthly)
+  hist(vector_climate_cases$infected_denv_chikv_stfd)
+  
 # gps data -------------------------------------------------------------
   R01_lab_results$aic_village_gps_altitude
   #denv
@@ -93,18 +116,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
     shapefile(gps_denv, "gps_denv.shp")
     
 # plot data -------------------------------------------------------------
-  plot(vector_climate_cases$infected_denv_stfd[vector_climate_cases$infected_denv_stf>0], round(vector_climate_cases$TtlRainfall[vector_climate_cases$infected_denv_stf>0]))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$TempAnomalies))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$AvgTemp))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$AvgRH))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$RainfallAnomalies))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$Ttl_Aedes.spp.larva))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$Ttl_Aedes.spp.hlc))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$ttl_Aedes_spp_Outdoor.ovi))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$Ttl_Aedes.spp_in.proko))
-  plot(vector_climate_cases$infected_denv_stfd, round(vector_climate_cases$Ttl_Aedes.spp.Indoor.ovi))
-  
-  
   library(plotly)
   
   t <- list(
