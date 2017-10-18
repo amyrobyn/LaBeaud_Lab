@@ -113,24 +113,39 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   
 # gps data -------------------------------------------------------------
   #denv
-    gps_denv<-vector_climate_cases[ , grepl( "gps|latit|longit|house_id|house_number|infected_denv|infected_chikv" , names(vector_climate_cases) ) ]
+  gps_denv<-vector_climate_cases
+  gps_denv<-vector_climate_cases[ , !grepl( "year|month" , names(vector_climate_cases) ) ]
+  #gps_denv<-vector_climate_cases[ , grepl( "gps|latit|longit|house_id|house_number|infected_denv|infected_chikv" , names(vector_climate_cases) ) ]
+  write.csv(as.data.frame(gps_denv), "gps_cases.csv")
+  
     library(sp)
     gps_denv <-gps_denv[which(!is.na(gps_denv$aic_village_gps_lattitude)&!is.na(gps_denv$aic_village_gps_longitude)), ]
     coordinates(gps_denv) <- ~aic_village_gps_longitude + aic_village_gps_lattitude
     class(gps_denv)
     
-summary(gps_denv$aic_village_gps_lattitude)
-summary(gps_denv$aic_village_gps_longitude)
-    gps_denv.utm <-gps_denv[which(gps_denv$aic_village_gps_lattitude>100|gps_denv$aic_village_gps_longitude>100), ]
-    gps_denv.wgs <-gps_denv[which(gps_denv$aic_village_gps_lattitude<100|gps_denv$aic_village_gps_longitude<100), ]
-    
+    summary(gps_denv$aic_village_gps_lattitude)
+    summary(gps_denv$aic_village_gps_longitude)
+
     require(raster)
 #    projection(gps_denv) = "+init=espg:4326" # WGS84 coords
-#    projection(gps_denv) ="+proj=utm +zone=37 +datum=WGS84"
-    shapefile(gps_denv, "gps_denv.shp")
+    projection(gps_denv) ="+proj=utm +zone=37 +datum=WGS84"
+    shapefile(gps_denv, "gps_denv.shp",overwrite=T)
+
+    gps_denv.u <-gps_denv[which(gps_denv$study_site=="u"), ]
+    gps_denv.c <-gps_denv[which(gps_denv$study_site=="c"), ]
+    gps_denv.k <-gps_denv[which(gps_denv$study_site=="k"), ]
+    gps_denv.m <-gps_denv[which(gps_denv$study_site=="m"), ]
+
+    cases.k<-spplot(gps_denv.k,c("infected_denv_chikv_stfd"), cuts = 2, legendEntries = c("uninfected", "infected.denv.or.chikv"), include.lowest=T)    
+    cases.c<-spplot(gps_denv.c,"infected_denv_chikv_stfd", cuts = 2, legendEntries = c("uninfected", "infected.denv.or.chikv"), include.lowest=T)    
+    cases.m<-spplot(gps_denv.m,"infected_denv_chikv_stfd", cuts = 2, legendEntries = c("uninfected", "infected.denv.or.chikv"), include.lowest=T)    
+    cases.u<-spplot(gps_denv.u,"infected_denv_chikv_stfd", cuts = 2, legendEntries = c("uninfected", "infected.denv.or.chikv"), include.lowest=T)    
+    library(gridExtra)
     
+    grid.arrange(cases.m,cases.u,cases.k,cases.c)
+
 ##---------------  mosquito, temp, cases plot
-load("vector_climate_cases.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- built environment/data/vector_climate_cases.rda")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate.rda")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate_mean.rda")
 
@@ -168,7 +183,7 @@ f <- list(
 
 m <- list(
   l = 100,
-  r = 100,
+  r = 150,
   b = 150,
   t = 100,
   pad = 4
@@ -195,7 +210,12 @@ climate <- plot_ly() %>%
     yaxis2 = list(side = 'right', overlaying = "y", title = 'Temp range (Degrees Celcius)', showgrid = FALSE, zeroline = FALSE),
     titlefont=t, font=f, autosize=T, margin = m)
 
-vector <- plot_ly() %>% 
+
+
+
+
+
+ plot_ly() %>% 
   add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.Indoor.ovi+ttl_Aedes_spp_Outdoor.ovi, type = 'bar', name = 'Ovitrap', yaxis = "y2")%>%
   add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y2")%>%
   add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp_in.proko+Ttl_Aedes.spp_out.proko, type = 'bar', name = 'Prokopack', yaxis = "y")%>%
@@ -207,87 +227,9 @@ vector <- plot_ly() %>%
     xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
     yaxis = list(side = 'left', title = 'Adult Aedes Mosquito (count)', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
     yaxis2 = list(side = 'right', overlaying = "y", title = 'Immature Aedes Mosquito (count)', showgrid = FALSE, zeroline = FALSE),
-    barmode = 'stack'
-  )
-
-
-      p3
-      
-##--------------- z scores: mosquito, temp, cases plot
-      
-      larva_long_aedes$larva_z<-(larva_long_aedes$larva_sum-mean(larva_long_aedes$larva_sum))/sd(larva_long_aedes$larva_sum)
-      bg$bg_z<-(bg$bg_aedes_sum -mean(bg$bg_aedes_sum))/sd(bg$bg_aedes_sum)
-      hlc$hlc_z<-(hlc$hlc_aedes_sum -mean(hlc$hlc_aedes_sum))/sd(hlc$hlc_aedes_sum)
-      ovi$ovi_z<-(ovi$egg_count -mean(ovi$egg_count))/sd(ovi$egg_count)
-      denv$denv_z <-(denv$infected_denv_stfd -mean(denv$infected_denv_stfd))/sd(denv$infected_denv_stfd)
-      prokopack$proko_z <-(prokopack$prokpack_sum -mean(prokopack$prokpack_sum))/sd(prokopack$prokpack_sum)
-      
-      
-      p4 <- plot_ly() %>% 
-        add_trace(data=denv, x = ~month_year, y = ~denv_z, name = 'z score DENV',type = 'scatter', mode = 'lines', yaxis = "y2") %>%
-        #add_trace(data=climate, x = ~month_year_lag, y = ~temp_mean_hobo, type = 'scatter', mode = 'lines', name='Mean temperature', yaxis = "y")%>%
-        #add_trace(data=climate, x = ~month_year_lag, y = ~rainfall_hobo, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
-        add_trace(data=ovi, x = ~ovi$month_year_lag, y = ~ovi$ovi_z, type = 'bar', name = 'Z score Ovitrap', yaxis = "y")%>%
-        add_trace(data=prokopack, x = ~prokopack$month_year_lag, y = ~proko_z, type = 'bar', name = 'Z score Prokopack', yaxis = "y")%>%
-        add_trace(data=larva_long_aedes, x = ~larva_long_aedes$month_year_lag, y = ~larva_z, type = 'bar', name = 'Z score Larva', yaxis = "y")%>%
-        add_trace(data=bg, x = ~bg$month_year_lag, y = ~bg_z , type = 'bar', name = 'Z score BG', yaxis = "y")%>%
-        add_trace(data=hlc, x = ~hlc$month_year_lag, y = ~hlc_z, type = 'bar', name = 'Z score HLC', yaxis = "y")%>%
-
-      layout(
-          title = 'Z score: Aedes aegypti and DENV in Kenya 2014-2017',
-          margin = list(b = 160, t = 160, r = 160, l = 160), 
-          xaxis = list(type ="One month lagged date", nticks = 15, tickangle =45,title = "Date"),
-          yaxis = list(side = 'left', title = 'Aedes Mosquito (Z score )', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
-          yaxis2 = list(side = 'right', overlaying = "y", title = 'Z score: Dengue Cases/Month', showgrid = FALSE, zeroline = FALSE),
-          barmode = 'stack', font  = t, legend = list(orientation = "h",   # show entries horizontally
-                                                      xanchor = "center",  # use center of legend as anchor
-                                                      x = 0.5, y = -0.5)
-          
-        )
-      p4
-      
-
-      
-      p5 <- plot_ly() %>% 
-        add_trace(data=denv, x = ~month_year, y = ~denv_z, name = 'z score DENV',type = 'scatter', mode = 'lines', yaxis = "y2") %>%
-        #add_trace(data=climate, x = ~month_year, y = ~temp_mean_hobo, type = 'scatter', mode = 'lines', name='Mean temperature', yaxis = "y")%>%
-        #add_trace(data=climate, x = ~month_year, y = ~rainfall_hobo, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
-        add_trace(data=ovi, x = ~ovi$month_year, y = ~ovi$ovi_z, type = 'bar', name = 'Z score Ovitrap', yaxis = "y")%>%
-        add_trace(data=prokopack, x = ~prokopack$month_year, y = ~proko_z, type = 'bar', name = 'Z score Prokopack', yaxis = "y")%>%
-        add_trace(data=larva_long_aedes, x = ~larva_long_aedes$month_year, y = ~larva_z, type = 'bar', name = 'Z score Larva', yaxis = "y")%>%
-        add_trace(data=bg, x = ~bg$month_year, y = ~bg_z , type = 'bar', name = 'Z score BG', yaxis = "y")%>%
-        add_trace(data=hlc, x = ~hlc$month_year, y = ~hlc_z, type = 'bar', name = 'Z score HLC', yaxis = "y")%>%
-        
-        layout(
-          title = 'Z score: Aedes aegypti and DENV in Kenya 2014-2017',
-          margin = list(b = 160, t = 160, r = 160, l = 160), 
-          xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
-          yaxis = list(side = 'left', title = 'Aedes Mosquito (Z score )', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
-          yaxis2 = list(side = 'right', overlaying = "y", title = 'Z score: Dengue Cases/Month', showgrid = FALSE, zeroline = FALSE),
-          barmode = 'stack', font  = t, legend = list(orientation = "h",   # show entries horizontally
-                                                      xanchor = "center",  # use center of legend as anchor
-                                                      x = 0.5, y = -0.5)
-          
-        )
-      p5      
-      
-      
-      p6 <- plot_ly() %>% 
-        add_trace(data=denv, x = ~month_year, y = ~denv_z, name = 'z score DENV',type = 'scatter', mode = 'lines', yaxis = "y2") %>%
-        add_trace(data=climate, x = ~month_year_lag, y = ~temp_mean_hobo, type = 'bar',  name='Mean temperature', yaxis = "y")%>%
-        add_trace(data=climate, x = ~month_year_lag, y = ~rainfall_hobo, type = 'bar', name='Total Rain', yaxis = "y")%>%
-        
-        layout(
-          title = 'Z score: Aedes aegypti and DENV in Kenya 2014-2017',
-          margin = list(b = 160, t = 160, r = 160, l = 160), 
-          xaxis = list(type ="date", nticks = 15, tickangle =45,title = "One month lagged date"),
-          yaxis = list(side = 'left', title = 'climate', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
-          yaxis2 = list(side = 'right', overlaying = "y", title = 'Z score: Dengue Cases/Month', showgrid = FALSE, zeroline = FALSE),
-          font  = t, legend = list(orientation = "h",   # show entries horizontally
-                                                      xanchor = "center",  # use center of legend as anchor
-                                                      x = 0.5, y = -0.5)
-          
-        )
-      p6
-      
-      
+    barmode = 'stack')
+ 
+ chart_link = api_create(p, filename="annotation/style")
+ 
+ 
+ 

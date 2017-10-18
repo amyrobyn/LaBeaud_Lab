@@ -42,10 +42,9 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
   
   prokopack$time_prokopack<-format(prokopack$date_time_prokopack, "%H:%M")
 
-  prokopack$date_collected<-trunc(prokopack$date_collected, units = "days")
-  prokopack$month_year_lag<-  prokopack$month_year-30
+  prokopack$month_year_lag<-trunc(prokopack$date_collected, units = "days")
+    prokopack$month_year_lag<-  prokopack$month_year-30
   prokopack$date_collected<-as.POSIXct(prokopack$date_collected)
-  class(prokopack$date_collected)
   prokopack$month_year<-as.yearmon(prokopack$date_collected)
   prokopack$month_year<-as.Date(prokopack$month_year)
   
@@ -56,6 +55,37 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     prokpack_indoor<-prokopack[which(prokopack$indoors_prokopack___1=="1")  , ]
       prokpack_indoor<-prokpack_indoor[ , grepl( "redcap_event_name|study_site|_indoor|date_collected|indoors_prokopack___1|team_leader_|survey_|no_sleepers" , names(prokpack_indoor) ) ]
       prokpack_indoor<-prokpack_indoor[ , !grepl( "other" , names(prokpack_indoor) ) ]
+      
+      prokpack_indoor<-prokpack_indoor[order((-grepl('redcap', names(prokpack_indoor)))+1L)]
+      prokpack_indoor<-prokpack_indoor[order((-grepl('date_collected', names(prokpack_indoor)))+1L)]
+      
+      write.csv(as.data.frame(prokpack_indoor), "prokpack_indoor_redcap.csv", na="", row.names = FALSE)
+      
+      ## S3 method for class 'redcapApiConnection' THis method will require reformatting all the dates to meet redcap standards.
+        Redcap.token <- readLines("api.key.txt") # Read API token from folder
+        REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+        rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
+        
+        
+        prokpack_indoor$redcap_repeat_instance<-paste(prokpack_indoor$date_collected, prokpack_indoor$redcap_event_name)
+        prokpack_indoor$redcap_repeat_instance<-with(prokpack_indoor, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
+        hlc_redcapbg_redcapredcap_repeat_instance<-as.numeric(as.character(prokpack_indoor$redcap_repeat_instance))
+        table(prokpack_indoor$redcap_repeat_instance)
+        prokpack_indoor$redcap_repeat_instrument<-"prokopack"
+
+        prokpack_indoor_redcap<-prokpack_indoor
+        prokpack_indoor_redcap<-prokpack_indoor_redcap[ , !grepl( "study_site" , names(prokpack_indoor_redcap) ) ]
+        prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('redcap_repeat_instance', names(prokpack_indoor_redcap)))+1L)]
+        prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('redcap_repeat_instrument', names(prokpack_indoor_redcap)))+1L)]
+        prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('redcap_event_name', names(prokpack_indoor_redcap)))+1L)]
+        prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('date_collected', names(prokpack_indoor_redcap)))+1L)]
+
+        importRecords(rcon, prokpack_indoor_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+        write.csv(as.data.frame(prokpack_indoor_redcap), "prokpack_indoor_redcap.csv", row.names = F, na="")
+        
+        
+      
+      
       prokpack_indoor$date_collected<-as.factor(as.character(prokpack_indoor$date_collected))
         prokpack_indoor_sum <-aggregate(. ~date_collected + redcap_event_name + survey_prokopack, data=prokpack_indoor, sum, na.rm=TRUE)
         prokpack_indoor_sum <- within(prokpack_indoor_sum, indoors_prokopack___1[prokpack_indoor_sum$indoors_prokopack___1 >1] <- 1)
@@ -69,6 +99,26 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
 
     prokpack_outdoor<-prokopack[which(prokopack$indoors_prokopack___2=="1")  , ]
     prokpack_outdoor<-prokpack_outdoor[ , grepl( "redcap_event_name|study_site|_outdoor|date_collected|indoors_prokopack___2|bushes|grass|survey_" , names(prokpack_outdoor) ) ]
+    prokpack_outdoor<-prokpack_outdoor[ , !grepl( "sum" , names(prokpack_outdoor) ) ]
+    prokpack_outdoor<-prokpack_outdoor[order((-grepl('redcap', names(prokpack_outdoor)))+1L)]
+    prokpack_outdoor<-prokpack_outdoor[order((-grepl('date_collected', names(prokpack_outdoor)))+1L)]
+    prokpack_outdoor_redcap<-prokpack_outdoor
+
+    ## S3 method for class 'redcapApiConnection' THis method will require reformatting all the dates to meet redcap standards.
+
+    prokpack_outdoor_redcap$redcap_repeat_instance<-paste(prokpack_outdoor_redcap$date_collected, prokpack_outdoor_redcap$redcap_event_name)
+    prokpack_outdoor_redcap$redcap_repeat_instance<-with(prokpack_outdoor_redcap, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
+    redcap_repeat_instance<-as.numeric(as.character(prokpack_outdoor_redcap$redcap_repeat_instance))
+    table(prokpack_outdoor_redcap$redcap_repeat_instance)
+    prokpack_outdoor_redcap$redcap_repeat_instrument<-"prokopack"
+    prokpack_outdoor_redcap<-prokpack_outdoor_redcap[order(-(grepl('date_collected|redcap', names(prokpack_outdoor_redcap)))+1L)]
+    prokpack_outdoor_redcap<-prokpack_outdoor_redcap[ , !grepl( "study_site" , names(prokpack_outdoor_redcap) ) ]
+    
+    write.csv(as.data.frame(prokpack_outdoor_redcap), "prokpack_outdoor_redcap.csv", na="", row.names = FALSE)
+    importRecords(rcon, prokpack_outdoor, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL,                  batch.size = -1)
+    
+    
+    
       prokpack_outdoor$date_collected<-as.factor(as.character(prokpack_outdoor$date_collected))
       prokpack_outdoor_sum <-aggregate(. ~date_collected + redcap_event_name + survey_prokopack, data=prokpack_outdoor, sum, na.rm=TRUE)
       
@@ -90,44 +140,51 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
                                  Ttl_Aedes.spp_out.proko = sum(prokpack_sum_outdoor )) 
       
 # sum gps data by house -----------------------------------------------------
-      gps<-vector[ , grepl( "redcap_event_name|study_site|latit|long|altit|acuracy|redcap_repeat_instrument|compound_house_id" , names(vector) ) ]
+      gps<-vector[ , grepl( "redcap_event_name|study_site|latit|long|altit|acuracy|redcap_repeat_instrument|compound_house_id|village" , names(vector) ) ]
       gps<-gps[which(gps$redcap_repeat_instrument=="")  , ]
-      gps<-gps[ , grepl( "redcap_event_name|study_site|latit|long|altit|acuracy|compound_house_id" , names(gps) ) ]
+      gps<-gps[ , grepl( "redcap_event_name|study_site|latit|long|altit|acuracy|compound_house_id|village" , names(gps) ) ]
       
-      gps$date_collected <-min(prokopack$date_collected)
-      gps$date_collected<-as.numeric(as.Date(gps$date_collected))
+      library(dplyr)    
+      mindate<-prokopack %>% group_by(compound_house_id) %>% slice(which.min(date_collected))
+      gps<-gps[ , !grepl( "date_collected" , names(gps) ) ]
+      mindate<-mindate[ , grepl( "date_collected|compound_house_id" , names(mindate) ) ]
+      gps<-merge(gps, mindate, by="compound_house_id")
+
       gps<-gps[,order(colnames(gps))]
       gps<-gps[order(-(grepl('date|red', names(gps)))+1L)]
+      gps_redcap<-gps
+  
+      importRecords(rcon, gps_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL,batch.size = -1)
       
 # sum house data by house -----------------------------------------------------
       house<-vector[1:45]
       house<-house[ , !grepl( "latit|long|altit|acuracy|larva|prokopack|bg|hlc|ovitrap" , names(house) ) ]
       house<-house[which(house$redcap_repeat_instrument=="house_repeatable")  , ]
       house<-house[ , !grepl( "repeat" , names(house) ) ]
-      
-      house$date_collected<-as.numeric(as.Date(house$date_house))
-      house<-house[ , !grepl( "date_house" , names(house) ) ]
-      house$date_collected <-min(prokopack$date_collected)
-      house$date_collected<-as.numeric(as.Date(house$date_collected))
-      
-      
+      colnames(house)[colnames(house)=="date_house"] <- "date_collected"
+
       house<-house[,order(colnames(house))]
       house<-house[order(-(grepl('date|red', names(house)))+1L)]
 
       house_first <- house[order(house$compound_house_id, house$date_collected),]
-      house_first <- ordered_data[!duplicated(ordered_data$compound_house_id),]
+      house_redcap<-house
+      house_redcap<-house_redcap[ , !grepl( "date_house" , names(house_redcap) ) ]
+      house_redcap<-house_redcap[which(!is.na(house_redcap$date_collected))  , ]
+      house_redcap<-house_redcap[which(house_redcap$date_collected!="")  , ]
+      house_redcap<-house_redcap[which(house_redcap$date_collected!="  ")  , ]
+      house_redcap$date_collected<-as.Date(house_redcap$date_collected)
+      importRecords(rcon, house_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
       
       
-# sum larva by house  and make wide -----------------------------------------------------
+# sum larva by house -----------------------------------------------------
       larva<-vector[ , grepl( "redcap_event_name|study_site|larva|repeat|compound_house_id" , names(vector) ) ]
       larva<-larva[which(larva$redcap_repeat_instrument=="larva")  , ]
       larva<-larva[order(-(grepl('date|red', names(larva)))+1L)]
       names(larva)[names(larva) == 'date_time_larva'] <- 'date_collected'
 
       larva$date_collected<-ymd_hm(larva$date_collected)
+      class(larva$date_collected)
       larva$time_larva<-format(larva$date_collected, "%H:%M")
-      larva$date_collected<-trunc(larva$date_collected, units = "days")
-      larva$date_collected<-as.numeric(as.Date(larva$date_collected))
 
       larva<-larva[,order(colnames(larva))]
 
@@ -157,14 +214,19 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
         times=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 14, 15)
         #  View(larva)
             larva_long<-reshape(larva, idvar = c("date_collected", "redcap_event_name", "redcap_repeat_instance"), varying = c(22:216),  direction = "long", timevar = "container_number", times = times, v.names = v.names)
+            library(beepr)
+            beep(sound = 4)
             #replace "" with NA
             larva_long[larva_long==""]<-NA
-            larva_long$date_collected<-as.Date(larva_long$date_collected)
-            larva_long$month_year_lag<-larva_long$date_collected-30
-            larva_long$month_year_lag<-as.yearmon(larva_long$month_year_lag)
-            larva_long$month_year<-as.yearmon(larva_long$date_collected)
+
+            larva_long$month_year<-as.Date(larva_long$date_collected)
+            larva_long$month_year<-as.yearmon(larva_long$month_year)
             larva_long$month_year<-as.Date(larva_long$month_year)
+            
+            larva_long$month_year_lag<-larva_long$month_year-30
+            larva_long$month_year_lag<-as.yearmon(larva_long$month_year_lag)
             larva_long$month_year_lag<-as.Date(larva_long$month_year_lag)
+            
             
             larva_long<-larva_long[which(!is.na(larva_long$date_collected))  , ]
             larva_long<-larva_long[which(!is.na(larva_long$month_year_lag))  , ]
@@ -179,25 +241,79 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
 
       #add in room_place for each container and for in and out.
         larva_out<-larva_long[which(larva_long$inoutdoors_larva =="2")  , ]
-
         larva_in<-larva_long[which(larva_long$inoutdoors_larva=="1")  , ]
 
         #remove all missing rows.
 
         larva_in <-larva_in[which(!is.na(larva_in$aedes_species_larva)|!is.na(larva_in$aedes_species_larva_other)|!is.na(larva_in$anopheles_species_larva)|!is.na(larva_in$anopheles_species_larva_other)|!is.na(larva_in$early_instars_larva)|!is.na(larva_in$genus_larva)|!is.na(larva_in$genus_other_larva)|!is.na(larva_in$habitat_id_larva)|!is.na(larva_in$habitat_size_larva)|!is.na(larva_in$habitat_type_larva)|!is.na(larva_in$habitat_type_other_larva))  , ]
-    
-            larva_in$date_house_in_out<-paste(larva_in$date_collected, larva_in$redcap_event_name, larva_in$inoutdoors_larva)
-            larva_in$count<-with(larva_in, ave(as.character(date_house_in_out), date_house_in_out, FUN = seq_along))
-            larva_in$count<-as.numeric(as.character(larva_in$count))
-            hist(larva_in$count)
+        larva_in<-larva_in[order((-grepl('date_collected|redcap_event_name|redcap_repeat', names(larva_in)))+1L)]
+        
+        larva_in$date_house_in_out<-paste(larva_in$date_collected, larva_in$redcap_event_name, larva_in$inoutdoors_larva)
+        larva_in$redcap_repeat_instance<-with(larva_in, ave(as.character(date_house_in_out), date_house_in_out, FUN = seq_along))
+        larva_in$redcap_repeat_instance<-as.numeric(as.character(larva_in$redcap_repeat_instance))
+        hist(larva_in$redcap_repeat_instance)
+        
+        
+        larva_in_redcap<-larva_in
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="inoutdoors_larva"] <- "in_out_larva___1"
+        larva_in_redcap<-larva_in_redcap[ , !grepl( "inoutdoors_other_larva|month_year|date_house_in_out|container_number|compound_house_id|study_site" , names(larva_in_redcap) ) ]
+        
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="count"] <- "redcap_repeat_instance"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="roomplace_larva"] <- "roomplace_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="roomplace_other_larva"] <- "roomplace_other_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="container_number"] <- "container_number_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="aedes_species_larva"] <- "aedes_species_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="aedes_species_larva_other"] <- "aedes_species_larva_other_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="anopheles_species_larva"] <- "anopheles_species_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="anopheles_species_larva_other"] <- "anopheles_species_larva_other_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="early_instars_larva"] <- "early_instars_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="genus_larva"] <- "genus_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="genus_other_larva"] <- "genus_other_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="habitat_id_larva"] <- "habitat_id_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="habitat_type_other_larva"] <- "habitat_type_other_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="habitat_size_larva"] <- "habitat_size_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="habitat_type_larva"] <- "habitat_type_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="late_instars_larva"] <- "late_instars_larva_1_in"
+        colnames(larva_in_redcap)[colnames(larva_in_redcap)=="pupae_larva"] <- "pupae_larva_1_in"
+        
+        write.csv(as.data.frame(larva_in_redcap), "larva_in_redcap.csv", na="", row.names = FALSE)
+        importRecords(rcon, larva_in_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL,                  batch.size = -1)
+        
 
         larva_out <-larva_out[which(!is.na(larva_out$aedes_species_larva)|!is.na(larva_out$aedes_species_larva_other)|!is.na(larva_out$anopheles_species_larva)|!is.na(larva_out$anopheles_species_larva_other)|!is.na(larva_out$early_instars_larva)|!is.na(larva_out$genus_larva)|!is.na(larva_out$genus_other_larva)|!is.na(larva_out$habitat_id_larva)|!is.na(larva_out$habitat_size_larva)|!is.na(larva_out$habitat_type_larva)|!is.na(larva_out$habitat_type_other_larva)) , ]
 
             larva_out$date_house_in_out<-paste(larva_out$date_collected, larva_out$redcap_event_name, larva_out$inoutdoors_larva)
-            larva_out$count<-with(larva_out, ave(as.character(date_house_in_out), date_house_in_out, FUN = seq_along))
-            larva_out$count<-as.numeric(as.character(larva_out$count))
-            hist(larva_out$count)
-            hist(larva_out$early_instars_larva)
+            larva_out$redcap_repeat_instance<-with(larva_out, ave(as.character(date_house_in_out), date_house_in_out, FUN = seq_along))
+            larva_out$redcap_repeat_instance<-as.numeric(as.character(larva_out$redcap_repeat_instance))
+            hist(larva_out$redcap_repeat_instance)
+
+            larva_out_redcap<-larva_out
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="inoutdoors_larva"] <- "in_out_larva___2"
+            larva_out_redcap <- within(larva_out_redcap, in_out_larva___2[larva_out_redcap$in_out_larva___2 ==2] <- 1)
+            larva_out_redcap<-larva_out_redcap[ , !grepl( "date_house_in_out|inoutdoors_other_larva|month_year|date_house_out_out|container_number|compound_house_id|study_site" , names(larva_out_redcap) ) ]
+            
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="roomplace_larva"] <- "roomplace_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="roomplace_other_larva"] <- "roomplace_other_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="container_number"] <- "container_number_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="aedes_species_larva"] <- "aedes_species_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="aedes_species_larva_other"] <- "aedes_species_larva_other_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="anopheles_species_larva"] <- "anopheles_species_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="anopheles_species_larva_other"] <- "anopheles_species_larva_other_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="early_intstars_larva"] <- "early_intstars_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="genus_larva"] <- "genus_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="genus_other_larva"] <- "genus_other_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="habitat_id_larva"] <- "habitat_id_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="habitat_type_other_larva"] <- "habitat_type_other_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="habitat_size_larva"] <- "habitat_size_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="habitat_type_larva"] <- "habitat_type_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="early_instars_larva"] <- "early_instars_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="late_instars_larva"] <- "late_instars_larva_1_out"
+            colnames(larva_out_redcap)[colnames(larva_out_redcap)=="pupae_larva"] <- "pupae_larva_1_out"
+
+            larva_out_redcap<-larva_out_redcap[order((-grepl('date_collected|redcap_event_name|redcap_repeat', names(larva_out_redcap)))+1L)]
+            
+            write.csv(as.data.frame(larva_out_redcap), "larva_out_redcap.csv", na="", row.names = FALSE)
+            
             
             # monthly summary by site: larva_long_aedes -------------------------------------------------------------
             Monthlylarva_long_aedes <- ddply(larva_long_aedes, ~month_year +study_site, summarise, 
@@ -212,9 +328,32 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       bg<-bg[which(bg$redcap_repeat_instrument=="bg")  , ]
       bg<-bg[which(!is.na(bg$datetime_bg)|!is.na(bg$date_bg))  , ]
       
-      bg$bg_aedes_sum<-rowSums(bg[,grep("aedes_agypti_gravid_bg|aedes_agypti_half_gravid_bg|aedes_agypti_unfed_bg|aedes_agypti_bloodfed_bg", names(bg))], na.rm = TRUE)
-    
+      bg<-bg[order(-(grepl('date_collected|redcap', names(bg)))+1L)]
       bg[bg==""]<-NA
+      bg_redcap<-bg
+      bg_redcap<-bg_redcap[ , grepl( "redcap_event_name|study_site|bg|date" , names(bg_redcap) ) ]
+      colnames(bg_redcap)[colnames(bg_redcap)=="datetime_bg"] <- "date_collected"
+      
+      bg_redcap<-bg_redcap[ , grepl( "redcap_event_name|study_site|bg|date_collected" , names(bg_redcap) ) ]
+      bg_redcap<-bg_redcap[ , !grepl( "date_bg" , names(bg_redcap) ) ]
+      bg_redcap$date_collected<-as.Date(bg_redcap$date_collected)
+      bg_redcap<-bg_redcap[which(!is.na(bg_redcap$date_collected))  , ]
+      
+      
+      bg_redcap$redcap_repeat_instance<-paste(bg_redcap$date_collected, bg_redcap$redcap_event_name)
+      bg_redcap$redcap_repeat_instance<-with(bg_redcap, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
+      hlc_redcapbg_redcapredcap_repeat_instance<-as.numeric(as.character(bg_redcap$redcap_repeat_instance))
+      table(bg_redcap$redcap_repeat_instance)
+      bg_redcap$redcap_repeat_instrument<-"bg"
+      bg_redcap<-bg_redcap[order(-(grepl('date_collected|redcap', names(bg_redcap)))+1L)]
+      
+      write.csv(as.data.frame(bg_redcap), "bg_redcap.csv", row.names = F, na="")
+      importRecords(rcon, bg_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+      
+      
+      bg$bg_aedes_sum<-rowSums(bg[,grep("aedes_agypti_gravid_bg|aedes_agypti_half_gravid_bg|aedes_agypti_unfed_bg|aedes_agypti_bloodfed_bg", names(bg))], na.rm = TRUE)
+      
+    
       bg$datetime_bg[is.na(bg$datetime_bg)] <- bg$date_bg[is.na(bg$datetime_bg)]
       bg$datetime_bg<-as.Date(bg$datetime_bg)
       bg$date_collected<-trunc(bg$datetime_bg, units = "days")
@@ -236,8 +375,27 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
 # sum ovi  by house  and make wide -----------------------------------------------------
       ovi<-vector[ , grepl( "redcap_event_name|study_site|ovi|repeat|house" , names(vector) ) ]
       ovi<-ovi[which(ovi$redcap_repeat_instrument=="ovitrap")  , ]
-      ovi$egg_count<-rowSums(ovi[,grep("egg_count_ovitrap_in|egg_count_ovitrap_out", names(ovi))], na.rm = TRUE)
+      ovi_redcap<-ovi
+      ovi_redcap<-ovi_redcap[ , grepl( "redcap_event_name|ovi" , names(ovi_redcap) ) ]
 
+      colnames(ovi_redcap)[colnames(ovi_redcap)=="date_collected_day_ovitrap"] <- "date_collected"
+      ovi_redcap$date_collected<-ymd(ovi_redcap$date_collected)
+      ovi_redcap$date_collected<-as.Date(ovi_redcap$date_collected)
+
+      ovi_redcap<-ovi_redcap[which(!is.na(ovi_redcap$date_collected))  , ]
+      
+      
+      ovi_redcap$redcap_repeat_instance<-paste(ovi_redcap$date_collected, ovi_redcap$redcap_event_name, ovi_redcap$indoors_ovitrap___1)
+      ovi_redcap$redcap_repeat_instance<-with(ovi_redcap, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
+      ovi_redcap$redcap_repeat_instance<-as.numeric(as.character(ovi_redcap$redcap_repeat_instance))
+      table(ovi_redcap$redcap_repeat_instance)
+      ovi_redcap$redcap_repeat_instrument<-"ovitrap"
+      ovi_redcap<-ovi_redcap[order(-(grepl('date_collected|redcap', names(ovi_redcap)))+1L)]
+      
+      importRecords(rcon, ovi_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+      write.csv(as.data.frame(ovi_redcap), "ovi_redcap.csv", row.names = F, na="")
+      
+      ovi$egg_count<-rowSums(ovi[,grep("egg_count_ovitrap_in|egg_count_ovitrap_out", names(ovi))], na.rm = TRUE)
       ovi$date_set_day_ovitrap<-as.Date(ovi$date_set_day_ovitrap)
       ovi$month_year_lag<-ovi$date_set_day_ovitrap-30
       ovi$month_year_lag<-as.yearmon(ovi$month_year_lag)
@@ -266,6 +424,31 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       hlc<-hlc[which(hlc$redcap_repeat_instrument=="hlc")  , ]
       hlc[hlc==""]<-NA
       hlc<-hlc[which(!is.na(hlc$date_hlc))  , ]
+      
+      hlc_redcap<-hlc
+      hlc_redcap<-hlc_redcap[ , grepl( "redcap_event_name|hlc" , names(hlc_redcap) ) ]
+      
+      colnames(hlc_redcap)[colnames(hlc_redcap)=="date_hlc"] <- "date_collected"
+      
+      hlc_redcap$date_collected<-ymd(hlc_redcap$date_collected)
+      hlc_redcap$date_collected<-as.Date(hlc_redcap$date_collected)
+      
+      hlc_redcap<-hlc_redcap[which(!is.na(hlc_redcap$date_collected))  , ]
+      
+      
+
+      hlc_redcap$redcap_repeat_instance<-paste(hlc_redcap$date_collected, hlc_redcap$redcap_event_name)
+      hlc_redcap$redcap_repeat_instance<-with(hlc_redcap, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
+      hlc_redcap$redcap_repeat_instance<-as.numeric(as.character(hlc_redcap$redcap_repeat_instance))
+      table(hlc_redcap$redcap_repeat_instance)
+      hlc_redcap$redcap_repeat_instrument<-"hlc"
+
+      hlc_redcap<-hlc_redcap[order(-(grepl('date_collected|redcap', names(hlc_redcap)))+1L)]
+      
+      write.csv(as.data.frame(hlc_redcap), "hlc_redcap.csv", row.names = F, na="")
+      
+      importRecords(rcon, hlc_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+      
       hlc$hlc_aedes_sum<-rowSums(hlc[,grep("aedes_agypti_half_gravid_hlc|aedes_agypti_unfed_hlc|aedes_agypti_bloodfed_hlc|aedes_agypti_gravid_hlc", names(hlc))], na.rm = TRUE)
       
       hlc$date_hlc<-as.Date(hlc$date_hlc)
@@ -294,7 +477,8 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       save(Monthlyvector,file="Monthlyvector.rda")
     
 # merge the trap types by house-------------------------------------------------
-    house.vector<-merge(house.Ovitrap, house.bg, by = c("compound_house_id","study_site"), all = TRUE)
+    house.vector<-house.Ovitrap
+    house.vector<-merge(house.vector, house.bg, by = c("compound_house_id","study_site"), all = TRUE)
     house.vector<-merge(house.vector, house.prokopack, by = c("compound_house_id","study_site"), all = TRUE)
     house.vector<-merge(house.vector, house.hlc, by = c("compound_house_id","study_site"), all = TRUE)
     house.vector<-merge(house.vector, house.larva_long_aedes, by = c("compound_house_id","study_site"), all = TRUE)
@@ -311,7 +495,8 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]
     house.vector <-house.vector[which(house.vector$compound_house_id!="2002"), ]#exclude for now.
     write.csv(as.data.frame(house.vector), "house.vector.gps.csv")
-
+    
+    library(sp)
     coordinates(house.vector) <- ~longitude + latitude
     
 
@@ -320,10 +505,17 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     shapefile(house.vector, "house.vector.shp", overwrite=TRUE)
     
 
-    house.vector.u <-house.vector[which(house.vector$study_site==1), ]
+house.vector.u <-house.vector[which(house.vector$study_site==1), ]
     house.vector.m <-house.vector[which(house.vector$study_site==2), ]
     house.vector.c <-house.vector[which(house.vector$study_site==3), ]
     house.vector.k <-house.vector[which(house.vector$study_site==4), ]
+    
+    house.vector.k <-house.vector.k[which(house.vector.k$compound_house_id!=1146), ]
+    house.vector.k13 <-house.vector.k[which(house.vector.k$village_estate.x==13), ]
+    house.vector.knot13 <-house.vector.k[which(house.vector.k$village_estate.x<13), ]
+    
+    spplot(house.vector.knot13, "village_estate.x", do.log=T, main = "Kisumu",key.space = "right", cuts = 7)
+    spplot(house.vector.not13, "compound_house_id", do.log=T, main = "Kisumu",key.space = "right")
     
     library(rgdal)
     library(sp)
@@ -332,23 +524,17 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     text2 = list("sp.text", c(179100,333090), "500 m")
     scale = list("SpatialPolygonsRescale", layout.scale.bar(), offset = c(178600,332990), scale = 500, fill=c("transparent","black"))
     arrow = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(178750,332500), scale = 400)
-    plot.vector.u<-spplot(house.vector.u, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Total Aedes Mosquito count 2014-2017", sub = "Source: LaBeaud et.al.", 
-           key.space = "right", as.table = TRUE, cuts = c(.2,.5,1,2,5,10,20,50,100,200,500,1000,2000), sp.layout=list(scale,text1,text2,arrow))
+    plot.vector.u<-spplot(house.vector.u, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Ukunda", sub = "", 
+           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.m<-spplot(house.vector.m, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Total Aedes Mosquito count 2014-2017", sub = "Source: LaBeaud et.al.", 
-           key.space = "right", as.table = TRUE, cuts = c(.2,.5,1,2,5,10,20,50,100,200,500,1000,2000), sp.layout=list(scale,text1,text2,arrow))
+    plot.vector.m<-spplot(house.vector.m, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Msambweni", sub = "", 
+           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.c<-spplot(house.vector.c, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Total Aedes Mosquito count 2014-2017", sub = "Source: LaBeaud et.al.", 
-           key.space = "right", as.table = TRUE, cuts = c(.2,.5,1,2,5,10,20,50,100,200,500,1000,2000), sp.layout=list(scale,text1,text2,arrow))
+    plot.vector.c<-spplot(house.vector.c, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Chulaimbo", sub = "", 
+           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.k<-spplot(house.vector.k, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Total Aedes Mosquito count 2014-2017", sub = "Source: LaBeaud et.al.", 
-           key.space = "right", as.table = TRUE, cuts = c(.2,.5,1,2,5,10,20,50,100,200,500,1000,2000), sp.layout=list(scale,text1,text2,arrow))
+    plot.vector.k<-spplot(house.vector.k, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Kisumu", sub = "", 
+           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
 
     library(gridExtra)
-    
-    grid.arrange(plot.vector.u,plot.vector.k,plot.vector.m,plot.vector.c)
-    
-
-    
-    
-   
+    grid.arrange(plot.vector.u,plot.vector.m,plot.vector.c,plot.vector.k, top = "Total Aedes Mosquito count 2014-2017", bottom = "Source: LaBeaud et.al.")
