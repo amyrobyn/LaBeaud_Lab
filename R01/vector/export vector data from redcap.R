@@ -69,7 +69,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
         
         prokpack_indoor$redcap_repeat_instance<-paste(prokpack_indoor$date_collected, prokpack_indoor$redcap_event_name)
         prokpack_indoor$redcap_repeat_instance<-with(prokpack_indoor, ave(as.character(redcap_repeat_instance), redcap_repeat_instance, FUN = seq_along))
-        hlc_redcapbg_redcapredcap_repeat_instance<-as.numeric(as.character(prokpack_indoor$redcap_repeat_instance))
+        prokpack_indoor$redcap_repeat_instance<-as.numeric(as.character(prokpack_indoor$redcap_repeat_instance))
         table(prokpack_indoor$redcap_repeat_instance)
         prokpack_indoor$redcap_repeat_instrument<-"prokopack"
 
@@ -331,7 +331,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       bg<-bg[order(-(grepl('date_collected|redcap', names(bg)))+1L)]
       bg[bg==""]<-NA
       bg_redcap<-bg
-      bg_redcap<-bg_redcap[ , grepl( "redcap_event_name|study_site|bg|date" , names(bg_redcap) ) ]
+      bg_redcap<-bg_redcap[ , grepl( "redcap_event_name|bg|date" , names(bg_redcap) ) ]
       colnames(bg_redcap)[colnames(bg_redcap)=="datetime_bg"] <- "date_collected"
       
       bg_redcap<-bg_redcap[ , grepl( "redcap_event_name|study_site|bg|date_collected" , names(bg_redcap) ) ]
@@ -345,9 +345,12 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       hlc_redcapbg_redcapredcap_repeat_instance<-as.numeric(as.character(bg_redcap$redcap_repeat_instance))
       table(bg_redcap$redcap_repeat_instance)
       bg_redcap$redcap_repeat_instrument<-"bg"
-      bg_redcap<-bg_redcap[order(-(grepl('date_collected|redcap', names(bg_redcap)))+1L)]
-      
+      bg_redcap<-bg_redcap[order(-(grepl('redcap', names(bg_redcap)))+1L)]
+      bg_redcap<-bg_redcap[order(-(grepl('date_collected', names(bg_redcap)))+1L)]
+      bg_redcap$time_bg[is.na(bg_redcap$time_bg)]<-"00:00"
+      bg_redcap$date_collected<-paste(bg_redcap$date_collected,bg_redcap$time_bg, sep = " ")
       write.csv(as.data.frame(bg_redcap), "bg_redcap.csv", row.names = F, na="")
+      
       importRecords(rcon, bg_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
       
       
@@ -505,14 +508,14 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     shapefile(house.vector, "house.vector.shp", overwrite=TRUE)
     
 
-house.vector.u <-house.vector[which(house.vector$study_site==1), ]
+    house.vector.u <-house.vector[which(house.vector$study_site==1), ]
     house.vector.m <-house.vector[which(house.vector$study_site==2), ]
     house.vector.c <-house.vector[which(house.vector$study_site==3), ]
     house.vector.k <-house.vector[which(house.vector$study_site==4), ]
     
     house.vector.k <-house.vector.k[which(house.vector.k$compound_house_id!=1146), ]
-    house.vector.k13 <-house.vector.k[which(house.vector.k$village_estate.x==13), ]
-    house.vector.knot13 <-house.vector.k[which(house.vector.k$village_estate.x<13), ]
+    house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x==13), ]
+    house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x<13), ]
     
     spplot(house.vector.knot13, "village_estate.x", do.log=T, main = "Kisumu",key.space = "right", cuts = 7)
     spplot(house.vector.not13, "compound_house_id", do.log=T, main = "Kisumu",key.space = "right")
@@ -535,6 +538,9 @@ house.vector.u <-house.vector[which(house.vector$study_site==1), ]
     
     plot.vector.k<-spplot(house.vector.k, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Kisumu", sub = "", 
            key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
-
+    
+    
     library(gridExtra)
     grid.arrange(plot.vector.u,plot.vector.m,plot.vector.c,plot.vector.k, top = "Total Aedes Mosquito count 2014-2017", bottom = "Source: LaBeaud et.al.")
+
+    
