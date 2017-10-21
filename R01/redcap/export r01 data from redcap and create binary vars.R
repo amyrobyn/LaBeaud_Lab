@@ -13,13 +13,15 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  #library(beepr)
+  #beep(sound=4)
 
   currentDate <- Sys.Date() 
   FileName <- paste("R01_lab_results.backup",currentDate,".rda",sep=" ") 
 #  save(R01_lab_results,file=FileName)
 load(FileName)
-beep(sound=4)
+
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 table(R01_lab_results$outcome_hospitalized)
 table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized)
@@ -35,6 +37,45 @@ R01_lab_results$id_visit<-as.integer(factor(R01_lab_results$redcap_event_name))
 R01_lab_results$id_visit<-R01_lab_results$id_visit-1
 
 
+# sites, city, rural ------------------------------------------------------
+    
+    #site
+    R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
+    R01_lab_results$site<-NA
+    table(R01_lab_results$id_city)
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="G"] <- "C")
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="U"] <- "C")
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="L"] <- "C")
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="M"] <- "C")
+    
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="C"] <- "W")
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="R"] <- "W")
+    R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="K"] <- "W")
+    
+    
+    R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="G"] <- "M")
+    R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="L"] <- "M")
+    
+    R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="R"] <- "C")
+    R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="O"] <- NA)
+    table(R01_lab_results$id_city)
+    ##rural
+    R01_lab_results$rural<-NA
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="G"] <- 1)
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="U"] <- 0)
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="L"] <- 1)
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="M"] <- 1)
+    
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="C"] <- 1)
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="R"] <- 1)
+    R01_lab_results <- within(R01_lab_results, rural[R01_lab_results$id_city=="K"] <- 0)
+    
+    #cohort
+    R01_lab_results <- within(R01_lab_results, id_cohort[R01_lab_results$id_cohort=="M"] <- "F")
+    
+    table(R01_lab_results$rural, exclude = NULL)
+    table(R01_lab_results$site, exclude = NULL)
+
 # interview dates ---------------------------------------------------------
     library("zoo")
     library("lubridate")
@@ -44,28 +85,25 @@ R01_lab_results$id_visit<-R01_lab_results$id_visit-1
 
     interview_dates<-R01_lab_results_visit[, grepl("person_id|redcap_event_name|interview_date|id_city|redcap_event_name|id_cohort", names(R01_lab_results_visit))]
     interview_dates<-interview_dates[, !grepl("u24", names(interview_dates))]
-    View(interview_dates)
     interview_dates[is.na(interview_dates)] = ''
     interview_dates<-unite(interview_dates, int_date, interview_date_aic:interview_date, sep='')
-    R01_lab_results_no_date<- interview_dates[which(interview_dates$int_date=="")  , ]
-    table(R01_lab_results_no_date$id_cohort,R01_lab_results_no_date$id_city, exclude = NULL)
-
-    table(R01_lab_results_no_date$id_cohort,R01_lab_results_no_date$redcap_event_name,R01_lab_results_no_date$id_city)
-    
 
     R01_lab_results<- merge(interview_dates, R01_lab_results,  by=c("person_id", "redcap_event_name", "id_city", "id_cohort"), all = TRUE)
-    
+
+#send samples without interview dates to cornleius. 
     R01_lab_results_no_date<- R01_lab_results
     R01_lab_results_no_date<-R01_lab_results_no_date[, grepl("person_id|redcap_event_name|interview_date|int_date|id_city|redcap_event_name|id_cohort", names(R01_lab_results_no_date))]
     R01_lab_results_no_date<-R01_lab_results_no_date[, !grepl("u24", names(R01_lab_results_no_date))]
     R01_lab_results_no_date[R01_lab_results_no_date==""]<-NA
-    write.csv(as.data.frame(R01_lab_results_no_date), "R01_lab_results_no_date.csv", row.names = F )
+#    write.csv(as.data.frame(R01_lab_results_no_date), "R01_lab_results_no_date.csv", row.names = F )
     
     
     #dates
     R01_lab_results$int_date <-ymd(R01_lab_results$int_date)
     n_distinct(R01_lab_results$int_date)
+    
     R01_lab_results$month_year <- as.yearmon(R01_lab_results$int_date)
+
     R01_lab_results$year <- year(as.Date(R01_lab_results$int_date, origin = '1900-1-1'))
     
 
@@ -337,39 +375,6 @@ table(R01_lab_results$denv_chikv_result_pcr)
   table(R01_lab_results$denv_chikv_result_ufi)
   38/(38+454)*100
 
-# prevalence
-R01_lab_results <- within(R01_lab_results, prev_chikv_igg_stfd_all_pcr[prev_chikv_igg_stfd_all_pcr>0|R01_lab_results$chikv_result_ufi==1] <- 1)
-R01_lab_results <- within(R01_lab_results, prev_denv_igg_stfd_all_pcr[prev_denv_igg_stfd_all_pcr>0|R01_lab_results$denv_result_ufi==1] <- 1)
-
-table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
-table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$id_cohort)
-
-# seroprevalence
-table(R01_lab_results$result_igg_denv_stfd)
-8185  + 222   + 10 
-222/8417*100
-table(R01_lab_results$result_igg_chikv_stfd)
-9134+  225+   16 
-225/9375*100
-
-table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$site, exclude=NULL)
-62/(6024+62+13)*100#chikv seroprevalence coast
-163/(3110+163+3)*100#chikv seroprevalence west
-table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$site)
-189/(4961+189+9)*100#denv coast
-33/(3224+33+1)*100#denv west
-
-table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$rural)
-144/(144+4687+7)*100#chikv rural
-81/(81+9+4447)*100#chikv urban
-table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural)
-  150/(1+150+4677)*100#denv rural
-  72/(72+9+3508)*100#denv urban
-
-table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural, exclude=NULL)
-
-table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
-table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
 # acute -----------------------------------------------------------------
 #create acute variable
 R01_lab_results$acute<-NA
@@ -395,13 +400,29 @@ R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$acute!=1 & !is.
 
 table(R01_lab_results$acute)
 
+##age group---------------------------------------------------
+R01_lab_results$age = R01_lab_results$age_calc_rc  # your new merged column starts with age_calc_rc
+R01_lab_results$age[!is.na(R01_lab_results$aic_calculated_age)] = R01_lab_results$aic_calculated_age[!is.na(R01_lab_results$aic_calculated_age)]  # merge with aic_calculated_age
+R01_lab_results$age[!is.na(R01_lab_results$age_calc)] = R01_lab_results$age_calc[!is.na(R01_lab_results$age_calc)]  # merge with age_calc
+
+R01_lab_results$age<-round(R01_lab_results$age)
+
+summary(R01_lab_results$age)
+R01_lab_results$age_group<-NA
+R01_lab_results <- within(R01_lab_results, age_group[age<=2] <- "under 2")
+R01_lab_results <- within(R01_lab_results, age_group[age>2 & age<=5] <- "2-5")
+R01_lab_results <- within(R01_lab_results, age_group[age>5 & age<=10] <- "6-10")
+R01_lab_results <- within(R01_lab_results, age_group[age>10 & age<=15] <- "11-15")
+R01_lab_results <- within(R01_lab_results, age_group[age>15] <- "over 15")
+R01_lab_results$age_group <- factor(R01_lab_results$age_group, levels = c("under 2", "2-5", "6-10", "11-15", "over 15"))
+table(R01_lab_results$age_group, exclude = NULL)
+
 # deidentify -----------------------------------------------------------------
-#double check to de-identify data
 #take name out of event.
-#names(R01_lab_results)[names(R01_lab_results) == 'redcap_event_name'] <- 'redcap_event'
-#identifiers<-grep("name|gps", names(R01_lab_results), value = TRUE)
-#R01_lab_results<-R01_lab_results[ , !(names(R01_lab_results) %in% identifiers)]
-#names(R01_lab_results)[names(R01_lab_results) == 'redcap_event'] <- 'redcap_event_name'
+  names(R01_lab_results)[names(R01_lab_results) == 'redcap_event_name'] <- 'redcap_event'
+identifiers<-grep("name|gps", names(R01_lab_results), value = TRUE)
+R01_lab_results<-R01_lab_results[ , !(names(R01_lab_results) %in% identifiers)]
+names(R01_lab_results)[names(R01_lab_results) == 'redcap_event'] <- 'redcap_event_name'
 
 # incidence -----------------------------------------------------------------
 table(R01_lab_results$seroc_denv_kenya_igg, R01_lab_results$seroc_denv_stfd_igg, exclude=NULL)
@@ -459,6 +480,72 @@ table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$id_cohort)
 8/(8 + 714)*100#hcc
 214/(214 + 3802)*100#aic
 
+
+##denominator is only those tested for chikv by pcr or igg at stfd ---------------------------------------------------
+R01_lab_results$tested_chikv<-NA
+R01_lab_results<- within(R01_lab_results, tested_chikv[infected_chikv_stfd==1 |tested_chikv_stfd_igg==1 | !is.na(result_pcr_chikv_kenya)| !is.na(result_pcr_chikv_stfd)| !is.na(chikv_result_ufi)] <- 1)
+table(R01_lab_results$infected_chikv_stfd, exclude = NULL)
+table(R01_lab_results$tested_chikv, exclude = NULL)
+table(R01_lab_results$tested_chikv, R01_lab_results$infected_chikv_stfd, exclude = NULL)
+(19/3938)*100 #incidence chikv
+
+##denominator is only those tested for denv by pcr or igg at stfd---------------------------------------------------
+R01_lab_results$tested_denv<-NA
+R01_lab_results<- within(R01_lab_results, tested_denv[infected_denv_stfd==1 |tested_denv_stfd_igg==1 | !is.na(result_pcr_denv_kenya) | !is.na(result_pcr_denv_stfd)|!is.na(denv_result_ufi)] <- 1)
+#denominator is only those tested for denv or chikv by pcr or igg at stfd
+R01_lab_results$tested_denv_chikv<-NA
+R01_lab_results<- within(R01_lab_results, tested_denv_chikv[tested_chikv==1 |tested_denv==1] <- 1)
+
+# prevalence -----------------------------------------------------------------
+R01_lab_results_prev_denv<-R01_lab_results[which(R01_lab_results$infected_denv_stfd==1|R01_lab_results$result_igg_denv_stfd==1),]
+R01_lab_results_prev_denv <- R01_lab_results_prev_denv[order(R01_lab_results_prev_denv$person_id, R01_lab_results_prev_denv$int_date),]
+R01_lab_results_prev_denv <- R01_lab_results_prev_denv[!duplicated(R01_lab_results_prev_denv$person_id),]
+R01_lab_results_prev_denv$prev_denv_stfd<-"1"
+R01_lab_results_prev_denv<-R01_lab_results_prev_denv[ , grepl( "person_id|redcap_event|prev_denv_stfd" , names(R01_lab_results_prev_denv) ) ]
+
+R01_lab_results<-  merge(R01_lab_results_prev_denv, R01_lab_results, by = c("person_id","redcap_event_name"), all.y = TRUE)
+
+R01_lab_results_prev_chikv<-R01_lab_results[which(R01_lab_results$infected_chikv_stfd==1|R01_lab_results$result_igg_chikv_stfd==1),]
+R01_lab_results_prev_chikv <- R01_lab_results_prev_chikv[order(R01_lab_results_prev_chikv$person_id, R01_lab_results_prev_chikv$int_date),]
+R01_lab_results_prev_chikv <- R01_lab_results_prev_chikv[!duplicated(R01_lab_results_prev_chikv$person_id),]
+R01_lab_results_prev_chikv$prev_chikv_stfd<-1
+R01_lab_results_prev_chikv<-R01_lab_results_prev_chikv[ , grepl( "person_id|redcap_event|prev_chikv_stfd" , names(R01_lab_results_prev_chikv) ) ]
+R01_lab_results<-  merge(R01_lab_results_prev_chikv, R01_lab_results, by = c("person_id","redcap_event_name"), all.y = T)
+
+R01_lab_results <- within(R01_lab_results, prev_chikv_stfd[(tested_chikv==1 & is.na(prev_chikv_stfd))|(!is.na(result_igg_chikv_stfd) & is.na(prev_chikv_stfd)) ] <- 0)
+R01_lab_results <- within(R01_lab_results, prev_denv_stfd[(tested_denv==1 & is.na(prev_denv_stfd))|(!is.na(result_igg_denv_stfd) & is.na(prev_denv_stfd)) ] <- 0)
+
+table(R01_lab_results$prev_chikv_stfd,R01_lab_results$id_cohort)
+table(R01_lab_results$prev_denv_stfd, R01_lab_results$id_cohort)
+
+# seroprevalence -----------------------------------------------------------------
+table(R01_lab_results$result_igg_denv_stfd)
+8185  + 222   + 10 
+222/8417*100
+table(R01_lab_results$result_igg_chikv_stfd)
+9134+  225+   16 
+225/9375*100
+
+table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$site, exclude=NULL)
+62/(6024+62+13)*100#chikv seroprevalence coast
+163/(3110+163+3)*100#chikv seroprevalence west
+table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$site)
+189/(4961+189+9)*100#denv coast
+33/(3224+33+1)*100#denv west
+
+table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$rural)
+144/(144+4687+7)*100#chikv rural
+81/(81+9+4447)*100#chikv urban
+table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural)
+150/(1+150+4677)*100#denv rural
+72/(72+9+3508)*100#denv urban
+
+table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural, exclude=NULL)
+
+table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
+table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
+
+
 # graphs -----------------------------------------------------------------
 #stanford infected denv aic
 #symptom sum histogram for aic
@@ -475,6 +562,7 @@ table(R01_lab_results$symptomatic, R01_lab_results$infected_denv_stfd)
 
 #kenya infected denv aic
 #symptom sum for aic
+infected_pcr_denv_stfd_igg<-R01_lab_results[which(R01_lab_results$infected_denv_stfd==1),]
 infected_pcr_denv_kenya_igg<-R01_lab_results[which(R01_lab_results$infected_denv_kenya==1),]
 tiff(file = "AIC DENV Infected (Kenya IgG, all PCR).tiff", width = 3200, height = 3200, units = "px", res = 800)
 hist(infected_pcr_denv_kenya_igg$symptom_sum, breaks=50, main = "AIC DENV Infected (Kenya IgG, all PCR)", xlab = "Number of Symptoms Reported at acute", freq=TRUE)
@@ -513,91 +601,15 @@ table(infected_pcr_chikv_kenya_igg$id_cohort , exclude = NULL)
 table(R01_lab_results$symptomatic, R01_lab_results$infected_chikv_kenya)
 #save file
 save(R01_lab_results,file="R01_lab_results.rda")
-
-##survival analysis
-#devtools::install_github("sachsmc/ggkm", force=TRUE)
+# survival ---------------------------------------------------------
 library(ggkm)
-#    load("R01_lab_results.rda")
-
-
 R01_lab_results$visit<- as.numeric(as.factor(R01_lab_results$redcap_event))
 R01_lab_results$visit<-R01_lab_results$visit-1
 R01_lab_results <- within(R01_lab_results, visit[visit==8] <- NA)
 R01_lab_results <- within(R01_lab_results, visit[visit==9] <- NA)
 table(R01_lab_results$visit)  
 
-#ggplot(R01_lab_results, aes(time = visit, status = infected_chikv_kenya, color = factor(symptomatic))) + geom_km()
-#ggplot(R01_lab_results, aes(time = visit, status = infected_denv_kenya, color = factor(symptomatic))) + geom_km()
-#ggplot(R01_lab_results, aes(time = visit, status = infected_chikv_stfd, color = factor(symptomatic))) + geom_km()
-#ggplot(R01_lab_results, aes(time = visit, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
-#incidence  
-survival_infected_chikv_kenya <- survfit(Surv(visit, infected_chikv_kenya)~symptomatic, data=R01_lab_results)
-survival_infected_denv_kenya <- survfit(Surv(visit, infected_denv_kenya)~symptomatic, data=R01_lab_results)
-survival_infected_chikv_stfd <- survfit(Surv(visit, infected_chikv_stfd)~symptomatic, data=R01_lab_results)
-survival_infected_denv_stfd <- survfit(Surv(visit, infected_denv_stfd)~symptomatic, data=R01_lab_results)
-
-#incidence by year
-#table(R01_lab_results$month_year, exclude = NULL)
-
-#infected by month
-table(R01_lab_results$infected_denv_kenya, R01_lab_results$month_year, exclude =NULL)
-table(R01_lab_results$infected_chikv_kenya, R01_lab_results$month_year, exclude =NULL)
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$month_year, exclude =NULL)
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$month_year, exclude =NULL)
-#infected by year
-table(R01_lab_results$infected_denv_kenya, R01_lab_results$year, exclude =NULL)
-table(R01_lab_results$infected_chikv_kenya, R01_lab_results$year, exclude =NULL)
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$year, exclude =NULL)
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$year, exclude =NULL)
-
-
-#site
-R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
-R01_lab_results_df=as.data.frame(R01_lab_results)
-
-R01_lab_results_df$site<-NA
-table(R01_lab_results$id_city)
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="G"] <- "C")
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="U"] <- "C")
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="L"] <- "C")
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="M"] <- "C")
-
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="C"] <- "W")
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="R"] <- "W")
-R01_lab_results_df <- within(R01_lab_results_df, site[R01_lab_results_df$id_city=="K"] <- "W")
-
-
-R01_lab_results_df <- within(R01_lab_results_df, id_city[R01_lab_results_df$id_city=="G"] <- "M")
-R01_lab_results_df <- within(R01_lab_results_df, id_city[R01_lab_results_df$id_city=="L"] <- "M")
-
-R01_lab_results_df <- within(R01_lab_results_df, id_city[R01_lab_results_df$id_city=="R"] <- "C")
-R01_lab_results_df <- within(R01_lab_results_df, id_city[R01_lab_results_df$id_city=="K"] <- "W")
-
-##rural
-R01_lab_results_df$rural<-NA
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="G"] <- 1)
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="U"] <- 0)
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="L"] <- 1)
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="M"] <- 1)
-
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="C"] <- 1)
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="R"] <- 1)
-R01_lab_results_df <- within(R01_lab_results_df, rural[R01_lab_results_df$id_city=="K"] <- 0)
-
-#cohort
-R01_lab_results_df <- within(R01_lab_results_df, id_cohort[R01_lab_results_df$id_cohort=="M"] <- "F")
-
-R01_lab_results<-R01_lab_results_df
-table(R01_lab_results_df$rural, exclude = NULL)
-table(R01_lab_results_df$site, exclude = NULL)
-table(R01_lab_results_df$site,R01_lab_results_df$seroc_chikv_stfd_igg, exclude = NULL)
-
-#prevalence
-#denv
-table(R01_lab_results$denv_prevalence)
-table(R01_lab_results$chikv_prevalence)
 #extract first event
-#infected_denv_kenya
 table(R01_lab_results$infected_denv_kenya, R01_lab_results$year, exclude = NULL)
 Ranks <- with(R01_lab_results, ave(infected_denv_kenya, person_id, infected_denv_kenya, FUN = function(x) 
   rank(x, ties.method="first")))
@@ -617,132 +629,160 @@ Ranks <- with(R01_lab_results, ave(infected_denv_stfd, person_id, infected_denv_
 infected_denv_stfd<-  R01_lab_results[Ranks == 1, ]
 table(infected_denv_stfd$infected_denv_stfd,  exclude = NULL)
 
-library(tableone)
-## Create Table 1 stratified by infection 
-vars <- c("infected_denv_stfd", "site", "id_city", "id_cohort", "year", "rural")
-factorVars <- c("infected_denv_stfd", "site", "id_city", "id_cohort", "year", "rural")
-infected_denv_stfd_hcc<-infected_denv_stfd[infected_denv_stfd$id_cohort =="C", ]
-infected_denv_stfd_aic<-infected_denv_stfd[infected_denv_stfd$id_cohort =="F", ]
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_denv_stfd", data = infected_denv_stfd_hcc)
-print(tableOne, quote = TRUE)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_denv_stfd", data = infected_denv_stfd_aic)
-print(tableOne, quote = TRUE)
-
 #infected_chikv_stfd
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$year, exclude = NULL)
 Ranks <- with(R01_lab_results, ave(infected_chikv_stfd, person_id, infected_chikv_stfd, FUN = function(x) 
   rank(x, ties.method="first")))
 infected_chikv_stfd<-  R01_lab_results[Ranks == 1, ]
-table(infected_chikv_stfd$infected_chikv_stfd,  exclude = NULL)
-table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$year,  exclude = NULL)
-table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$id_cohort,  exclude = NULL)
-table(infected_chikv_stfd$infected_chikv_stfd, infected_chikv_stfd$site,  exclude = NULL)
-#table one
-#incidence
-vars <- c("infected_chikv_stfd", "site", "id_city", "id_cohort")
-factorVars <- c("infected_chikv_stfd", "site", "id_city", "id_cohort")
-infected_chikv_stfd_hcc<-infected_chikv_stfd[infected_chikv_stfd$id_cohort =="C", ]
-infected_chikv_stfd_aic<-infected_chikv_stfd[infected_chikv_stfd$id_cohort =="F", ]
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = infected_chikv_stfd_hcc)
-print(tableOne, quote = TRUE)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = infected_chikv_stfd_aic)
-print(tableOne, quote = TRUE)
-#prevalence chikv
-vars <- c("prev_chikv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
-factorVars <- c("prev_chikv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
-infected_chikv_stfd_hcc<-R01_lab_results[R01_lab_results$id_cohort =="C", ]
-infected_chikv_stfd_aic<-R01_lab_results[R01_lab_results$id_cohort =="F", ]
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_igg_stfd_all_pcr", data = R01_lab_results)
-print(tableOne, quote = TRUE)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_igg_stfd_all_pcr", data = R01_lab_results)
-print(tableOne, quote = TRUE)
-#prevalence denv
-vars <- c("prev_denv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
-factorVars <- c("prev_denv_igg_stfd_all_pcr", "site", "rural", "id_cohort")
-infected_denv_stfd_hcc<-R01_lab_results[R01_lab_results$id_cohort =="C", ]
-infected_denv_stfd_aic<-R01_lab_results[R01_lab_results$id_cohort =="F", ]
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = R01_lab_results)
-print(tableOne, quote = TRUE)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_igg_stfd_all_pcr", data = R01_lab_results)
-print(tableOne, quote = TRUE)
 
-R01_lab_results<-R01_lab_results[,order(colnames(R01_lab_results))]
-R01_lab_results$gender[is.na(R01_lab_results$gender)] = ''
-R01_lab_results$gender_aic[is.na(R01_lab_results$gender_aic)] = ''
+# tables ---------------------------------------------------------
+library(tableone)
+## Create Table 1 stratified by infection 
+colnames(R01_lab_results)[colnames(R01_lab_results)=="gender_all"] <- "Female"
+colnames(R01_lab_results)[colnames(R01_lab_results)=="id_city"] <- "City"
+colnames(R01_lab_results)[colnames(R01_lab_results)=="id_cohort"] <- "Cohort"
 
-R01_lab_results<-unite(R01_lab_results, gender_all, gender_aic:gender, sep='')
-R01_lab_results$gender_all[R01_lab_results$gender_all==''] = NA
+vars <- c("site", "City", "Cohort", "rural", "age_group", "Female")
+factorVars <- c("site", "City", "Cohort", "rural", "age_group", "Female")
+
+tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_denv_stfd", data = R01_lab_results)
+print(tableOne, quote = TRUE,
+      exact=c("site", "City", "Cohort", "rural", "age_group", "Female"))
+
+tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_stfd", data = R01_lab_results)
+print(tableOne, quote = TRUE,
+      exact=c("site", "City", "Cohort", "rural", "Female"))
+
+tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = R01_lab_results)
+print(tableOne, quote = TRUE,
+      exact=c("site", "City", "Cohort", "rural", "Female"))
+
+tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_denv_stfd", data = R01_lab_results)
+print(tableOne, quote = TRUE,
+      exact=c("site", "City", "Cohort", "rural", "Female"))
+
 
 # #missing dates export ---------------------------------------------------
 missing_date<-R01_lab_results[which((R01_lab_results$infected_denv_stfd!="" & is.na(R01_lab_results$year)) | (R01_lab_results$infected_chikv_stfd!="" & is.na(R01_lab_results$year))) , ]
+
 #export to csv
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 f <- "missing_date.csv"
 write.csv(as.data.frame(missing_date), f )
 
 
-infected_pcr_denv_stfd_igg<-R01_lab_results[which(R01_lab_results$infected_denv_stfd==1),]
 
-# #survival with time. ---------------------------------------------------
-  R01_lab_results$month_year_numeric<-as.numeric(as.Date(R01_lab_results$month_year))-16071
-  surv_month_infected_denv_stfd <- survfit(Surv(month_year_numeric, infected_denv_stfd)~symptomatic, data=R01_lab_results)
-  ggplot(R01_lab_results, aes(time = month_year_numeric, status = infected_denv_stfd,  color = factor(symptomatic))) + geom_km()
-#survival by city
-  surv_month_infected_denv_stfd <- survfit(Surv(month_year_numeric, infected_denv_stfd)~id_city, data=R01_lab_results)
-  ggplot(R01_lab_results, aes(time = month_year_numeric, status = infected_denv_stfd,  color = factor(id_city))) + geom_km()
-  ggplot(R01_lab_results, aes(time = month_year_numeric, status = infected_denv_stfd,  color = factor(rural))) + geom_km()
-  ggplot(R01_lab_results, aes(time = month_year_numeric, status = infected_denv_stfd,  color = factor(id_cohort))) + geom_km()
+# #hcc survival with time. ---------------------------------------------------
+  hcc<-R01_lab_results[which(R01_lab_results$id_cohort=="C" ), ]
+  hcc<- within(hcc, rural[rural==1 ] <- "Rural")
+  hcc<- within(hcc, rural[rural==0 ] <- "Urban")
+  
+  surv_month_infected_denv_stfd <- survfit(Surv(month_year_numeric, infected_denv_chikv_stfd)~id_city, data=hcc)
+  hcc_infected_denv_stfd_survival<-  ggplot(hcc, aes(time = month_year_numeric, status = infected_denv_stfd,  color = factor(rural))) + geom_km()
+  hcc_infected_chikv_stfd_survival<-  ggplot(hcc, aes(time = month_year_numeric, status = infected_chikv_stfd,  color = factor(rural))) + geom_km()
+  hcc_infected_denv_chikv_stfd_survival<-  ggplot(hcc, aes(time = month_year_numeric, status = infected_denv_chikv_stfd,  color = factor(rural))) + geom_km()
+  
+  
+  hcc_pos<-hcc[which(hcc$infected_denv_chikv_stfd==1 ), ]
+  table(hcc_pos$infected_denv_chikv_stfd, hcc_pos$interview_date)
+  
+print(hcc_infected_denv_chikv_stfd_survival + ggtitle("DENV or CHIKV survival by Rural vs Urban (HCC)")
+        + labs(y="Survival", x = "Follow-up (days)")
+        +theme(legend.position="bottom")
+        + theme(legend.title = element_blank())
+        + theme(legend.text = element_text( size=20, face="bold"))
+        + theme(plot.title = element_text( size=40, face="bold"))
+        + theme(axis.title = element_text( size=20, face="bold"))
+        + theme(axis.text = element_text( size=20, face="bold"))
+        +theme(plot.title = element_text(hjust = 0.5))
+  )
 
-  table(R01_lab_results$city, R01_lab_results$id_city, exclude = NULL)  
+##plot aic or hcc incident cases---------------------------------------------------
+R01_lab_results<- within(R01_lab_results, id_cohort[id_cohort=="C" ] <- "HCC")
+R01_lab_results<- within(R01_lab_results, id_cohort[id_cohort=="F" ] <- "AIC")
 
-##denominator is only those tested for chikv by pcr or igg at stfd ---------------------------------------------------
-R01_lab_results$tested_chikv<-NA
-R01_lab_results<- within(R01_lab_results, tested_chikv[infected_chikv_stfd==1 |tested_chikv_stfd_igg==1 | !is.na(result_pcr_chikv_kenya)| !is.na(result_pcr_chikv_stfd)| !is.na(chikv_result_ufi)| !is.na(chikv_2_result_ufi)] <- 1)
-table(R01_lab_results$infected_chikv_stfd, exclude = NULL)
-table(R01_lab_results$tested_chikv, exclude = NULL)
-table(R01_lab_results$tested_chikv, R01_lab_results$infected_chikv_stfd, exclude = NULL)
-(19/3938)*100 #incidence chikv
+monthly_infection <- ddply(R01_lab_results, .(month_year, id_cohort),
+                      summarise, 
+                      infected_denv_stfd_sum = sum(infected_denv_stfd, na.rm = TRUE),
+                      infected_chikv_stfd_sum = sum(infected_chikv_stfd, na.rm = TRUE),
+                      infected_denv_stfd_inc = mean(infected_denv_stfd, na.rm = TRUE),
+                      infected_chikv_stfd_inc = mean(infected_chikv_stfd, na.rm = TRUE),
+                      infected_denv_stfd_sd = sd(infected_denv_stfd, na.rm = TRUE),
+                      infected_chikv_stfd_sd = sd(infected_chikv_stfd, na.rm = TRUE)
+)
 
-##denominator is only those tested for denv by pcr or igg at stfd---------------------------------------------------
-R01_lab_results$tested_denv<-NA
-R01_lab_results<- within(R01_lab_results, tested_denv[infected_denv_stfd==1 |tested_denv_stfd_igg==1 | !is.na(result_pcr_denv_kenya) | !is.na(result_pcr_denv_stfd)|!is.na(denv_result_ufi)] <- 1)
-#denominator is only those tested for denv or chikv by pcr or igg at stfd
-R01_lab_results$tested_denv_chikv<-NA
-R01_lab_results<- within(R01_lab_results, tested_denv_chikv[tested_chikv==1 |tested_denv==1] <- 1)
+age_infection <- ddply(R01_lab_results, .(age_group),
+                           summarise, 
+                           infected_denv_stfd_sum = sum(infected_denv_stfd, na.rm = TRUE),
+                           infected_chikv_stfd_sum = sum(infected_chikv_stfd, na.rm = TRUE),
+                           infected_denv_stfd_inc = mean(infected_denv_stfd, na.rm = TRUE),
+                           infected_chikv_stfd_inc = mean(infected_chikv_stfd, na.rm = TRUE),
+                           infected_denv_stfd_sd = sd(infected_denv_stfd, na.rm = TRUE),
+                           infected_chikv_stfd_sd = sd(infected_chikv_stfd, na.rm = TRUE)
+)
 
-table(R01_lab_results$tested_denv, exclude = NULL)
-table(R01_lab_results$infected_denv_stfd, exclude = NULL)
-(137/3676)*100 #incidence denv
+R01_lab_results$prev_denv_stfd<-as.numeric(as.character(R01_lab_results$prev_denv_stfd))
+age_prev <- ddply(R01_lab_results, .(age_group),
+                       summarise, 
+                       infected_denv_stfd_sum = sum(prev_denv_stfd, na.rm = TRUE),
+                       infected_chikv_stfd_sum = sum(prev_chikv_stfd, na.rm = TRUE),
+                       infected_denv_stfd_inc = mean(prev_denv_stfd, na.rm = TRUE),
+                       infected_chikv_stfd_inc = mean(prev_chikv_stfd, na.rm = TRUE),
+                       infected_denv_stfd_sd = sd(prev_denv_stfd, na.rm = TRUE),
+                       infected_chikv_stfd_sd = sd(prev_chikv_stfd, na.rm = TRUE)
+)
 
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$tested_denv, exclude = NULL)
-##incidence by age age group---------------------------------------------------
-R01_lab_results$age = R01_lab_results$age_calc  # your new merged column start with x
-R01_lab_results$age[!is.na(R01_lab_results$aic_calculated_age)] = R01_lab_results$aic_calculated_age[!is.na(R01_lab_results$aic_calculated_age)]  # merge with y
-R01_lab_results$age<-round(R01_lab_results$age)
-table(R01_lab_results$infected_denv_stfd)
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$age , exclude = NULL)
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$age , exclude = NULL)
+denv_incidence<-ggplot() + geom_line(data = monthly_infection, aes(month_year, infected_denv_stfd_inc, color = factor(id_cohort)), size=2)
+chikv_incidence<-ggplot() + geom_line(data = monthly_infection, aes(month_year, infected_chikv_stfd_inc, color = factor(id_cohort)), size=2)
 
-R01_lab_results$age_group<-NA
-R01_lab_results <- within(R01_lab_results, age_group[age<=2] <- "under 2")
-R01_lab_results <- within(R01_lab_results, age_group[age>2 & age<=5] <- "2-4")
-R01_lab_results <- within(R01_lab_results, age_group[age>5 & age<=10] <- "6-10")
-R01_lab_results <- within(R01_lab_results, age_group[age>10 & age<=15] <- "11-15")
-R01_lab_results <- within(R01_lab_results, age_group[age>15] <- "over 15")
-table(R01_lab_results$age_group, exclude = NULL)
+age_chikv_incidence<-ggplot() + geom_bar(data = age_infection, aes(age_group, infected_chikv_stfd_inc), stat="identity")+
+                                        geom_errorbar(data =  age_prev, aes(age_group, infected_chikv_stfd_inc, 
+                                        ymin = 0, 
+                                        ymax = infected_chikv_stfd_inc + infected_chikv_stfd_sd),
+                                        width = 0.4)
+age_denv_incidence<-ggplot() + geom_bar(data = age_infection, aes(age_group, infected_denv_stfd_inc), stat="identity")+
+                                        geom_errorbar(data =  age_prev, aes(age_group, infected_denv_stfd_inc, 
+                                        ymin = 0, 
+                                        ymax = infected_denv_stfd_inc + infected_denv_stfd_sd),
+                                        width = 0.4)
+
+age_chikv_prev<-ggplot() + geom_bar(data = age_prev, aes(age_group, infected_chikv_stfd_inc), stat="identity")+
+                                        geom_errorbar(data =  age_prev, aes(age_group, infected_chikv_stfd_inc, 
+                                        ymin = 0, 
+                                        ymax = infected_chikv_stfd_inc + infected_chikv_stfd_sd),
+                                        width = 0.4)
+
+age_denv_prev<-ggplot() + geom_bar(data = age_prev, aes(age_group, infected_denv_stfd_inc), stat="identity")+
+                                  geom_errorbar(data =  age_prev, aes(age_group, infected_denv_stfd_inc, 
+                                  ymin = 0, 
+                                  ymax = infected_denv_stfd_inc + infected_denv_stfd_sd),
+                                  width = 0.4)
+
+
+
+print(age_chikv_prev 
+      + ggtitle("CHIKV Exposure by Age")
+      + labs(y="Proportion subjects Exposed", x = "")
+      + theme(legend.position="bottom")
+      + theme(legend.title = element_blank())
+      + theme(legend.text = element_text( size=20, face="bold"))
+      + theme(plot.title = element_text( size=40, face="bold"))
+      + theme(axis.title = element_text( size=20, face="bold"))
+      + theme(axis.text = element_text( size=20, face="bold"))
+      + theme(plot.title = element_text(hjust = 0.5))
+)
+
+
+
 ###either denv or chikv incidence---------------------------------------------------
 table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$id_cohort)
 table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$age_group, exclude = NULL)
-###either denv or chikv prevalence---------------------------------------------------
-R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_igg_stfd_all_pcr ==0|R01_lab_results$prev_chikv_igg_stfd_all_pcr==0]<-0
-R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_igg_stfd_all_pcr ==1|R01_lab_results$prev_chikv_igg_stfd_all_pcr==1]<-1
 
-table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$age_group, exclude = NULL)
-table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$age_group, exclude = NULL)
+###either denv or chikv prevalence---------------------------------------------------
+R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_stfd ==0|R01_lab_results$prev_chikv_stfd==0]<-0
+R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_stfd ==1|R01_lab_results$prev_chikv_stfd==1]<-1
 table(R01_lab_results$prev_denv_chikv_all, R01_lab_results$age_group, exclude = NULL)
 table(R01_lab_results$tested_denv_chikv, R01_lab_results$age_group, exclude = NULL)
 
-32/795*100
 ####get incidence by age group numberator and denominator ---------------------------------------------------
 #denv
 table(R01_lab_results$infected_denv_stfd, R01_lab_results$id_cohort, exclude = NULL)
@@ -771,9 +811,11 @@ table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$id_cohort, exclu
 table(R01_lab_results$tested_denv_chikv, R01_lab_results$id_cohort, exclude = NULL)
 
 #some need age  to be included in sample
-no_age<-R01_lab_results[which(is.na(R01_lab_results$age_group) & R01_lab_results$infected_denv_stfd==1), ]
-table(is.na(R01_lab_results$age_group) & R01_lab_results$infected_denv_stfd==1)
-table(no_age$person_id, no_age$redcap_event_name)
+  no_age<-R01_lab_results[which(is.na(R01_lab_results$age_group) & !is.na(R01_lab_results$prev_denv_chikv_all)), ]
+  no_age<-no_age[, grepl("person_id|redcap_event_name|date|prev_denv_chikv_all", names(no_age))]
+  table(is.na(R01_lab_results$age_group) & R01_lab_results$prev_denv_chikv_all==1)
+  write.csv(as.data.frame(no_age), "no_age.csv", na="", row.names = F )
+
 #prevalence
 table(R01_lab_results$prev_chikv_igg_stfd_all_pcr)
 (195/6992)*100#prevalence of chikv.
