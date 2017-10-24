@@ -5,6 +5,7 @@ library(dplyr)
 library(plyr)
 library(redcapAPI)
 library(REDCapR)
+library(ggplot2)
 
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
@@ -641,6 +642,14 @@ colnames(R01_lab_results)[colnames(R01_lab_results)=="gender_all"] <- "Female"
 colnames(R01_lab_results)[colnames(R01_lab_results)=="id_city"] <- "City"
 colnames(R01_lab_results)[colnames(R01_lab_results)=="id_cohort"] <- "Cohort"
 
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="G"] <- "M")
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="L"] <- "M")
+
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="R"] <- "C")
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="O"] <- NA)
+table(R01_lab_results$City)
+
+
 vars <- c("site", "City", "Cohort", "rural", "age_group", "Female")
 factorVars <- c("site", "City", "Cohort", "rural", "age_group", "Female")
 
@@ -700,7 +709,9 @@ print(hcc_infected_denv_chikv_stfd_survival + ggtitle("DENV or CHIKV survival by
 R01_lab_results<- within(R01_lab_results, id_cohort[id_cohort=="C" ] <- "HCC")
 R01_lab_results<- within(R01_lab_results, id_cohort[id_cohort=="F" ] <- "AIC")
 
-monthly_infection <- ddply(R01_lab_results, .(month_year, id_cohort),
+table(R01_lab_results$City, exclude=NULL)
+
+monthly_infection <- ddply(R01_lab_results, .(month_year, City),
                       summarise, 
                       infected_denv_stfd_sum = sum(infected_denv_stfd, na.rm = TRUE),
                       infected_chikv_stfd_sum = sum(infected_chikv_stfd, na.rm = TRUE),
@@ -721,6 +732,7 @@ age_infection <- ddply(R01_lab_results, .(age_group),
 )
 
 R01_lab_results$prev_denv_stfd<-as.numeric(as.character(R01_lab_results$prev_denv_stfd))
+
 age_prev <- ddply(R01_lab_results, .(age_group),
                        summarise, 
                        infected_denv_stfd_sum = sum(prev_denv_stfd, na.rm = TRUE),
@@ -731,8 +743,61 @@ age_prev <- ddply(R01_lab_results, .(age_group),
                        infected_chikv_stfd_sd = sd(prev_chikv_stfd, na.rm = TRUE)
 )
 
-denv_incidence<-ggplot() + geom_line(data = monthly_infection, aes(month_year, infected_denv_stfd_inc, color = factor(id_cohort)), size=2)
-chikv_incidence<-ggplot() + geom_line(data = monthly_infection, aes(month_year, infected_chikv_stfd_inc, color = factor(id_cohort)), size=2)
+
+library(plotly)
+f1 <- list(
+  family = "Arial, sans-serif",
+  size = 18,
+  color = "black"
+)
+f2 <- list(
+  family = "Arial, sans-serif",
+  size = 24,
+  color = "black"
+)
+f3 <- list(
+  family = "Arial, sans-serif",
+  size = 36,
+  color = "black"
+)
+a <- list(
+  autotick = FALSE,
+  ticks = "outside",
+  tick0 = 0,
+  dtick = 1,
+  ticklen = 5,
+  tickwidth = 2,
+  tickcolor = toRGB("black"),
+  tickfont=f1,
+  title=""
+)
+legend = list(orientation = "h",   # show entries horizontally
+              xanchor = "center",  # use center of legend as anchor
+              x = 0.5,
+              font=f2
+              )  
+margin = list(l = 100, r = 50, b = 50, t = 75, pad = 4)
+
+denv_incidence_time_city<-plot_ly(monthly_infection, x=~ month_year, y =~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=6), color=~City, connectgaps=TRUE)%>%
+                add_trace(y = ~infected_denv_stfd_sd+infected_denv_stfd_inc, name = 'Max', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE)%>%
+                      layout(title='Incident DENV over Time', titlefont=f3,
+                             xaxis = a,
+                             yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2),
+                             legend=legend,
+                             margin = margin
+                      )
+    
+
+chikv_incidence_time_city<-plot_ly(monthly_infection, x=~ month_year, y =~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', color=~City, line=list(width=6), connectgaps=TRUE)%>%
+  add_trace(y = ~infected_chikv_stfd_sd+infected_chikv_stfd_inc, name = 'Max', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE)%>%
+  layout(title='Incident CHIKV over Time', titlefont=f3,
+         xaxis = a,
+         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2),
+         legend=legend,
+         margin = margin
+  )
+
+
 
 age_chikv_incidence<-ggplot() + geom_bar(data = age_infection, aes(age_group, infected_chikv_stfd_inc), stat="identity")+
                                         geom_errorbar(data =  age_prev, aes(age_group, infected_chikv_stfd_inc, 
@@ -757,10 +822,8 @@ age_denv_prev<-ggplot() + geom_bar(data = age_prev, aes(age_group, infected_denv
                                   ymax = infected_denv_stfd_inc + infected_denv_stfd_sd),
                                   width = 0.4)
 
-
-
-print(age_chikv_prev 
-      + ggtitle("CHIKV Exposure by Age")
+print(age_chikv_incidence 
+      + ggtitle("CHIKV Incident Exposure by Age")
       + labs(y="Proportion subjects Exposed", x = "")
       + theme(legend.position="bottom")
       + theme(legend.title = element_blank())
