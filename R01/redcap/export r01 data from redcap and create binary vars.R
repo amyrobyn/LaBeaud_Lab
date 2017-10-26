@@ -720,7 +720,6 @@ monthly_infection <- ddply(R01_lab_results, .(month_year, City),
                       infected_denv_stfd_sd = sd(infected_denv_stfd, na.rm = TRUE),
                       infected_chikv_stfd_sd = sd(infected_chikv_stfd, na.rm = TRUE)
 )
-
 age_infection <- ddply(R01_lab_results, .(age_group),
                            summarise, 
                            infected_denv_stfd_sum = sum(infected_denv_stfd, na.rm = TRUE),
