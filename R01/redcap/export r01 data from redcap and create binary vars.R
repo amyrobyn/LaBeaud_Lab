@@ -14,9 +14,9 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-  #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-  #library(beepr)
-  #beep(sound=4)
+  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  library(beepr)
+  beep(sound=4)
 
   currentDate <- Sys.Date() 
   FileName <- paste("R01_lab_results.backup",currentDate,".rda",sep=" ") 
@@ -893,10 +893,9 @@ table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$site)
 table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$rural)
 (103/(103+3184))*100#prevalence of denv urban
 (165/(165+3296))*100#prevalence of denv rural
-
-#export to csv
+# save cleaned dataset ----------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
-    write.csv(as.data.frame(R01_lab_results), f )
-    #save as r data frame for use in other analysis. 
-    save(R01_lab_results,file="R01_lab_results.clean.rda")
+    write.csv(as.data.frame(R01_lab_results), f )#export to csv
+    save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
+
