@@ -211,25 +211,91 @@ climate <- plot_ly() %>%
     titlefont=t, font=f, autosize=T, margin = m)
 
 
+# split by city -----------------------------------------------------------
+monthly_infection$month_year<-as.Date(monthly_infection$month_year)
+monthly_infection.c$month_year<-as.Date(monthly_infection.c$month_year)
+monthly_infection.k$month_year<-as.Date(monthly_infection.k$month_year)
+monthly_infection.m$month_year<-as.Date(monthly_infection.m$month_year)
+monthly_infection.u$month_year<-as.Date(monthly_infection.u$month_year)
 
+Monthlyvector.c<-Monthlyvector[which(Monthlyvector$study_site==3), ]
+Monthlyvector.k<-Monthlyvector[which(Monthlyvector$study_site==4), ]
+Monthlyvector.m<-Monthlyvector[which(Monthlyvector$study_site==2), ]
+Monthlyvector.u<-Monthlyvector[which(Monthlyvector$study_site==1), ]
 
+margin = list(l = 100, r = 100, b = 50, t = 75, pad = 4)
 
-
- plot_ly() %>% 
-  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.Indoor.ovi+ttl_Aedes_spp_Outdoor.ovi, type = 'bar', name = 'Ovitrap', yaxis = "y2")%>%
-  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y2")%>%
-  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp_in.proko+Ttl_Aedes.spp_out.proko, type = 'bar', name = 'Prokopack', yaxis = "y")%>%
-  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.bg, type = 'bar', name = 'BG', yaxis = "y")%>%
-  add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.hlc, type = 'bar', name = 'HLC', yaxis = "y")%>%
+# plot vector and disease. chulaimbo --------------------------------------
+disease_vector.c<- plot_ly() %>% 
+  add_trace(data=Monthlyvector.c, x = ~month_year, y = ~z.egg_count_ovitrap, type = 'bar', name = 'Ovitrap', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.c, x = ~month_year, y = ~z.Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.c, x = ~month_year, y = ~z.Ttl_Aedes.spp.proko , type = 'bar', name = 'Prokopack', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.c, x = ~month_year, y = ~z.Ttl_Aedes.spp.bg , type = 'bar', name = 'BG', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.c, x = ~month_year, y = ~z.Ttl_Aedes.spp.hlc , type = 'bar', name = 'HLC', yaxis = "y")%>%
+  add_trace(data=monthly_infection.c, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.c, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
   layout(
-    title = 'Total Aedes spp. count in four sites in Kenya 2014-2017',
-    margin = list(b = 160), 
-    xaxis = list(type ="date", nticks = 15, tickangle =45,title = "Date"),
-    yaxis = list(side = 'left', title = 'Adult Aedes Mosquito (count)', showgrid = FALSE, zeroline = TRUE, barmode='relative'),
-    yaxis2 = list(side = 'right', overlaying = "y", title = 'Immature Aedes Mosquito (count)', showgrid = FALSE, zeroline = FALSE),
-    barmode = 'stack')
- 
- chart_link = api_create(p, filename="annotation/style")
- 
- 
- 
+    title = 'Chulaimbo',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Aedes Mosquito (Z-Score)', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2, range=c(0,80)),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# plot vector and disease. kisumu --------------------------------------
+disease_vector.k<- plot_ly() %>% 
+  add_trace(data=Monthlyvector.k, x = ~month_year, y = ~z.egg_count_ovitrap, type = 'bar', name = 'Ovitrap', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.k, x = ~month_year, y = ~z.Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.k, x = ~month_year, y = ~z.Ttl_Aedes.spp.proko , type = 'bar', name = 'Prokopack', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.k, x = ~month_year, y = ~z.Ttl_Aedes.spp.bg , type = 'bar', name = 'BG', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.k, x = ~month_year, y = ~z.Ttl_Aedes.spp.hlc , type = 'bar', name = 'HLC', yaxis = "y")%>%
+  add_trace(data=monthly_infection.k, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.k, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Kisumu',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Aedes Mosquito (Z-Score)', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2, range=c(0,80)),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# plot vector and disease. msambweni --------------------------------------
+disease_vector.m<- plot_ly() %>% 
+  add_trace(data=Monthlyvector.m, x = ~month_year, y = ~z.egg_count_ovitrap, type = 'bar', name = 'Ovitrap', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.m, x = ~month_year, y = ~z.Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.m, x = ~month_year, y = ~z.Ttl_Aedes.spp.proko , type = 'bar', name = 'Prokopack', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.m, x = ~month_year, y = ~z.Ttl_Aedes.spp.bg , type = 'bar', name = 'BG', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.m, x = ~month_year, y = ~z.Ttl_Aedes.spp.hlc , type = 'bar', name = 'HLC', yaxis = "y")%>%
+  add_trace(data=monthly_infection.m, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.m, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Msambweni',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Aedes Mosquito (Z-Score)', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2, range=c(0,80)),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# plot vector and disease. ukunda --------------------------------------
+disease_vector.u<- plot_ly() %>% 
+  add_trace(data=Monthlyvector.u, x = ~month_year, y = ~z.egg_count_ovitrap, type = 'bar', name = 'Ovitrap', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.u, x = ~month_year, y = ~z.Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.u, x = ~month_year, y = ~z.Ttl_Aedes.spp.proko , type = 'bar', name = 'Prokopack', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.u, x = ~month_year, y = ~z.Ttl_Aedes.spp.bg , type = 'bar', name = 'BG', yaxis = "y")%>%
+  add_trace(data=Monthlyvector.u, x = ~month_year, y = ~z.Ttl_Aedes.spp.hlc , type = 'bar', name = 'HLC', yaxis = "y")%>%
+  add_trace(data=monthly_infection.u, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.u, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Ukunda',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Aedes Mosquito (Z-Score)', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2, range=c(0,80)),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+
+# plot by city in grid ----------------------------------------------------
+disease_vector.u
+disease_vector.m
+disease_vector.c
+disease_vector.k

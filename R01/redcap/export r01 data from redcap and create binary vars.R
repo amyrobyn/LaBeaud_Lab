@@ -14,7 +14,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   library(beepr)
   beep(sound=4)
 
@@ -777,24 +777,24 @@ legend = list(orientation = "h",   # show entries horizontally
               )  
 margin = list(l = 100, r = 50, b = 50, t = 75, pad = 4)
 
-denv_incidence_time_city<-plot_ly(monthly_infection, x=~ month_year, y =~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=6), color=~City, connectgaps=TRUE)%>%
-                add_trace(y = ~infected_denv_stfd_sd+infected_denv_stfd_inc, name = 'Max', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE)%>%
-                      layout(title='Incident DENV over Time', titlefont=f3,
-                             xaxis = a,
-                             yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2),
-                             legend=legend,
-                             margin = margin
-                      )
+denv_incidence_time_city<-  plot_ly() %>%
+  add_trace(x=monthly_infection$month_year, y = monthly_infection$infected_denv_stfd_sd+monthly_infection$infected_denv_stfd_inc, name = 'Max', type = 'scatter', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE, split=monthly_infection$City)%>%
+  add_trace(x=monthly_infection$month_year, y =monthly_infection$infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, split=monthly_infection$City)%>%
+  layout(title='Incident DENV over Time', 
+         titlefont=f3, 
+         xaxis = a, 
+         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2, range = c(0,1) ),legend=legend, 
+         margin = margin)
     
 
-chikv_incidence_time_city<-plot_ly(monthly_infection, x=~ month_year, y =~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', color=~City, line=list(width=6), connectgaps=TRUE)%>%
-  add_trace(y = ~infected_chikv_stfd_sd+infected_chikv_stfd_inc, name = 'Max', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE)%>%
-  layout(title='Incident CHIKV over Time', titlefont=f3,
-         xaxis = a,
-         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2),
-         legend=legend,
-         margin = margin
-  )
+chikv_incidence_time_city<-  plot_ly() %>%
+  add_trace(x=monthly_infection$month_year, y = monthly_infection$infected_chikv_stfd_sd+monthly_infection$infected_chikv_stfd_inc, name = 'Max', type = 'scatter', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE, split=monthly_infection$City)%>%
+  add_trace(x=monthly_infection$month_year, y =monthly_infection$infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, split=monthly_infection$City)%>%
+  layout(title='Incident CHIKV over Time', 
+         titlefont=f3, 
+         xaxis = a, 
+         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2,range = c(0,1)),legend=legend, 
+         margin = margin)
 
 
 

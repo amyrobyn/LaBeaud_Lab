@@ -114,11 +114,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     prokpack_outdoor_redcap<-prokpack_outdoor_redcap[order(-(grepl('date_collected|redcap', names(prokpack_outdoor_redcap)))+1L)]
     prokpack_outdoor_redcap<-prokpack_outdoor_redcap[ , !grepl( "study_site" , names(prokpack_outdoor_redcap) ) ]
     
-    write.csv(as.data.frame(prokpack_outdoor_redcap), "prokpack_outdoor_redcap.csv", na="", row.names = FALSE)
-    importRecords(rcon, prokpack_outdoor, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL,                  batch.size = -1)
-    
-    
-    
+
       prokpack_outdoor$date_collected<-as.factor(as.character(prokpack_outdoor$date_collected))
       prokpack_outdoor_sum <-aggregate(. ~date_collected + redcap_event_name + survey_prokopack, data=prokpack_outdoor, sum, na.rm=TRUE)
       
@@ -130,14 +126,22 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       prokopack$prokpack_sum_indoor<-rowSums(prokopack[,grep("aedes_agypti_unfed_prokopack_indoor| aedes_agypti_blood_fed_prokopack_indoor|aedes_agypti_half_gravid_prokopack_indoor|aedes_agypti_gravid_prokopack_indoor", names(prokopack))], na.rm = TRUE)
       prokopack$prokpack_sum_outdoor<-rowSums(prokopack[,grep("aedes_agypti_unfed_prokopack_outdoor| aedes_agypti_blood_fed_prokopack_outdoor|aedes_agypti_half_gravid_prokopack_outdoor|aedes_agypti_gravid_prokopack_outdoor", names(prokopack))], na.rm = TRUE)
       prokopack$prokpack_sum<-rowSums(prokopack[,grep("prokpack_sum_outdoor|prokpack_sum_indoor", names(prokopack))], na.rm = TRUE)
-
+      Monthlyprokopack$prokpack_sum<-Monthlyprokopack$prokpack_sum_indoor+Monthlyprokopack$prokpack_sum_outdoor
       # monthly summary by site: prokopack -------------------------------------------------------------
       Monthlyprokopack <- ddply(prokopack, ~month_year + study_site, summarise, 
                                  Ttl_Aedes.spp_in.proko = sum(prokpack_sum_indoor ),
-                                 Ttl_Aedes.spp_out.proko = sum(prokpack_sum_outdoor )) 
+                                 Ttl_Aedes.spp_out.proko = sum(prokpack_sum_outdoor ),
+                                Ttl_Aedes.spp.proko = sum(prokpack_sum ),
+                                Ttl_Aedes.spp.proko.sd = sd(prokpack_sum ),
+                                Ttl_Aedes.spp.proko.mean = mean(prokpack_sum )
+      ) 
       house.prokopack <- ddply(prokopack, ~compound_house_id + study_site, summarise, 
                                  Ttl_Aedes.spp_in.proko = sum(prokpack_sum_indoor ),
                                  Ttl_Aedes.spp_out.proko = sum(prokpack_sum_outdoor )) 
+      
+      Monthlyprokopack$z.Ttl_Aedes.spp.proko<-(Monthlyprokopack$Ttl_Aedes.spp.proko-Monthlyprokopack$Ttl_Aedes.spp.proko.mean)/Monthlyprokopack$Ttl_Aedes.spp.proko.sd
+      hist(Monthlyprokopack$z.Ttl_Aedes.spp.proko)
+      
       
 # sum gps data by house -----------------------------------------------------
       gps<-vector[ , grepl( "redcap_event_name|study_site|latit|long|altit|acuracy|redcap_repeat_instrument|compound_house_id|village" , names(vector) ) ]
@@ -317,11 +321,17 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
             
             # monthly summary by site: larva_long_aedes -------------------------------------------------------------
             Monthlylarva_long_aedes <- ddply(larva_long_aedes, ~month_year +study_site, summarise, 
-                                             Ttl_Aedes.spp.larva = sum(larva_sum )) 
+                                             Ttl_Aedes.spp.larva = sum(larva_sum ),
+                                             Ttl_Aedes.spp.larva.sd = sd(larva_sum ),
+                                             Ttl_Aedes.spp.larva.mean = mean(larva_sum )
+            ) 
             house.larva_long_aedes <- ddply(larva_long_aedes, ~compound_house_id+ study_site, summarise, 
                                             Ttl_Aedes.spp.larva = sum(larva_sum )) 
             
-
+            
+            Monthlylarva_long_aedes$z.Ttl_Aedes.spp.larva<-(Monthlylarva_long_aedes$Ttl_Aedes.spp.larva-Monthlylarva_long_aedes$Ttl_Aedes.spp.larva.mean)/Monthlylarva_long_aedes$Ttl_Aedes.spp.larva.sd
+            hist(Monthlylarva_long_aedes$z.Ttl_Aedes.spp.larva)
+            
 
 # sum bg by month/house -----------------------------------------------------
       bg<-vector[ , grepl( "redcap_event_name|study_site|bg|repeat|house" , names(vector) ) ]
@@ -371,9 +381,16 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       
       # monthly summary by site: bg -------------------------------------------------------------
       Monthlybg <- ddply(bg, ~month_year +study_site, summarise, 
-                         Ttl_Aedes.spp.bg = sum(bg_aedes_sum )) 
+                         Ttl_Aedes.spp.bg = sum(bg_aedes_sum ),
+                         Ttl_Aedes.spp.bg.sd = sd(bg_aedes_sum),
+                         Ttl_Aedes.spp.bg.mean = mean(bg_aedes_sum )
+      ) 
       house.bg <- ddply(bg, ~compound_house_id + study_site, summarise, 
                          Ttl_Aedes.spp.bg = sum(bg_aedes_sum )) 
+      
+      Monthlybg$z.Ttl_Aedes.spp.bg<-(Monthlybg$Ttl_Aedes.spp.bg-Monthlybg$Ttl_Aedes.spp.bg.mean)/Monthlybg$Ttl_Aedes.spp.bg.sd
+      hist(Monthlybg$z.Ttl_Aedes.spp.bg)
+      
       
 # sum ovi  by house  and make wide -----------------------------------------------------
       ovi<-vector[ , grepl( "redcap_event_name|study_site|ovi|repeat|house" , names(vector) ) ]
@@ -409,13 +426,20 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       ovi<-ovi[which(!is.na(ovi$month_year))  , ]
       ovi<-ovi[which(!is.na(ovi$month_year_lag))  , ]
       ovi$month_year<-as.Date(ovi$month_year_lag)
-      
+      ovi$egg_count_ovitrap<-ovi$egg_count_ovitrap_in+ovi$egg_count_ovitrap_out
       # monthly/house summary: ovitrap -------------------------------------------------------------
       ovi$aedes_species_ovitrap_out<-as.numeric(ovi$aedes_species_ovitrap_out)
       ovi$aedes_species_ovitrap_in<-as.numeric(ovi$aedes_species_ovitrap_in)
       MonthlyOvitrap <- ddply(ovi, ~month_year+study_site , summarise, 
+                              Ttl_Aedes.spp.ovi.mean = mean(egg_count_ovitrap ),
+                              Ttl_Aedes.spp.ovi.sd = sd(egg_count_ovitrap ),
+                              Ttl_Aedes.spp.ovi = sum(egg_count_ovitrap),
                               Ttl_Aedes.spp.Indoor.ovi = sum(egg_count_ovitrap_in ),
-                              ttl_Aedes_spp_Outdoor.ovi = sum(egg_count_ovitrap_out)) 
+                              ttl_Aedes_spp_Outdoor.ovi = sum(egg_count_ovitrap_out)
+      ) 
+MonthlyOvitrap$z.egg_count_ovitrap<-(MonthlyOvitrap$Ttl_Aedes.spp.ovi-MonthlyOvitrap$Ttl_Aedes.spp.ovi.mean)/MonthlyOvitrap$Ttl_Aedes.spp.ovi.sd
+hist(MonthlyOvitrap$z.egg_count_ovitrap)
+
       house.Ovitrap <- ddply(ovi, ~compound_house_id + study_site , summarise, 
                              Ttl_Aedes.spp.Indoor.ovi = sum(egg_count_ovitrap_in ),
                              ttl_Aedes_spp_Outdoor.ovi = sum(egg_count_ovitrap_out)) 
@@ -464,11 +488,16 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       
       # monthly summary by site: hlc -------------------------------------------------------------
       Monthlyhlc <- ddply(hlc, ~month_year +study_site , summarise, 
-                           Ttl_Aedes.spp.hlc = sum(hlc_aedes_sum ))  
+                           Ttl_Aedes.spp.hlc = sum(hlc_aedes_sum ),
+                          Ttl_Aedes.spp.hlc.mean = mean(hlc_aedes_sum ),
+                          Ttl_Aedes.spp.hlc.sd = sd(hlc_aedes_sum )
+      )  
       house.hlc <- ddply(hlc, ~compound_house_id + study_site, summarise, 
                           Ttl_Aedes.spp.hlc = sum(hlc_aedes_sum ))  
       
-
+      Monthlyhlc$z.Ttl_Aedes.spp.hlc<-(Monthlyhlc$Ttl_Aedes.spp.hlc-Monthlyhlc$Ttl_Aedes.spp.hlc.mean)/Monthlyhlc$Ttl_Aedes.spp.hlc.sd
+      hist(Monthlyhlc$z.Ttl_Aedes.spp.hlc)
+      
 # merge the trap types by site/month-------------------------------------------------
       Monthlyvector<-merge(MonthlyOvitrap, Monthlybg, by = c("month_year", "study_site"), all = TRUE)
       Monthlyvector<-merge(Monthlyvector, Monthlyprokopack, by = c("month_year", "study_site"), all = TRUE)
@@ -479,7 +508,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
 # save Monthlyvector data -------------------------------------------------------------
       save(Monthlyvector,file="Monthlyvector.rda")
     
-# merge the trap types by house-------------------------------------------------
+    # merge the trap types by house-------------------------------------------------
     house.vector<-house.Ovitrap
     house.vector<-merge(house.vector, house.bg, by = c("compound_house_id","study_site"), all = TRUE)
     house.vector<-merge(house.vector, house.prokopack, by = c("compound_house_id","study_site"), all = TRUE)
@@ -488,13 +517,13 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     house.vector<-merge(house.vector, gps, by = c("compound_house_id","study_site"), all = TRUE)
     
     house.vector<-merge(house.vector, house_first, by = c("compound_house_id" ,"study_site"),all.x=TRUE)
-  
+    
     house.vector <-house.vector[which(!is.na(house.vector$Ttl_Aedes.spp.Indoor.ovi)|!is.na(house.vector$ttl_Aedes_spp_Outdoor.ovi)|!is.na(house.vector$Ttl_Aedes.spp.bg)|!is.na(house.vector$Ttl_Aedes.spp_in.proko)|!is.na(house.vector$Ttl_Aedes.spp_out.proko)|!is.na(house.vector$Ttl_Aedes.spp.hlc)|!is.na(house.vector$Ttl_Aedes.spp.larva)), ]
     house.vector[, 3:9][is.na(house.vector[, 3:9])] <- 0
     
     table(house.vector$study_site, exclude = NULL)
-
-#gps
+    
+    #gps
     house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]
     house.vector <-house.vector[which(house.vector$compound_house_id!="2002"), ]#exclude for now.
     write.csv(as.data.frame(house.vector), "house.vector.gps.csv")
@@ -502,12 +531,12 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     library(sp)
     coordinates(house.vector) <- ~longitude + latitude
     
-
+    
     require(raster)
     projection(house.vector) = "+proj=utm +zone=37 +datum=WGS84" # WGS84 coords
     shapefile(house.vector, "house.vector.shp", overwrite=TRUE)
     
-
+    
     house.vector.u <-house.vector[which(house.vector$study_site==1), ]
     house.vector.m <-house.vector[which(house.vector$study_site==2), ]
     house.vector.c <-house.vector[which(house.vector$study_site==3), ]
@@ -528,19 +557,20 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
     scale = list("SpatialPolygonsRescale", layout.scale.bar(), offset = c(178600,332990), scale = 500, fill=c("transparent","black"))
     arrow = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(178750,332500), scale = 400)
     plot.vector.u<-spplot(house.vector.u, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Ukunda", sub = "", 
-           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     plot.vector.m<-spplot(house.vector.m, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Msambweni", sub = "", 
-           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     plot.vector.c<-spplot(house.vector.c, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Chulaimbo", sub = "", 
-           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     plot.vector.k<-spplot(house.vector.k, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Kisumu", sub = "", 
-           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     
     library(gridExtra)
     grid.arrange(plot.vector.u,plot.vector.m,plot.vector.c,plot.vector.k, top = "Total Aedes Mosquito count 2014-2017", bottom = "Source: LaBeaud et.al.")
-
+    
+    
     
