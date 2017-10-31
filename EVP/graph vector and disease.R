@@ -5,6 +5,13 @@ library(lubridate)
 # import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- built environment/data")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate.rda")
+
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/obamaMonthlyClimate.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/msambweniMonthlyClimate.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/kisumuMonthlyClimate.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/UkundaMonthlyClimate.rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/chulaimboMonthlyClimate.rda")
+
 load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/Monthlyvector.rda")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
 
@@ -152,8 +159,74 @@ disease_vector.u<- plot_ly() %>%
     titlefont=f3, 
     barmode = 'stack', legend=legend)
 
+# add climate ukunda-------------------------------------------------------------
+UkundaMonthlyClimate$month_collected<-as.Date(UkundaMonthlyClimate$month_collected)
+disease_climate.u<- plot_ly() %>% 
+  add_trace(data=UkundaMonthlyClimate, x = ~month_collected, y = ~AvgTemp, type = 'scatter', mode = 'lines', name='Average Temperature', yaxis = "y")%>%
+#  add_trace(data=UkundaMonthlyClimate, x = ~month_collected, y = ~TtlRainfall, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
+  add_trace(data=monthly_infection.u, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.u, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Ukunda',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Climate', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# add climate msambweni-------------------------------------------------------------
+msambweniMonthlyClimate$month_collected<-as.Date(msambweniMonthlyClimate$month_collected)
+disease_climate.m<- plot_ly() %>% 
+  add_trace(data=msambweniMonthlyClimate, x = ~month_collected, y = ~AvgTemp, type = 'scatter', mode = 'lines', name='Average Temperature', yaxis = "y")%>%
+  #  add_trace(data=msambweniMonthlyClimate, x = ~month_collected, y = ~TtlRainfall, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
+  add_trace(data=monthly_infection.m, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.m, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Ukunda',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Climate', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# add climate kisumu-------------------------------------------------------------
+kisumuMonthlyClimate$month_collected<-as.Date(kisumuMonthlyClimate$month_collected)
+disease_climate.k<- plot_ly() %>% 
+  add_trace(data=kisumuMonthlyClimate, x = ~month_collected, y = ~AvgTemp, type = 'scatter', mode = 'lines', name='Average Temperature', yaxis = "y")%>%
+  #  add_trace(data=kisumuMonthlyClimate, x = ~month_collected, y = ~TtlRainfall, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
+  add_trace(data=monthly_infection.k, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.k, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Ukunda',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Climate', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+# add climate chulaimbo-------------------------------------------------------------
+chulaimboMonthlyClimate$month_collected<-as.Date(chulaimboMonthlyClimate$month_collected)
+disease_climate.c<- plot_ly() %>% 
+  add_trace(data=chulaimboMonthlyClimate, x = ~month_collected, y = ~AvgTemp, type = 'scatter', mode = 'lines', name='Average Temperature', yaxis = "y")%>%
+  #  add_trace(data=chulaimboMonthlyClimate, x = ~month_collected, y = ~TtlRainfall, type = 'scatter', mode = 'lines', name='Total Rain', yaxis = "y")%>%
+  add_trace(data=monthly_infection.c, name ="CHIKV",x=~month_year, y=~infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4, color="black", dash="dash"),  connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  add_trace(data=monthly_infection.c, name ="DENV",x=~month_year, y=~infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4,color ="black"), connectgaps=TRUE, showlegend=T, yaxis="y2")%>%
+  layout(
+    title = 'Ukunda',
+    margin = margin, 
+    xaxis = list(type ="date", nticks = 15, tickangle =25,title = "",tickfont=f1,titlefont=f2),
+    yaxis = list(side = 'left', title = 'Climate', showgrid = FALSE, zeroline = TRUE, barmode='relative',tickfont=f1,titlefont=f2),
+    yaxis2 = list(side = 'right', overlaying = "y", title = 'Proportion Infected', showgrid = FALSE, zeroline = FALSE, range=c(0,0.6), tickformat="%",tickfont=f1,titlefont=f2),
+    titlefont=f3, 
+    barmode = 'stack', legend=legend)
+
 # plot  ----------------------------------------------------
 disease_vector.u
 disease_vector.m
 disease_vector.c
 disease_vector.k
+
+disease_climate.u
+disease_climate.k
+disease_climate.m
+disease_climate.c

@@ -14,7 +14,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-  #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   library(beepr)
   beep(sound=4)
 
@@ -448,7 +448,8 @@ table(R01_lab_results$infected_chikv_kenya)
   R01_lab_results$infected_denv_stfd[R01_lab_results$tested_denv_stfd_igg ==1 |R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0|R01_lab_results$denv_result_ufi==0]<-0
   R01_lab_results$infected_denv_stfd[R01_lab_results$seroc_denv_stfd_igg==1|R01_lab_results$result_pcr_denv_kenya==1|R01_lab_results$result_pcr_denv_stfd==1|R01_lab_results$denv_result_ufi==1]<-1
   table(R01_lab_results$infected_denv_stfd)  
-  175/(175+3899)*100
+  174/(4073)*100
+  
 table(R01_lab_results$infected_denv_stfd, R01_lab_results$redcap_event_name)  
 table(R01_lab_results$infected_denv_stfd, R01_lab_results$id_cohort)
 table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)
@@ -461,7 +462,7 @@ table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)
 R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi==0]<-0
 R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_lab_results$result_pcr_chikv_kenya==1|R01_lab_results$chikv_result_ufi==1]<-1
 table(R01_lab_results$infected_chikv_stfd)  
-61/(61+4130)*100
+119/(4151)*100
 
 table(R01_lab_results$infected_chikv_stfd, R01_lab_results$id_cohort)  
 56/(56+3418)*100#aic inc

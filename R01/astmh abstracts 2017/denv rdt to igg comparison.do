@@ -21,6 +21,12 @@ fsum stanford_igg_fu_dum stanford_igg_initial_dum rdt_igg_dum
 diagt stanford_igg_initial_dum  rdt_igg_dum
 tab stanford_igg_initial_dum  rdt_igg_dum
 
+*compare rdt igm to igg at fu for all comers 
+	fsum  stanford_igg_fu_dum  rdt_igm_dum 
+	tab   stanford_igg_fu_dum  rdt_igm_dum , m
+
+	diagt  stanford_igg_fu_dum  rdt_igm_dum 	
+
 *compare rdt igm to igg at fu for seroconverters (those neg at initial and positive at follow up) 
 preserve
 	bysort stanford_igg_initial_dum :  tab stanford_igg_fu_dum rdt_igm_dum, m
@@ -32,10 +38,3 @@ preserve
 
 *	diagt  stanford_igg_fu_dum  rdt_igm_dum 	**fails as there are no seroconverters. . . 
 restore	
-*compare rdt igm to pcr
-	tab  pcr_dum rdt_igm_dum, m
-
-	fsum  pcr_dum  rdt_igm_dum 
-	tab   pcr_dum  rdt_igm_dum , m
-
-	diagt  pcr_dum  rdt_igm_dum

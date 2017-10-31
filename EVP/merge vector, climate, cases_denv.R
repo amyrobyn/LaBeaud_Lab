@@ -16,19 +16,27 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   vector$date_bg <-ymd(vector$date_bg)
   class(vector$date_bg)
   vector$month_bg <- as.yearmon(vector$date_bg)
-  R01_lab_results$study_site<-R01_lab_results$id_city
+  R01_lab_results$study_site<-R01_lab_results$City
   
   R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$id_city=="L"] <- "m")
   R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$id_city=="O"] <- NA)
   R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$id_city=="R"] <- "c")
   R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$id_city=="G"] <- "m")
   R01_lab_results$study_site<-tolower(R01_lab_results$study_site)
+  R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$study_site=="o"] <- "k")
+  R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$study_site=="r"] <- "c")
+  R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$study_site=="l"] <- "m")
+  R01_lab_results <- within(R01_lab_results, study_site[R01_lab_results$study_site=="g"] <- "m")
   table(R01_lab_results$study_site)
   
   Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==1] <- "u")
   Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==2] <- "m")
   Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==3] <- "c")
   Monthlyvector <- within(Monthlyvector, study_site[Monthlyvector$study_site==4] <- "k")
+  
+  MonthlyClimate <- within(MonthlyClimate, study_site[MonthlyClimate$study_site=="o"] <- "k")
+  
+  
   
   table(Monthlyvector$study_site)
   table(MonthlyClimate$study_site)
@@ -40,9 +48,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   chikv <- ddply(R01_lab_results, .(month_year, study_site),
                 summarise, infected_chikv_stfd_monthly = sum(infected_chikv_stfd, na.rm = TRUE))
   
-  MonthlyClimate <- within(MonthlyClimate, study_site[MonthlyClimate$study_site=="o"] <- "k")
-
-  denv <- within(denv, infected_denv_stfd[is.na(denv$month_year)] <- 0)
+  denv <- within(denv, infected_denv_stfd_monthly[is.na(denv$month_year)] <- 0)
   denv <-denv[which(!is.na(denv$month_year)), ]
   denv$month_year<-as.Date(denv$month_year)
 #lag vectors by two weeks  
@@ -80,8 +86,8 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   tableOne_denv_chikv <- CreateTableOne(vars = vars, factorVars=factorVars, strata = "infected_denv_chikv_stfd", data = vector_climate_cases)
 
   #  summary(tableOne_denv_chikv)
-  print(tableOne_denv, 
-        nonnormal = c( "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies","age"),
+  print(tableOne_chikv, 
+#        nonnormal = c( "Ttl_Aedes.spp.Indoor.ovi", "ttl_Aedes_spp_Outdoor.ovi", "Ttl_Aedes.spp.bg", "Ttl_Aedes.spp_in.proko", "Ttl_Aedes.spp_out.proko", "Ttl_Aedes.spp.hlc", "Ttl_Aedes.spp.larva", "month_year_date", "month_collected", "AvgTemp", "AvgMaxTemp", "AvgMinTemp", "OverallMaxTemp", "OverallMinTemp", "AvgTempRange", "AvgRH", "AvgDewPt", "TtlRainfall", "RainfallAnomalies", "TempRangeAnomalies", "TempDewPtDiffAnomalies", "TempAnomalies", "RHAnomalies", "RHTempAnomalies","age"),
         exact = c("month_year", "study_site", "month_year_lag", 'roof_type' , "floor_type","latrine_type","light_source","drinking_water_source", "id_cohort","age_group","gender_all"),
         cramVars = c("id_cohort"), quote = TRUE)
   
