@@ -1,6 +1,11 @@
+# !diagnostics off
 # packages ----------------------------------------------------------------
 library("DiagrammeR")#install.packages("DiagrammeR")
 library(plotly)
+library(plyr)
+library(dplyr)
+library(tableone)
+
 
 # get data ----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyanka malaria aic visit a")
@@ -33,32 +38,33 @@ aic_febrile_malaria<-aic_febrile_malaria[which(!is.na(aic_febrile_malaria$malari
 
   aic_febrile_malaria<-aic_febrile_malaria[which(aic_febrile_malaria$malaria==1),]
   n_aic_fever_malaria_pos<-sum(n_distinct(aic_febrile_malaria$person_id,aic_febrile_malaria$redcap_event_name, na.rm = FALSE)) #3114 with malaria. 2926 neg.
-  # outcome=hospitalized ----------------------------------------------------
+# outcome=hospitalized ----------------------------------------------------
     table(aic_febrile_malaria$outcome,aic_febrile_malaria$outcome_hospitalized)
     aic_febrile_malaria$priyanka_outcome_hospitalized<-NA
     aic_febrile_malaria<- within(aic_febrile_malaria, priyanka_outcome_hospitalized[outcome_hospitalized==0 |outcome==1|outcome==2] <- 0)
     aic_febrile_malaria<- within(aic_febrile_malaria, priyanka_outcome_hospitalized[outcome_hospitalized==1 |outcome==3|outcome==4] <- 1)
-    table(aic_febrile_malaria$priyanka_outcome_hospitalized)
+    table(aic_febrile_malaria$priyanka_outcome_hospitalized, exclude = NULL)
     1323+131
     131/(1323+131)*100#9%
     
     n_aic_fever_malaria_pos_hospitalized <-  sum(aic_febrile_malaria$priyanka_outcome_hospitalized ==1 , na.rm = TRUE)#131 hospitalized. 1323 not. 
     n_aic_fever_malaria_pos_follow_up<- sum(!is.na(aic_febrile_malaria$priyanka_outcome_hospitalized), na.rm = TRUE)#131 hospitalized. 1323 not.
-  #repeat offenders ------------------------------
-    aic_febrile_malaria<-    aic_febrile_malaria %>%
-          group_by(person_id) %>%
-          mutate(repeat_malaria_count = n())
-    aic_febrile_malaria<-as.data.frame(aic_febrile_malaria)
+#repeat offenders ------------------------------
+    aic_febrile_malaria <- aic_febrile_malaria[order(aic_febrile_malaria$visit),] #order by date redapevent
+    
+    aic_febrile_malaria<-aic_febrile_malaria %>% group_by(person_id) %>% mutate(repeat_malaria_count = cumsum(malaria))
     table(aic_febrile_malaria$repeat_malaria_count)
-    2597+396+93+28
+
     aic_febrile_malaria$repeat_malaria<-NA
     aic_febrile_malaria <- within(aic_febrile_malaria, repeat_malaria[aic_febrile_malaria$repeat_malaria_count==1] <- "No")
     aic_febrile_malaria <- within(aic_febrile_malaria, repeat_malaria[aic_febrile_malaria$repeat_malaria_count>1] <- "Yes")
     table(aic_febrile_malaria$repeat_malaria)
     
+    aic_febrile_malaria<-aic_febrile_malaria[order(-(grepl('repeat_malaria|person_id|redcap', names(aic_febrile_malaria)))+1L)]
+    
     n_aic_fever_malaria_pos_repeat <-  sum(aic_febrile_malaria$repeat_malaria =="Yes" , na.rm = TRUE)#517 repeat. 2597 not. 
     
-  # rdt vs micro ------------------------------------------------------------
+# rdt vs micro ------------------------------------------------------------
     aic_febrile_malaria$test<-NA
     aic_febrile_malaria <- within(aic_febrile_malaria, test[!is.na(aic_febrile_malaria$rdt_results)] <- "RDT")
     aic_febrile_malaria <- within(aic_febrile_malaria, test[!is.na(aic_febrile_malaria$malaria_results)] <- "POC Microscopy")
@@ -75,43 +81,67 @@ aic_febrile_malaria<-aic_febrile_malaria[which(!is.na(aic_febrile_malaria$malari
   
   aic_febrile_malaria_malariawide<- aic_febrile_malaria[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(aic_febrile_malaria) ) ]
   aic_febrile_malaria_malariawide<-aic_febrile_malaria_malariawide[,order(colnames(aic_febrile_malaria_malariawide))]
+  aic_febrile_malaria_malariawide<-as.data.frame(aic_febrile_malaria_malariawide)
   aic_febrile_malaria_malariawide<-reshape(aic_febrile_malaria_malariawide, idvar = c("person_id", "redcap_event_name"), varying = 1:5,  direction = "long", timevar = "species", times=c("ni", "pf","pm","po","pv"), v.names=c("microscopy_malaria"))
   
   aic_febrile_malaria_malariawide<- within(aic_febrile_malaria_malariawide, species[microscopy_malaria!=1] <- NA)
   aic_febrile_malaria_malariawide<-aic_febrile_malaria_malariawide[which(!is.na(aic_febrile_malaria_malariawide$species)),]
   
-  table(aic_febrile_malaria_malariawide$species, aic_febrile_malaria_malariawide$microscopy_malaria)
+  aic_febrile_malaria_malariawide<-aic_febrile_malaria_malariawide %>% group_by(person_id,redcap_event_name) %>% mutate(malaria_coinfection = n())
+  aic_febrile_malaria_malariawide<-aggregate( .~ person_id+redcap_event_name, aic_febrile_malaria_malariawide, function(x) toString(unique(x)))
   
-  aic_febrile_malaria_species<-merge(aic_febrile_malaria, aic_febrile_malaria_malariawide, by=c("person_id","redcap_event_name"), all.x=TRUE)
-  aic_febrile_malaria_species <- within(aic_febrile_malaria_species, species[aic_febrile_malaria_species$rdt_results==1 & (is.na(aic_febrile_malaria$species)|aic_febrile_malaria$species=="ni")] <- "pf") #rdt is pf specific
-  barplot(table(aic_febrile_malaria_species$species))
+  table(aic_febrile_malaria_malariawide$species)
 
-table(aic_febrile_malaria_species$species)
-  445/(2111+29+9)*100 #ni
-  1704/(2149)*100 #identified
+  aic_febrile_malaria_species<-merge(aic_febrile_malaria, aic_febrile_malaria_malariawide, by=c("person_id","redcap_event_name"), all.x=TRUE)
+
+  aic_febrile_malaria_species <- within(aic_febrile_malaria_species, species[aic_febrile_malaria_species$rdt_results==1 & (is.na(aic_febrile_malaria_species$species)|aic_febrile_malaria_species$species=="ni")] <- "pf") #rdt is pf specific
+
+  barplot(table(aic_febrile_malaria_species$species))
+  table(aic_febrile_malaria_species$species)
+  (2676+      8+      1+     21+      8)/3114 #speices level id/pos malaria. 87%.
   
-  2111/(2149)*100 #pf
-  29/(2149)*100 #pm
-  9/(2149)*100 #po
+  2676/(2714)*100 #pf
+  21/(2714)*100 #pm
+  9/(2714)*100 #po
 
 # flow chart of subjects --------------------------------------------------
 flow_chart<-  mermaid("
   graph TB;
-
-  A(Acute visits)-->B(8278); B(8278)-->C(Fever)
-  B(8278)-->D(No fever); D(No fever)-->E(2186)
-  C(Fever)-->F(6092) ;   F(6092)-->G(Not tested)
-  G(Not tested)-->H(26);   F(6092)-->I(Malaria tested)
-  I(Malaria tested)-->K(6040);   K(6040)-->M(Positive)
-  K(6040)-->N(Negative);   M(Positive)-->O(3114)
-  N(Negative)-->O(2926);   O(3114)-->P(No follow-up)
-  P(No follow-up)-->Q(1660);   O(3114)-->R(Follow-up)
-  R(Follow-up)-->S(1454);   S(1454)-->T(Repeat-offenders)
-  T(Repeat-offenders)-->U(517);   S(1454)-->V(Hospitalized)
-  S(1454)-->W(Not hospitalized);   W(Not hospitalized)-->X(1273)
+  A(Acute visits)-->B(8,278); B(8,278)-->C(Fever)
+  B(8,278)-->D(No fever); D(No fever)-->E(2,186)
+  C(Fever)-->F(6,092) ;   F(6,092)-->G(Not tested)
+  G(Not tested)-->H(26);   F(6,092)-->I(Malaria tested)
+  I(Malaria tested)-->K(6,040);   K(6,040)-->M(Positive)
+  K(6,040)-->N(Negative);   M(Positive)-->O(3,114)
+  N(Negative)-->J(2,926);   O(3,114)-->P(No follow-up)
+  P(No follow-up)-->Q(1,660);   O(3,114)-->R(Follow-up)
+  R(Follow-up)-->S(1,454);   S(1,454)-->T(Repeat-offenders)
+  T(Repeat-offenders)-->U(517);   S(1,454)-->V(Hospitalized)
+  S(1,454)-->W(Not hospitalized);   W(Not hospitalized)-->X(1,273)
   V(Hospitalized)-->Y(181)
-  style A fontsize:200%;
+
+style A font-family: Arial, fontsize: 140px, fill:white; style B font-family: Arial, fontsize: 140px, fill:white
+style C font-family: Arial, fontsize: 140px, fill:white;style D font-family: Arial, fontsize: 140px, fill:white
+style E font-family: Arial, fontsize: 140px, fill:white;style F font-family: Arial, fontsize: 140px, fill:white
+style G font-family: Arial, fontsize: 140px, fill:white;style H font-family: Arial, fontsize: 140px, fill:white
+style I font-family: Arial, fontsize: 140px, fill:white;style J font-family: Arial, fontsize: 140px, fill:white
+style K font-family: Arial, fontsize: 140px, fill:white;style M font-family: Arial, fontsize: 140px, fill:white
+style N font-family: Arial, fontsize: 140px, fill:white; style O font-family: Arial, fontsize: 140px, fill:white
+style P font-family: Arial, fontsize: 140px, fill:white; style Q font-family: Arial, fontsize: 140px, fill:white
+style R font-family: Arial, fontsize: 140px, fill:white; style S font-family: Arial, fontsize: 140px, fill:white
+style T font-family: Arial, fontsize: 140px, fill:white; style U font-family: Arial, fontsize: 140px, fill:white
+style V font-family: Arial, fontsize: 140px, fill:white; style W font-family: Arial, fontsize: 140px, fill:white
+style X font-family: Arial, fontsize: 140px, fill:white; style Y font-family: Arial, fontsize: 140px, fill:white
                       ")
+library(slidify)
+  library(slidifyLibraries)
+  author('slidifyDemo')
+  
+  library(htmlwidgets)
+  saveWidget(flow_chart, 'diagram.html')
+  cat('<iframe src="diagram.html" width=100% height=100% allowtransparency="true" style="background: #FFCCFF;"> </iframe>')
+    
+    class(flow_chart)
   
 # history of malaria ------------------------------------------------------
 aic_febrile_malaria$malaria_history<-grepl("malaria", aic_febrile_malaria$past_medical_history)
@@ -119,9 +149,14 @@ aic_febrile_malaria$malaria_history<-grepl("malaria", aic_febrile_malaria$past_m
 table(aic_febrile_malaria$repeat_malaria,aic_febrile_malaria$malaria_history)
 
 aic_febrile_malaria$malaria_history <- factor(aic_febrile_malaria$malaria_history,levels = c("FALSE","TRUE"),labels = c("No", "Yes"))
-
+table(aic_febrile_malaria$malaria_history, aic_febrile_malaria$priyanka_outcome_hospitalized)
 # city --------------------------------------------------------------------
 aic_febrile_malaria <- within(aic_febrile_malaria, City[aic_febrile_malaria$City=="R"] <- "C")
+
+aic_febrile_malaria <- within(aic_febrile_malaria, City[aic_febrile_malaria$City=="C"] <- "Chulaimbo")
+aic_febrile_malaria <- within(aic_febrile_malaria, City[aic_febrile_malaria$City=="K"] <- "Kisumu")
+aic_febrile_malaria <- within(aic_febrile_malaria, City[aic_febrile_malaria$City=="M"] <- "Msambweni")
+aic_febrile_malaria <- within(aic_febrile_malaria, City[aic_febrile_malaria$City=="U"] <- "Ukunda")
 table(aic_febrile_malaria$City)
 table(aic_febrile_malaria$site,aic_febrile_malaria$City, exclude = NULL)
 
@@ -132,7 +167,9 @@ hospitalized_age <- ddply(aic_febrile_malaria, .(age_group), summarise,
                              hospital_p = mean(priyanka_outcome_hospitalized, na.rm = TRUE),
                              hospital_sd = sd(priyanka_outcome_hospitalized, na.rm = TRUE)
 )
-margin = list(l = 100, r = 50, b = 100, t = 75, pad = 4)
+table(aic_febrile_malaria$age_group, aic_febrile_malaria$priyanka_outcome_hospitalized)
+
+margin = list(l = 100, r = 100, b = 100, t = 75, pad = 4)
 plot_ly(hospitalized_age, y=~hospital_p, x=~age_group, type="bar", error_y = ~list(value = hospital_sd))%>%
 layout(xaxis=list(title="Age Group"), yaxis=list(title="Subjects", tickformat="%"),font=list(size=28),margin=margin)
 # graph outcome hospitalized by MALARIA HISTORY ---------------------------------------------------------------
@@ -144,19 +181,29 @@ plot_ly(hospitalized_mal_history, y=~hospital_p, x=~malaria_history, type="bar",
   layout(xaxis=list(title="History of Malaria"), yaxis=list(title="Subjects", tickformat="%"),font=list(size=28),margin=margin)
 # graph outcome hospitalized by city ---------------------------------------------------------------
 hospitalized_City <- ddply(aic_febrile_malaria, .(City), summarise, 
-                                  hospital_p = mean(priyanka_outcome_hospitalized, na.rm = TRUE),
+                           hospital_n = sum(priyanka_outcome_hospitalized, na.rm = TRUE),
+                           hospital_p = mean(priyanka_outcome_hospitalized, na.rm = TRUE),
                                   hospital_sd = sd(priyanka_outcome_hospitalized, na.rm = TRUE)
 )
-plot_ly(hospitalized_City, y=~hospital_p, x=~City, type="bar", error_y = ~list(value = hospital_sd))%>%
-  layout(xaxis=list(title="City"), yaxis=list(title="Subjects", tickformat="%"),font=list(size=28),margin=margin)
+plot_ly()%>%
+  add_trace(data=hospitalized_City, y=~hospital_p, x=~City, type="bar", error_y = ~list(value = hospital_sd), name ="% hospitalized")%>%
+  layout(xaxis=list(title="City"), yaxis=list(title="", tickformat="%"),font=list(size=28),margin=margin
+)
+
 # graph outcome hospitalized by repeat offender ---------------------------------------------------------------
-hospitalized_repeat_offender <- ddply(aic_febrile_malaria, .(repeat_malaria_count), summarise, 
-                           hospital_p = mean(priyanka_outcome_hospitalized, na.rm = TRUE),
+hospitalized_repeat_offender <- ddply(aic_febrile_malaria, .(repeat_malaria_count, City), summarise, 
+                                      hospital_p = mean(priyanka_outcome_hospitalized, na.rm = TRUE),
+                                      hospital_n = sum(priyanka_outcome_hospitalized, na.rm = TRUE),
                            hospital_sd = sd(priyanka_outcome_hospitalized, na.rm = TRUE)
 )
-plot_ly(hospitalized_repeat_offender, y=~hospital_p, x=~repeat_malaria_count, type="bar", error_y = ~list(value = hospital_sd))%>%
-  layout(xaxis=list(title="Malaria Episodes",dtick=1), yaxis=list(title="Subjects", tickformat="%"),font=list(size=28),margin=margin)
+table(aic_febrile_malaria$repeat_malaria_count, aic_febrile_malaria$priyanka_outcome_hospitalized, aic_febrile_malaria$City)
+aic_febrile_malaria$city_repeat<-paste(aic_febrile_malaria$repeat_malaria_count, aic_febrile_malaria$priyanka_outcome_hospitalized)
 
+table(aic_febrile_malaria$city_repeat)
+
+plot_ly()%>%
+  add_trace(data=hospitalized_repeat_offender, y=~hospital_p, x=~City, type="bar", error_y = ~list(value = hospital_sd), name ="",split=~repeat_malaria_count)%>%
+  layout(xaxis=list(title="# Malaria Episodes by City"), yaxis=list(title="", tickformat="%"),font=list(size=28),margin=margin)
 # wealth index ------------------------------------------------------------
 aic_febrile_malaria <- within(aic_febrile_malaria, kid_highest_level_education_aic[aic_febrile_malaria$kid_highest_level_education_aic==9|aic_febrile_malaria$kid_highest_level_education_aic==5] <- NA)
 aic_febrile_malaria <- within(aic_febrile_malaria, mom_highest_level_education_aic[aic_febrile_malaria$mom_highest_level_education_aic==9|aic_febrile_malaria$mom_highest_level_education_aic==5] <- NA)
@@ -214,10 +261,11 @@ aic_febrile_malaria$ses_sum<-rowSums(aic_febrile_malaria[, c("telephone","radio"
 table(aic_febrile_malaria$ses_sum)
 
 # demography tables ------------------------------------------------------------------
-vars<-c("malaria_history","age_group","site","City","species","ses_sum","mom_highest_level_education_aic","gender_aic","repeat_malaria_count")
-factorVars<-c("malaria_history","age_group","site","City","mom_educ","species","mom_highest_level_education_aic","gender_aic","repeat_malaria_count")
-table1 <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "priyanka_outcome_hospitalized", data = aic_febrile_malaria)
-print(table1, quote = TRUE)
+vars<-c("malaria_history","age_group","site","City","species","ses_sum","mom_highest_level_education_aic","gender_aic","repeat_malaria_count","city_repeat")
+factorVars<-c("malaria_history","age_group","site","City","mom_educ","species","mom_highest_level_education_aic","gender_aic","repeat_malaria_count","city_repeat")
+table1 <- CreateTableOne(vars = vars, factorVars = factorVars ,strata = "priyanka_outcome_hospitalized", data = aic_febrile_malaria)
+
+print(table1, quote = TRUE,exact=c("city_repeat","age_group","City"))
 
 # mosquito table ----------------------------------------------------------
 aic_febrile_malaria$mosquito_bites_aic<-as.numeric(as.character(aic_febrile_malaria$mosquito_bites_aic))
