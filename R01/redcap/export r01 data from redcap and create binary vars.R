@@ -25,7 +25,9 @@ load(FileName)
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 table(R01_lab_results$outcome_hospitalized)
-table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized)
+
+table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized, R01_lab_results$outcome_where_hospitalized)
+
 
 # parse the id -----------------------------------------------------------------
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)

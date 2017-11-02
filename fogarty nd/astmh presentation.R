@@ -32,45 +32,40 @@ table(chikv_nd$gestational_age_cat, exclude = NULL)
 
 
 # outcome -----------------------------------------------------------------
-chikv_nd$preg_chikvpos<-NA
-chikv_nd <- within(chikv_nd, preg_chikvpos[result_mother==0 | pregnant==0] <- 0)
-chikv_nd <- within(chikv_nd, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- 1)
-cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$preg_chikvpos) ), ])
+cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother)& !is.na(chikv_nd$result_child)), ])#516 tested both mother and child.
+
+cohort$preg_chikvpos<-NA
+cohort <- within(cohort, preg_chikvpos[is.na(cohort$ever_had_chikv)] <- 98)
+cohort <- within(cohort, preg_chikvpos[is.na(cohort$pregnant)] <- 99)
+cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- 0)
+cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- 1)
+#153 negative or not infected during pregnancy
+#168 infected and during pregnancy with trimester recall.
+#152 had chikv but not during pregnancy.
+#18 had chikv but didn't respond to if during pregancy or not.
+
+cohort<-as.data.frame(cohort[which(cohort$preg_chikvpos==1|cohort$preg_chikvpos==0 ), ])
+table(cohort$preg_chikvpos,exclude = NULL)
+153+168
 # flow chart of subjects --------------------------------------------------
 n<-sum(n_distinct(cohort$participant_id, na.rm = FALSE)) #506 mother-child pairs
-n_tested_moms<-  sum(!is.na(cohort$result_mother), na.rm = TRUE)#438 tested moms
-n_tested_children<-  sum(!is.na(cohort$result_child), na.rm = TRUE)#436 tested children
 
-n_cohort<-  sum(!is.na(cohort$preg_chikvpos), na.rm = TRUE)#332 included in cohort
-n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#169 cases 
-n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#163 controls 
+n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#163 cases 
+n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#130 controls 
 
-grViz("
-      digraph boxes_and_circles{
-      graph[nodesep=2]
-      node[shape = oval; color = black; fontsize = 100; fontname=arial; fontcolor=black; penwidth = 6; arrowshape=normal]
-      edge[penwidth = 6; arrowhead=normal; arrowsize =4; minlen=4]
-      
-      #mother child pairs
-      mother_child_pairs->506
-      
-      #tested events
-      506->tested_moms; 506->tested_child  
-      tested_moms->438; tested_child->436
-      
-      #cohort. excluded (equivocal_lab_result_or_never_infected). 
-      #included as exposed if mother igg pos and infected during preg.
-      #included as unexposed if mother igg neg or not infected during pregnancy
-      438->included_in_cohort; 438->excluded
-      included_in_cohort->332;excluded->174; 
-      
-      
-      #exposed/unexposed
-      332->exposed; 332->unexposed
-      exposed->169; unexposed->163
-      
-      }")
-        
+mermaid("
+  graph TB;
+      A(Mother child pairs)-->B(506)
+      B(506)-->C(Tested both<br> mother and child)
+      C(Tested both<br> mother and child)-->D(415)
+      D(415)-->E(Excluded<br> from cohort)
+      E(Excluded<br> from cohort)-->F(122)
+      F(122)-->G(112 CHIKV+<br> Not during<br> pregnancy) 
+      F(122)-->H(10 CHIKV+<br> No recall if<br> during pregnancy) 
+      D(415)-->I(Exposed)
+      D(415)-->J(Unexposed)
+      I(Exposed)-->K(163)
+      J(Unexposed)-->L(130)")    
 
 
 # trimester ---------------------------------------------------------------
@@ -82,11 +77,10 @@ trimester_infection <- ddply(cohort, .(trimester_lab),
 )
 margin = list(l = 100, r = 50, b = 100, t = 75, pad = 4)
 
-plot_ly(trimester_infection, y=~trimester_sum, x=~trimester_lab, type="bar", error_y = ~list(value = trimester_sd))%>%
+plot_ly(trimester_infection, y=~trimester_sum, x=~trimester_lab, type="bar")%>%
   layout(title="Trimester of CHIKV Infection", xaxis=list(title="Trimester"), yaxis=list(title="Count"),
          font=list(size=28),
          margin=margin)
-
 
 # moms elisa result -------------------------------------------------------
 colors <- c('rgb(128,133,133)','rgb(211,94,96)' )
@@ -95,19 +89,35 @@ chikv_nd <- within(chikv_nd, result_mother[result_mother>1] <- NA)
 result_mother<-as.data.frame(table(chikv_nd$result_mother))
 result_mother$Var1 <- factor(result_mother$Var1,levels = c(0,1),labels = c("Neg", "Pos"))
 
-plot_ly(result_mother, labels = ~Var1, values = ~Freq,
+plot_ly(result_mother, labels = ~Var1, values = ~Freq,type = 'pie',
         textposition = 'inside',
         textinfo = 'label+percent',
         insidetextfont = list(color = '#FFFFFF', size=24),
         marker = list(colors = colors,
                       line = list(color = '#FFFFFF', width = 1)) 
 ) %>%
-  add_pie(hole = 0.6) %>%
   layout(title ='Mother IgG ELISA Result', titlefont=list(size=34),
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
 
-# child elisa result ------------------------------------------------------------
+# child elisa result all comers------------------------------------------------------------
+chikv_nd <- within(chikv_nd, result_child[result_child>1] <- NA)
+result_child<-as.data.frame(table(chikv_nd$result_child))
+result_child$Var1 <- factor(result_child$Var1,levels = c(0,1),labels = c("Neg", "Pos"))
+
+plot_ly(result_child, labels = ~Var1, values = ~Freq,type = 'pie',
+        textposition = 'inside',
+        textinfo = 'label+percent',
+        insidetextfont = list(color = '#FFFFFF', size=24),
+        marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)) 
+) %>%
+  layout(title ='Child IgG ELISA Result', titlefont=list(size=34),
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+# child elisa result cohort------------------------------------------------------------
 cohort <- within(cohort, result_child[result_child>1] <- NA)
 result_child <- ddply(cohort, .(preg_chikvpos), 
                       summarise, 
@@ -135,11 +145,11 @@ hist(cohort$mom_age, breaks=20)
 cohort <- within(cohort, mom_age[mom_age<10] <- NA)
 
 #text variables to categorize ----------------------------------------------------
-cohort_to_cat<-cohort[which(!is.na(cohort$preg_chikvpos)), grepl("participant_id|redcap_event_name|preg_chikvpos|list_pregnancy_illness|specify_after_birth_problems|specify_complications|specify_first_few_months", names(cohort))]
+cohort_to_cat<-cohort[which(!is.na(cohort$preg_chikvpos)), grepl("preg_chikvpos|participant_id|redcap_event_name|preg_chikvpos|list_pregnancy_illness|specify_after_birth_problems|specify_complications|specify_first_few_months", names(cohort))]
 write.csv(as.data.frame(cohort_to_cat), "cohort_to_cat.csv" )
 
 
-# symptoms data cleaning----------------------------------------------------------------
+# symptoms data cleaning by trimester----------------------------------------------------------------
 
 cases<-as.data.frame(cohort[which(cohort$preg_chikvpos==1), ])
 
@@ -213,10 +223,14 @@ symptoms <- ddply(cases, .(trimester),
                   seizures_sd = sd(symptoms___33, na.rm = TRUE),
                   hand_weak  = mean(symptoms___34, na.rm = TRUE),
                   hand_weak_sd = sd(symptoms___34, na.rm = TRUE))
-# symptoms graph----------------------------------------------------------------
+# symptoms graph by trimester----------------------------------------------------------------
+symptoms<-as.data.frame(symptoms[which(symptoms$trimester!=4), ])
 
-symptoms$trimester <- factor(symptoms$trimester,levels = c(1,2,3,4),labels = c("1st", "2nd", "3rd", "Delivery"))
+symptoms$trimester <- factor(symptoms$trimester,levels = c(1,2,3),labels = c("1st", "2nd", "3rd"))
+
 plot_ly(symptoms)%>%
+  add_trace(x=~trimester, y=~adbominal, type="bar", name="adbominal pain**",error_y = ~list(value = adbominal_sd))%>%
+  add_trace(x=~trimester, y=~eye_pain, type="bar", name="pain behnd eye*",error_y = ~list(value = eye_pain_sd))%>%
   add_trace(x=~trimester, y=~rash, type="bar", name="rash",error_y = ~list(value = rash_sd))%>%
   add_trace(x=~trimester, y=~fever, type="bar", name="fever",error_y = ~list(value = fever_sd))%>%
   add_trace(x=~trimester, y=~chills, type="bar", name="chills",error_y = ~list(value = chills_sd))%>%
@@ -225,7 +239,6 @@ plot_ly(symptoms)%>%
   add_trace(x=~trimester, y=~muscle, type="bar", name="muscle",error_y = ~list(value = muscle_sd))%>%
   add_trace(x=~trimester, y=~itch, type="bar", name="itch",error_y = ~list(value = itch_sd))%>%
   add_trace(x=~trimester, y=~headache, type="bar", name="headache",error_y = ~list(value = headache_sd))%>%
-  add_trace(x=~trimester, y=~eye_pain, type="bar", name="eye pain",error_y = ~list(value = eye_pain_sd))%>%
   add_trace(x=~trimester, y=~appetite, type="bar", name="loss of appetite",error_y = ~list(value = appetite_sd))%>%
   layout(
          xaxis = list(titlefont=list(size=34),title = "Trimester of Infection", tickfont = list(size=24)),
@@ -233,6 +246,103 @@ plot_ly(symptoms)%>%
          margin=margin,
          legend=list(font=list(size=24), orientation="h"))
 
+# symptoms data cleaning by pregnancy----------------------------------------------------------------
+cases<-as.data.frame(chikv_nd[which(chikv_nd$result_mother==1&(chikv_nd$pregnant==1|chikv_nd$pregnant==0)), ])
+cases$pregnant <- factor(cases$pregnant,levels = c(0,1),labels = c("Not", "Pregnancy"))
+
+symptoms <- ddply(cases, .(pregnant), 
+                  summarise, 
+                  fever  = mean(symptoms___1, na.rm = TRUE),
+                  fever_sd = sd(symptoms___1, na.rm = TRUE),
+                  chills  = mean(symptoms___2, na.rm = TRUE),
+                  chills_sd = sd(symptoms___3, na.rm = TRUE),
+                  Generalized_body_ache = mean(symptoms___3, na.rm = TRUE),
+                  Generalized_body_ache_sd = sd(symptoms___3, na.rm = TRUE),
+                  joint  = mean(symptoms___4, na.rm = TRUE),
+                  joint_sd = sd(symptoms___4, na.rm = TRUE),
+                  muscle  = mean(symptoms___5, na.rm = TRUE),
+                  muscle_sd = sd(symptoms___5, na.rm = TRUE),
+                  bone  = mean(symptoms___6, na.rm = TRUE),
+                  bone_sd = sd(symptoms___6, na.rm = TRUE),
+                  itch  = mean(symptoms___7, na.rm = TRUE),
+                  itch_sd = sd(symptoms___7, na.rm = TRUE),
+                  headache  = mean(symptoms___8, na.rm = TRUE),
+                  headache_sd = sd(symptoms___8, na.rm = TRUE),
+                  eye_pain  = mean(symptoms___9, na.rm = TRUE),
+                  eye_pain_sd = sd(symptoms___9, na.rm = TRUE),
+                  dizzy  = mean(symptoms___10, na.rm = TRUE),
+                  dizzy_sd = sd(symptoms___10, na.rm = TRUE),
+                  eyes_sens  = mean(symptoms___11, na.rm = TRUE),
+                  eyes_sens_sd = sd(symptoms___11, na.rm = TRUE),
+                  stiff_neck  = mean(symptoms___12, na.rm = TRUE),
+                  stiff_neck_sd = sd(symptoms___12, na.rm = TRUE),
+                  red_eye  = mean(symptoms___13, na.rm = TRUE),
+                  red_eye_sd = sd(symptoms___13, na.rm = TRUE),
+                  runny_nose  = mean(symptoms___14, na.rm = TRUE),
+                  runny_nose_sd = sd(symptoms___14, na.rm = TRUE),
+                  earchache  = mean(symptoms___15, na.rm = TRUE),
+                  earchache_sd = sd(symptoms___15, na.rm = TRUE),
+                  sore_throat  = mean(symptoms___16, na.rm = TRUE),
+                  sore_throat_sd = sd(symptoms___16, na.rm = TRUE),
+                  cough  = mean(symptoms___17, na.rm = TRUE),
+                  cough_sd = sd(symptoms___17, na.rm = TRUE),
+                  short_breath  = mean(symptoms___18, na.rm = TRUE),
+                  short_breath_sd = sd(symptoms___18, na.rm = TRUE),
+                  appetite  = mean(symptoms___19, na.rm = TRUE),
+                  appetite_sd = sd(symptoms___19, na.rm = TRUE),
+                  funny_taste  = mean(symptoms___20, na.rm = TRUE),
+                  funny_taste_sd = sd(symptoms___20, na.rm = TRUE),
+                  nausea  = mean(symptoms___21, na.rm = TRUE),
+                  nausea_sd = sd(symptoms___21, na.rm = TRUE),
+                  vomit  = mean(symptoms___22, na.rm = TRUE),
+                  vomit_sd = sd(symptoms___22, na.rm = TRUE),
+                  diarrhea  = mean(symptoms___23, na.rm = TRUE),
+                  diarrhea_sd = sd(symptoms___23, na.rm = TRUE),
+                  adbominal  = mean(symptoms___24, na.rm = TRUE),
+                  adbominal_sd = sd(symptoms___24, na.rm = TRUE),
+                  rash  = mean(symptoms___25, na.rm = TRUE),
+                  rash_sd = sd(symptoms___25, na.rm = TRUE),
+                  bloody_nose  = mean(symptoms___26, na.rm = TRUE),
+                  bloody_nose_sd = sd(symptoms___26, na.rm = TRUE),
+                  bleeding_gum  = mean(symptoms___27, na.rm = TRUE),
+                  bleeding_gum_sd = sd(symptoms___27, na.rm = TRUE),
+                  bloody_stool  = mean(symptoms___28, na.rm = TRUE),
+                  bloody_stool_sd = sd(symptoms___28, na.rm = TRUE),
+                  bloody_vomit  = mean(symptoms___29, na.rm = TRUE),
+                  bloody_vomit_sd = sd(symptoms___29, na.rm = TRUE),
+                  bloody_urine  = mean(symptoms___30, na.rm = TRUE),
+                  bloody_urine_sd = sd(symptoms___30, na.rm = TRUE),
+                  bruises  = mean(symptoms___31, na.rm = TRUE),
+                  bruises_sd = sd(symptoms___31, na.rm = TRUE),
+                  ims  = mean(symptoms___32, na.rm = TRUE),
+                  ims_sd = sd(symptoms___32, na.rm = TRUE),
+                  seizures  = mean(symptoms___33, na.rm = TRUE),
+                  seizures_sd = sd(symptoms___33, na.rm = TRUE),
+                  hand_weak  = mean(symptoms___34, na.rm = TRUE),
+                  hand_weak_sd = sd(symptoms___34, na.rm = TRUE))
+
+# symptoms graph by preg----------------------------------------------------------------
+
+plot_ly(symptoms)%>%
+  add_trace(x=~pregnant, y=~adbominal, type="bar", name="adbominal pain",error_y = ~list(value = adbominal_sd))%>%
+  add_trace(x=~pregnant, y=~eye_pain, type="bar", name="pain behnd eye",error_y = ~list(value = eye_pain_sd))%>%
+  add_trace(x=~pregnant, y=~rash, type="bar", name="rash",error_y = ~list(value = rash_sd))%>%
+  add_trace(x=~pregnant, y=~fever, type="bar", name="fever",error_y = ~list(value = fever_sd))%>%
+  add_trace(x=~pregnant, y=~chills, type="bar", name="chills*",error_y = ~list(value = chills_sd))%>%
+  add_trace(x=~pregnant, y=~Generalized_body_ache, type="bar", name="Generalized body ache",error_y = ~list(value = Generalized_body_ache_sd))%>%
+  add_trace(x=~pregnant, y=~joint, type="bar", name="joint pain**",error_y = ~list(value = joint_sd))%>%
+  add_trace(x=~pregnant, y=~muscle, type="bar", name="muscle pain**",error_y = ~list(value = muscle_sd))%>%
+  add_trace(x=~pregnant, y=~itch, type="bar", name="itch",error_y = ~list(value = itch_sd))%>%
+  add_trace(x=~pregnant, y=~headache, type="bar", name="headache**",error_y = ~list(value = headache_sd))%>%
+  add_trace(x=~pregnant, y=~appetite, type="bar", name="loss of appetite*",error_y = ~list(value = appetite_sd))%>%
+  add_trace(x=~pregnant, y=~vomit, type="bar", name="vomitting**",error_y = ~list(value = vomit_sd))%>%
+  add_trace(x=~pregnant, y=~bone, type="bar", name="bone pain*",error_y = ~list(value = bone_sd))%>%
+  add_trace(x=~pregnant, y=~cough, type="bar", name="cough*",error_y = ~list(value = cough_sd))%>%
+  layout(
+    xaxis = list(titlefont=list(size=34),title = "When infected", tickfont = list(size=24)),
+    yaxis = list(titlefont=list(size=34),tickfont = list(size=24), title = 'Subjects',tickformat="%", showgrid = FALSE, zeroline = FALSE),
+    margin=margin,
+    legend=list(font=list(size=24), orientation="v"))
 # problems ----------------------------------------------------------------
 problems <- ddply(cohort, .(preg_chikvpos), 
                   summarise, 
@@ -257,22 +367,43 @@ plot_ly(problems)%>%
          margin=margin,
          legend=list(font=list(size=30), orientation="h"))
 
-
-
-
 prop.test(table(cohort$after_birth_problems, cohort$preg_chikvpos))
 prop.test(table(cohort$pregnancy_illness, cohort$preg_chikvpos))
 prop.test(table(cohort$first_few_months_illness, cohort$preg_chikvpos))
 prop.test(table(cohort$complications, cohort$preg_chikvpos))
 
+# load dummy compmlications and merge with full database ------------------
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyanka- fogarty nd")
+load("complications.dum.rda")
+cohort<-merge(complications,cohort, by=c("participant_id", "redcap_event_name"), all.y=T)
+
+table(cohort$abp__sum, cohort$preg_chikvpos)
+table(cohort$compl__sum, cohort$preg_chikvpos)
+table(cohort$preg_ill_sum, cohort$preg_chikvpos)
+table(cohort$ffm__sum, cohort$preg_chikvpos)
+
+# baby birth measurments --------------------------------------------------
+summary(cohort$weight)
+names<-c("height","height_stad","height_mt")
+cohort[names] <- sapply(cohort[names],as.numeric)
+cohort$height_child <- rowMeans(cohort[names], na.rm=TRUE)
+summary(cohort$height_child)
+
 # tables ------------------------------------------------------------------
 cohort <- within(cohort, trimester[trimester==4 ] <- NA)
-vars<-c("labour_duration","symptom_duration", "pregnancy_illness","complications","after_birth_problems","first_few_months_illness","parish","other_pregnancy_illness","hospitalized_ever", "trimester","race", "mom_age", "education", "marrital_status", "monthly_income", "medical_conditions___6", "medical_conditions___10", "alcohol", "smoking", "birth_time", "mode_of_delivery", "gestational_age_weekfrac",  "result_child")
+vars<-c("labour_duration","symptom_duration", "pregnancy_illness","complications","after_birth_problems","first_few_months_illness","parish","other_pregnancy_illness","hospitalized_ever", "trimester","race", "mom_age", "education", "marrital_status", "monthly_income", "medical_conditions___6", "medical_conditions___10", "alcohol", "smoking", "birth_time", "mode_of_delivery", "gestational_age_weekfrac",  "result_child","abp__sum","compl__sum","preg_ill_sum","ffm__sum","height_child","weight")
 vars2<-c("symptoms___1", "symptoms___2", "symptoms___3", "symptoms___4", "symptoms___5", "symptoms___6", "symptoms___7", "symptoms___8", "symptoms___9", "symptoms___10", "symptoms___11", "symptoms___12", "symptoms___13", "symptoms___14", "symptoms___15", "symptoms___16", "symptoms___17", "symptoms___18", "symptoms___19", "symptoms___20", "symptoms___21", "symptoms___22", "symptoms___23", "symptoms___24", "symptoms___25", "symptoms___26", "symptoms___27", "symptoms___28", "symptoms___29", "symptoms___30", "symptoms___31", "symptoms___32", "symptoms___33", "symptoms___34")
 factorVars<-c("pregnancy_illness","complications","after_birth_problems","first_few_months_illness","parish","other_pregnancy_illness","hospitalized_ever", "trimester","race", "education", "marrital_status", "monthly_income", "medical_conditions___6", "medical_conditions___10", "alcohol", "smoking", "birth_time", "mode_of_delivery","result_child")
 
+vars3<-names(cohort[ , grepl( "preg_ill_|ffm__|compl__|abp__" , names( cohort) ) ])
+
 table1 <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "preg_chikvpos", data = cohort)
-table2 <- CreateTableOne(vars = vars2, strata = "trimester", data = cohort)
+symptoms_by_trimester <- CreateTableOne(vars = vars2, strata = "trimester", data = cohort)
+symptoms_by_preg.vs.not <- CreateTableOne(vars = vars2, strata = "pregnant", data = cases)
+
+complications.by.exposure <- CreateTableOne(vars = vars3, strata = "preg_chikvpos", data = cohort)
 
 print(table1, quote = TRUE)
-print(table2, quote = TRUE)
+print(symptoms_by_trimester, quote = TRUE)
+print(symptoms_by_preg.vs.not, quote = TRUE)
+print(complications.by.exposure, quote = TRUE)
