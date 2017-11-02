@@ -5,6 +5,7 @@ library(tableone)
 library("DiagrammeR")#install.packages("DiagrammeR")
 library(plotly)
 library(plyr)
+library(dplyr)
 # data --------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyanka- fogarty nd")
 
@@ -17,55 +18,56 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 currentDate <- Sys.Date() 
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 #save(chikv_nd,file=FileName)
-load(FileName)
-# data cleaning --------------------------------------------------------
-chikv_nd[chikv_nd==99] <-NA#replace 99 with NA
-# gestattional age --------------------------------------------------------
-chikv_nd$gestational_age_daysfrac<-chikv_nd$gestational_age_days/7
-chikv_nd$gestational_age_weekfrac<-chikv_nd$gestational_age_daysfrac+chikv_nd$gestational_age_weeks
-
-gestational_age_cat<-NA
-chikv_nd <- within(chikv_nd, gestational_age_cat[gestational_age_weekfrac>=37 & gestational_age_weekfrac<42] <- "full-term")
-chikv_nd <- within(chikv_nd, gestational_age_cat[gestational_age_weekfrac<37 ] <- "pre-term")
-chikv_nd <- within(chikv_nd, gestational_age_cat[gestational_age_weekfrac>=42 ] <- "post-term")
-table(chikv_nd$gestational_age_cat, exclude = NULL)
-
-
+load("chikv_nd 2017-11-01 .rda")
 # outcome -----------------------------------------------------------------
-cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother)& !is.na(chikv_nd$result_child)), ])#516 tested both mother and child.
+cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother)& !is.na(chikv_nd$result_child)), ])#495 tested both mother and child.
 
-cohort$preg_chikvpos<-NA
-cohort <- within(cohort, preg_chikvpos[is.na(cohort$ever_had_chikv)] <- 98)
-cohort <- within(cohort, preg_chikvpos[is.na(cohort$pregnant)] <- 99)
-cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- 0)
-cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- 1)
+cohort$preg_chikvpos<-cohort$result_mother*-1
+cohort <- within(cohort, preg_chikvpos[is.na(cohort$pregnant)] <- "no answer to pregant")#26 
+cohort <- within(cohort, preg_chikvpos[is.na(cohort$ever_had_chikv)] <- "no answer to ever had chikv")#5
+
+cohort <- within(cohort, preg_chikvpos[cohort$result_mother==1] <- "mother pos but not preg")#122
+cohort <- within(cohort, preg_chikvpos[cohort$pregnant==1] <- "pregnant but not positive.")#1
+cohort <- within(cohort, preg_chikvpos[!is.na(trimester)] <- "doesnt recall trimester")#7
+
+cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- "unexposed")#154
+cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- "exposed")#179
+
+
 #153 negative or not infected during pregnancy
 #168 infected and during pregnancy with trimester recall.
 #152 had chikv but not during pregnancy.
 #18 had chikv but didn't respond to if during pregancy or not.
+table(cohort$preg_chikvpos,exclude = NULL)
+
+cohort$preg_chikvpos<-NA
+cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <-0)#154
+cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- 1)#179
 
 cohort<-as.data.frame(cohort[which(cohort$preg_chikvpos==1|cohort$preg_chikvpos==0 ), ])
 table(cohort$preg_chikvpos,exclude = NULL)
-153+168
+154+179
 # flow chart of subjects --------------------------------------------------
-n<-sum(n_distinct(cohort$participant_id, na.rm = FALSE)) #506 mother-child pairs
+n<-sum(n_distinct(chikv_nd$participant_id,chikv_nd$redcap_event_name, na.rm = FALSE)) #516 mother-child pairs
 
-n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#163 cases 
-n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#130 controls 
+n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#179 cases 
+n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#154 controls 
 
 mermaid("
   graph TB;
-      A(Mother child pairs)-->B(506)
-      B(506)-->C(Tested both<br> mother and child)
-      C(Tested both<br> mother and child)-->D(415)
-      D(415)-->E(Excluded<br> from cohort)
-      E(Excluded<br> from cohort)-->F(122)
-      F(122)-->G(112 CHIKV+<br> Not during<br> pregnancy) 
-      F(122)-->H(10 CHIKV+<br> No recall if<br> during pregnancy) 
-      D(415)-->I(Exposed)
-      D(415)-->J(Unexposed)
-      I(Exposed)-->K(163)
-      J(Unexposed)-->L(130)")    
+      A(Mother child pairs)-->B(516)
+      B(516)-->C(Tested both<br> mother and child)
+      C(Tested both<br> mother and child)-->D(495)
+     
+      
+      D(495)-->I(Exposed)
+      D(495)-->J(Unexposed)
+      I(Exposed)-->K(179)
+      J(Unexposed)-->L(154)
+      D(495)-->E(Excluded<br> from cohort)
+      
+      E(Excluded<br> from cohort)-->F(162)
+        ")    
 
 
 # trimester ---------------------------------------------------------------
@@ -136,6 +138,17 @@ plot_ly(result_child, x= ~preg_chikvpos, y = ~child_infection_rate, type = "bar"
 prop.test(table(cohort$result_child,cohort$preg_chikvpos))
 
 
+# data cleaning --------------------------------------------------------
+cohort[cohort==99] <-NA#replace 99 with NA
+# gestattional age --------------------------------------------------------
+cohort$gestational_age_daysfrac<-cohort$gestational_age_days/7
+cohort$gestational_age_weekfrac<-cohort$gestational_age_daysfrac+cohort$gestational_age_weeks
+
+cohort$gestational_age_cat<-NA
+cohort <- within(cohort, gestational_age_cat[gestational_age_weekfrac>=37 & gestational_age_weekfrac<42] <- "full-term")
+cohort <- within(cohort, gestational_age_cat[gestational_age_weekfrac<37 ] <- "pre-term")
+cohort <- within(cohort, gestational_age_cat[gestational_age_weekfrac>=42 ] <- "post-term")
+table(cohort$gestational_age_cat, exclude = NULL)
 # mom age ---------------------------------------------------------------------
 cohort$primary_date<-as.Date(cohort$primary_date)
 cohort$dob<-as.Date(cohort$dob)
@@ -331,12 +344,13 @@ plot_ly(symptoms)%>%
   add_trace(x=~pregnant, y=~chills, type="bar", name="chills*",error_y = ~list(value = chills_sd))%>%
   add_trace(x=~pregnant, y=~Generalized_body_ache, type="bar", name="Generalized body ache",error_y = ~list(value = Generalized_body_ache_sd))%>%
   add_trace(x=~pregnant, y=~joint, type="bar", name="joint pain**",error_y = ~list(value = joint_sd))%>%
-  add_trace(x=~pregnant, y=~muscle, type="bar", name="muscle pain**",error_y = ~list(value = muscle_sd))%>%
+  add_trace(x=~pregnant, y=~muscle, type="bar", name="muscle pain***",error_y = ~list(value = muscle_sd))%>%
   add_trace(x=~pregnant, y=~itch, type="bar", name="itch",error_y = ~list(value = itch_sd))%>%
   add_trace(x=~pregnant, y=~headache, type="bar", name="headache**",error_y = ~list(value = headache_sd))%>%
-  add_trace(x=~pregnant, y=~appetite, type="bar", name="loss of appetite*",error_y = ~list(value = appetite_sd))%>%
+  add_trace(x=~pregnant, y=~appetite, type="bar", name="loss of appetite**",error_y = ~list(value = appetite_sd))%>%
   add_trace(x=~pregnant, y=~vomit, type="bar", name="vomitting**",error_y = ~list(value = vomit_sd))%>%
   add_trace(x=~pregnant, y=~bone, type="bar", name="bone pain*",error_y = ~list(value = bone_sd))%>%
+  add_trace(x=~pregnant, y=~diarrhea, type="bar", name="dhiarrea*",error_y = ~list(value = diarrhea_sd))%>%
   add_trace(x=~pregnant, y=~cough, type="bar", name="cough*",error_y = ~list(value = cough_sd))%>%
   layout(
     xaxis = list(titlefont=list(size=34),title = "When infected", tickfont = list(size=24)),
@@ -360,7 +374,7 @@ plot_ly(problems)%>%
   add_trace(x=~preg_chikvpos, y=~complications, type="bar", name="Birth complications",error_y = ~list(value = complications_sd))%>%
   add_trace(x=~preg_chikvpos, y=~first_few_months_illness, type="bar", name="First few months illness",error_y = ~list(value = first_few_months_illness_sd))%>%
   add_trace(x=~preg_chikvpos, y=~after_birth_problems, type="bar", name="After birth problems",error_y = ~list(value = after_birth_problems_sd))%>%
-  add_trace(x=~preg_chikvpos, y=~pregnancy_illness, type="bar", name="Pregnancy illness",error_y = ~list(value = pregnancy_illness_sd))%>%
+  add_trace(x=~preg_chikvpos, y=~pregnancy_illness, type="bar", name="Pregnancy illness*",error_y = ~list(value = pregnancy_illness_sd))%>%
   layout(
          xaxis = list(titlefont=list(size=34),title = "", tickfont = list(size=24)),
          yaxis = list(titlefont=list(size=34),tickfont = list(size=24), title = 'Subjects',tickformat="%", showgrid = FALSE, zeroline = FALSE),
