@@ -135,7 +135,13 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
     require(raster)
 #    projection(gps_denv) = "+init=espg:4326" # WGS84 coords
     projection(gps_denv) ="+proj=utm +zone=37 +datum=WGS84"
+    
+    distInMeters <- 10
+    pc10km <- gBuffer(gps_denv, width=10*distInMeters, byid=TRUE)
+    
     shapefile(gps_denv, "gps_denv.shp",overwrite=T)
+    
+    
 
     gps_denv.u <-gps_denv[which(gps_denv$study_site=="u"), ]
     gps_denv.c <-gps_denv[which(gps_denv$study_site=="c"), ]

@@ -171,6 +171,8 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       house<-house[order(-(grepl('date|red', names(house)))+1L)]
 
       house_first <- house[order(house$compound_house_id, house$date_collected),]
+      house_first <- house_first[!duplicated(house_first$compound_house_id),]
+      
       house_redcap<-house
       house_redcap<-house_redcap[ , !grepl( "date_house" , names(house_redcap) ) ]
       house_redcap<-house_redcap[which(!is.na(house_redcap$date_collected))  , ]
@@ -517,13 +519,14 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     house.vector<-merge(house.vector, gps, by = c("compound_house_id","study_site"), all = TRUE)
     
     house.vector<-merge(house.vector, house_first, by = c("compound_house_id" ,"study_site"),all.x=TRUE)
+    View(house.vector)
     
     house.vector <-house.vector[which(!is.na(house.vector$Ttl_Aedes.spp.Indoor.ovi)|!is.na(house.vector$ttl_Aedes_spp_Outdoor.ovi)|!is.na(house.vector$Ttl_Aedes.spp.bg)|!is.na(house.vector$Ttl_Aedes.spp_in.proko)|!is.na(house.vector$Ttl_Aedes.spp_out.proko)|!is.na(house.vector$Ttl_Aedes.spp.hlc)|!is.na(house.vector$Ttl_Aedes.spp.larva)), ]
     house.vector[, 3:9][is.na(house.vector[, 3:9])] <- 0
     
     table(house.vector$study_site, exclude = NULL)
     
-    #gps
+# gps ---------------------------------------------------------------------
     house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]
     house.vector <-house.vector[which(house.vector$compound_house_id!="2002"), ]#exclude for now.
     write.csv(as.data.frame(house.vector), "house.vector.gps.csv")
@@ -534,20 +537,48 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     
     require(raster)
     projection(house.vector) = "+proj=utm +zone=37 +datum=WGS84" # WGS84 coords
-    shapefile(house.vector, "house.vector.shp", overwrite=TRUE)
+
+    names(house.vector) <- gsub("Indoor", "in", names(house.vector))
+    names(house.vector) <- gsub("indoor", "in", names(house.vector))
+    names(house.vector) <- gsub("Ttl_Aedes.spp", "a", names(house.vector))
+    names(house.vector) <- gsub("ttl_Aedes_spp", "a", names(house.vector))
+    names(house.vector) <- gsub("Outdoor", "out", names(house.vector))
+# add buffer --------------------------------------------------------------
+#install.packages("rgeos")
+library("rgeos")
+    distInMeters <- 100#add buffer.
+    house.vector1km <- gBuffer( house.vector, width=1*distInMeters, byid=TRUE )#add buffer.
     
+    house.vector1km.u <-house.vector1km[which(house.vector1km$study_site==1), ]
+    house.vector1km.m <-house.vector1km[which(house.vector1km$study_site==2), ]
+    house.vector1km.c <-house.vector1km[which(house.vector1km$study_site==3), ]
+    house.vector1km.k <-house.vector1km[which(house.vector1km$study_site==4), ]
+    
+    table(house.vector1km.c$a.in.ovi)
+    
+    shapefile(house.vector1km.k, "house.vector1km.k.shp", overwrite=TRUE)#with buffer.
+    shapefile(house.vector1km.u, "house.vector1km.u.shp", overwrite=TRUE)#with buffer.
+    shapefile(house.vector1km.c, "house.vector1km.c.shp", overwrite=TRUE)#with buffer.
+    shapefile(house.vector1km.m, "house.vector1km.m.shp", overwrite=TRUE)#with buffer.
+    table(house.vector1km.m$compound_house_id)
+    
+# plot by house -----------------------------------------------------------
+
+
+    shapefile(house.vector, "house.vector.shp", overwrite=TRUE)#without buffer.
+
+
     
     house.vector.u <-house.vector[which(house.vector$study_site==1), ]
     house.vector.m <-house.vector[which(house.vector$study_site==2), ]
     house.vector.c <-house.vector[which(house.vector$study_site==3), ]
     house.vector.k <-house.vector[which(house.vector$study_site==4), ]
     
-    house.vector.k <-house.vector.k[which(house.vector.k$compound_house_id!=1146), ]
-    house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x==13), ]
-    house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x<13), ]
-    
-    spplot(house.vector.knot13, "village_estate.x", do.log=T, main = "Kisumu",key.space = "right", cuts = 7)
-    spplot(house.vector.not13, "compound_house_id", do.log=T, main = "Kisumu",key.space = "right")
+    #house.vector.k <-house.vector.k[which(house.vector.k$compound_house_id!=1146), ]
+    #house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x==13), ]
+    #house.vector.k <-house.vector.k[which(house.vector.k$village_estate.x<13), ]
+    #spplot(house.vector.knot13, "village_estate.x", do.log=T, main = "Kisumu",key.space = "right", cuts = 7)
+    #spplot(house.vector.not13, "compound_house_id", do.log=T, main = "Kisumu",key.space = "right")
     
     library(rgdal)
     library(sp)
@@ -556,16 +587,15 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     text2 = list("sp.text", c(179100,333090), "500 m")
     scale = list("SpatialPolygonsRescale", layout.scale.bar(), offset = c(178600,332990), scale = 500, fill=c("transparent","black"))
     arrow = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(178750,332500), scale = 400)
-    plot.vector.u<-spplot(house.vector.u, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Ukunda", sub = "", 
+    plot.vector.u<-spplot(house.vector.u, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Ukunda", sub = "", 
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+    plot.vector.m<-spplot(house.vector.m, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Msambweni", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.m<-spplot(house.vector.m, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Msambweni", sub = "", 
+    plot.vector.c<-spplot(house.vector.c, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Chulaimbo", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.c<-spplot(house.vector.c, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Chulaimbo", sub = "", 
-                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
-    
-    plot.vector.k<-spplot(house.vector.k, c("Ttl_Aedes.spp.larva","Ttl_Aedes.spp_out.proko","Ttl_Aedes.spp_in.proko","Ttl_Aedes.spp.hlc","Ttl_Aedes.spp.Indoor.ovi","ttl_Aedes_spp_Outdoor.ovi","Ttl_Aedes.spp.bg"), do.log=T, main = "Kisumu", sub = "", 
+    plot.vector.k<-spplot(house.vector.k, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Kisumu", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     

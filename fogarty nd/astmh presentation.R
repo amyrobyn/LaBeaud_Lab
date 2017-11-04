@@ -19,19 +19,20 @@ currentDate <- Sys.Date()
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 #save(chikv_nd,file=FileName)
 load("chikv_nd 2017-11-01 .rda")
-# outcome -----------------------------------------------------------------
+# tested momo and baby-----------------------------------------------------------------
 cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother)& !is.na(chikv_nd$result_child)), ])#495 tested both mother and child.
 
+# outcome pregchikv pos ---------------------------------------------------
 cohort$preg_chikvpos<-cohort$result_mother*-1
 cohort <- within(cohort, preg_chikvpos[is.na(cohort$pregnant)] <- "no answer to pregant")#26 
 cohort <- within(cohort, preg_chikvpos[is.na(cohort$ever_had_chikv)] <- "no answer to ever had chikv")#5
 
-cohort <- within(cohort, preg_chikvpos[cohort$result_mother==1] <- "mother pos but not preg")#122
-cohort <- within(cohort, preg_chikvpos[cohort$pregnant==1] <- "pregnant but not positive.")#1
+cohort <- within(cohort, preg_chikvpos[cohort$result_mother==1] <- "pos but preg<>1")#122
+cohort <- within(cohort, preg_chikvpos[cohort$pregnant==1] <- "pregnant but not chikv+")#1
 cohort <- within(cohort, preg_chikvpos[!is.na(trimester)] <- "doesnt recall trimester")#7
 
 cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- "unexposed")#154
-cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- "exposed")#179
+cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1] <- "exposed")#179
 
 
 #153 negative or not infected during pregnancy
@@ -39,18 +40,49 @@ cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(
 #152 had chikv but not during pregnancy.
 #18 had chikv but didn't respond to if during pregancy or not.
 table(cohort$preg_chikvpos,exclude = NULL)
-
+table(cohort$preg_chikvpos)
 cohort$preg_chikvpos<-NA
 cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <-0)#154
-cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1 & !is.na(trimester)] <- 1)#179
+cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1] <- 1)#179
 
 cohort<-as.data.frame(cohort[which(cohort$preg_chikvpos==1|cohort$preg_chikvpos==0 ), ])
 table(cohort$preg_chikvpos,exclude = NULL)
 154+179
+
+
+# outcome by trimester ----------------------------------------------------
+
+cohort$first_v_unexposed<-NA
+cohort<- within(cohort, first_v_unexposed[cohort$preg_chikvpos==0] <- 0)#26 
+cohort<- within(cohort, first_v_unexposed[cohort$trimester==1 & cohort$preg_chikvpos==1] <- 1)#26 
+table(cohort$first_v_unexposed)
+
+cohort$second_v_unexposed<-NA
+cohort<- within(cohort, second_v_unexposed[cohort$preg_chikvpos==0] <- 0)#26 
+cohort<- within(cohort, second_v_unexposed[cohort$trimester==2 & cohort$preg_chikvpos==1] <- 1)#26 
+table(cohort$second_v_unexposed)
+
+cohort$third_d_v_unexposed<-NA
+cohort<- within(cohort, third_d_v_unexposed[cohort$preg_chikvpos==0] <- 0)#26 
+cohort<- within(cohort, third_d_v_unexposed[(cohort$trimester==3 & cohort$preg_chikvpos==1)|(cohort$trimester==4 & cohort$preg_chikvpos==1)] <- 1)#26 
+table(cohort$third_d_v_unexposed)
+
+cohort$third_v_unexposed<-NA
+cohort<- within(cohort, third_v_unexposed[cohort$preg_chikvpos==0] <- 0)#26 
+cohort<- within(cohort, third_v_unexposed[cohort$trimester==3 & cohort$preg_chikvpos==1] <- 1)#26 
+table(cohort$third_v_unexposed)
+
+cohort$d_v_unexposed<-NA
+cohort<- within(cohort, d_v_unexposed[cohort$preg_chikvpos==0] <- 0)#26 
+cohort<- within(cohort, d_v_unexposed[cohort$trimester==4 & cohort$preg_chikvpos==1] <- 1)#26 
+table(cohort$d_v_unexposed)
+table(cohort$trimester)
+
+
 # flow chart of subjects --------------------------------------------------
 n<-sum(n_distinct(chikv_nd$participant_id,chikv_nd$redcap_event_name, na.rm = FALSE)) #516 mother-child pairs
 
-n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#179 cases 
+n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#186 cases 
 n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#154 controls 
 
 mermaid("
@@ -62,24 +94,24 @@ mermaid("
       
       D(495)-->I(Exposed)
       D(495)-->J(Unexposed)
-      I(Exposed)-->K(179)
+      I(Exposed)-->K(186)
       J(Unexposed)-->L(154)
       D(495)-->E(Excluded<br> from cohort)
       
-      E(Excluded<br> from cohort)-->F(162)
+      E(Excluded<br> from cohort)-->F(155)
         ")    
 
 
 # trimester ---------------------------------------------------------------
 cohort$trimester_lab <- factor(cohort$trimester,levels = c(1,2,3,4),labels = c("1st", "2nd", "3rd", "Delivery"))
-trimester_infection <- ddply(cohort, .(trimester_lab), 
-                             summarise, 
-                             trimester_sum = sum(trimester, na.rm = TRUE),
-                             trimester_sd = sd(trimester, na.rm = TRUE)
-)
+cohort$trimester<-as.factor(cohort$trimester)
+
+trimester_infection<-as.data.frame(with(cohort, table(trimester_lab)))
+trimester_infection$Freq
+
 margin = list(l = 100, r = 50, b = 100, t = 75, pad = 4)
 
-plot_ly(trimester_infection, y=~trimester_sum, x=~trimester_lab, type="bar")%>%
+plot_ly(trimester_infection, y=~Freq, x=~trimester_lab, type="bar")%>%
   layout(title="Trimester of CHIKV Infection", xaxis=list(title="Trimester"), yaxis=list(title="Count"),
          font=list(size=28),
          margin=margin)
@@ -449,9 +481,22 @@ symptoms_by_preg.vs.not <- CreateTableOne(vars = vars2, strata = "pregnant", dat
 
 complications.by.exposure <- CreateTableOne(vars = vars3, strata = "preg_chikvpos", data = cohort)
 
+complications.by.exposure_1 <- CreateTableOne(vars = vars3, strata = "first_v_unexposed", data = cohort)
+complications.by.exposure_2 <- CreateTableOne(vars = vars3, strata = "second_v_unexposed", data = cohort)
+complications.by.exposure_3d <- CreateTableOne(vars = vars3, strata = "third_d_v_unexposed", data = cohort)
+complications.by.exposure_3 <- CreateTableOne(vars = vars3, strata = "third_v_unexposed", data = cohort)
+complications.by.exposure_d <- CreateTableOne(vars = vars3, strata = "d_v_unexposed", data = cohort)
+
 print(table1_child_in_utero_exp, quote = TRUE)
 print(symptoms_by_trimester, quote = TRUE)
 print(symptoms_by_preg.vs.not, quote = TRUE)
 print(complications.by.exposure, quote = TRUE)
+
 print(table1_mom_exp, quote = TRUE)
-  
+
+print(complications.by.exposure_1, quote = TRUE)
+print(complications.by.exposure_2, quote = TRUE)
+print(complications.by.exposure_3, quote = TRUE)
+print(complications.by.exposure_3d, quote = TRUE)
+print(complications.by.exposure_d, quote = TRUE)
+
