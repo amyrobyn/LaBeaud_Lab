@@ -2,8 +2,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyan
 complications<-read.csv("complications.csv")
 complications$list_pregnancy_illness_category2<-complications$list_pregnancy_illness_category
 complications$list_pregnancy_illness_category <- gsub("CHIKV|chikv|chikv|CHIKV", "", complications$list_pregnancy_illness_category)
-complications$child_compl<-paste(complications$specify_after_birth_problems_category, complications$specify_first_few_months_category, sep=" ")
-complications$mother_compl<-paste(complications$list_pregnancy_illness_category, complications$specify_complications_category, sep=" ")
 
 # complications$list_pregnancy_illness_category ---------------------------
 complications$list_pregnancy_illness_category<-tolower(complications$list_pregnancy_illness_category)
@@ -38,6 +36,8 @@ complications <- cbind(complications,result)
 # complications$specify_after_birth_problems_category ---------------------------
 complications$specify_after_birth_problems_category<-tolower(complications$specify_after_birth_problems_category)
 complications$specify_after_birth_problems_category <- gsub('seizures', 'seizure', complications$specify_after_birth_problems_category)
+complications$specify_after_birth_problems_category <- gsub('bronshitis', 'bronchitis', complications$specify_after_birth_problems_category)
+
 
 lev <- levels(factor(complications$specify_after_birth_problems_category))
 lev <- unique(unlist(strsplit(lev, " ")))
@@ -53,6 +53,7 @@ complications <- cbind(complications,result)
 
 # complications$specify_first_few_months_category ---------------------------
 complications$specify_first_few_months_category<-tolower(complications$specify_first_few_months_category)
+complications$specify_first_few_months_category <- gsub('seizures', 'seizure', complications$specify_first_few_months_category)
 
 lev <- levels(factor(complications$specify_first_few_months_category))
 lev <- unique(unlist(strsplit(lev, " ")))
@@ -67,6 +68,8 @@ colnames(result) <- mnames
 complications <- cbind(complications,result)
 
 # complications$mother_compl---------------------------
+complications$mother_compl<-paste(complications$list_pregnancy_illness_category, complications$specify_complications_category, sep=" ")
+
 complications$mother_compl<-tolower(complications$mother_compl)
 
 lev <- levels(factor(complications$mother_compl))
@@ -81,6 +84,8 @@ result <- data.frame(result, stringsAsFactors = TRUE)
 colnames(result) <- mnames
 complications <- cbind(complications,result)
 # complications$child_compl---------------------------
+complications$child_compl<-paste(complications$specify_after_birth_problems_category, complications$specify_first_few_months_category, sep=" ")
+
 complications$child_compl<-tolower(complications$child_compl)
 
 lev <- levels(factor(complications$child_compl))
@@ -95,7 +100,7 @@ result <- data.frame(result, stringsAsFactors = TRUE)
 colnames(result) <- mnames
 complications <- cbind(complications,result)
 
-# add up copmlications ----------------------------------------------------
+# add up complications ----------------------------------------------------
 names<-names(complications[ , grepl( "preg_ill_|ffm__|compl__|abp__|child_compl_|mother_compl_" , names( complications ) ) ])
   
 as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}

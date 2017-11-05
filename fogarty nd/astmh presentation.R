@@ -153,11 +153,22 @@ plot_ly(result_child, labels = ~Var1, values = ~Freq,type = 'pie',
 
 # child elisa result cohort------------------------------------------------------------
 cohort <- within(cohort, result_child[result_child>1] <- NA)
+
 result_child <- ddply(cohort, .(preg_chikvpos), 
                       summarise, 
+                      child_infection_count = sum(result_child, na.rm = TRUE),
                       child_infection_rate = mean(result_child, na.rm = TRUE),
                       child_infection_sd = sd(result_child, na.rm = TRUE)
 )
+
+table(cohort$preg_chikvpos, cohort$result_child)
+
+(5/131)*100
+
+(8/173)*100
+
+table(cohort$result_child)
+
 result_child$preg_chikvpos <- factor(result_child$preg_chikvpos,levels = c(0,1),labels = c("Unexposed", "Exposed"))
 
 plot_ly(result_child, x= ~preg_chikvpos, y = ~child_infection_rate, type = "bar", 
@@ -497,6 +508,6 @@ print(table1_mom_exp, quote = TRUE)
 print(complications.by.exposure_1, quote = TRUE)
 print(complications.by.exposure_2, quote = TRUE)
 print(complications.by.exposure_3, quote = TRUE)
-print(complications.by.exposure_3d, quote = TRUE)
 print(complications.by.exposure_d, quote = TRUE)
+print(complications.by.exposure_3d, quote = TRUE)
 
