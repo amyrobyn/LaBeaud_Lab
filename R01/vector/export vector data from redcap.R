@@ -80,11 +80,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
         prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('redcap_event_name', names(prokpack_indoor_redcap)))+1L)]
         prokpack_indoor_redcap<-prokpack_indoor_redcap[order(-(grepl('date_collected', names(prokpack_indoor_redcap)))+1L)]
 
-        importRecords(rcon, prokpack_indoor_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
-        write.csv(as.data.frame(prokpack_indoor_redcap), "prokpack_indoor_redcap.csv", row.names = F, na="")
-        
-        
-      
+        #write.csv(as.data.frame(prokpack_indoor_redcap), "prokpack_indoor_redcap.csv", row.names = F, na="")
       
       prokpack_indoor$date_collected<-as.factor(as.character(prokpack_indoor$date_collected))
         prokpack_indoor_sum <-aggregate(. ~date_collected + redcap_event_name + survey_prokopack, data=prokpack_indoor, sum, na.rm=TRUE)
@@ -94,8 +90,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
         prokpack_indoor_sum <- within(prokpack_indoor_sum, team_leader_prokopack___4[prokpack_indoor_sum$team_leader_prokopack___4 >1] <- 1)
         prokpack_indoor_sum$date_collected<-as.numeric(as.Date(prokpack_indoor_sum$date_collected))
         
-
-        n_distinct(prokpack_indoor$date_collected,  prokpack_indoor$redcap_event_name)
+        n_distinct(prokpack_indoor$date_collected, prokpack_indoor$redcap_event_name)
 
     prokpack_outdoor<-prokopack[which(prokopack$indoors_prokopack___2=="1")  , ]
     prokpack_outdoor<-prokpack_outdoor[ , grepl( "redcap_event_name|study_site|_outdoor|date_collected|indoors_prokopack___2|bushes|grass|survey_" , names(prokpack_outdoor) ) ]
@@ -509,6 +504,7 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     table(Monthlyvector$study_site, exclude=NULL)      
 # save Monthlyvector data -------------------------------------------------------------
       save(Monthlyvector,file="Monthlyvector.rda")
+    load("Monthlyvector.rda")
     
     # merge the trap types by house-------------------------------------------------
     house.vector<-house.Ovitrap

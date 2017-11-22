@@ -19,8 +19,9 @@ currentDate <- Sys.Date()
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 #save(chikv_nd,file=FileName)
 load("chikv_nd 2017-11-01 .rda")
-# tested momo and baby-----------------------------------------------------------------
-cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother)& !is.na(chikv_nd$result_child)), ])#495 tested both mother and child.
+# tested both mom and baby-----------------------------------------------------------------
+cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
+
 
 # outcome pregchikv pos ---------------------------------------------------
 cohort$preg_chikvpos<-cohort$result_mother*-1
@@ -29,7 +30,6 @@ cohort <- within(cohort, preg_chikvpos[is.na(cohort$ever_had_chikv)] <- "no answ
 
 cohort <- within(cohort, preg_chikvpos[cohort$result_mother==1] <- "pos but preg<>1")#122
 cohort <- within(cohort, preg_chikvpos[cohort$pregnant==1] <- "pregnant but not chikv+")#1
-cohort <- within(cohort, preg_chikvpos[!is.na(trimester)] <- "doesnt recall trimester")#7
 
 cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- "unexposed")#154
 cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1] <- "exposed")#179
@@ -47,8 +47,32 @@ cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1] <- 1)#17
 
 cohort<-as.data.frame(cohort[which(cohort$preg_chikvpos==1|cohort$preg_chikvpos==0 ), ])
 table(cohort$preg_chikvpos,exclude = NULL)
-154+179
+154+180
+table(cohort$preg_chikvpos, cohort$result_mother)
+table(cohort$preg_chikvpos, cohort$result_child)
+# flow chart of subjects --------------------------------------------------
+n<-sum(n_distinct(chikv_nd$participant_id,chikv_nd$redcap_event_name, na.rm = FALSE)) #516 mother-child pairs
 
+n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#186 cases 
+n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#154 controls 
+
+mermaid("
+  graph TB;
+      A(Mother child pairs)-->B(516)
+      B(516)-->C(Tested both<br> mother and child)
+      C(Tested both<br> mother and child)-->D(421)
+
+      D(421)-->E(Exposed)
+      E(Exposed)-->F(174) 
+      F(174)-->G(8<br> positive<br> baby)
+      F(174)-->H(165<br> negative<br> baby)
+      F(174)-->I(1<br> equivacol<br> baby)
+
+      D(421)-->J(Unexposed)
+      J(Unexposed)-->K(131)
+      K(131)-->L(5<br> positive<br> baby)
+      K(131)-->M(126<br> negative<br> baby)
+        ")    
 
 # outcome by trimester ----------------------------------------------------
 
@@ -79,29 +103,6 @@ table(cohort$d_v_unexposed)
 table(cohort$trimester)
 
 
-# flow chart of subjects --------------------------------------------------
-n<-sum(n_distinct(chikv_nd$participant_id,chikv_nd$redcap_event_name, na.rm = FALSE)) #516 mother-child pairs
-
-n_preg_chikv_case<-  sum(cohort$preg_chikvpos==1, na.rm = TRUE)#186 cases 
-n_preg_chikv_control<-  sum(cohort$preg_chikvpos==0, na.rm = TRUE)#154 controls 
-
-mermaid("
-  graph TB;
-      A(Mother child pairs)-->B(516)
-      B(516)-->C(Tested both<br> mother and child)
-      C(Tested both<br> mother and child)-->D(495)
-     
-      
-      D(495)-->I(Exposed)
-      D(495)-->J(Unexposed)
-      I(Exposed)-->K(186)
-      J(Unexposed)-->L(154)
-      D(495)-->E(Excluded<br> from cohort)
-      
-      E(Excluded<br> from cohort)-->F(155)
-        ")    
-
-
 # trimester ---------------------------------------------------------------
 cohort$trimester_lab <- factor(cohort$trimester,levels = c(1,2,3,4),labels = c("1st", "2nd", "3rd", "Delivery"))
 cohort$trimester<-as.factor(cohort$trimester)
@@ -116,13 +117,17 @@ plot_ly(trimester_infection, y=~Freq, x=~trimester_lab, type="bar")%>%
          font=list(size=28),
          margin=margin)
 
+61+65+49+1
 # moms elisa result -------------------------------------------------------
 colors <- c('rgb(128,133,133)','rgb(211,94,96)' )
 
 chikv_nd <- within(chikv_nd, result_mother[result_mother>1] <- NA)
 result_mother<-as.data.frame(table(chikv_nd$result_mother))
+360+78
 result_mother$Var1 <- factor(result_mother$Var1,levels = c(0,1),labels = c("Neg", "Pos"))
+table(chikv_nd$result_mother)
 
+360+78
 plot_ly(result_mother, labels = ~Var1, values = ~Freq,type = 'pie',
         textposition = 'inside',
         textinfo = 'label+percent',
@@ -137,6 +142,7 @@ plot_ly(result_mother, labels = ~Var1, values = ~Freq,type = 'pie',
 # child elisa result all comers------------------------------------------------------------
 chikv_nd <- within(chikv_nd, result_child[result_child>1] <- NA)
 result_child<-as.data.frame(table(chikv_nd$result_child))
+421+15
 result_child$Var1 <- factor(result_child$Var1,levels = c(0,1),labels = c("Neg", "Pos"))
 
 plot_ly(result_child, labels = ~Var1, values = ~Freq,type = 'pie',
@@ -163,11 +169,6 @@ result_child <- ddply(cohort, .(preg_chikvpos),
 
 table(cohort$preg_chikvpos, cohort$result_child)
 
-(5/131)*100
-
-(8/173)*100
-
-table(cohort$result_child)
 
 result_child$preg_chikvpos <- factor(result_child$preg_chikvpos,levels = c(0,1),labels = c("Unexposed", "Exposed"))
 
@@ -177,6 +178,12 @@ plot_ly(result_child, x= ~preg_chikvpos, y = ~child_infection_rate, type = "bar"
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = TRUE, title="",  tickfont = list(size=24)),
          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = TRUE,tickformat = "%", title="Infants Infected", titlefont=list(size =24),  tickfont = list(size=24)) ,
          margin=margin)
+table(cohort$result_child, cohort$preg_chikvpos)
+8+165
+5+126
+(5/131)*100
+
+(8/173)*100
 
 prop.test(table(cohort$result_child,cohort$preg_chikvpos))
 
