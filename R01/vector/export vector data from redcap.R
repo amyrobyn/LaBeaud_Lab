@@ -278,7 +278,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
         colnames(larva_in_redcap)[colnames(larva_in_redcap)=="pupae_larva"] <- "pupae_larva_1_in"
         
         write.csv(as.data.frame(larva_in_redcap), "larva_in_redcap.csv", na="", row.names = FALSE)
-        importRecords(rcon, larva_in_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL,                  batch.size = -1)
+        #importRecords(rcon, larva_in_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
         
 
         larva_out <-larva_out[which(!is.na(larva_out$aedes_species_larva)|!is.na(larva_out$aedes_species_larva_other)|!is.na(larva_out$anopheles_species_larva)|!is.na(larva_out$anopheles_species_larva_other)|!is.na(larva_out$early_instars_larva)|!is.na(larva_out$genus_larva)|!is.na(larva_out$genus_other_larva)|!is.na(larva_out$habitat_id_larva)|!is.na(larva_out$habitat_size_larva)|!is.na(larva_out$habitat_type_larva)|!is.na(larva_out$habitat_type_other_larva)) , ]
@@ -358,7 +358,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       bg_redcap$date_collected<-paste(bg_redcap$date_collected,bg_redcap$time_bg, sep = " ")
       write.csv(as.data.frame(bg_redcap), "bg_redcap.csv", row.names = F, na="")
       
-      importRecords(rcon, bg_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+#      importRecords(rcon, bg_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
       
       
       bg$bg_aedes_sum<-rowSums(bg[,grep("aedes_agypti_gravid_bg|aedes_agypti_half_gravid_bg|aedes_agypti_unfed_bg|aedes_agypti_bloodfed_bg", names(bg))], na.rm = TRUE)
@@ -409,7 +409,7 @@ vector<-vector[order(-(grepl('date', names(vector)))+1L)]
       ovi_redcap$redcap_repeat_instrument<-"ovitrap"
       ovi_redcap<-ovi_redcap[order(-(grepl('date_collected|redcap', names(ovi_redcap)))+1L)]
       
-      importRecords(rcon, ovi_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+    #  importRecords(rcon, ovi_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
       write.csv(as.data.frame(ovi_redcap), "ovi_redcap.csv", row.names = F, na="")
       
       ovi$egg_count<-rowSums(ovi[,grep("egg_count_ovitrap_in|egg_count_ovitrap_out", names(ovi))], na.rm = TRUE)
@@ -471,7 +471,7 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
       
       write.csv(as.data.frame(hlc_redcap), "hlc_redcap.csv", row.names = F, na="")
       
-      importRecords(rcon, hlc_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
+#      importRecords(rcon, hlc_redcap, overwriteBehavior = "normal", returnContent = c("count", "ids", "nothing"), returnData = FALSE, logfile = "", proj = NULL, batch.size = -1)
       
       hlc$hlc_aedes_sum<-rowSums(hlc[,grep("aedes_agypti_half_gravid_hlc|aedes_agypti_unfed_hlc|aedes_agypti_bloodfed_hlc|aedes_agypti_gravid_hlc", names(hlc))], na.rm = TRUE)
       
@@ -542,7 +542,7 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
 # add buffer --------------------------------------------------------------
 #install.packages("rgeos")
 library("rgeos")
-    distInMeters <- 100#add buffer.
+    distInMeters <- 10#add buffer.
     house.vector1km <- gBuffer( house.vector, width=1*distInMeters, byid=TRUE )#add buffer.
     
     house.vector1km.u <-house.vector1km[which(house.vector1km$study_site==1), ]
@@ -583,15 +583,16 @@ library("rgeos")
     text2 = list("sp.text", c(179100,333090), "500 m")
     scale = list("SpatialPolygonsRescale", layout.scale.bar(), offset = c(178600,332990), scale = 500, fill=c("transparent","black"))
     arrow = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(178750,332500), scale = 400)
-    plot.vector.u<-spplot(house.vector.u, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Ukunda", sub = "", 
+    house.vector.u$a.ou
+    plot.vector.u<-spplot(house.vector.u, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Ukunda", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
-    plot.vector.m<-spplot(house.vector.m, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Msambweni", sub = "", 
-                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
-    
-    plot.vector.c<-spplot(house.vector.c, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Chulaimbo", sub = "", 
+    plot.vector.m<-spplot(house.vector.m, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Msambweni", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
-    plot.vector.k<-spplot(house.vector.k, c("ad.in.ovi","ad_out.ovi","ad.bg","ad_in.proko","ad_out.proko","ad.hlc","ad.larva"), do.log=T, main = "Kisumu", sub = "", 
+    plot.vector.c<-spplot(house.vector.c, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Chulaimbo", sub = "", 
+                          key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
+    
+    plot.vector.k<-spplot(house.vector.k, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Kisumu", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     
     
