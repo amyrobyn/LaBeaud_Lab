@@ -550,8 +550,6 @@ library("rgeos")
     house.vector1km.c <-house.vector1km[which(house.vector1km$study_site==3), ]
     house.vector1km.k <-house.vector1km[which(house.vector1km$study_site==4), ]
     
-    table(house.vector1km.c$a.in.ovi)
-    
     shapefile(house.vector1km.k, "house.vector1km.k.shp", overwrite=TRUE)#with buffer.
     shapefile(house.vector1km.u, "house.vector1km.u.shp", overwrite=TRUE)#with buffer.
     shapefile(house.vector1km.c, "house.vector1km.c.shp", overwrite=TRUE)#with buffer.
@@ -583,7 +581,6 @@ library("rgeos")
     text2 = list("sp.text", c(179100,333090), "500 m")
     scale = list("SpatialPolygonsRescale", layout.scale.bar(), offset = c(178600,332990), scale = 500, fill=c("transparent","black"))
     arrow = list("SpatialPolygonsRescale", layout.north.arrow(), offset = c(178750,332500), scale = 400)
-    house.vector.u$a.ou
     plot.vector.u<-spplot(house.vector.u, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Ukunda", sub = "", 
                           key.space = "right", as.table = TRUE, cuts = c(1,10,100,1000,10000), sp.layout=list(scale,text1,text2,arrow))
     plot.vector.m<-spplot(house.vector.m, c("a.in.ovi","a_out.ovi","a.bg","a_in.proko","a_out.proko","a.hlc","a.larva"), do.log=T, main = "Msambweni", sub = "", 
@@ -599,5 +596,9 @@ library("rgeos")
     library(gridExtra)
     grid.arrange(plot.vector.u,plot.vector.m,plot.vector.c,plot.vector.k, top = "Total Aedes Mosquito count 2014-2017", bottom = "Source: LaBeaud et.al.")
     
-    
-    
+    save(house.vector, file="house.vector.rda") #save the data to your local working directory.
+    save(house.vector.k, file="house.vector.k.rda") #save the data to your local working directory.
+    save(house.vector.u, file="house.vector.u.rda") #save the data to your local working directory.
+    save(house.vector.m, file="house.vector.m.rda") #save the data to your local working directory.
+    save(house.vector.c, file="house.vector.c.rda") #save the data to your local working directory.
+
