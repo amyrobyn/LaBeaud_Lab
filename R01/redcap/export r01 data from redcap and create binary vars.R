@@ -641,6 +641,10 @@ infected_chikv_stfd<-  R01_lab_results[Ranks == 1, ]
 # tables ---------------------------------------------------------
 library(tableone)
 ## Create Table 1 stratified by infection 
+R01_lab_results$gender_all = R01_lab_results$gender  # your new merged column start with gender
+R01_lab_results$gender_all[!is.na(R01_lab_results$gender_aic)] = R01_lab_results$gender_aic[!is.na(R01_lab_results$gender_aic)]  # merge with gender_aic
+table(R01_lab_results$gender_all, exclude = NULL)
+
 colnames(R01_lab_results)[colnames(R01_lab_results)=="gender_all"] <- "Female"
 colnames(R01_lab_results)[colnames(R01_lab_results)=="id_city"] <- "City"
 colnames(R01_lab_results)[colnames(R01_lab_results)=="id_cohort"] <- "Cohort"

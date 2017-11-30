@@ -1,46 +1,41 @@
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 #load data that has been cleaned previously
   load("R01_lab_results.clean.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
-  R01_lab_results$site <-NA
-  R01_lab_results <- within(R01_lab_results, id_city[R01_lab_results$id_city=="R"] <- "C")
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="C"] <- "west")
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="K"] <- "west")
   
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="G"] <- "coast")
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="L"] <- "coast")
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="M"] <- "coast")
-  R01_lab_results <- within(R01_lab_results, site[R01_lab_results$id_city=="U"] <- "coast")
-table(R01_lab_results$site)
-
 # subset of the variables
-  cases<-R01_lab_results[which(R01_lab_results$id_cohort=="F" | R01_lab_results$id_cohort=="M" ), ]
+  cases<-R01_lab_results[which(R01_lab_results$Cohort=="F" | R01_lab_results$Cohort=="M" ), ]
   cases <- as.data.frame(cases)
-  cases<-cases[which(cases$site=="west"), ]
+  cases<-cases[which(cases$site=="W"), ]
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
 
   #create acute variable
-  cases$acute<-NA
-  cases <- within(cases, acute[cases$visit_type==1] <- 1)
-  cases <- within(cases, acute[cases$visit_type==2] <- 1)
-  cases <- within(cases, acute[cases$visit_type==3] <- 0)
-  cases <- within(cases, acute[cases$visit_type==4] <- 1)
-  cases <- within(cases, acute[cases$visit_type==5] <- 1)
+    cases$acute<-NA
+    cases <- within(cases, acute[cases$visit_type==1] <- 1)
+    cases <- within(cases, acute[cases$visit_type==2] <- 1)
+    cases <- within(cases, acute[cases$visit_type==3] <- 0)
+    cases <- within(cases, acute[cases$visit_type==4] <- 1)
+    cases <- within(cases, acute[cases$visit_type==5] <- 1)
   #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
-  cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
-  cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
-  cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
-  cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
-  cases <- within(cases, acute[cases$roof_type!=""] <- 1)
-  cases <- within(cases, acute[cases$pregnant!=""] <- 1)
+    cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
+    cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
+    cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
+    cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
+    cases <- within(cases, acute[cases$roof_type!=""] <- 1)
+    cases <- within(cases, acute[cases$pregnant!=""] <- 1)
   #if it is visit a,call it acute
-  cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1" & id_cohort=="F"] <- 1)
+    cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1" & cases$Cohort=="F"] <- 1)
+  
   #if they have fever, call it acute
-  cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
-  cases <- within(cases, acute[cases$temp>=38] <- 1)
+    cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
+    cases <- within(cases, acute[cases$temp>=38] <- 1)
+  
   #otherwise, it is not acute
-  cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
+    cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
+    table(cases$acute)
 
+#20days -10 weeks  is a convalescent visit to pair with acute. 
+  
 #create diagram of patients
 library("dplyr")
   n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9479 patients reviewed
@@ -273,8 +268,8 @@ library("plyr")
     cases<-cases[order(-(grepl('person_id|redcap', names(cases)))+1L)]
     
                            
-    dem_factorVars <- c("id_city")
-    dem_vars=c("id_city", "gender_all","aic_calculated_age","ses_sum")
+    dem_factorVars <- c("City")
+    dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
     #summary(dem_tableOne)
     print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age","ses_sum"), quote = TRUE, includeNA=TRUE)

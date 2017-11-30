@@ -535,7 +535,7 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     table(house.vector$study_site, exclude = NULL)
 
 # gps ---------------------------------------------------------------------
-    house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]#this excludes lots of data.
+    house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]    #this excludes lots of data.
     house.vector <-house.vector[which(house.vector$compound_house_id!="2002"), ]#exclude for now.
     write.csv(as.data.frame(house.vector), "house.vector.gps.csv")
     

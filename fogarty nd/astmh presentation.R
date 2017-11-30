@@ -19,6 +19,20 @@ currentDate <- Sys.Date()
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 save(chikv_nd,file=FileName)
 #load("chikv_nd 2017-11-01 .rda")
+
+#internda by child result
+# tables ------------------------------------------------------------------
+  vars_internda<-c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score")
+  chikv_nd <- within(chikv_nd, result_child[chikv_nd$result_child==98|chikv_nd$result_child==99] <- NA)
+  table(chikv_nd$mean_receptive_language_score)
+  chikv_nd <- within(chikv_nd, mean_receptive_language_score[chikv_nd$mean_receptive_language_score=="Inf"] <- NA)
+  
+  chikv_nd$mean_receptive_language_score<-  as.numeric(chikv_nd$mean_receptive_language_score)
+  
+  table1_internda_exposed <- CreateTableOne(vars = vars_internda, strata = "result_child", data = chikv_nd)
+  print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score"), quote = TRUE, includeNA=TRUE)
+  
+
 # tested both mom and baby-----------------------------------------------------------------
 cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
 
