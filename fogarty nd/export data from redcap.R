@@ -20,6 +20,7 @@ chikvnd <- redcap_read(
 )$data
 
 save(chikvnd,file=paste("chikvnd",Sys.Date(),sep = "_"))
+
 load("chikvnd_2017-05-26")
 glimpse("chikvnd_2017-05-26")
 n_distinct(chikvnd$participant_id, na.rm = FALSE)

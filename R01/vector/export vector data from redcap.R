@@ -516,14 +516,26 @@ hist(MonthlyOvitrap$z.egg_count_ovitrap)
     
     house.vector<-merge(house.vector, house_first, by = c("compound_house_id" ,"study_site"),all.x=TRUE)
     View(house.vector)
+    library("zoo")
+    house.vector$month_year<-as.yearmon(house.vector$date_collected.x)
+    library(lubridate)
+    house.vector$month<-month(as.yearmon(house.vector$date_collected.x))
+    table(house.vector$month)
+    
+    house.vector$season<-NA
+    house.vector <- within(house.vector, season[house.vector$month >=4 & house.vector$month <=6] <- "LRS")
+    house.vector <- within(house.vector, season[house.vector$month >=10 & house.vector$month <=12] <- "SRS")
+    house.vector <- within(house.vector, season[house.vector$month >=1 & house.vector$month <=3] <- "HDS")
+    house.vector <- within(house.vector, season[house.vector$month >=7 & house.vector$month <=9] <- "CDS")
+    table(house.vector$season)
     
     house.vector <-house.vector[which(!is.na(house.vector$Ttl_Aedes.spp.Indoor.ovi)|!is.na(house.vector$ttl_Aedes_spp_Outdoor.ovi)|!is.na(house.vector$Ttl_Aedes.spp.bg)|!is.na(house.vector$Ttl_Aedes.spp_in.proko)|!is.na(house.vector$Ttl_Aedes.spp_out.proko)|!is.na(house.vector$Ttl_Aedes.spp.hlc)|!is.na(house.vector$Ttl_Aedes.spp.larva)), ]
     house.vector[, 3:9][is.na(house.vector[, 3:9])] <- 0
     
     table(house.vector$study_site, exclude = NULL)
-    
+
 # gps ---------------------------------------------------------------------
-    house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]
+    house.vector <-house.vector[which(!is.na(house.vector$latitude)&!is.na(house.vector$longitude)), ]#this excludes lots of data.
     house.vector <-house.vector[which(house.vector$compound_house_id!="2002"), ]#exclude for now.
     write.csv(as.data.frame(house.vector), "house.vector.gps.csv")
     

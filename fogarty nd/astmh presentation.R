@@ -12,13 +12,13 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyan
 Redcap.token <- readLines("api.token.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-#chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 200)$data#export data from redcap to R (must be connected via cisco VPN)
+chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 200)$data#export data from redcap to R (must be connected via cisco VPN)
 
 
 currentDate <- Sys.Date() 
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
-#save(chikv_nd,file=FileName)
-load("chikv_nd 2017-11-01 .rda")
+save(chikv_nd,file=FileName)
+#load("chikv_nd 2017-11-01 .rda")
 # tested both mom and baby-----------------------------------------------------------------
 cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
 
@@ -34,6 +34,8 @@ cohort <- within(cohort, preg_chikvpos[cohort$pregnant==1] <- "pregnant but not 
 cohort <- within(cohort, preg_chikvpos[result_mother==0 | pregnant==0] <- "unexposed")#154
 cohort <- within(cohort, preg_chikvpos[result_mother==1 & pregnant ==1] <- "exposed")#179
 
+#export
+write.csv(as.data.frame(cohort), "cohort_exposed.csv" )
 
 #153 negative or not infected during pregnancy
 #168 infected and during pregnancy with trimester recall.
@@ -518,3 +520,14 @@ print(complications.by.exposure_3, quote = TRUE)
 print(complications.by.exposure_d, quote = TRUE)
 print(complications.by.exposure_3d, quote = TRUE)
 
+#export
+  write.csv(as.data.frame(cohort), "cohort.csv" )
+#internda
+  # tables ------------------------------------------------------------------
+  vars_internda<-c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score")
+  
+  cohort$mean_receptive_language_score<-  as.numeric(cohort$mean_receptive_language_score)
+  
+  table1_internda_exposed <- CreateTableOne(vars = vars_internda, strata = "preg_chikvpos", data = cohort)
+  table1_internda_exposed
+  
