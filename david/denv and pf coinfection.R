@@ -204,8 +204,6 @@ library("plyr")
 ## Create Table 1 stratified by denv/pf status.
   ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
   library("tableone")
-  cases <- as.matrix.data.frame(cases)
-  cases <- data.frame(cases)
   cases$outcome_hospitalized<-as.numeric(as.character(cases$outcome_hospitalized))
   cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-1 )
   table(cases$outcome_hospitalized)
@@ -272,8 +270,9 @@ library("plyr")
     library("tableone")
     cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
     cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
-    cases[1:100] <- sapply(cases[1:100], as.numeric)
-    cases<-cases[order(-(grepl('person_id|redcap', names(cases)))+1L)]
+    
+    #cases[1:100] <- sapply(cases[1:100], as.numeric)
+    #cases<-cases[order(-(grepl('person_id|redcap', names(cases)))+1L)]
     
                            
     dem_factorVars <- c("City")
@@ -311,12 +310,11 @@ library("plyr")
     #print table one (assume non normal distribution)
       print(pedsql_paired_tableOne, 
             exact = c(),
-            nonnormal=c("pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
+            nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
             , quote = TRUE, includeNA=TRUE)
     #print table one (assume normal distribution)
       print(pedsql_paired_tableOne, 
             exact = c(),
-            #nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv"),
             quote = TRUE, includeNA=TRUE)
 #pedsql unpaired
     cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
@@ -329,15 +327,13 @@ library("plyr")
     #print table one (assume non normal distribution)
     print(pedsql_tableOne, 
           exact = c(),
-          nonnormal=c("pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
+          nonnormal=c("pedsql_child_school_mean_acute", "pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
           , quote = TRUE, includeNA=TRUE)
     #print table one (assume normal distribution)
     
     print(pedsql_tableOne, 
           exact = c(),
-          #nonnormal=c("pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean_aucte", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean"), 
           quote = TRUE, includeNA=TRUE)
-    
     
   #symptoms
     cases$heart_rate<-    as.numeric(as.character(cases$heart_rate))
@@ -355,9 +351,9 @@ library("plyr")
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)
 
+#save data frame
+    save(cases,file="david_denv_pf_cohort.rda")
 #export to csv
   setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
   f <- "david_denv_pf_cohort.csv"
   write.csv(as.data.frame(cases), f )
-#save data frame
-  save(cases,file="david_denv_pf_cohort.rda")

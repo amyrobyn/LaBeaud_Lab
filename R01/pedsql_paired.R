@@ -248,17 +248,16 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
       pedsql_wide$elapsed.time.ef <- as.numeric(pedsql_wide$int_date_visit_f_arm_1 - pedsql_wide$int_date_visit_e_arm_1)
       pedsql_wide$elapsed.time.fg <- as.numeric(pedsql_wide$int_date_visit_g_arm_1 -  pedsql_wide$int_date_visit_f_arm_1)
       pedsql_wide$elapsed.time.gh <- as.numeric(pedsql_wide$int_date_visit_h_arm_1 -  pedsql_wide$int_date_visit_g_arm_1)
-      hist(pedsql_wide$elapsed.time.ab)
-      hist(pedsql_wide$elapsed.time.bc)
+      hist(pedsql_wide$elapsed.time.ab, breaks = 500)
+      hist(pedsql_wide$elapsed.time.bc, breaks = 500)
       hist(pedsql_wide$elapsed.time.cd)
       hist(pedsql_wide$elapsed.time.de)
       hist(pedsql_wide$elapsed.time.ef)
       hist(pedsql_wide$elapsed.time.fg)
       hist(pedsql_wide$elapsed.time.gh)
       
-      table(pedsql_wide$elapsed.time.ab>=14 & pedsql_wide$elapsed.time.ab<=70)
-      table(pedsql_wide$pairs_cd)
-      
+
+      pedsql_wide$pairs_ab<-ifelse(pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
       pedsql_wide$pairs_ab<-ifelse(pedsql_wide$elapsed.time.ab>=14 & pedsql_wide$elapsed.time.ab<=70 & pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
       pedsql_wide$pairs_bc<-ifelse(pedsql_wide$elapsed.time.bc>=14 & pedsql_wide$elapsed.time.bc<=70 & pedsql_wide$acute_visit_b_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1) & pedsql_wide$acute_visit_c_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1), 1, 0)    
       pedsql_wide$pairs_cd<-ifelse(pedsql_wide$elapsed.time.cd>=14 & pedsql_wide$elapsed.time.cd<=70 & pedsql_wide$acute_visit_c_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1) & pedsql_wide$acute_visit_d_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1), 1, 0)    
