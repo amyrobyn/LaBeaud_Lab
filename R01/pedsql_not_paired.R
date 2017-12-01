@@ -9,19 +9,7 @@ library(ggplot2)
 
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
-REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-
-#export data from redcap to R (must be connected via cisco VPN)
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-library(beepr)
-beep(sound=4)
-
-currentDate <- Sys.Date() 
-FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
-#save(R01_lab_results,file=FileName)
-load(FileName)
+load("R01_lab_results 2017-12-01 .rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
@@ -45,7 +33,7 @@ pedsql[pedsql=="4" ] <- 0
 #children
 #select child vars
 pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
-pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
+pedsql_child<- pedsql_child[, !grepl("parent", names(pedsql_child))]
 
 #total child score
 pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
@@ -244,6 +232,7 @@ R01_lab_results$acute<-NA
   table(R01_lab_results$acute)
 #seprate acute and convalescent pedsql visits.       
   pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
+  pedsql_acute<-pedsql
 
   pedsql_acute<- within(pedsql_acute, acute[acute ==1] <- "acute")
   pedsql_acute<- within(pedsql_acute, acute[acute==0] <- "conv")

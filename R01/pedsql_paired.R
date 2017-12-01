@@ -1,5 +1,4 @@
 #2 weeks -10 weeks  is a convalescent visit to pair with acute. 
-
 # packages -----------------------------------------------------------------
 #install.packages(c("REDCapR", "mlr"))
 #install.packages(c("dummies"))
@@ -11,27 +10,14 @@ library(ggplot2)
 
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
-REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-
-#export data from redcap to R (must be connected via cisco VPN)
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-library(beepr)
-beep(sound=4)
-
-currentDate <- Sys.Date() 
-FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
-#save(R01_lab_results,file=FileName)
-load(FileName)
-  R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
+load("R01_lab_results 2017-12-01 .rda")
+R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
   
   R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
   R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
   
 
 pedsql<- R01_lab_results[, grepl("person_id|redcap_event_name|pedsql", names(R01_lab_results))]
-pedsql<-as.matrix(pedsql)
 #remove missing
   pedsql[pedsql=="99" ] <- NA
   pedsql[pedsql=="98" ] <- NA
@@ -49,11 +35,10 @@ pedsql[pedsql=="4" ] <- 0
 #children
 #select child vars
 pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
-
-  pedsql_child<-as.matrix( pedsql[, !grepl("parent", names(pedsql))])
+pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql))]
 
 #total child score
-  pedsql_child_total<-as.matrix( pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))])
+  pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
   pedsql_child_total$not_missing_child<-rowSums(!is.na(pedsql_child_total))
   pedsql_child_total$not_missing_child<-pedsql_child_total$not_missing_child-2
   table(pedsql_child_total$not_missing_child)
