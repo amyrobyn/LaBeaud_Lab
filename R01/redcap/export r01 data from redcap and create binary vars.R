@@ -19,8 +19,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
   beep(sound=4)
 
   currentDate <- Sys.Date() 
-  FileName <- paste("R01_lab_results.backup",currentDate,".rda",sep=" ") 
-#  save(R01_lab_results,file=FileName)
+  FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
+  save(R01_lab_results,file=FileName)
 load(FileName)
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
@@ -901,8 +901,12 @@ table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$rural)
 (103/(103+3184))*100#prevalence of denv urban
 (165/(165+3296))*100#prevalence of denv rural
 # save cleaned dataset ----------------------------------------------------
+R01_lab_results$gender_all = R01_lab_results$gender  # your new merged column start with gender
+R01_lab_results$gender_all[!is.na(R01_lab_results$gender_aic)] = R01_lab_results$gender_aic[!is.na(R01_lab_results$gender_aic)]  # merge with gender_aic
+table(R01_lab_results$gender_all, exclude = NULL)
+
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
-    write.csv(as.data.frame(R01_lab_results), f )#export to csv
     save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
-
+    save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. 
+    write.csv(as.data.frame(R01_lab_results), f )#export to csv

@@ -1,7 +1,6 @@
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 #load data that has been cleaned previously
-  load("R01_lab_results.clean.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
-  
+  load("R01_lab_results.david.coinfection.dataset.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
 # subset of the variables
   cases<-R01_lab_results[which(R01_lab_results$Cohort=="F" | R01_lab_results$Cohort=="M" ), ]
   cases <- as.data.frame(cases)
@@ -15,7 +14,8 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
     cases <- within(cases, acute[cases$visit_type==2] <- 1)
     cases <- within(cases, acute[cases$visit_type==3] <- 0)
     cases <- within(cases, acute[cases$visit_type==4] <- 1)
-    cases <- within(cases, acute[cases$visit_type==5] <- 1)
+    cases <- within(cases, acute[cases$visit_type==5] <- 0)
+
   #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
     cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
     cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
@@ -31,25 +31,24 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
     cases <- within(cases, acute[cases$temp>=38] <- 1)
   
   #otherwise, it is not acute
-    cases <- within(cases, acute[cases$acute!=1 & !is.na(cases$gender_aic) ] <- 0)
+    cases <- within(cases, acute[cases$acute!=1] <- 0)
     table(cases$acute)
 
-#20days -10 weeks  is a convalescent visit to pair with acute. 
-  
 #create diagram of patients
 library("dplyr")
-  n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9479 patients reviewed
-  aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #1992 patients included in study (aic, west)
-  afi<-  sum(cases$acute==1, na.rm = TRUE)#2714 afi's
+  n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9772 patients reviewed
+  aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2011 patients included in study (aic, west)
+  afi<-  sum(cases$acute==1, na.rm = TRUE)#2775 afi's
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
-    R01_lab_results$infected_denv_stfd<-NA
-    R01_lab_results$infected_denv_stfd[R01_lab_results$tested_denv_stfd_igg ==1 |R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0]<-0
-    R01_lab_results$infected_denv_stfd[R01_lab_results$seroc_denv_stfd_igg==1|R01_lab_results$result_pcr_denv_kenya==1|R01_lab_results$result_pcr_denv_stfd==1]<-1
-    table(R01_lab_results$infected_denv_stfd)  
+    cases$infected_denv_stfd<-NA
+    cases$infected_denv_stfd[cases$tested_denv_stfd_igg ==1 |cases$result_pcr_denv_kenya==0|cases$result_pcr_denv_stfd==0]<-0
+    cases$infected_denv_stfd[cases$seroc_denv_stfd_igg==1|cases$result_pcr_denv_kenya==1|cases$result_pcr_denv_stfd==1]<-1
+      table(cases$seroc_denv_stfd_igg)
+      table(cases$infected_denv_stfd)  
     
   #table of denv at acute visit. 
-  denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
+    denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
 
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
     cases$malaria<-NA
@@ -60,18 +59,17 @@ library("dplyr")
 
     cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
     cases <- within(cases, malaria[cases$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
-    cases <- within(cases, malaria[cases$result_rdt_malaria_kenya==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
-    cases <- within(cases, malaria[cases$rdt_result==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
+    cases <- within(cases, malaria[cases$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
     table(cases$malaria)
-  #by pcr or igg seroc?
+    #by pcr or igg seroc?
     cases$pcr_denv<-NA
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==0] <- 0)
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==0] <- 0)
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==1] <- 1)
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==1] <- 1)
     table(cases$pcr_denv)
-    
-  table(cases$seroc_denv_stfd_igg, cases$pcr_denv)#87 by pcr, 6 by igg seroconversion.
+    table(cases$seroc_denv_stfd_igg)
+  table(cases$seroc_denv_stfd_igg, cases$pcr_denv, exclude = NULL)#87 by pcr, 6 by igg seroconversion.
   table(cases$infected_denv_stfd, cases$malaria, exclude = NULL)
   table(cases$infected_denv_stfd, exclude = NULL)
   #some need to be malaria tested to be included in sample
@@ -88,10 +86,10 @@ library("dplyr")
     cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
     cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
 #count just tested for denv not malaria  #just tested for malaria not denv
-    table(cases$tested_malaria, exclude = NULL)#malaria tested = 2123. NA = 748
-    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1792. NA = 903
+    table(cases$tested_malaria, exclude = NULL)#malaria tested = 2189 NA = 586
+    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1812 NA = 963
     table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 166 not malaria tested but denv tested. 321 malaria tested but not denv tested. 582 tested for neither. 1625 tested for both
-    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1772 teste for both
+    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1761 teste for both
     denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#538
     denv_not_tested_malaria_tested <-  sum(is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#351
     denv_tested_malaria_not_tested <-  sum(!is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#52
@@ -99,8 +97,8 @@ library("dplyr")
   #keep only those tested for both
     cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
 #flow chart of subjects.    
-  n_events_tested<-  sum(length(cases$person_id))#1772 acute visits tested for both denv and malaria.
-  n_subjects_tested<-  sum(n_distinct(cases$person_id), na.rm = TRUE)#1707 unique subjects.
+  n_events_tested<-  sum(length(cases$person_id))#1761 acute visits tested for both denv and malaria.
+  n_subjects_tested<-  sum(n_distinct(cases$person_id), na.rm = TRUE)#1680 unique subjects.
   
 #denv and any malaria  
 #Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
@@ -108,18 +106,28 @@ library("dplyr")
   #DENV: positive by RT-PCR, or IgG seroconversion (I've run your code but there are symptoms variables that give me errors.says they don't exist). Can you also query how many seroconverted bc, de, fg?
   #this is the same way i have defined infection for desiree.
   
-  table(cases$malaria, cases$infected_denv_stfd)
-  denv_pos_malaria_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria==0, na.rm = TRUE)#56
-  denv_pos_malaria_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria==1, na.rm = TRUE)#63
-  denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#691
-  denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#962
+  table(cases$malaria, cases$infected_denv_stfd, exclude = NULL)
+  denv_pos_malaria_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria==0, na.rm = TRUE)#42
+  denv_pos_malaria_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria==1, na.rm = TRUE)#48
+  denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#695
+  denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#976
   
+  # malaria species ---------------------------------------------------------
   cases$malaria_species<-NA
   
   cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
   cases_malariawide<-cases_malariawide[,order(colnames(cases_malariawide))]
+  cases_malariawide<-as.data.frame(cases_malariawide)
   cases_malariawide<-reshape(cases_malariawide, idvar = c("person_id", "redcap_event_name"), varying = 1:5,  direction = "long", timevar = "species", times=c("ni", "pf","pm","po","pv"), v.names=c("microscopy_malaria"))
-  table(cases_malariawide$species, cases_malariawide$microscopy_malaria)
+  
+  cases_malariawide<- within(cases_malariawide, species[microscopy_malaria!=1] <- NA)
+  cases_malariawide<-cases_malariawide[which(!is.na(cases_malariawide$species)),]
+  
+  cases_malariawide<-cases_malariawide %>% group_by(person_id,redcap_event_name) %>% mutate(malaria_coinfection = n())
+  cases_malariawide<-aggregate( .~ person_id+redcap_event_name, cases_malariawide, function(x) toString(unique(x)))
+  
+  table(cases_malariawide$species)
+  ((764+2+5)/(976+48))*100
   
   cases$malaria_pf<-NA
   cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==0 & cases$malaria!=1] <- 0)#rdt
@@ -128,8 +136,8 @@ library("dplyr")
   cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1] <- 0)#rdt
   cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==1] <- 1)#rdt
   
-  table(cases$malaria_pf)#malaria pos/neg
-  table(cases$malaria)#pf pos/neg
+  table(cases$malaria_pf)#pf pos/neg
+  table(cases$malaria)#malaria pos/neg
   
   table(cases$malaria_pf, cases$infected_denv_stfd)
   denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
@@ -158,11 +166,9 @@ library("dplyr")
       cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
       cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
       
-      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
-      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==0 & cases$malaria!=1 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
-      
-      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==0 &  !is.na(result_microscopy_malaria_kenya) & cases$malaria!=1 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
-      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==0 & cases$malaria!=1 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
+      cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+
+      cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
       table(cases$strata)  
 
 save(cases,file="cases.rda")
@@ -172,6 +178,7 @@ names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
 #merge with paired pedsql data (acute and convalescent)
 library("plyr")
   load("pedsql_pairs_acute.rda")
+
   names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
   cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
   cases_pedsql<-cases_pedsql[order(-(grepl('person_id|redcap|pedsql_', names(cases_pedsql)))+1L)]
@@ -199,7 +206,7 @@ library("plyr")
   cases <- as.matrix.data.frame(cases)
   cases <- data.frame(cases)
   cases$outcome_hospitalized<-as.numeric(as.character(cases$outcome_hospitalized))
-  cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-NA )
+  cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-1 )
   table(cases$outcome_hospitalized)
   #demographics
   
@@ -272,8 +279,8 @@ library("plyr")
     dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
     #summary(dem_tableOne)
-    print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age","ses_sum"), quote = TRUE, includeNA=TRUE)
-
+    print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age"), quote = TRUE, includeNA=TRUE)
+    
   #mosquito
     cases$mosquito_bites_aic<-as.numeric(as.character(cases$mosquito_bites_aic))
     cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
@@ -342,7 +349,7 @@ library("plyr")
     cases$aic_symp
     print(symptoms_tableOne, 
           exact = c(
-            "aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "temp", "outcome_hospitalized", "heart_rate"
+            "aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "temp", "outcome_hospitalized"
           ),
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)

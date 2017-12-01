@@ -34,5 +34,12 @@ gamm4(formula,random=NULL,family=gaussian(),data=list(),weights=NULL,
 #     explore the counts by house by season. ------------------------------
 
 #     kendall test over season over house. outdoor vs indoor. -------------
-install.packages("Kendall")
-library("Kendall")
+  install.packages("Kendall")
+  library("Kendall")
+  cor.test(exer, smoke, method="kendall") 
+  library(rpud)                     # load rpudplus 
+  rpucor(m, method="kendall", use="pairwise") 
+  rt <- rpucor.test(m, method="kendall", use="pairwise") 
+  rt$estimate 
+  rt$p.value 
+  rt$p.value < 0.05

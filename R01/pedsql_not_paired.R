@@ -1,10 +1,13 @@
+# packages -----------------------------------------------------------------
 #install.packages(c("REDCapR", "mlr"))
 #install.packages(c("dummies"))
 library(dplyr)
 library(plyr)
 library(redcapAPI)
 library(REDCapR)
+library(ggplot2)
 
+# get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
@@ -12,9 +15,13 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-#R01_lab_results.backup<-R01_lab_results
-#save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
-load("R01_lab_results.backup.rda")
+library(beepr)
+beep(sound=4)
+
+currentDate <- Sys.Date() 
+FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
+#save(R01_lab_results,file=FileName)
+load(FileName)
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)

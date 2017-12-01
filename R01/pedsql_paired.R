@@ -1,10 +1,15 @@
+#2 weeks -10 weeks  is a convalescent visit to pair with acute. 
+
+# packages -----------------------------------------------------------------
 #install.packages(c("REDCapR", "mlr"))
 #install.packages(c("dummies"))
-  library(dplyr)
-  library(plyr)
-  library(redcapAPI)
-  library(REDCapR)
+library(dplyr)
+library(plyr)
+library(redcapAPI)
+library(REDCapR)
+library(ggplot2)
 
+# get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
@@ -12,9 +17,13 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
 #R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
-#R01_lab_results.backup<-R01_lab_results
-#save(R01_lab_results.backup,file="R01_lab_results.backup.rda")
-load("R01_lab_results.backup.rda")
+library(beepr)
+beep(sound=4)
+
+currentDate <- Sys.Date() 
+FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
+#save(R01_lab_results,file=FileName)
+load(FileName)
   R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
   
   R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
@@ -22,9 +31,11 @@ load("R01_lab_results.backup.rda")
   
 
 pedsql<- R01_lab_results[, grepl("person_id|redcap_event_name|pedsql", names(R01_lab_results))]
+pedsql<-as.matrix(pedsql)
 #remove missing
   pedsql[pedsql=="99" ] <- NA
   pedsql[pedsql=="98" ] <- NA
+
 #reverse scoring: Step 1: Transform Score.
 #Items are reversed scored and linearly transformed to a 0-100 scale as
 #follows: 0=100, 1=75, 2=50, 3=25, 4=0.
@@ -37,11 +48,12 @@ pedsql[pedsql=="4" ] <- 0
 
 #children
 #select child vars
-  pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
-  pedsql_child<- pedsql[, !grepl("parent", names(pedsql))]
+pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
+
+  pedsql_child<-as.matrix( pedsql[, !grepl("parent", names(pedsql))])
 
 #total child score
-  pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
+  pedsql_child_total<-as.matrix( pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))])
   pedsql_child_total$not_missing_child<-rowSums(!is.na(pedsql_child_total))
   pedsql_child_total$not_missing_child<-pedsql_child_total$not_missing_child-2
   table(pedsql_child_total$not_missing_child)
@@ -219,7 +231,7 @@ pedsql[pedsql=="4" ] <- 0
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==2] <- 1)
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==3] <- 0)
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==4] <- 1)
-      R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==5] <- 1)
+      R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$visit_type==5] <- 0)
       #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$kid_highest_level_education_aic!=""] <- 1)
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$occupation_aic!=""] <- 1)
