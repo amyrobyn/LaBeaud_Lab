@@ -363,8 +363,9 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
 
 #save for use in others
       save(pedsql_pairs_acute,file="pedsql_pairs_acute.rda")
-      
+
 #export to csv
       setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
       f <- "paired_pedsql.csv"
       write.csv(as.data.frame(pedsql_pairs_acute), f)
+      

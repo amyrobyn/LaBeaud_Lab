@@ -243,11 +243,14 @@ R01_lab_results$acute<-NA
   pedsql_conv_unpaired<- pedsql_acute[which(pedsql_acute$acute=="conv")  , ]
   
 #save for use in others
+  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
   save(pedsql_conv_unpaired,file="pedsql_conv_unpaired.rda")
   save(pedsql_acute_unpaired,file="pedsql_acute_unpaired.rda")
-
+  pedsql_unpaired <- join(pedsql_conv_unpaired, pedsql_acute_unpaired,  by=c("person_id", "redcap_event"), match = "all" , type="full")
+  table(pedsql_unpaired$acute)
+  save(pedsql_unpaired,file="pedsql_unpaired.rda")
+  pedsql_unpaired$pedsql_parent_school_sum
 #export to csv
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
   f <- "pedsql_acute_unpaired.csv"
   write.csv(as.data.frame(pedsql_acute_unpaired), f)
   

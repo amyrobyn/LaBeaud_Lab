@@ -1,7 +1,9 @@
+# import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 #load data that has been cleaned previously
   load("R01_lab_results.david.coinfection.dataset.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
-# subset of the variables
+  
+# subset our data to david's cohort of aic west ---------------------------
   R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
   cases<-R01_lab_results[which(R01_lab_results$Cohort=="F" | R01_lab_results$Cohort=="M" ), ]
   cases <- as.data.frame(cases)
@@ -9,8 +11,9 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
 
-  #create acute variable
-    cases$acute<-NA
+
+# #create acute variable  ------------------------------------------------------------------------
+  cases$acute<-NA
     cases <- within(cases, acute[cases$visit_type==1] <- 1)
     cases <- within(cases, acute[cases$visit_type==2] <- 1)
     cases <- within(cases, acute[cases$visit_type==3] <- 0)
@@ -35,11 +38,12 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
     cases <- within(cases, acute[cases$acute!=1] <- 0)
     table(cases$acute)
 
-#create diagram of patients
+# count number per group for subject diagram------------------------------------------------------------------------
 library("dplyr")
   n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9772 patients reviewed
   aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2011 patients included in study (aic, west)
   afi<-  sum(cases$acute==1, na.rm = TRUE)#2775 afi's
+#denv  case defination------------------------------------------------------------------------
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
     cases$infected_denv_stfd<-NA
@@ -50,7 +54,7 @@ library("dplyr")
     
   #table of denv at acute visit. 
     denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
-
+#malaria case defination------------------------------------------------------------------------
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
     cases$malaria<-NA
     cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
@@ -62,7 +66,7 @@ library("dplyr")
     cases <- within(cases, malaria[cases$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
     cases <- within(cases, malaria[cases$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
     table(cases$malaria)
-    #by pcr or igg seroc?
+#denv by pcr or serology ------------------------------------------------------------------------
     cases$pcr_denv<-NA
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==0] <- 0)
     cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==0] <- 0)
@@ -73,15 +77,15 @@ library("dplyr")
   table(cases$seroc_denv_stfd_igg, cases$pcr_denv, exclude = NULL)#87 by pcr, 6 by igg seroconversion.
   table(cases$infected_denv_stfd, cases$malaria, exclude = NULL)
   table(cases$infected_denv_stfd, exclude = NULL)
-  #some need to be malaria tested to be included in sample
+#  #some need to be malaria tested to be included in sample ------------------------------------------------------------------------
     not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
     table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
     table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
-#keep only acute
+#  keep acute only ------------------------------------------------------------------------
   cases<-cases[which(cases$acute==1), ]
 
-#keep only those tested for both malaria and denv.
-  #define denv testing as pcr or paired igg.
+#  keep only those tested for both denv and malaria ------------------------------------------------------------------------
+    #define denv testing as pcr or paired igg.
     cases$tested_malaria<-NA
     cases <- within(cases, tested_malaria[!is.na(cases$malaria)] <- 1)
     cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
@@ -101,7 +105,8 @@ library("dplyr")
   n_events_tested<-  sum(length(cases$person_id))#1761 acute visits tested for both denv and malaria.
   n_subjects_tested<-  sum(n_distinct(cases$person_id), na.rm = TRUE)#1680 unique subjects.
   
-#denv and any malaria  
+#  strata for malaria and denv------------------------------------------------------------------------
+  #denv and any malaria  
 #Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
   #What I would like is the cases defined as follows:
   #DENV: positive by RT-PCR, or IgG seroconversion (I've run your code but there are symptoms variables that give me errors.says they don't exist). Can you also query how many seroconverted bc, de, fg?
@@ -113,7 +118,7 @@ library("dplyr")
   denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#695
   denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#976
   
-  # malaria species ---------------------------------------------------------
+# malaria species------------------------------------------------------------------------
   cases$malaria_species<-NA
   
   cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
@@ -140,6 +145,7 @@ library("dplyr")
   table(cases$malaria_pf)#pf pos/neg
   table(cases$malaria)#malaria pos/neg
   
+# pf malaria strata------------------------------------------------------------------------
   table(cases$malaria_pf, cases$infected_denv_stfd)
   denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
   denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#35
@@ -171,12 +177,13 @@ library("dplyr")
 
       cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
       table(cases$strata)  
-
+#save dataset------------------------------------------------------------------------
+      
 save(cases,file="cases.rda")
 load("cases.rda")
 names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
 
-#merge with paired pedsql data (acute and convalescent)
+##merge with paired pedsql data (acute and convalescent)-----------------------------------------------------------------------
 library("plyr")
   load("pedsql_pairs_acute.rda")
 
@@ -188,33 +195,21 @@ library("plyr")
 
   cases<-cases_pedsql
   cases<-cases[order(-(grepl('person_id|redcap|pedsql_', names(cases)))+1L)]
-  
-#merge with unpaired pedsql data
-  load("pedsql.rda")
-  names(pedsql)[names(pedsql) == 'redcap_event'] <- 'redcap_event_name'
-  cases_pedsql <- join(cases, pedsql,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
-  table(cases_pedsql$pedsql_child_social_mean_acute, cases_pedsql$strata)
-  cases<-cases_pedsql
+##how to merge  with unpaired pedsql data?? if we don't know when the convalescent visit is, and we are only looking at acute visits, then what is the unpaired data?-----------------------------------------------------------------------
 
-#plot paired outcomes over time.
-  library("ggplot2")
-  ggplot(aes(x = redcap_event_name, y =pedsql_child_emotional_mean_acute, color=strata), data = cases) + geom_point()+geom_line()
-  table(cases$pedsql_child_emotional_mean_acute, cases$redcap_event_name) 
-
-## Create Table 1 stratified by denv/pf status.
-  ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
-  library("tableone")
+# outcome hospitalized ----------------------------------------------------
   cases$outcome_hospitalized<-as.numeric(as.character(cases$outcome_hospitalized))
   cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-1 )
   table(cases$outcome_hospitalized)
-  #demographics
-  
+# demographics ------------------------------------------------------------
+
   #ses- create an index
   cases <- within(cases, kid_highest_level_education_aic[cases$kid_highest_level_education_aic==9|cases$kid_highest_level_education_aic==5] <- NA)
   cases <- within(cases, mom_highest_level_education_aic[cases$mom_highest_level_education_aic==9|cases$mom_highest_level_education_aic==5] <- NA)
   cases <- within(cases, roof_type[cases$roof_type==9|cases$roof_type==4] <- NA)
   cases <- within(cases, latrine_type[cases$latrine_type==9|cases$latrine_type==6] <- NA)
   cases <- within(cases, floor_type[cases$floor_type==9|cases$floor_type==5] <- NA)
+
 
   cases <- within(cases, drinking_water_source[cases$drinking_water_source==9|cases$drinking_water_source==6] <- NA)
   cases$drinking_water_source<-  as.numeric(as.character(cases$drinking_water_source))
@@ -271,17 +266,18 @@ library("plyr")
     cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
     cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
     
-    #cases[1:100] <- sapply(cases[1:100], as.numeric)
-    #cases<-cases[order(-(grepl('person_id|redcap', names(cases)))+1L)]
+# demography tables ------------------------------------------------------------------
+    ## Create Table 1 stratified by denv/pf status.
+    ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
+    library("tableone")
     
-                           
     dem_factorVars <- c("City")
     dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
     #summary(dem_tableOne)
     print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age"), quote = TRUE, includeNA=TRUE)
     
-  #mosquito
+#   #mosquito tables ------------------------------------------------------------------
     cases$mosquito_bites_aic<-as.numeric(as.character(cases$mosquito_bites_aic))
     cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
 
@@ -301,7 +297,7 @@ library("plyr")
   #summary(mosq_tableOne)
     print(mosq_tableOne, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = TRUE, includeNA=TRUE)
 
-  #pedsql paired
+# pedsql paired data ------------------------------------------------------
     table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
 
     pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
@@ -316,27 +312,8 @@ library("plyr")
       print(pedsql_paired_tableOne, 
             exact = c(),
             quote = TRUE, includeNA=TRUE)
-#pedsql unpaired
-    cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
-    cases<-cases[order(-(grepl('person_id|redcap|strata', names(cases)))+1L)]
-    
-    pedsql_vars <- c("pedsql_child_school_mean_acute", "pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
-    
-    pedsql_tableOne <- CreateTableOne(vars = pedsql_vars, strata = "strata", data = cases)
-    summary(pedsql_tableOne)
-    #print table one (assume non normal distribution)
-    print(pedsql_tableOne, 
-          exact = c(),
-          nonnormal=c("pedsql_child_school_mean_acute", "pedsql_child_school_mean_conv", "pedsql_child_social_mean_acute", "pedsql_child_social_mean_conv", "pedsql_parent_school_mean_acute", "pedsql_parent_school_mean_conv", "pedsql_parent_social_mean_aucte", "pedsql_parent_social_conv", "pedsql_child_physical_mean_acute", "pedsql_child_physical_mean_conv", "pedsql_parent_physical_mean_acute", "pedsql_parent_physical_mean_conv", "pedsql_child_emotional_mean_acute", "pedsql_child_emotional_mean_conv", "pedsql_parent_emotional_mean_acute", "pedsql_parent_emotional_mean_conv")
-          , quote = TRUE, includeNA=TRUE)
-    #print table one (assume normal distribution)
-    
-    print(pedsql_tableOne, 
-          exact = c(),
-          quote = TRUE, includeNA=TRUE)
-    
-  #symptoms
-    cases$heart_rate<-    as.numeric(as.character(cases$heart_rate))
+# symptoms table ----------------------------------------------------------
+      ses$heart_rate<-    as.numeric(as.character(cases$heart_rate))
     cases$temp<-    as.numeric(as.character(cases$temp))
     symptom_vars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate")
     symptom_factorVars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache")
@@ -351,7 +328,8 @@ library("plyr")
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)
 
-#save data frame
+
+# save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
 #export to csv
   setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
