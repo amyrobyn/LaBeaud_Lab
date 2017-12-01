@@ -1,4 +1,3 @@
-#2 weeks -10 weeks  is a convalescent visit to pair with acute. 
 # packages -----------------------------------------------------------------
 #install.packages(c("REDCapR", "mlr"))
 #install.packages(c("dummies"))
@@ -12,7 +11,8 @@ library(ggplot2)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 load("R01_lab_results 2017-12-01 .rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
-  
+R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
+table(R01_lab_results$redcap_event_name)
   R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
   R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
   
@@ -35,7 +35,7 @@ pedsql[pedsql=="4" ] <- 0
 #children
 #select child vars
 pedsql_child<- pedsql[, grepl("person_id|redcap_event_name|pedsql", names(pedsql))]
-pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql))]
+pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
 
 #total child score
   pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
@@ -233,17 +233,39 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql))]
       R01_lab_results <- within(R01_lab_results, acute[R01_lab_results$acute!=1 & !is.na(R01_lab_results$gender_aic) ] <- 0)
       
       table(R01_lab_results$acute)
-#make pairs of acute and convalescent pedsql visits.       
-      pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute", names(R01_lab_results) ) ]
+#make pairs of acute and convalescent pedsql visits. #2 weeks -10 weeks  is a convalescent visit to pair with acute. 
+      R01_lab_results$int_date <-ymd(R01_lab_results$interview_date_aic)
+      class(R01_lab_results$int_date)
       
+      pedsql <- R01_lab_results[, grepl("person_id|redcap_event|pedsql|acute|int_date", names(R01_lab_results) ) ]
+
       pedsql_wide<-reshape(pedsql, direction = "wide", idvar = "person_id", timevar = "redcap_event", sep = "_")
-      pedsql_wide$pairs_ab<-ifelse(pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
-      pedsql_wide$pairs_bc<-ifelse(pedsql_wide$acute_visit_b_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1) & pedsql_wide$acute_visit_c_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1), 1, 0)    
-      pedsql_wide$pairs_cd<-ifelse(pedsql_wide$acute_visit_c_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1) & pedsql_wide$acute_visit_d_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1), 1, 0)    
-      pedsql_wide$pairs_de<-ifelse(pedsql_wide$acute_visit_d_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1) & pedsql_wide$acute_visit_e_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1), 1, 0)    
-      pedsql_wide$pairs_ef<-ifelse(pedsql_wide$acute_visit_e_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1) & pedsql_wide$acute_visit_f_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1), 1, 0)    
-      pedsql_wide$pairs_fg<-ifelse(pedsql_wide$acute_visit_f_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1) & pedsql_wide$acute_visit_g_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1), 1, 0)    
-      pedsql_wide$pairs_gh<-ifelse(pedsql_wide$acute_visit_g_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1) & pedsql_wide$acute_visit_h_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_h_arm_1), 1, 0)    
+      
+      pedsql_wide$elapsed.time.ab <- as.numeric(pedsql_wide$int_date_visit_b_arm_1 - pedsql_wide$int_date_visit_a_arm_1)
+      pedsql_wide$elapsed.time.bc <- as.numeric(pedsql_wide$int_date_visit_c_arm_1 - pedsql_wide$int_date_visit_b_arm_1)
+      pedsql_wide$elapsed.time.cd <- as.numeric(pedsql_wide$int_date_visit_d_arm_1 - pedsql_wide$int_date_visit_c_arm_1)
+      pedsql_wide$elapsed.time.de <- as.numeric(pedsql_wide$int_date_visit_e_arm_1 -   pedsql_wide$int_date_visit_d_arm_1)
+      pedsql_wide$elapsed.time.ef <- as.numeric(pedsql_wide$int_date_visit_f_arm_1 - pedsql_wide$int_date_visit_e_arm_1)
+      pedsql_wide$elapsed.time.fg <- as.numeric(pedsql_wide$int_date_visit_g_arm_1 -  pedsql_wide$int_date_visit_f_arm_1)
+      pedsql_wide$elapsed.time.gh <- as.numeric(pedsql_wide$int_date_visit_h_arm_1 -  pedsql_wide$int_date_visit_g_arm_1)
+      hist(pedsql_wide$elapsed.time.ab)
+      hist(pedsql_wide$elapsed.time.bc)
+      hist(pedsql_wide$elapsed.time.cd)
+      hist(pedsql_wide$elapsed.time.de)
+      hist(pedsql_wide$elapsed.time.ef)
+      hist(pedsql_wide$elapsed.time.fg)
+      hist(pedsql_wide$elapsed.time.gh)
+      
+      table(pedsql_wide$elapsed.time.ab>=14 & pedsql_wide$elapsed.time.ab<=70)
+      table(pedsql_wide$pairs_cd)
+      
+      pedsql_wide$pairs_ab<-ifelse(pedsql_wide$elapsed.time.ab>=14 & pedsql_wide$elapsed.time.ab<=70 & pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
+      pedsql_wide$pairs_bc<-ifelse(pedsql_wide$elapsed.time.bc>=14 & pedsql_wide$elapsed.time.bc<=70 & pedsql_wide$acute_visit_b_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1) & pedsql_wide$acute_visit_c_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1), 1, 0)    
+      pedsql_wide$pairs_cd<-ifelse(pedsql_wide$elapsed.time.cd>=14 & pedsql_wide$elapsed.time.cd<=70 & pedsql_wide$acute_visit_c_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1) & pedsql_wide$acute_visit_d_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1), 1, 0)    
+      pedsql_wide$pairs_de<-ifelse(pedsql_wide$elapsed.time.de>=14 & pedsql_wide$elapsed.time.de<=70 & pedsql_wide$acute_visit_d_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1) & pedsql_wide$acute_visit_e_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1), 1, 0)    
+      pedsql_wide$pairs_ef<-ifelse(pedsql_wide$elapsed.time.ef>=14 & pedsql_wide$elapsed.time.ef<=70 & pedsql_wide$acute_visit_e_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1) & pedsql_wide$acute_visit_f_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1), 1, 0)    
+      pedsql_wide$pairs_fg<-ifelse(pedsql_wide$elapsed.time.fg>=14 & pedsql_wide$elapsed.time.fg<=70 & pedsql_wide$acute_visit_f_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_f_arm_1) & pedsql_wide$acute_visit_g_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1), 1, 0)    
+      pedsql_wide$pairs_gh<-ifelse(pedsql_wide$elapsed.time.gh>=14 & pedsql_wide$elapsed.time.gh<=70 & pedsql_wide$acute_visit_g_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1) & pedsql_wide$acute_visit_h_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_h_arm_1), 1, 0)    
       table(pedsql_wide$pairs_ab)
       table(pedsql_wide$pairs_bc)
       table(pedsql_wide$pairs_cd)

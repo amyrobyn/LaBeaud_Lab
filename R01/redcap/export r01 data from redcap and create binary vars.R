@@ -24,6 +24,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 load(FileName)
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
+R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
+
 table(R01_lab_results$outcome_hospitalized)
 
 table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized, R01_lab_results$outcome_where_hospitalized)
