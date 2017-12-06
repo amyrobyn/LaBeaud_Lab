@@ -13,38 +13,60 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 
 
 #export data from redcap to R (must be connected via cisco VPN)
-ds <- redcap_read(
-  redcap_uri  = REDcap.URL,
-  token       = Redcap.token
-)$data
-#if result is missing, replace exposed with missing.
-  ds <- within(ds, exposed[is.na(result)] <- NA)
-#if exposed by navy testing ==1, confirmed by blood test == 1 
-  ds <- within(ds, confirmed_blood_test[ds$exposed==1] <- 1)
-  ds <- within(ds, exposed[ds$confirmed_blood_test==1] <- 1)
-#if reported as having chikv during pregnancy, exposed ==1
-  ds <- within(ds, exposed[ds$pregnant==1] <- 1)
+#ds <- redcap_read(  redcap_uri  = REDcap.URL,   token       = Redcap.token)$data
+ds<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/ZikaPregnancyCohort_DATA_2017-12-04_1544.csv",na.strings=c(""," ","NA"))
+
+# #delivery data and zika outbreak dates ----------------------------------
+  ds$delivery_date <- ymd(as.character(ds$delivery_date ))
+  ds$delivery_date[ds$delivery_date=="2007-01-15"]<-"2017-01-15"
+  ds$prenancy_date<-ds$delivery_date - 280
   
-#delivery data and zika outbreak dates
-  delivery_date <- ymd(as.character(ds$delivery_date ))
-  delivery_date[ds$delivery_date=="2007-01-15"]<-"2017-01-15"
-  prenancy_date<-ds$delivery_date - 280
-  
-  duration <- 280
   zika_start<- ymd(as.character("2016-06-12"))
   zika_end <- ymd(as.character("2016-10-01"))
-#export to csv  
-  f <- "REDCap_export_aug30.csv"
-  write.csv(as.data.frame(ds), f )
 
-#split data into mom and child then remerge by id
-  mom<-subset(ds, redcap_event_name=="mother_arm_1")
-  mom <-mom[!sapply(mom, function (x) all(is.na(x) | x == ""))]
+
+# exposure cats -----------------------------------------------------------
+#define the unknown first
+  #if result is missing, replace exposed with missing.
+    ds <- within(ds, exposed[(is.na(result)|is.na(exposed)|is.na(exposed_2)|exposed_2==99|exposed==99)] <- 98)
+#then define negative
+  #if exposed by navy testing ==1, confirmed by blood test == 1 
+  ds <- within(ds, exposed[ds$confirmed_blood_test==0] <- 0)
+  ds <- within(ds, confirmed_blood_test[is.na(exposed==0)|is.na(exposed_2)==0] <- 0)
+    table(ds$confirmed_blood_test)
+    #if reported as having chikv during pregnancy, exposed ==1
+    ds <- within(ds, exposed[ds$pregnant==0] <- 0)
+  #ever had zika
+    ds <- within(ds, exposed[ds$ever_had_zikv==0] <- 0)
+  #pregnant during outbreak
+    ds <- within(ds, exposed[ds$delivery_date<zika_start | ds$delivery_date>zika_end] <- 0)
+    
+#then define positive  
+  #if exposed by navy testing ==1, confirmed by blood test == 1 
+    ds <- within(ds, exposed[ds$confirmed_blood_test==1] <- 1)
+    ds <- within(ds, confirmed_blood_test[!is.na(ds$result)|!is.na(ds$igm_result_urine)] <- 1)
+    ds <- within(ds, exposed[ds$exposed_2==1] <- 1)
+  #if reported as having chikv during pregnancy, exposed ==1
+    ds <- within(ds, exposed[ds$pregnant==1] <- 1)
+  #ever had zika
+    ds <- within(ds, exposed[ds$ever_had_zikv==1] <- 1)
+#pregnant during outbreak
+  ds <- within(ds, exposed[ds$delivery_date>zika_start & ds$delivery_date<zika_end  ] <- 1)
+  table(ds$exposed, exclude = NULL)
   
-  child<-subset(ds, redcap_event_name=="child_arm_1")
-  child <-child[!sapply(child, function (x) all(is.na(x) | x == ""))]
-  ds <- merge(mom, child, by="mother_record_id")
+# #split data into mom and child then remerge by id -----------------------
+  mom<-subset(ds, redcap_event_name=="mother_arm_1")
+  mom <-mom[!sapply(mom, function (x) all(is.na(x)))]
 
+
+  child<-subset(ds, redcap_event_name=="child_arm_1")
+  child <-child[!sapply(child, function (x) all(is.na(x)))]
+  child<-child[ , !grepl( "exposed" , names(child) ) ]
+  ds <- merge(mom, child, by="mother_record_id")
+  table(ds$exposed)
+  
+  ds<- ds[which(ds$cohort___3==1)  , ]#keep only those in fu
+  table(ds$redcap_repeat_instance)  
 
 #We will want to know how many kids were Zika exposed (8/206. 7/8 confirmed) 
   table(ds$ever_had_zikv, ds$confirmed_blood_test)
@@ -98,9 +120,8 @@ factorVars <- c("pregnant","parish","race", "gender",  "child_delivery", "delive
                 "femoral_pulse", "scoliosis", "sacral_dimple", "moro", "grasp", "suck", "plantar_reflex", 
                 "galant_reflex")
 
-## Create Table 1 stratified by trt (omit strata argument for overall table)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "exposed", data = ds)
-## Just typing the object name will invoke the print.TableOne method
+## Create Table 1 stratified by exposure
+tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, data = ds)
 ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
 print(tableOne, 
       nonnormal = c("mean_weight","mean_length","mean_hc","temperature","heart_rate","resp_rate",  "neonatal_resusitation", "cong_abnormal",  "maternal_resusitation", "child_referred",  "apgar_one", "apgar_ten"),

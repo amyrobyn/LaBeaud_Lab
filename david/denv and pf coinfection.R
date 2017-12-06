@@ -313,17 +313,55 @@ library("plyr")
             exact = c(),
             quote = TRUE, includeNA=TRUE)
 # symptoms table ----------------------------------------------------------
+      #fix the bleeding and body_ache variables to replace NA with zero.
+      
+      #bleeding
+      cases <- within(cases, bleeding[cases$aic_symptom_bleeding_gums==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bleeding_gums==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_nose==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_urine==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_stool==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_vomit==0] <- 0)
+      cases <- within(cases, bleeding[cases$aic_symptom_bruises==0] <- 0)
+
+      cases <- within(cases, bleeding[cases$aic_symptom_bleeding_gums==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bleeding_gums==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_nose==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_urine==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_stool==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bloody_vomit==1] <- 1)
+      cases <- within(cases, bleeding[cases$aic_symptom_bruises==1] <- 1)
+      table(cases$bleeding)  
+      
+      #nausea_vomitting
+      cases <- within(cases, nausea_vomitting[cases$aic_symptom_nausea==0|cases$aic_symptom_vomiting==0| cases$aic_symptom_bloody_vomit==0] <- 0)
+      cases <- within(cases, nausea_vomitting[cases$aic_symptom_nausea==1|cases$aic_symptom_vomiting==1| cases$aic_symptom_bloody_vomit==1] <- 1)
+      table(cases$nausea_vomitting)
+      
+      #ims
+      symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==0|symptoms$aic_symptom_seizures==0] <- 0)
+      symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1|symptoms$aic_symptom_seizures==1] <- 1)
+      
+      #bodyache
+      cases <- within(cases, body_ache[cases$aic_symptom_general_body_ache==0] <- 0)
+      cases <- within(cases, body_ache[cases$aic_symptom_muscle_pains==0] <- 0)
+      cases <- within(cases, body_ache[cases$aic_symptom_bone_pains==0] <- 0)
+
+      cases <- within(cases, body_ache[cases$aic_symptom_general_body_ache==1] <- 1)
+      cases <- within(cases, body_ache[cases$aic_symptom_muscle_pains==1] <- 1)
+      cases <- within(cases, body_ache[cases$aic_symptom_bone_pains==1] <- 1)
+      table(cases$body_ache)      
+  
       ses$heart_rate<-    as.numeric(as.character(cases$heart_rate))
     cases$temp<-    as.numeric(as.character(cases$temp))
-    symptom_vars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate")
-    symptom_factorVars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache")
+    symptom_vars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "nausea_vomitting")
+    symptom_factorVars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache","nausea_vomitting")
     
     symptoms_tableOne <- CreateTableOne(vars = symptom_vars, factorVars = symptom_factorVars, strata = "strata", data = cases)
     #summary(symptoms_tableOne)
-    cases$aic_symp
     print(symptoms_tableOne, 
           exact = c(
-            "aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "temp", "outcome_hospitalized"
+            "aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "temp", "outcome_hospitalized","nausea_vomitting"
           ),
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)

@@ -183,10 +183,18 @@ symptoms<-symptoms[ , (names(symptoms) %in% aic_symptom_)]
 symptoms <-as.data.frame(sapply(symptoms, as.numeric.factor))
 
 #collapse the symptoms that are the same.
-symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1] <- 1)
-symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_seizures==1] <- 1)
+symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==0|symptoms$aic_symptom_seizures==0] <- 0)
+symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1|symptoms$aic_symptom_seizures==1] <- 1)
 
 symptoms$bleeding<-NA
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_nose==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_urine==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_stool==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_vomit==0] <- 0)
+symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bruises==0] <- 0)
+
 symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
 symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bleeding_gums==1] <- 1)
 symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_nose==1] <- 1)
@@ -196,13 +204,19 @@ symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bloody_vomit==1] <- 1
 symptoms <- within(symptoms, bleeding[symptoms$aic_symptom_bruises==1] <- 1)
 
 symptoms$body_ache<-NA
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_general_body_ache==0] <- 0)
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==0] <- 0)
+symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==0] <- 0)
+
 symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_general_body_ache==1] <- 1)
 symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_muscle_pains==1] <- 1)
 symptoms <- within(symptoms, body_ache[symptoms$aic_symptom_bone_pains==1] <- 1)
 table(symptoms$body_ache)
 variable.names(symptoms)
+
 symptoms$nausea_vomitting<-NA
-symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==1|symptoms$aic_symptom_vomiting| symptoms$aic_symptom_bloody_vomit==1] <- 1)
+symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==0|symptoms$aic_symptom_vomiting==0| symptoms$aic_symptom_bloody_vomit==0] <- 0)
+symptoms <- within(symptoms, nausea_vomitting[symptoms$aic_symptom_nausea==1|symptoms$aic_symptom_vomiting==1| symptoms$aic_symptom_bloody_vomit==1] <- 1)
 
 symptoms<-symptoms[ , grepl( "aic_symptom|bleeding|body_ache|nausea_vomitting" , names(symptoms) ) ]
 symptoms$symptom_sum <- as.integer(rowSums(symptoms[ , grep("aic_symptom" , names(symptoms))], na.rm = TRUE))
