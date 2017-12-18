@@ -14,7 +14,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+#  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   library(beepr)
   beep(sound=4)
 
@@ -926,3 +926,5 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
     save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
     save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. 
     write.csv(as.data.frame(R01_lab_results), f )#export to csv
+    
+    

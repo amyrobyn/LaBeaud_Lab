@@ -4,7 +4,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
   load("R01_lab_results.david.coinfection.dataset.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
   
 # subset our data to david's cohort of aic west ---------------------------
-  R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
+  R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1" & R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
   cases<-R01_lab_results[which(R01_lab_results$Cohort=="F" | R01_lab_results$Cohort=="M" ), ]
   cases <- as.data.frame(cases)
   cases<-cases[which(cases$site=="W"), ]
@@ -301,17 +301,22 @@ library("plyr")
     table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
 
     pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
-    pedsql_paired_tableOne <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
-    summary(pedsql_paired_tableOne)
+    pedsql_unpaired_tableOne <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
+    summary(pedsql_unpaired_tableOne)
     #print table one (assume non normal distribution)
-      print(pedsql_paired_tableOne, 
+      print(pedsql_unpaired_tableOne, 
             exact = c(),
             nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
             , quote = TRUE, includeNA=TRUE)
     #print table one (assume normal distribution)
-      print(pedsql_paired_tableOne, 
+      print(pedsql_unpaired_tableOne, 
             exact = c(),
             quote = TRUE, includeNA=TRUE)
+      
+      pedsql<-cases[, grepl("person_id|pedsql|strata|hospitalized", names(cases))]
+
+      write.csv(as.data.frame(pedsql), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/pedsql.csv" )
+      
 # symptoms table ----------------------------------------------------------
       #fix the bleeding and body_ache variables to replace NA with zero.
       
@@ -370,6 +375,11 @@ library("plyr")
 # save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
 #export to csv
-  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-  f <- "david_denv_pf_cohort.csv"
-  write.csv(as.data.frame(cases), f )
+    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+    f <- "david_denv_pf_cohort.csv"
+    write.csv(as.data.frame(cases), f )
+# save and export strata and hospitalization data ----------------------------------------------------
+    david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome", names(cases))]
+    save(david_coinfection_strata_hospitalization,file="david_coinfection_strata_hospitalization.rda")
+    
+    
