@@ -25,12 +25,12 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
     beep(sound=4)  #beep when finishes.
 
 
-#save backup from today
-  currentDate <- Sys.Date() 
-  FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
-  save(vector_climate,file=FileName)
-#load most recent backup
-  load(FileName)
+    #save backup from today
+    currentDate <- Sys.Date() 
+    FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+    save(vector_climate,file=FileName)
+    #load most recent backup
+    load(FileName)
 
 # descriptives ------------------------------------------------------------
 describe(vector_climate) 

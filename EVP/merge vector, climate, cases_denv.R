@@ -4,15 +4,15 @@ library(lubridate)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- built environment/data")
 # import data -------------------------------------------------------------
 
-  #merge vector, climate, cases by day/month/year
-  load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate.rda")
+#merge vector, climate, cases by day/month/year
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate/MonthlyClimate.rda")
 
-  load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/vector.rda")
-  load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/Monthlyvector.rda")
+load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/vector.rda")
+load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/Monthlyvector.rda")
   
   load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
-
-# merge data -------------------------------------------------------------
+  
+  # merge data -------------------------------------------------------------
   vector$date_bg <-ymd(vector$date_bg)
   class(vector$date_bg)
   vector$month_bg <- as.yearmon(vector$date_bg)
@@ -46,16 +46,16 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/amy- b
   denv <- ddply(R01_lab_results, .(month_year, study_site),
                 summarise, infected_denv_stfd_monthly = sum(infected_denv_stfd, na.rm = TRUE))
   chikv <- ddply(R01_lab_results, .(month_year, study_site),
-                summarise, infected_chikv_stfd_monthly = sum(infected_chikv_stfd, na.rm = TRUE))
+                 summarise, infected_chikv_stfd_monthly = sum(infected_chikv_stfd, na.rm = TRUE))
   
   denv <- within(denv, infected_denv_stfd_monthly[is.na(denv$month_year)] <- 0)
   denv <-denv[which(!is.na(denv$month_year)), ]
   denv$month_year<-as.Date(denv$month_year)
-#lag vectors by two weeks  
+  #lag vectors by two weeks  
   Monthlyvector$month_year<-as.Date(Monthlyvector$month_year)
   Monthlyvector$month_year_lag<-Monthlyvector$month_year-31
-
-#lag rain by one month  
+  
+  #lag rain by one month  
   MonthlyClimate$month_year<-as.Date(MonthlyClimate$month_year)
   MonthlyClimate$month_year_lag<-MonthlyClimate$month_year-93
 
