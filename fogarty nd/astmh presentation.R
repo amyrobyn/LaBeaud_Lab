@@ -18,7 +18,24 @@ chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_si
 currentDate <- Sys.Date() 
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 save(chikv_nd,file=FileName)
-#load("chikv_nd 2017-11-01 .rda")
+
+# table one ---------------------------------------------------------------
+chikv_nd$mother_igg<-chikv_nd$result_mother
+chikv_nd <- within(chikv_nd, mother_igg[result_mother==98|result_mother==99|result_mother==100 ] <- NA)
+
+chikv_nd$child_igg<-chikv_nd$result_child
+chikv_nd <- within(chikv_nd, child_igg[child_igg==98|child_igg==99|child_igg==100 ] <- NA)
+
+chikv_nd <- within(chikv_nd, alcohol[alcohol==99] <- NA)
+
+vars<-c("race", "mother_age","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
+factor<-c("race","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
+table1_chikv_child <- CreateTableOne(vars = vars, factor=factor, strata = "child_igg", data = chikv_nd)
+table1_chikv_mother <- CreateTableOne(vars = vars, factor=factor, strata = "mother_igg", data = chikv_nd)
+
+
+print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score"), quote = TRUE, includeNA=TRUE)
+
 
 #internda by child result
 # tables ------------------------------------------------------------------

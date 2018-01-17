@@ -9,7 +9,7 @@ library(plotly)
 
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
-ds<-read.csv("ZikaPregnancyCohort_DATA_2018-01-09_1651 (1).csv")
+ds<-read.csv("ZikaPregnancyCohort_DATA_2018-01-16_1556.csv")
 
 
 #split data into mom and child then remerge by id
@@ -73,14 +73,22 @@ ds <- within(ds, microcephaly[zhc < -2] <- "mild")
 ds <- within(ds, microcephaly[zhc < -3] <- "severe")
 table(ds$microcephaly)
 
+
 # table one children ------------------------------------------------------
 library("tableone")
 vars <- c("zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","child_calculated_age","gender","mean_hc")
 factorVars <- c("zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","gender")
 microcephaly_table<-CreateTableOne(vars = vars, factorVars = factorVars, strata = "microcephaly", data = ds)
-
 table_one<-CreateTableOne(vars = vars, factorVars = factorVars, data = ds)
 (7/151)*100
+# table one moms ------------------------------------------------------
+
+library("tableone")
+ds$medical_conditions___6
+
+vars <- c("race","parish","occupation","education","marrital_status","mothers_age_calc","medical_conditions___6","medical_conditions___10","cohort___1","cohort___2","cohort___3")
+factorVars <- c("parish","race","occupation","education","marrital_status","medical_conditions___6","medical_conditions___10","cohort___1","cohort___2","cohort___3")
+table_1_moms<-CreateTableOne(vars = vars, factorVars = factorVars, data = ds)
 
 # flowchart ---------------------------------------------------------------
 library("DiagrammeR")#install.packages("DiagrammeR")
@@ -88,8 +96,8 @@ library("DiagrammeR")#install.packages("DiagrammeR")
 mermaid("
   graph TB;
         A(Pregnancy<br> Cohort)-->B(321)
-        C(Febrile Cohort)-->D(190<br> xx%preg)
-        D(190<br> xx%preg)--> F(30 Pregnant<br> women<br> 4 PCR ZIKV +)
+        C(Febrile Cohort)-->D(678<br> 27.5% pregnant)
+        D(678<br> 27.5% pregnant)--> F(30 Pregnant<br> women<br> 4 PCR ZIKV +)
         B(321)--> E(125 Followed up<br> 3 PCR ZIKV +)
         E(125 Followed up<br> 3 PCR ZIKV +)-->G(383 moms) 
         F(30 Pregnant<br> women)-->G(383 moms) 

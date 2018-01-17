@@ -14,7 +14,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-#  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   library(beepr)
   beep(sound=4)
 
