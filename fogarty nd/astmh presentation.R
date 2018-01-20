@@ -35,7 +35,9 @@ table1_chikv_mother <- CreateTableOne(vars = vars, factor=factor, strata = "moth
 
 
 print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score"), quote = TRUE, includeNA=TRUE)
-
+library(lattice)
+bwplot(as.factor(chikv_nd$mother_igg)~as.factor(chikv_nd$education), data = chikv_nd)
+table(as.factor(chikv_nd$mother_igg),as.factor(chikv_nd$education))
 
 #internda by child result
 # tables ------------------------------------------------------------------
@@ -50,6 +52,8 @@ print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cogniti
   print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score"), quote = TRUE, includeNA=TRUE)
   
 
+# child table one ---------------------------------------------------------
+  
 # tested both mom and baby-----------------------------------------------------------------
 cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
 
@@ -561,4 +565,19 @@ print(complications.by.exposure_3d, quote = TRUE)
   
   table1_internda_exposed <- CreateTableOne(vars = vars_internda, strata = "preg_chikvpos", data = cohort)
   table1_internda_exposed
+  
+  
+  vars <- c("height_child", "weight", "childs_age","gender","preg_chikvpos")
+  factorVars <- c("gender","preg_chikvpos")
+  chikv_kids<-CreateTableOne(vars = vars, factorVars = factorVars, data = cohort)
+  chikv_kids <-print(chikv_kids, nonnormal = c("height_child", "weight","childs_age"), exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+  ## Save to a CSV file
+  write.csv(chikv_kids, file = "chikv_kids.csv")
+
+  vars <- c("height_child", "weight", "childs_age","gender")
+  factorVars <- c("gender")
+  chikv_exposure_kids<-CreateTableOne(vars = vars, factorVars = factorVars, strata="preg_chikvpos", data = cohort)
+  chikv_exposure_kids <-print(chikv_exposure_kids, nonnormal = c("height_child", "weight","childs_age"), exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+  ## Save to a CSV file
+  write.csv(chikv_exposure_kids, file = "chikv_exposure_kids.csv")
   

@@ -1,53 +1,55 @@
 library("plyr")
 library(redcapAPI)
 library(REDCapR)
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/climate")
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
 # import climate data -------------------------------------------------------------
-  Redcap.token <- readLines("api.token.climate.txt") # Read API token from folder
+  Redcap.token <- readLines("api.key.txt") # Read API token from folder
   REDcap.URL  <- 'https://redcap.stanford.edu/api/'
   rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-#  climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
-#  save(climate,file="climate.rda")
-# load climate data -------------------------------------------------------------
-  load("climate.rda")
-  write.csv(as.data.frame(climate), "climate.csv")
+  #climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
+  #save backup from today
+  currentDate <- Sys.Date() 
+  FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+  save(vector_climate,file=FileName)
+  #load most recent backup
+  load(FileName)
+  climate<-vector_climate
+  
   climate$month_collected <- as.yearmon(climate$date_collected)
+  table(climate$month_collected)
   
   #format date
     library(zoo)
     library(lubridate)
-  climate$date_collected<-ymd(climate$date_collected)
   climate$date_collected<-as.Date(climate$date_collected)
+  climate$date_collected<-ymd(climate$date_collected)
+  
   #remove outliers
   climate <-climate[which(climate$rainfall_hobo<=120), ]
   
 #plot climate
   library(plotly)
   plot_hobo<-plot_ly(climate, x = ~date_collected, y = ~rainfall_hobo, type = 'scatter', mode="lines", name = 'rainfall hobo')%>%
+            add_trace(y = ~temp_max_hobo, name = 'Max Temp Hobo',type = 'scatter', mode="lines", fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
+            add_trace(y = ~temp_min_hobo, name = 'Min Temp Hobo',type = 'scatter', mode="lines",fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
             add_trace(y = ~temp_mean_hobo, name = 'Mean Temp Hobo',type = 'scatter', mode="lines", yaxis = "y2") %>%
-            add_trace(y = ~temp_max_hobo, name = 'Max Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
-            add_trace(y = ~temp_min_hobo, name = 'Min Temp Hobo',mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2") %>%
+    
             #add_trace(y = ~rh_mean_hobo, name = 'rh_mean_hobo',type = 'scatter',mode="lines") %>%
             #add_trace(y = ~climate$dewpt_mean_hobo, name = 'dewpt_mean_hobo',type = 'scatter',mode="lines") %>%
-            layout(title = 'Total Aedes aegypti, temperature, and rainfall in Kenya 2014-2017',
+            layout(title = 'Temperature, and rainfall in Kenya 2014-2017',
                              xaxis = list(title = "Date"),
-                             yaxis = list(side = 'left', title = 'Temp (C)', showgrid = FALSE, zeroline = TRUE), barmode='relative',
+                             yaxis = list(side = 'left', title = 'Precipitation (mm)', showgrid = FALSE, zeroline = TRUE), barmode='relative',
                              yaxis2 = list(side = 'right', overlaying = "y", title = 'Mean temperature (degrees C)', 
-                                           showgrid = FALSE, zeroline = FALSE, range = c(15, 33)))
-  
+                                           showgrid = FALSE, zeroline = FALSE))
+
   #   add_trace(data=temp, x = ~Date, y = ~upper, name = 'Max temp', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2")%>%
   #   add_trace(data=temp, x = ~Date, y = ~lower, name = 'Min temp', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2")%>%
   
   # dates -------------------------------------------------------------
-  climate$month_year_lag<-climate$date_collected-30
-  climate$month_year_lag<-as.yearmon(climate$month_year_lag)
-  climate$month_year<-as.yearmon(climate$date_collected)
-  climate$month_year<-as.Date(climate$month_year)
-  climate$month_year_lag<-as.yearmon(climate$month_year_lag)
-  climate$month_year_lag<-as.Date(climate$month_year_lag)
-  
-  climate <-climate[which(!is.na(climate$month_year_lag)), ]
-  
+  climate$date_lag<-climate$date_collected-30
+  climate$date_lag<-as.Date(climate$date_lag)
+  table(climate$date_lag)
+
 # save climate data -------------------------------------------------------------
   save(climate,file="climate.rda")
 # monthly summary by site:chulaimbo -------------------------------------------------------------

@@ -76,11 +76,24 @@ table(ds$microcephaly)
 
 # table one children ------------------------------------------------------
 library("tableone")
-vars <- c("zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","child_calculated_age","gender","mean_hc")
+ds$mean_length
+table(ds$ever_had_zikv)
+vars <- c("zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","child_calculated_age","gender","mean_hc","mean_weight","mean_length")
 factorVars <- c("zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","gender")
 microcephaly_table<-CreateTableOne(vars = vars, factorVars = factorVars, strata = "microcephaly", data = ds)
-table_one<-CreateTableOne(vars = vars, factorVars = factorVars, data = ds)
-(7/151)*100
+microcephaly_table <-print(microcephaly_table, nonnormal = c("child_calculated_age", "mean_weight"), exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+## Save to a CSV file
+write.csv(microcephaly_table, file = "microcephaly_table.csv")
+
+
+vars <- c("microcephaly","zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","child_calculated_age","gender","mean_hc","mean_weight","mean_length")
+factorVars <- c("microcephaly","zika_pcr_pos","ever_had_zikv","zika_diag","zika_diag_preg","pregnant","confirmed_blood_test","trimester","gender")
+zika_kids<-CreateTableOne(vars = vars, factorVars = factorVars, data = ds)
+zika_kids <-print(zika_kids, nonnormal = c("child_calculated_age", "mean_weight"), exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+## Save to a CSV file
+write.csv(zika_kids, file = "zika_kids.csv")
+
+
 # table one moms ------------------------------------------------------
 
 library("tableone")
