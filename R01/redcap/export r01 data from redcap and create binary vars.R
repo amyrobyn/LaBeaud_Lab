@@ -388,6 +388,9 @@ table(R01_lab_results$denv_chikv_result_pcr)
   table(R01_lab_results$chikv_result_ufi)
 #UFI DENV
   table(R01_lab_results$denv_result_ufi)
+#UFI DENV AND chikv
+  table(R01_lab_results$denv_result_ufi, R01_lab_results$chikv_result_ufi, exclude = NULL)
+  
 #UFI DENV or chikv
   R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 0|R01_lab_results$chikv_result_ufi==0] <- 0
   R01_lab_results$denv_chikv_result_ufi[R01_lab_results$denv_result_ufi == 1|R01_lab_results$denv_result_ufi==1] <- 1

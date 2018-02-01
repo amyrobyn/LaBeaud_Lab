@@ -38,6 +38,7 @@ print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cogniti
 library(lattice)
 bwplot(as.factor(chikv_nd$mother_igg)~as.factor(chikv_nd$education), data = chikv_nd)
 table(as.factor(chikv_nd$mother_igg),as.factor(chikv_nd$education))
+pairwise.t.test(as.factor(chikv_nd$education), chikv_nd$mother_igg, p.adjust="bonferroni", na.rm=TRUE)
 
 #internda by child result
 # tables ------------------------------------------------------------------
@@ -143,7 +144,7 @@ table(cohort$trimester)
 # trimester ---------------------------------------------------------------
 cohort$trimester_lab <- factor(cohort$trimester,levels = c(1,2,3,4),labels = c("1st", "2nd", "3rd", "Delivery"))
 cohort$trimester<-as.factor(cohort$trimester)
-
+table(cohort$preg_chikvpos)
 trimester_infection<-as.data.frame(with(cohort, table(trimester_lab)))
 trimester_infection$Freq
 
@@ -153,8 +154,8 @@ plot_ly(trimester_infection, y=~Freq, x=~trimester_lab, type="bar")%>%
   layout(title="Trimester of CHIKV Infection", xaxis=list(title="Trimester"), yaxis=list(title="Count"),
          font=list(size=28),
          margin=margin)
-
 61+65+49+1
+table(cohort$trimester)
 # moms elisa result -------------------------------------------------------
 colors <- c('rgb(128,133,133)','rgb(211,94,96)' )
 
@@ -164,7 +165,7 @@ result_mother<-as.data.frame(table(chikv_nd$result_mother))
 result_mother$Var1 <- factor(result_mother$Var1,levels = c(0,1),labels = c("Neg", "Pos"))
 table(chikv_nd$result_mother)
 
-360+78
+100+426
 plot_ly(result_mother, labels = ~Var1, values = ~Freq,type = 'pie',
         textposition = 'inside',
         textinfo = 'label+percent',
@@ -204,6 +205,8 @@ result_child <- ddply(cohort, .(preg_chikvpos),
                       child_infection_sd = sd(result_child, na.rm = TRUE)
 )
 
+table(cohort$result_child)
+16+365
 table(cohort$preg_chikvpos, cohort$result_child)
 
 
@@ -215,14 +218,14 @@ plot_ly(result_child, x= ~preg_chikvpos, y = ~child_infection_rate, type = "bar"
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = TRUE, title="",  tickfont = list(size=24)),
          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = TRUE,tickformat = "%", title="Infants Infected", titlefont=list(size =24),  tickfont = list(size=24)) ,
          margin=margin)
-table(cohort$result_child, cohort$preg_chikvpos)
+table(cohort$preg_chikvpos, cohort$result_child)
 8+165
 5+126
 (5/131)*100
 
 (8/173)*100
 
-prop.test(table(cohort$result_child,cohort$preg_chikvpos))
+prop.test(table(cohort$preg_chikvpos, cohort$result_child))
 
 
 # data cleaning --------------------------------------------------------
@@ -324,9 +327,9 @@ symptoms <- ddply(cases, .(trimester),
                   hand_weak  = mean(symptoms___34, na.rm = TRUE),
                   hand_weak_sd = sd(symptoms___34, na.rm = TRUE))
 # symptoms graph by trimester----------------------------------------------------------------
-symptoms<-as.data.frame(symptoms[which(symptoms$trimester!=4), ])
+#symptoms<-as.data.frame(symptoms[which(symptoms$trimester!=4), ])
 
-symptoms$trimester <- factor(symptoms$trimester,levels = c(1,2,3),labels = c("1st", "2nd", "3rd"))
+symptoms$trimester <- factor(symptoms$trimester,levels = c(1,2,3,4),labels = c("1st", "2nd", "3rd","delivery"))
 
 plot_ly(symptoms)%>%
   add_trace(x=~trimester, y=~joint, type="bar", name="joint",error_y = ~list(value = joint_sd))%>%
@@ -349,6 +352,8 @@ plot_ly(symptoms)%>%
 # symptoms data cleaning by pregnancy----------------------------------------------------------------
 cases<-as.data.frame(chikv_nd[which(chikv_nd$result_mother==1&(chikv_nd$pregnant==1|chikv_nd$pregnant==0)), ])
 cases$pregnant <- factor(cases$pregnant,levels = c(0,1),labels = c("Not", "Pregnancy"))
+
+table(cases$pregnant)
 
 symptoms <- ddply(cases, .(pregnant), 
                   summarise, 
@@ -422,29 +427,28 @@ symptoms <- ddply(cases, .(pregnant),
                   hand_weak_sd = sd(symptoms___34, na.rm = TRUE))
 
 # symptoms graph by preg----------------------------------------------------------------
-table(chikv_nd$trimester)
 plot_ly(symptoms)%>%
-  add_trace(x=~pregnant, y=~joint, type="bar", name="joint pain**",error_y = ~list(value = joint_sd))%>%
+  add_trace(x=~pregnant, y=~joint, type="bar", name="joint pain*",error_y = ~list(value = joint_sd))%>%
   add_trace(x=~pregnant, y=~fever, type="bar", name="fever",error_y = ~list(value = fever_sd))%>%
   add_trace(x=~pregnant, y=~rash, type="bar", name="rash",error_y = ~list(value = rash_sd))%>%
-  add_trace(x=~pregnant, y=~itch, type="bar", name="itch",error_y = ~list(value = itch_sd))%>%
+  add_trace(x=~pregnant, y=~itch, type="bar", name="itch*",error_y = ~list(value = itch_sd))%>%
   add_trace(x=~pregnant, y=~Generalized_body_ache, type="bar", name="Generalized body ache",error_y = ~list(value = Generalized_body_ache_sd))%>%
-  add_trace(x=~pregnant, y=~headache, type="bar", name="headache**",error_y = ~list(value = headache_sd))%>%
+  add_trace(x=~pregnant, y=~headache, type="bar", name="headache",error_y = ~list(value = headache_sd))%>%
   add_trace(x=~pregnant, y=~chills, type="bar", name="chills*",error_y = ~list(value = chills_sd))%>%
   add_trace(x=~pregnant, y=~muscle, type="bar", name="muscle pain***",error_y = ~list(value = muscle_sd))%>%
-  add_trace(x=~pregnant, y=~eye_pain, type="bar", name="pain behnd eye",error_y = ~list(value = eye_pain_sd))%>%
-  add_trace(x=~pregnant, y=~appetite, type="bar", name="loss of appetite**",error_y = ~list(value = appetite_sd))%>%
-  add_trace(x=~pregnant, y=~vomit, type="bar", name="vomitting**",error_y = ~list(value = vomit_sd))%>%
-  add_trace(x=~pregnant, y=~bone, type="bar", name="bone pain*",error_y = ~list(value = bone_sd))%>%
-  add_trace(x=~pregnant, y=~diarrhea, type="bar", name="dhiarrea*",error_y = ~list(value = diarrhea_sd))%>%
-  add_trace(x=~pregnant, y=~cough, type="bar", name="cough*",error_y = ~list(value = cough_sd))%>%
+  add_trace(x=~pregnant, y=~eye_pain, type="bar", name="pain behnd eye*",error_y = ~list(value = eye_pain_sd))%>%
+  add_trace(x=~pregnant, y=~appetite, type="bar", name="loss of appetite***",error_y = ~list(value = appetite_sd))%>%
+  add_trace(x=~pregnant, y=~vomit, type="bar", name="vomiting***",error_y = ~list(value = vomit_sd))%>%
+  add_trace(x=~pregnant, y=~bone, type="bar", name="bone pain***",error_y = ~list(value = bone_sd))%>%
+  add_trace(x=~pregnant, y=~diarrhea, type="bar", name="diarrhea**",error_y = ~list(value = diarrhea_sd))%>%
+  add_trace(x=~pregnant, y=~cough, type="bar", name="cough",error_y = ~list(value = cough_sd))%>%
   add_trace(x=~pregnant, y=~adbominal, type="bar", name="adbominal pain",error_y = ~list(value = adbominal_sd))%>%
-  layout(
+  layout(title ="Symptoms by timing of infection",
     xaxis = list(titlefont=list(size=34),title = "When infected", tickfont = list(size=24)),
     yaxis = list(titlefont=list(size=34),tickfont = list(size=24), title = 'Subjects',tickformat="%", showgrid = FALSE, zeroline = FALSE),
     margin=margin,
-    legend=list(font=list(size=24), orientation="v"))
-
+    legend=list(font=list(size=24), orientation="v",)
+    )
 # load dummy compmlications and merge with full database ------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyanka- fogarty nd")
 load("complications.dum.rda")
@@ -521,7 +525,7 @@ cohort$height_child <- rowMeans(cohort[names], na.rm=TRUE)
 summary(cohort$height_child)
 
 # tables ------------------------------------------------------------------
-cohort <- within(cohort, trimester[trimester==4 ] <- NA)
+#cohort <- within(cohort, trimester[trimester==4 ] <- NA)
 vars<-c("labour_duration","symptom_duration", "pregnancy_illness","complications","after_birth_problems","first_few_months_illness","parish","other_pregnancy_illness","hospitalized_ever", "trimester","race", "mom_age", "education", "marrital_status", "monthly_income", "medical_conditions___6", "medical_conditions___10", "alcohol", "smoking", "birth_time", "mode_of_delivery", "gestational_age_weekfrac",  "result_child","abp__sum","compl__sum","preg_ill_sum","ffm__sum","height_child","weight","child_compl_dum","specify_other_pregnancy_illness")
 vars2<-c("symptoms___1", "symptoms___2", "symptoms___3", "symptoms___4", "symptoms___5", "symptoms___6", "symptoms___7", "symptoms___8", "symptoms___9", "symptoms___10", "symptoms___11", "symptoms___12", "symptoms___13", "symptoms___14", "symptoms___15", "symptoms___16", "symptoms___17", "symptoms___18", "symptoms___19", "symptoms___20", "symptoms___21", "symptoms___22", "symptoms___23", "symptoms___24", "symptoms___25", "symptoms___26", "symptoms___27", "symptoms___28", "symptoms___29", "symptoms___30", "symptoms___31", "symptoms___32", "symptoms___33", "symptoms___34","child_compl_dum","mother_compl_dum","specify_other_pregnancy_illness")
 factorVars<-c("pregnancy_illness","complications","after_birth_problems","first_few_months_illness","parish","other_pregnancy_illness","hospitalized_ever", "trimester","race", "education", "marrital_status", "monthly_income", "medical_conditions___6", "medical_conditions___10", "alcohol", "smoking", "birth_time", "mode_of_delivery","result_child","specify_other_pregnancy_illness")
@@ -562,7 +566,12 @@ print(complications.by.exposure_3d, quote = TRUE)
   vars_internda<-c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score")
   
   cohort$mean_receptive_language_score<-  as.numeric(cohort$mean_receptive_language_score)
-  
+  cohort$trimester4<-NA
+  cohort <- within(cohort, trimester4[cohort$trimester!=4 ] <- 0)
+  cohort <- within(cohort, trimester4[cohort$trimester==4 ] <- 1)
+  table1_internda <- CreateTableOne(vars = vars_internda, data = cohort)
+  table1_internda_trimester4 <- CreateTableOne(vars = vars_internda, strata = "trimester4", data = cohort)
+  print(table1_internda_trimester4, exact =vars_internda)
   table1_internda_exposed <- CreateTableOne(vars = vars_internda, strata = "preg_chikvpos", data = cohort)
   table1_internda_exposed
   

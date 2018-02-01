@@ -73,6 +73,7 @@ ds <- within(ds, microcephaly[zhc < -2] <- "mild")
 ds <- within(ds, microcephaly[zhc < -3] <- "severe")
 table(ds$microcephaly)
 
+table(ds$surveyor_surname.x,ds$patent_anus)
 
 # table one children ------------------------------------------------------
 library("tableone")
@@ -157,11 +158,26 @@ factorVars <- c("parish","race", "gender",  "child_delivery", "delivery_type", "
                 "galant_reflex")
 
 ## Create a variable list. Use dput(names(pbc))
-vars <- c("mean_weight","mean_length","mean_hc","temperature","heart_rate","resp_rate", "parish","race", "gender", "apgar_one", "apgar_ten", "opv_vaccine", "vac_utd",  "temperature", "heart_rate", "resp_rate", "color___1", "color___2", "color___3", "color___4", "color___5", "color___6", "cry", "tone", "moving_limbs", "ant_fontanelle", "sutures", "facial_dysmoph", "cleft", "red_reflex", "cap_refill", "heart_sounds", "murmur", "breath_sounds", "breath_noises___1", "breath_noises___2", "breath_noises___3", "breath_noises___0", "breath_noises___99", "resp_effort___0", "resp_effort___1", "resp_effort___2", "resp_effort___99", "bowel_sounds", "hernia", "organomegaly___0", "organomegaly___1", "organomegaly___2", "organomegaly___99", "testes", "patent_anus", "hip_manouver", "hip_creases", "femoral_pulse", "scoliosis", "sacral_dimple", "moro", "grasp", "suck", "plantar_reflex", "galant_reflex", "ever_had_dengue")
-
+vars <- c("mean_weight","mean_length","mean_hc", "parish","race", "gender", "apgar_one", "apgar_ten", "opv_vaccine", "vac_utd",  "temperature", "heart_rate", "resp_rate", "color___1", "color___2", "color___3", "color___4", "color___5", "color___6", "cry", "tone", "moving_limbs", "ant_fontanelle", "sutures", "facial_dysmoph", "cleft", "red_reflex", "cap_refill", "heart_sounds", "murmur", "breath_sounds", "breath_noises___1", "breath_noises___2", "breath_noises___3", "breath_noises___0", "breath_noises___99", "resp_effort___0", "resp_effort___1", "resp_effort___2", "resp_effort___99", "bowel_sounds", "hernia", "organomegaly___0", "organomegaly___1", "organomegaly___2", "organomegaly___99", "testes", "patent_anus", "hip_manouver", "hip_creases", "femoral_pulse", "scoliosis", "sacral_dimple", "moro", "grasp", "suck", "plantar_reflex", "galant_reflex", "ever_had_dengue")
 cases<-subset(ds, pregnant=="1")
 ## Create Table 1 stratified by trt (omit strata argument for overall table)
-tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "symptomatic", data = cases)
+tableOne_symptomatic <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "symptomatic", data = cases)
+tableOne_zika_pcr <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "zika_pcr_pos", data = cases)
+
+tableOne_zika_pcr <- print(tableOne_zika_pcr, nonnormal = vars, exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+## Save to a CSV file
+write.csv(tableOne_zika_pcr, file = "tableOne_zika_pcr.csv")
+
+table(cases$zika_pcr_pos)
+table(cases$patent_anus, cases$zika_pcr_pos)
+table(cases$patent_anus, cases$symptomatic)
+
+tableOne_symptomatic <- print(tableOne_symptomatic, nonnormal = vars, exact = factorVars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+## Save to a CSV file
+write.csv(tableOne_symptomatic, file = "tableOne_symptomatic.csv")
+
+
+table(cases$zika_pcr_pos)
 ## Just typing the object name will invoke the print.TableOne method
 ## Tests are by oneway.test\t.test for continuous, chisq.test for categorical
 tableOne
@@ -170,8 +186,8 @@ summary(tableOne)
 print(tableOne, 
       nonnormal = c("mean_weight","mean_length","mean_hc","temperature","heart_rate","resp_rate",  "neonatal_resusitation", "cong_abnormal",  "maternal_resusitation", "child_referred",  "apgar_one", "apgar_ten"),
       exact = c("ever_had_dengue", "parish","race", "gender",  "child_delivery", "delivery_type", "outcome_of_delivery",  "opv_vaccine", "vac_utd", "color___1", "color___2", "color___3", "color___4", "color___5", "color___6", "cry", "tone", "moving_limbs", "ant_fontanelle", "sutures", "facial_dysmoph", "cleft", "red_reflex", "cap_refill", "heart_sounds", "murmur", "breath_sounds", "bowel_sounds", "hernia", "color___1", "color___2", "color___3", "color___4", "color___5", "color___6",  "breath_noises___1", "breath_noises___2", "breath_noises___3", "breath_noises___0", "breath_noises___99", "resp_effort___0", "resp_effort___1", "resp_effort___2", "resp_effort___99",  "organomegaly___0", "organomegaly___1", "organomegaly___2", "organomegaly___99",  "testes",  "patent_anus", "hip_manouver", "hip_creases", "femoral_pulse", "scoliosis", "sacral_dimple", "moro", "grasp", "suck", "plantar_reflex", "galant_reflex"),
-      cramVars = "neonatal_resusitation, cong_abnormal,  maternal_resusitation, child_referred,  opv_vaccine, vac_utd, color___1, color___2, color___3, color___4, color___5, color___6,  breath_noises___1, breath_noises___2, breath_noises___3, breath_noises___0, breath_noises___99, resp_effort___0, resp_effort___1, resp_effort___2, resp_effort___99,  organomegaly___0, organomegaly___1, organomegaly___2, organomegaly___99", quote = TRUE)
-
+      quote = TRUE)
+table(cases$zika_pcr_pos)
 
 #i don't have the variable for "hospitalization due to ZIKV and\or Guillain-Barré syndrome"
 
@@ -195,9 +211,3 @@ table(ds$hospitalized_denv)
                                                                                                                                                                                                    
 f <- "ds.csv"
 write.csv(as.data.frame(ds), f )
-
-
-tetracore
-pos
-maybe
-neg
