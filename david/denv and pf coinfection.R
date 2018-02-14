@@ -1,5 +1,5 @@
 # import data -------------------------------------------------------------
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
 #load data that has been cleaned previously
   load("R01_lab_results.david.coinfection.dataset.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
   
@@ -94,7 +94,8 @@ library("dplyr")
     table(cases$tested_malaria, exclude = NULL)#malaria tested = 2189 NA = 586
     table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1812 NA = 963
     table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 166 not malaria tested but denv tested. 321 malaria tested but not denv tested. 582 tested for neither. 1625 tested for both
-    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1761 teste for both
+    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1761 tested for both
+    
     denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#538
     denv_not_tested_malaria_tested <-  sum(is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#351
     denv_tested_malaria_not_tested <-  sum(!is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#52
@@ -144,6 +145,26 @@ library("dplyr")
   
   table(cases$malaria_pf)#pf pos/neg
   table(cases$malaria)#malaria pos/neg
+  #1. Of the 1816, what was the distribution of Pf vs other species? Basically, I want to say this: "In our cohort, among the subjects with malaria whose Plasmodium species could be identified by blood smear microscopy, X of Y (%) were identified as Pf. P. malariae was identified in 7 subjects with malaria."
+  table(cases$malaria)  
+  table(cases$malaria_pf)  
+
+  non_id_malaria<-cases[which(cases$malaria==1 & is.na(cases$malaria_pf)), ]
+  non_id_malaria <-non_id_malaria[, grepl("person_id|redcap|malaria", names(non_id_malaria) ) ]
+  f <- "non_id_malaria.csv"
+  write.csv(as.data.frame(non_id_malaria), f )
+  
+  non_pf<-cases[which(cases$malaria==1 & cases$microscopy_malaria_pm_kenya___1==1& cases$microscopy_malaria_pf_kenya___1==0), ]
+  non_pf <-non_pf[, grepl("person_id|redcap|malaria", names(non_pf) ) ]
+  f <- "non_pf.csv"
+  write.csv(as.data.frame(non_pf), f )
+  
+  ten_p_pf<-cases[which(cases$malaria_pf==1), ]
+  ten_p_pf<-ten_p_pf[sample(nrow(ten_p_pf), 80), ]
+  ten_p_pf <-ten_p_pf[, grepl("person_id|redcap|malaria", names(ten_p_pf) ) ]
+  f <- "ten_p_pf.csv"
+  write.csv(as.data.frame(ten_p_pf), f )
+  
   
 # pf malaria strata------------------------------------------------------------------------
   table(cases$malaria_pf, cases$infected_denv_stfd)
@@ -153,7 +174,6 @@ library("dplyr")
   denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#497
   denv_neg_pf_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==1, na.rm = TRUE)#719
   
-
 #repate analyasis for both pf and malaria
       
     #create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
@@ -177,6 +197,7 @@ library("dplyr")
 
       cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
       table(cases$strata)  
+      table(cases$strata_all)  
 #save dataset------------------------------------------------------------------------
       
 save(cases,file="cases.rda")
@@ -274,6 +295,7 @@ library("plyr")
     dem_factorVars <- c("City")
     dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
     dem_tableOne <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
+    
     #summary(dem_tableOne)
     print(dem_tableOne, exact = c("id_city", "gender_all"), nonnormal=c("aic_calculated_age"), quote = TRUE, includeNA=TRUE)
     
@@ -297,6 +319,15 @@ library("plyr")
   #summary(mosq_tableOne)
     print(mosq_tableOne, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = TRUE, includeNA=TRUE)
 
+    
+#2. Do you think we could do specific sub-analyses? For example, can we ask specifically just what was the difference in SES and mosquito habits in the Pf +DENV/Pf subjects?
+    pf_pos<-cases[which(cases$strata=="pf_pos_&_denv_neg"|cases$strata=="pf_pos_&_denv_pos"), ]
+    dem__mosq_vars=c("gender_all","aic_calculated_age","ses_sum", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
+    dem_mosq_factorVars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","gender_all") 
+
+    pf_city_dem_tableOne <- CreateTableOne(vars = dem__mosq_vars, factorVars = dem_mosq_factorVars, strata = "City", data = pf_pos)
+    
+#3.	Table 1 info for PE, and outcomes analysis
 # pedsql paired data ------------------------------------------------------
     table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
 
@@ -357,7 +388,7 @@ library("plyr")
       cases <- within(cases, body_ache[cases$aic_symptom_bone_pains==1] <- 1)
       table(cases$body_ache)      
   
-      ses$heart_rate<-    as.numeric(as.character(cases$heart_rate))
+    cases$heart_rate<-    as.numeric(as.character(cases$heart_rate))
     cases$temp<-    as.numeric(as.character(cases$temp))
     symptom_vars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "nausea_vomitting")
     symptom_factorVars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache","nausea_vomitting")
@@ -371,7 +402,75 @@ library("plyr")
           nonnormal=c("heart_rate", "temp")
           , quote = TRUE, includeNA=TRUE)
 
+# meds --------------------------------------------------------------------
+  cases$all_meds<-NA
+    cases$all_meds<-cases$meds_prescribed
+    
+    cases$all_meds<-tolower(cases$all_meds)
+    cases$all_meds <- gsub('  ', ' ', cases$all_meds)
+    cases$all_meds <- gsub(' ', '_', cases$all_meds)
+    
+    cases$all_meds<-gsub("chloramphenicol|teo|t.e.o|flagyl|flaggyl|ciproxin|augumentin|cefxime|ciproxin|chlamphenicol|cefixime|ciproxin|ciprofloxin|intravenous_metronidazole|nitrofurantion|ciprofloxacin|flagyla|  |gentamicin|metronidazole|floxapen|flucloxacill|trinidazole|vedrox|ampiclox|cloxacillin|ampicillin|albendaxole|albedazole|tinidazole|tetracycline|augmentin|amoxicillin|ceftriaxone|penicillian|septrin|antibiotic|ceftrizin|cotrimoxazole|cefuroxime|erythromycin|gentamycin|cipro", "antibacterial", cases$all_meds)
+    cases$all_meds<-gsub("im_quinine|artesunate|artesun|sp|quinine|coartem|quinnie|atersunate|quinnine|paludrin|quinnie|duocotecxin|pheramine|artsun|atesunate|atesa|artesinate|doxycline", "antimalarial", cases$all_meds)
+    cases$all_meds<-gsub("albendazole|abz|mebendazole|benzimidazole|diloxanide", "antihelmenthic", cases$all_meds)
+    cases$all_meds<-gsub("guaifenesin|xpen|expectants|expectant|tricoff|expectant|expectants|expectant|expectant", "expectorant", cases$all_meds)
+    cases$all_meds<-gsub("syrup|unibrolcoldcap|unibrol|tricohist|trichohist|cold_cap|ascoril", "cough", cases$all_meds)
+    cases$all_meds<-gsub( "cetrizine hydrochloride|chlorepheramine|chlore|hydrocrt|hydrocortisone|cetrizine|piriton|priton|hydroctisone_cream|hydroctisone|hydroctione|cpm|pitriton|probeta-n", "allergy", cases$all_meds)
+    cases$all_meds<-gsub("calamine_lotion|cream|lotion|eye_ointment", "topical", cases$all_meds)
+    cases$all_meds<-gsub("zinc_tablet|vitamin|vit|zinc|multisupplement|supplement|ranferon|ferrous_sulphate|mult|folic_acid|folic|ferrous|haemoton", "supplement", cases$all_meds)
+    cases$all_meds<-gsub("paracentamol|paracetamol|ibuprofen|diclofenac|calpol", "antipyretic", cases$all_meds)
+    cases$all_meds<-gsub("ketoconazole|griseofulvin|clotrimazole|clotrimazone|grisofluvin|graeofulvin|graseofulvin|greseofulvin|nystatin_oral_mouth_paint", "antifungal", cases$all_meds)
+    cases$all_meds<-gsub("voline_gel|voltaren|dinac|duclofenac", "painmed", cases$all_meds)
+    cases$all_meds<-gsub("ors|o.r.s.", "ors", cases$all_meds)
+    cases$all_meds<-gsub("iv|i.v.|ivs|i.v.s.|i.v", "iv", cases$all_meds)
+    cases$all_meds<-gsub("ventolin|ventoli|sabutanol|salbutamol|albutol", "bronchospasm", cases$all_meds)
+    cases$all_meds<-gsub("plasil", "gerd", cases$all_meds)
+    cases$all_meds<-gsub("diloxanide", "antiamoeba", cases$all_meds)
+    cases$all_meds<-gsub("admission|admitted|admit", "admit", cases$all_meds)
+    
+# dummy meds vars ---------------------------------------------------------
+    #subset meds
+    meds<-cases[, c("person_id", "redcap_event_name","all_meds", "meds_prescribed")]
+    meds <- lapply(meds, function(x) {
+      gsub("NA", "", x)
+    })
+    meds <- lapply(meds, function(x) {
+      gsub(",none", "", x)
+    })
+    meds<-as.data.frame(meds)
 
+    #create dummy vars for all meds
+    lev <- levels(factor(meds$all_meds))
+    lev <- unique(unlist(strsplit(lev, "_")))
+    mnames <- gsub(" ", "_", paste("med", lev, sep = "_"))
+    result <- matrix(data = "0", nrow = length(meds$all_meds), ncol = length(lev))
+    char.med <- as.character(meds$all_meds)
+    for (i in 1:length(lev)) {
+      result[grep(lev[i], char.med, fixed = TRUE), i] <- "1"
+    }
+    result <- data.frame(result, stringsAsFactors = TRUE)
+    colnames(result) <- mnames
+    meds <- cbind(meds,result)
+cases<-merge(meds,cases,by=c("person_id","redcap_event_name"), all=TRUE)    
+
+    cases$antiparasite <- NA
+    cases <- within(cases, antiparasite[cases$med_antihelmenthic==0|cases$med_antimalarial==0] <- 0)
+    cases <- within(cases, antiparasite[cases$med_antihelmenthic==1|cases$med_antimalarial==1] <- 1)
+    table(cases$antiparasite)
+    
+    library(stringr)
+    cases$number_meds <- str_count(cases$all_meds.x, "_")
+    cases$number_meds<-cases$number_meds+1
+    table(cases$number_meds)
+    
+    med_vars=c("number_meds","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_other","med_antipyretic")
+    med_factorVars <- c("med_antibacterial", "med_antihelmenthic","med_antimalarial","med_other","med_antipyretic")
+    med_tableOne <- CreateTableOne(vars = med_vars, factorVars = med_factorVars, strata = "strata", data = cases)
+    
+# physical exam --------------------------------------------------------------------
+    pe<-grep("aic_pe", names(cases), value=TRUE)
+    med_tableOne <- CreateTableOne(vars = pe, factorVars = pe, strata = "strata", data = cases)
+    
 # save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
 #export to csv
@@ -381,5 +480,3 @@ library("plyr")
 # save and export strata and hospitalization data ----------------------------------------------------
     david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome", names(cases))]
     save(david_coinfection_strata_hospitalization,file="david_coinfection_strata_hospitalization.rda")
-    
-    

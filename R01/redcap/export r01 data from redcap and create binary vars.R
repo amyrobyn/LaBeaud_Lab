@@ -919,6 +919,83 @@ table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$site)
 table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$rural)
 (103/(103+3184))*100#prevalence of denv urban
 (165/(165+3296))*100#prevalence of denv rural
+
+
+# meds prescribed ---------------------------------------------------------
+cases$all_meds<-NA
+cases$all_meds<-cases$meds_prescribed
+
+cases$all_meds<-tolower(cases$all_meds)
+cases$all_meds <- gsub('  ', ' ', cases$all_meds)
+cases$all_meds <- gsub(' ', '_', cases$all_meds)
+
+cases$all_meds<-gsub("chloramphenicol|teo|t.e.o|flagyl|flaggyl|ciproxin|augumentin|cefxime|ciproxin|chlamphenicol|cefixime|ciproxin|ciprofloxin|intravenous_metronidazole|nitrofurantion|ciprofloxacin|flagyla|  |gentamicin|metronidazole|floxapen|flucloxacill|trinidazole|vedrox|ampiclox|cloxacillin|ampicillin|albendaxole|albedazole|tinidazole|tetracycline|augmentin|amoxicillin|ceftriaxone|penicillian|septrin|antibiotic|ceftrizin|cotrimoxazole|cefuroxime|erythromycin|gentamycin|cipro", "antibacterial", cases$all_meds)
+cases$all_meds<-gsub("im_quinine|artesunate|artesun|sp|quinine|coartem|quinnie|atersunate|quinnine|paludrin|quinnie|duocotecxin|pheramine|artsun|atesunate|atesa|artesinate|doxycline", "antimalarial", cases$all_meds)
+cases$all_meds<-gsub("albendazole|abz|mebendazole|benzimidazole|diloxanide", "antihelmenthic", cases$all_meds)
+cases$all_meds<-gsub("guaifenesin|xpen|expectants|expectant|tricoff|expectant|expectants|expectant|expectant", "expectorant", cases$all_meds)
+cases$all_meds<-gsub("syrup|unibrolcoldcap|unibrol|tricohist|trichohist|cold_cap|ascoril", "cough", cases$all_meds)
+cases$all_meds<-gsub( "cetrizine hydrochloride|chlorepheramine|chlore|hydrocrt|hydrocortisone|cetrizine|piriton|priton|hydroctisone_cream|hydroctisone|hydroctione|cpm|pitriton|probeta-n", "allergy", cases$all_meds)
+cases$all_meds<-gsub("calamine_lotion|cream|lotion|eye_ointment", "topical", cases$all_meds)
+cases$all_meds<-gsub("zinc_tablet|vitamin|vit|zinc|multisupplement|supplement|ranferon|ferrous_sulphate|mult|folic_acid|folic|ferrous|haemoton", "supplement", cases$all_meds)
+cases$all_meds<-gsub("paracentamol|paracetamol|ibuprofen|diclofenac|calpol", "antipyretic", cases$all_meds)
+cases$all_meds<-gsub("ketoconazole|griseofulvin|clotrimazole|clotrimazone|grisofluvin|graeofulvin|graseofulvin|greseofulvin|nystatin_oral_mouth_paint", "antifungal", cases$all_meds)
+cases$all_meds<-gsub("voline_gel|voltaren|dinac|duclofenac", "painmed", cases$all_meds)
+cases$all_meds<-gsub("ors|o.r.s.", "ors", cases$all_meds)
+cases$all_meds<-gsub("iv|i.v.|ivs|i.v.s.|i.v", "iv", cases$all_meds)
+cases$all_meds<-gsub("ventolin|ventoli|sabutanol|salbutamol|albutol", "bronchospasm", cases$all_meds)
+cases$all_meds<-gsub("plasil", "gerd", cases$all_meds)
+cases$all_meds<-gsub("diloxanide", "antiamoeba", cases$all_meds)
+cases$all_meds<-gsub("admission|admitted|admit", "admit", cases$all_meds)
+
+
+# dummy meds vars ---------------------------------------------------------
+#subset meds
+meds<-cases[which(cases$id_visit > 0), c("person_id", "redcap_event_name","all_meds", "cohort", "city", "id_visit", "visit_type")]
+meds<-as.data.frame(meds)
+meds <- lapply(meds, function(x) {
+  gsub(",NA", "", x)
+})
+meds <- lapply(meds, function(x) {
+  gsub("NA", "", x)
+})
+meds <- lapply(meds, function(x) {
+  gsub(",none", "", x)
+})
+meds <- lapply(meds, function(x) {
+  gsub("none", "", x)
+})
+meds<-as.data.frame(meds)
+
+
+#create dummy vars for all meds
+meds<-as.data.frame(meds)
+meds$all_meds<-tolower(meds$all_meds)
+
+lev <- levels(factor(meds$all_meds))
+lev <- unique(unlist(strsplit(lev, "_")))
+mnames <- gsub(" ", "_", paste("med", lev, sep = "_"))
+result <- matrix(data = "0", nrow = length(meds$all_meds), ncol = length(lev))
+char.med <- as.character(meds$all_meds)
+for (i in 1:length(lev)) {
+  result[grep(lev[i], char.med, fixed = TRUE), i] <- "1"
+}
+result <- data.frame(result, stringsAsFactors = TRUE)
+colnames(result) <- mnames
+meds <- cbind(meds,result)
+
+as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
+ids <- c("person_id", "redcap_event_name", "all_meds")
+ids <- cases[ids]
+meds<-meds[ , !(names(meds) %in% "meds_")]
+meds_<-grep("meds_", names(meds), value = TRUE)
+meds<-meds[ , (names(meds) %in% meds_)]
+meds <-as.data.frame(sapply(meds, as.numeric.factor))
+meds <- cbind(meds,id)
+
+
+antiparasite <- NA
+cases<- antiparasite =0 if all_meds_antimalarial ==0|all_meds_antihelmenthic==0| all_meds_benzimidazole ==0
+cases<- antiparasite = 1 if all_meds_antimalarial ==1|all_meds_antihelmenthic==1| all_meds_benzimidazole ==1
 # save cleaned dataset ----------------------------------------------------
 R01_lab_results$gender_all = R01_lab_results$gender  # your new merged column start with gender
 R01_lab_results$gender_all[!is.na(R01_lab_results$gender_aic)] = R01_lab_results$gender_aic[!is.na(R01_lab_results$gender_aic)]  # merge with gender_aic
@@ -927,7 +1004,7 @@ table(R01_lab_results$gender_all, exclude = NULL)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
     f <- "redcap_data_cleaned.csv"
     save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
-    save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. 
+      #save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on 12/13/17 for david conifection paper.
     write.csv(as.data.frame(R01_lab_results), f )#export to csv
     
     
