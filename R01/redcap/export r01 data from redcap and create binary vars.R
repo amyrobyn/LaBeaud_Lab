@@ -443,7 +443,7 @@ table(R01_lab_results$age_group, exclude = NULL)
 #take name out of event.
   names(R01_lab_results)[names(R01_lab_results) == 'redcap_event_name'] <- 'redcap_event'
 identifiers<-grep("name|gps", names(R01_lab_results), value = TRUE)
-R01_lab_results<-R01_lab_results[ , !(names(R01_lab_results) %in% identifiers)]
+#R01_lab_results<-R01_lab_results[ , !(names(R01_lab_results) %in% identifiers)]#turn of the deidentifiers to export the u24 data. 
 names(R01_lab_results)[names(R01_lab_results) == 'redcap_event'] <- 'redcap_event_name'
 
 # incidence -----------------------------------------------------------------
@@ -479,7 +479,35 @@ table(R01_lab_results$seroc_denv_stfd_igg, R01_lab_results$id_cohort)
 table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)  
 2/685*100 #hcc seroconverters
 
-#stfd chikv igg seroconverters or PCR positives as infected.
+#prnt
+    R01_lab_results <- within(R01_lab_results, prnt_80_chikv[R01_lab_results$prnt_80_chikv =="<10"] <- 5)
+    R01_lab_results <- within(R01_lab_results, prnt_80_wnv[R01_lab_results$prnt_80_wnv ==">80"] <- 160)
+    R01_lab_results <- within(R01_lab_results, prnt_80_wnv[R01_lab_results$prnt_80_wnv =="No sample"] <- NA)
+    R01_lab_results <- within(R01_lab_results, prnt_80_denv[R01_lab_results$prnt_80_denv =="<10"] <- 5)
+    R01_lab_results <- within(R01_lab_results, prnt_80_denv[R01_lab_results$prnt_80_denv =="nd"] <- NA)
+    R01_lab_results <- within(R01_lab_results, prnt_80_wnv[R01_lab_results$prnt_80_wnv =="<10"] <- 5)
+    R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn ==">80"] <- 160)
+    R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn =="<10"] <- 5)
+    R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn =="No sample"|R01_lab_results$prnt_80_onn =="no sample"] <- NA)
+    table(R01_lab_results$prnt_80_wnv)
+    
+    R01_lab_results$prnt_result_onn<-NA
+    R01_lab_results <- within(R01_lab_results, prnt_result_onn[R01_lab_results$prnt_80_onn <10] <- 0)
+    R01_lab_results <- within(R01_lab_results, prnt_result_onn[R01_lab_results$prnt_80_onn >=10] <- 1)
+    table(R01_lab_results$prnt_result_onn)
+    R01_lab_results$prnt_result_denv<-NA
+    R01_lab_results <- within(R01_lab_results, prnt_result_denv[R01_lab_results$prnt_80_denv <10] <- 0)
+    R01_lab_results <- within(R01_lab_results, prnt_result_denv[R01_lab_results$prnt_80_denv >=10] <- 1)
+    table(R01_lab_results$prnt_result_denv)
+    R01_lab_results$prnt_result_chikv<-NA
+    R01_lab_results <- within(R01_lab_results, prnt_result_chikv[R01_lab_results$prnt_80_chikv <10] <- 0)
+    R01_lab_results <- within(R01_lab_results, prnt_result_chikv[R01_lab_results$prnt_80_chikv >=10] <- 1)
+    table(R01_lab_results$prnt_result_chikv)
+    R01_lab_results$prnt_result_wnv<-NA
+    R01_lab_results <- within(R01_lab_results, prnt_result_wnv[R01_lab_results$prnt_80_wnv <10] <- 0)
+    R01_lab_results <- within(R01_lab_results, prnt_result_wnv[R01_lab_results$prnt_80_wnv >=10] <- 1)
+    table(R01_lab_results$prnt_result_wnv)
+#stfd chikv igg seroconverters or PCR positives as infected. or PNRT +
 R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi==0]<-0
 R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_lab_results$result_pcr_chikv_kenya==1|R01_lab_results$chikv_result_ufi==1]<-1
 table(R01_lab_results$infected_chikv_stfd)  

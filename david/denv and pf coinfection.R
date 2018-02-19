@@ -216,6 +216,9 @@ library("plyr")
 
   cases<-cases_pedsql
   cases<-cases[order(-(grepl('person_id|redcap|pedsql_', names(cases)))+1L)]
+  conv_paired_peds<-cases[which(!is.na(cases$pedsql_parent_total_mean_conv_paired)), ]
+  table(cases$pedsql_parent_total_mean_conv_paired)
+  
 ##how to merge  with unpaired pedsql data?? if we don't know when the convalescent visit is, and we are only looking at acute visits, then what is the unpaired data?-----------------------------------------------------------------------
 
 # outcome hospitalized ----------------------------------------------------
@@ -332,15 +335,15 @@ library("plyr")
     table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
 
     pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
-    pedsql_unpaired_tableOne <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
-    summary(pedsql_unpaired_tableOne)
+    pedsql_paired_tableOne <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
+    summary(pedsql_paired_tableOne)
     #print table one (assume non normal distribution)
-      print(pedsql_unpaired_tableOne, 
+      print(pedsql_paired_tableOne, 
             exact = c(),
             nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
             , quote = TRUE, includeNA=TRUE)
     #print table one (assume normal distribution)
-      print(pedsql_unpaired_tableOne, 
+      print(pedsql_paired_tableOne, 
             exact = c(),
             quote = TRUE, includeNA=TRUE)
       
