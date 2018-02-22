@@ -26,14 +26,20 @@ load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/climate.rda")
     library(DataCombine)
 #    install.packages("DataCombine")
 # moving mean for that day and previous days (e.g. 5 represents the mean of that day and the for previous days)
-  climate = climate[order(climate$redcap_event_name, climate$date_collected), ]
 
   climate = climate %>%
       group_by(redcap_event_name) %>%
       arrange(redcap_event_name, date_collected) %>%
-      mutate(temp_mean_hobo.5 = rollsum(x = temp_mean_hobo, 5, align = "right", fill = NA))
+      mutate(temp_mean_hobo.30 = rollmean(x = temp_mean_hobo, 30, align = "right", fill = NA))
+  table(round(climate$temp_mean_hobo.30))
+
+  climate = climate[order(climate$redcap_event_name, climate$date_collected), ]
+  climate = climate %>%
+    group_by(redcap_event_name) %>%
+    arrange(redcap_event_name, date_collected) %>%
+    mutate(rainfall_hobo.30 = rollsum(x = rainfall_hobo, 30, align = "right", fill = NA))
   
-table(climate$temp_mean_hobo.5)
+  hist(round(climate$rainfall_hobo.30))
 
 table(aicmalaria$id_site_A)
 table(climate$redcap_event_name)
@@ -42,66 +48,14 @@ climate <- within (climate, id_site[climate$redcap_event_name=="chulaimbo_villag
 climate <- within (climate, id_site[climate$redcap_event_name=="msambweni_arm_1"] <- "Msambweni")
 climate <- within (climate, id_site[climate$redcap_event_name=="obama_arm_1"] <- "Kisumu")
 climate <- within (climate, id_site[climate$redcap_event_name=="ukunda_arm_1"] <- "Ukunda")
-class(climate$date_collected)
-climate$date_collected_1mL<-as.Date(climate$date_collected-30)
 rain <- climate[ , grepl("date_collected|id_site|rain" , names(climate) ) ]
 temp <- climate[ , grepl("date_collected|id_site|temp" , names(climate) ) ]
 malaria_climate<-aicmalaria
-malaria_climate<-merge(malaria_climate, rain, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected_1mL","id_site"), all = T) 
-malaria_climate<-merge(malaria_climate, temp, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected_1mL","id_site"), all = T) 
-malaria_climate$normal_temp<-800*0.95^((malaria_climate$temp_mean_hobo-25)^2)
-  
-plot(malaria_climate$result_microscopy_malaria_kenya_A, round(malaria_climate$rainfall_hobo))
+malaria_climate$interview_date_aic_A
+malaria_climate<-merge(malaria_climate, rain, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected","id_site"), all = T) 
+malaria_climate<-merge(malaria_climate, temp, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected","id_site"), all = T) 
 
 
-plot(malaria_climate$result_microscopy_malaria_kenya_A, round(malaria_climate$temp_mean_hobo))
-plot(round(malaria_climate$temp_mean_hobo))
-plot(round(malaria_climate$normal_temp))
-plot(malaria_climate$result_microscopy_malaria_kenya_A~ round(malaria_climate$temp_mean_hobo))
-
-library(ggplot2)
-ggplot(malaria_climate, aes(x = temp_mean_hobo, y = ..density.., fill = result_microscopy_malaria_kenya_A == 1)) +
-  geom_histogram() + 
-  scale_fill_manual(values = c("gray30", "skyblue"))
-install.packages("rstanarm")
-library("rstanarm")
-library("stan_glm")
-
-t_prior <- student_t(df = 7, location = 0, scale = 2.5)
-fit1 <- stan_glm(result_microscopy_malaria_kenya_A ~ temp_mean_hobo, data = malaria_climate, 
-                 family = binomial(link = "logit"), 
-                 prior = t_prior, prior_intercept = t_prior,  
-                 chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
-
-round(posterior_interval(fit1, prob = 0.5), 2)
-
-# Predicted probability as a function of x
-pr_malaria <- function(x, ests) plogis(ests[1] + ests[2] * x)
-# A function to slightly jitter the binary data
-jitt <- function(...) {
-  geom_point(aes_string(...), position = position_jitter(height = 0.05, width = 0.1), 
-             size = 2, shape = 21, stroke = 0.2)
-}
-ggplot(malaria_climate, aes(x = temp_mean_hobo, y = result_microscopy_malaria_kenya_A, color = result_microscopy_malaria_kenya_A)) + 
-  scale_y_continuous(breaks = c(0, 0.5, 1)) +
-  jitt(x="temp_mean_hobo") + 
-  stat_function(fun = pr_malaria, args = list(ests = coef(fit1)), 
-                size = 2, color = "gray35")
-
-fit2 <- update(fit1, formula = result_microscopy_malaria_kenya_A ~ temp_mean_hobo + rainfall_hobo) 
-
-(coef_fit2 <- round(coef(fit2), 3))
-
-pr_malaria2 <- function(x, y, ests) plogis(ests[1] + ests[2] * x + ests[3] * y)
-grid <- expand.grid(temp_mean_hobo = seq(0, 4, length.out = 100), 
-                    rainfall_hobo = seq(0, 10, length.out = 100))
-grid$prob <- with(grid, pr_malaria2(temp_mean_hobo, rainfall_hobo, coef(fit2)))
-ggplot(grid, aes(x = temp_mean_hobo, y = rainfall_hobo)) + 
-  geom_tile(aes(fill = prob)) + 
-  geom_point(data = malaria_climate, aes(color = factor(result_microscopy_malaria_kenya_A)), size = 2, alpha = 0.85) + 
-  scale_fill_gradient() +
-  scale_color_manual("result_microscopy_malaria_kenya_A", values = c("white", "black"), labels = c("Negative", "Positive"))
-  
 # table one ---------------------------------------------------------------
 vars<-c("rainfall_hobo","temp_mean_hobo","aic_calculated_age_A",  "temp_A", "roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "number_windows_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
 factorVars<-c("roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
@@ -126,9 +80,6 @@ cor(na.omit(malaria_climate[var]))
 summary(mylogit)
 wald.test(b = coef(mylogit), Sigma = vcov(mylogit), Terms = 4:6)
 exp(cbind(OR = coef(mylogit), confint(mylogit)))
-
-saveRDS(malaria_climate, file="malaria_climate.rds")
-
 #only chulaimbo
 malaria_climate_chulaimbo<- malaria_climate[which(malaria_climate$id_site_A== "Chulaimbo")  , ]
 
@@ -141,4 +92,28 @@ exp(cbind(OR = coef(mylogit), confint(mylogit)))
 
 # effect modification -----------------------------------------------------
 
+# non-linear temperature option 1. splines -------------------------------------------------------
+#install.packages("splines")
+library("splines")
+malaria_climate$id_site_A<-as.factor(malaria_climate$id_site_A)
+malaria_climate$drinking_water_source_A<-as.factor(malaria_climate$drinking_water_source_A)
+malaria_climate$gender_aic_A<-as.factor(malaria_climate$gender_aic_A)
+malaria_climate$fever_contact_A<-as.factor(malaria_climate$fever_contact_A)
+malaria_climate$mosquito_net_aic_A<-as.factor(malaria_climate$mosquito_net_aic_A)
+
+summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_hobo.30, df = 3)*rainfall_hobo.30 + aic_calculated_age_A + temp_A + id_site_A + drinking_water_source_A + gender_aic_A + fever_contact_A + mosquito_net_aic_A*number_windows_A , data = malaria_climate))
+  boot::inv.logit(coef(spline.malaria)[2])
+  boot::inv.logit(coef(spline.malaria)[3])
+  boot::inv.logit(coef(spline.malaria)[4])
+#hold all effects constant except rain and temp
+  plot(effects::Effect(focal.predictors = c("temp_mean_hobo.30","rainfall_hobo.30"), mod = spline.malaria, 
+            xlevels = list(temp_mean_hobo.30 = 22:31)), rug = FALSE)
+#hold all effects constant except temp
+  plot(effects::Effect(focal.predictors = c("temp_mean_hobo.30"), mod = spline.malaria, 
+                     xlevels = list(temp_mean_hobo.30 = 18:31)), rug = FALSE)
+
+wald.test(b = coef(spline.malaria), Sigma = vcov(spline.malaria), Terms = 4:6)
+exp(cbind(OR = coef(spline.malaria), confint(spline.malaria)))
+
+saveRDS(malaria_climate, file="malaria_climate.rds")
 

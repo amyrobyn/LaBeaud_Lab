@@ -31,9 +31,9 @@ load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/climate.rda")
   climate = climate %>%
       group_by(redcap_event_name) %>%
       arrange(redcap_event_name, date_collected) %>%
-      mutate(temp_mean_hobo.5 = rollsum(x = temp_mean_hobo, 5, align = "right", fill = NA))
+      mutate(temp_mean_hobo.30 = rollmean(x = temp_mean_hobo, 30, align = "right", fill = NA))
   
-table(climate$temp_mean_hobo.5)
+  table(climate$temp_mean_hobo.5)
 
 table(aicmalaria$id_site_A)
 table(climate$redcap_event_name)
@@ -89,6 +89,12 @@ ggplot(malaria_climate, aes(x = temp_mean_hobo, y = result_microscopy_malaria_ke
                 size = 2, color = "gray35")
 
 fit2 <- update(fit1, formula = result_microscopy_malaria_kenya_A ~ temp_mean_hobo + rainfall_hobo) 
+bs [splines]
+logit transform the b from temp
+
+or gam models. 
+
+install.packages
 
 (coef_fit2 <- round(coef(fit2), 3))
 
