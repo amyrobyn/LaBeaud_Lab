@@ -9,7 +9,7 @@ library(plotly)
 
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
-ds<-read.csv("ZikaPregnancyCohort_DATA_2018-01-16_1556.csv")
+ds<-read.csv("ZikaPregnancyCohort_DATA_2018-02-27_1404.csv")
 
 
 #split data into mom and child then remerge by id
@@ -22,12 +22,17 @@ child <- Filter(function(child)!all(is.na(child)), child)
 #women --------------------------------------------------------------
 table(mom$cohort___1)#321 preg women
 table(mom$cohort___2)#190 febrile women
-table(mom$cohort___3)#388 moms in follow up
+table(mom$cohort___3)#383 moms in follow up
 
 #women in both cohorts
 table(mom$cohort___1,mom$cohort___3)#125 women in both  pregnancy and follow up cohorts
 table(mom$cohort___2,mom$cohort___3)#30 women in both  febrile and follow up cohorts
+initial_id_for_moms_in_fu<-mom[ , grepl( "mother_record_id|redcap_event_name|cohort___|mom_id_orig_study" , names(mom) ) ]
+initial_id_for_moms_in_fu <-initial_id_for_moms_in_fu[which(!is.na(initial_id_for_moms_in_fu$mom_id_orig_study)|!is.na(initial_id_for_moms_in_fu$mom_id_orig_study_2))  , ]
+initial_id_for_moms_in_fu <-initial_id_for_moms_in_fu[which(mom$cohort___3==1)  , ]
 
+f <- "initial_id_for_moms_in_fu.csv"
+write.csv(as.data.frame(initial_id_for_moms_in_fu), f )
 
 #mom zika outcome. pcr positive by pinsky.
 mom$zika_pcr_pos<-NA

@@ -520,10 +520,17 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
       save(pedsql_pairs_acute,file="pedsql_pairs_acute.rda")
 
 #export to csv
-      setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-      f <- "paired_pedsql.csv"
-      write.csv(as.data.frame(pedsql_pairs_acute), f)
-      
+      #export convalescent to csv for david
+      colnames(david_coinfection_strata_hospitalization)[colnames(david_coinfection_strata_hospitalization)=="redcap_event"] <- "redcap_event_name"
+      pedsql_pairs_acute$redcap_event_name<-pedsql_pairs_acute$redcap_event_name_acute_paired
+      pedsql_pairs_acute_strata <- join(pedsql_pairs_acute, david_coinfection_strata_hospitalization,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
+      pedsql_pairs_acute_strata<-pedsql_pairs_acute_strata[,order(colnames(pedsql_pairs_acute_strata))]
+      pedsql_pairs_acute_strata<-pedsql_pairs_acute_strata[order(-(grepl('outcome', names(pedsql_pairs_acute_strata)))+1L)]
+      pedsql_pairs_acute_strata<-pedsql_pairs_acute_strata[order(-(grepl('strata', names(pedsql_pairs_acute_strata)))+1L)]
+      pedsql_pairs_acute_strata<-pedsql_pairs_acute_strata[order(-(grepl('redcap', names(pedsql_pairs_acute_strata)))+1L)]
+      pedsql_pairs_acute_strata<-pedsql_pairs_acute_strata[order(-(grepl('person_id', names(pedsql_pairs_acute_strata)))+1L)]
+      write.csv(as.data.frame(pedsql_pairs_acute_strata), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/pedsql_pairs_acute_strata.csv", na = "")
+
 #list of cases that are neither acute nor conv.
       convalescent$id<-paste(convalescent$person_id, convalescent$redcap_event, sep="_")
       neither_pedsql<- pedsql[which(pedsql$acute!=1)  , ]
