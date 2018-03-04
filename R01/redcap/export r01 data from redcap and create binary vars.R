@@ -14,7 +14,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
 #export data from redcap to R (must be connected via cisco VPN)
-  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+#  R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
   library(beepr)
   beep(sound=4)
 
@@ -22,6 +22,8 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
   FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
   save(R01_lab_results,file=FileName)
 load(FileName)
+
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
 
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
@@ -489,24 +491,43 @@ table(R01_lab_results$tested_denv_stfd_igg, R01_lab_results$id_cohort)
     R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn ==">80"] <- 160)
     R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn =="<10"] <- 5)
     R01_lab_results <- within(R01_lab_results, prnt_80_onn[R01_lab_results$prnt_80_onn =="No sample"|R01_lab_results$prnt_80_onn =="no sample"] <- NA)
+    R01_lab_results$prnt_80_wnv<-as.numeric(as.character(R01_lab_results$prnt_80_wnv))
+    class(R01_lab_results$prnt_80_wnv)
     table(R01_lab_results$prnt_80_wnv)
     
+    R01_lab_results$prnt_80_onn<-as.numeric(as.character(R01_lab_results$prnt_80_onn))
+    class(R01_lab_results$prnt_80_onn)
+    table(R01_lab_results$prnt_80_wnv)
     R01_lab_results$prnt_result_onn<-NA
     R01_lab_results <- within(R01_lab_results, prnt_result_onn[R01_lab_results$prnt_80_onn <10] <- 0)
     R01_lab_results <- within(R01_lab_results, prnt_result_onn[R01_lab_results$prnt_80_onn >=10] <- 1)
     table(R01_lab_results$prnt_result_onn)
+    
+    R01_lab_results$prnt_80_denv<-as.numeric(as.character(R01_lab_results$prnt_80_denv))
+    class(R01_lab_results$prnt_80_denv)
+    table(R01_lab_results$prnt_80_denv)
     R01_lab_results$prnt_result_denv<-NA
     R01_lab_results <- within(R01_lab_results, prnt_result_denv[R01_lab_results$prnt_80_denv <10] <- 0)
     R01_lab_results <- within(R01_lab_results, prnt_result_denv[R01_lab_results$prnt_80_denv >=10] <- 1)
-    table(R01_lab_results$prnt_result_denv)
+    table(R01_lab_results$prnt_result_denv, R01_lab_results$prnt_80_denv)
+
+    R01_lab_results$prnt_80_chikv<-as.numeric(as.character(R01_lab_results$prnt_80_chikv))
+    class(R01_lab_results$prnt_80_chikv)
+    table(R01_lab_results$prnt_80_chikv)
     R01_lab_results$prnt_result_chikv<-NA
     R01_lab_results <- within(R01_lab_results, prnt_result_chikv[R01_lab_results$prnt_80_chikv <10] <- 0)
     R01_lab_results <- within(R01_lab_results, prnt_result_chikv[R01_lab_results$prnt_80_chikv >=10] <- 1)
     table(R01_lab_results$prnt_result_chikv)
+    
+    R01_lab_results$prnt_80_wnv<-as.numeric(as.character(R01_lab_results$prnt_80_wnv))
+    class(R01_lab_results$prnt_80_wnv)
+    table(R01_lab_results$prnt_80_wnv)
     R01_lab_results$prnt_result_wnv<-NA
     R01_lab_results <- within(R01_lab_results, prnt_result_wnv[R01_lab_results$prnt_80_wnv <10] <- 0)
     R01_lab_results <- within(R01_lab_results, prnt_result_wnv[R01_lab_results$prnt_80_wnv >=10] <- 1)
     table(R01_lab_results$prnt_result_wnv)
+    
+    
 #stfd chikv igg seroconverters or PCR positives as infected. or PNRT +
 R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi==0]<-0
 R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_lab_results$result_pcr_chikv_kenya==1|R01_lab_results$chikv_result_ufi==1]<-1
