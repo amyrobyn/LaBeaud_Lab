@@ -6,7 +6,7 @@ library(REDCapR)
 library(lubridate)
 library(ggplot2)
 library(plotly)
-
+install.packages("curl")
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
 Redcap.token <- readLines("Redcap.token.zika.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'

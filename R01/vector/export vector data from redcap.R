@@ -10,13 +10,11 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
 # import vector data -------------------------------------------------------------
 Redcap.token <- readLines("api.key.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-
-vector <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 2)$data#export data from redcap to R (must be connected via cisco VPN)
+vector <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 2)$data #export data from redcap to R (must be connected via cisco VPN)
 save(vector,file="vector.rda")
 # load vector data -------------------------------------------------------------
   load(file="vector.rda")
-
-write.csv(as.data.frame(vector), "vector.csv")
+#write.csv(as.data.frame(vector), "vector.csv")
 
 # subest data by form -----------------------------------------------------
 vector$redcap_event_name<- str_pad(vector$compound_house_id, 4, pad = "0")

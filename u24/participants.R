@@ -2,9 +2,22 @@ library(janitor)
 library(dplyr)
 library(plyr)
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
+R01_lab_results[R01_lab_results==98]<-NA
+R01_lab_results$result_microscopy_malaria_kenya
+R01_lab_results$malaria_results
+
+
+
+R01_lab_results[R01_lab_results$person_id=="UF0413",  "malaria_results"]
+R01_lab_results[R01_lab_results$person_id=="UF0413",  "result_microscopy_malaria_kenya"]
+
+R01_lab_results[R01_lab_results$person_id=="MF0061",  "date_of_birth_aic"]
+
+R01_lab_results[R01_lab_results$person_id=="MF0006",  "date_of_birth"]
 
   R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
   R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
+
 # those exposed in msambweni. we had so many with any exposure that i cut it down to those with documented incident infection. ---------------------------------------------------------------
       u24_all<- R01_lab_results[, !grepl("date|dob|u24", names(R01_lab_results))]
       u24_all<- u24_all[which(u24_all$id_city =="M"|u24_all$id_city =="G"|u24_all$id_city=="L")  , ]
@@ -26,7 +39,7 @@ load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 la
       
       u24_all_wide<-    u24_all_wide %>%
         remove_empty_cols()
-      u24_all_wide<- u24_all_wide[, grepl("person_id|age|gender|prnt_result_chikv|prnt_result_denv|infected|exposure|prnt_interpretation_flavi___1|prnt_interpretation_alpha___2|result_igg_denv_stfd|infected_denv_stfd|infected_chikv_stfd|result_igg_chikv_stfd|result_igg_denv_stfd", names(u24_all_wide))]
+      u24_all_wide<- u24_all_wide[, grepl("person_id|age|gender|prnt_result_chikv|prnt_result_denv|infected|exposure|prnt_interpretation_flavi___1|prnt_interpretation_alpha___2|result_igg_denv_stfd|infected_denv_stfd|infected_chikv_stfd|result_igg_chikv_stfd|result_igg_denv_stfd|name|dob|phone|village|date_of_birth", names(u24_all_wide))]
     u24_all_wide$incident_prnt_u24_strata<-NA
     u24_all_wide <- within(u24_all_wide, incident_prnt_u24_strata[u24_all_wide$exposure_sum ==0] <- "control")
     u24_all_wide <- within(u24_all_wide, incident_prnt_u24_strata[u24_all_wide$incident_prnt_chikv_exposure_sum >=1] <- "chikv")
@@ -92,8 +105,8 @@ u24_hcc<-readxl::read_xls("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure-
 u24_aic<-merge(u24_aic, u24_all_wide_matched_aic, by ="person_id", all.y =  TRUE)
 u24_hcc<-merge(u24_hcc, u24_all_wide_matched_hcc, by ="person_id", all.y = TRUE)
 
-u24_hcc<-u24_hcc[order(-(grepl('u24_strata|prnt_confirmed|case_control', names(u24_hcc)))+1L)]
-u24_aic<-u24_aic[order(-(grepl('u24_strata|prnt_confirmed|case_control', names(u24_aic)))+1L)]
+u24_hcc<-u24_hcc[order(-(grepl('u24_strata|prnt_confirmed|case_control|exposure_sum', names(u24_hcc)))+1L)]
+u24_aic<-u24_aic[order(-(grepl('u24_strata|prnt_confirmed|case_control|exposure_sum', names(u24_aic)))+1L)]
 
 #export list with id's
 write.csv(as.data.frame(u24_hcc), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_hcc_participant_list.csv", na = "")

@@ -7,12 +7,12 @@ library(plotly)
 library(plyr)
 library(dplyr)
 # data --------------------------------------------------------
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH/ASTMH 2017 abstracts/priyanka- fogarty nd")
+  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH/ASTMH 2017 abstracts/priyanka- fogarty nd")
 
 Redcap.token <- readLines("api.token.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 200)$data#export data from redcap to R (must be connected via cisco VPN)
+#chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 200)$data#export data from redcap to R (must be connected via cisco VPN)
 
 
 currentDate <- Sys.Date() 
@@ -59,7 +59,7 @@ pairwise.t.test(as.factor(chikv_nd$education), chikv_nd$mother_igg, p.adjust="bo
   
 # tested both mom and baby-----------------------------------------------------------------
 #cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
-
+cohort<-chikv_nd
 
 # outcome pregchikv pos ---------------------------------------------------
 cohort$preg_chikvpos<-cohort$result_mother*-1
@@ -76,8 +76,9 @@ ids.you.want.to.keep <- c("GA0001", "GA0022", "GB0016", "GB0023", "GB0083", "GO0
 subset_dataframe<-subset(cohort , (c(participant_id) %in% ids.you.want.to.keep))
 subset_dataframe<-as.data.frame(subset_dataframe[which(subset_dataframe$redcap_event_name!="child2_arm_2" ), ])
 table(subset_dataframe$symptoms___1,subset_dataframe$preg_chikvpos, exclude=NULL )#During your chikungunya illness, what symptoms did you have?
-table(subset_dataframe$symptoms___1, exclude = NULL )#During your chikungunya illness, what symptoms did you have?
-
+table(subset_dataframe$symptoms___1, subset_dataframe$trimester, exclude = NULL )#During your chikungunya illness, what symptoms did you have?
+write.csv(as.data.frame(subset_dataframe), "randy_abstract_subset.csv" )
+table(chikv_nd$child_igg, chikv_nd$mother_igg)
 
 #export
 write.csv(as.data.frame(cohort), "cohort_exposed.csv" )
@@ -583,8 +584,7 @@ print(complications.by.exposure_3d, quote = TRUE)
   print(table1_internda_trimester4, exact =vars_internda)
   table1_internda_exposed <- CreateTableOne(vars = vars_internda, strata = "preg_chikvpos", data = cohort)
   table1_internda_exposed
-  
-  
+
   vars <- c("height_child", "weight", "childs_age","gender","preg_chikvpos")
   factorVars <- c("gender","preg_chikvpos")
   chikv_kids<-CreateTableOne(vars = vars, factorVars = factorVars, data = cohort)

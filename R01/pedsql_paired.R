@@ -9,7 +9,9 @@ library(ggplot2)
 
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-load("R01_lab_results 2017-12-01 .rda")
+R01_lab_results<-read.csv("20180328085529_pid10495_CenqVc.csv")
+
+#load("R01_lab_results 2017-12-01 .rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
 table(R01_lab_results$redcap_event_name)
@@ -18,6 +20,8 @@ table(R01_lab_results$redcap_event_name)
   
 
 pedsql<- R01_lab_results[, grepl("person_id|redcap_event_name|pedsql", names(R01_lab_results))]
+pedsql_format<-pedsql
+write.csv(pedsql_format,"pedsql_format.csv", na="" )
 #remove missing
   pedsql[pedsql=="99" ] <- NA
   pedsql[pedsql=="98" ] <- NA
@@ -532,11 +536,11 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
       write.csv(as.data.frame(pedsql_pairs_acute_strata), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/pedsql_pairs_acute_strata.csv", na = "")
 
 #list of cases that are neither acute nor conv.
-      convalescent$id<-paste(convalescent$person_id, convalescent$redcap_event, sep="_")
-      neither_pedsql<- pedsql[which(pedsql$acute!=1)  , ]
-      neither_pedsql<-subset(neither, !(c(id) %in% convalescent$id))
-      write.csv(as.data.frame(neither_pedsql), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/neither_pedsql.csv", na = "")
+ #     convalescent$id<-paste(convalescent$person_id, convalescent$redcap_event, sep="_")
+  #    neither_pedsql<- pedsql[which(pedsql$acute!=1)  , ]
+   #   neither_pedsql<-subset(neither, !(c(id) %in% convalescent$id))
+    #  write.csv(as.data.frame(neither_pedsql), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/neither_pedsql.csv", na = "")
       
-      neither_pedsql_all_coinfection<- pedsql[which(pedsql_all_coinfection$acute!=1)  , ]
-      neither_pedsql_all_coinfection<-subset(neither, !(c(id) %in% convalescent$id))
+     # neither_pedsql_all_coinfection<- pedsql[which(pedsql_all_coinfection$acute!=1)  , ]
+      #neither_pedsql_all_coinfection<-subset(neither, !(c(id) %in% convalescent$id))
       
