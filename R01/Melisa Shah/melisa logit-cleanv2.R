@@ -109,7 +109,7 @@ library(lme4)
 table(malaria_climate$agecat_A)
 
 summary(spline.malaria <- lmer(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + as.factor(agecat_A) + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A +  (1|id_site_A)+gender_aic_A, data = malaria_climate))
-summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate))
+summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+ rainfall_hobo_30 + as.factor(agecat_A) + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate))
 
 summary(spline.malaria.c <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate_c))
 summary(spline.malaria.k <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate_k))
