@@ -6,10 +6,21 @@ library(plyr)
 library(redcapAPI)
 library(REDCapR)
 library(ggplot2)
-# download data -----------------------------------------------------------------
+# get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 
-R01_lab_results<-read.csv("20180328085529_pid10495_CenqVc.csv")
+#export data from redcap to R (must be connected via cisco VPN)
+#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+library(beepr)
+beep(sound=4)
+
+currentDate <- Sys.Date() 
+FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
+#save(R01_lab_results,file=FileName)
+load(FileName)
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
   R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
   
@@ -1047,3 +1058,28 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 l
     f <- "redcap_data_cleaned.csv"
     save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
       #save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on 12/13/17 for david conifection paper.
+#Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
+    R01_lab_results$malaria<-NA
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$result_rdt_malaria_keny==0] <- 0)#rdt
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$rdt_result==0] <- 0)#rdt
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$result_microscopy_malaria_kenya==0] <- 0)#microscopy. this goes last so that it overwrites all the other's if it exists.
+    
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
+    R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
+    table(R01_lab_results$malaria)
+    
+    table(R01_lab_results$infected_denv_stfd, R01_lab_results$malaria)
+    table(R01_lab_results$infected_chikv_stfd, R01_lab_results$malaria)
+    
+    table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$malaria,R01_lab_results$acute)
+    R01_lab_results_acute<- R01_lab_results[which(R01_lab_results$acute==1)  , ]
+    
+    158+219+2153+1948
+(158/4478)*100
+    table(R01_lab_results_acute$infected_denv_chikv_stfd, R01_lab_results_acute$malaria)
+    
+    161+232+2250+2606
+    
+    
