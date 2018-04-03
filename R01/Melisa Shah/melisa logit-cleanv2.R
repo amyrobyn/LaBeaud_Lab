@@ -107,14 +107,14 @@ class(malaria_climate$id_site_A)
 #we are missing lots of temp!
 library(lme4)
 table(malaria_climate$agecat_A)
+summary(spline.malaria <- lmer(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + as.factor(agecat_A) +   fever_contact_A + mosquito_bites_aic_A +  (1|id_site_A)+gender_aic_A, data = malaria_climate))
 
-summary(spline.malaria <- lmer(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + as.factor(agecat_A) + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A +  (1|id_site_A)+gender_aic_A, data = malaria_climate))
-summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+ rainfall_hobo_30 + as.factor(agecat_A) + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate))
-
-summary(spline.malaria.c <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate_c))
-summary(spline.malaria.k <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate_k))
-summary(spline.malaria.m <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A +  id_site_A + gender_aic_A, data = malaria_climate_m))
-summary(spline.malaria.u <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+ rainfall_hobo_30 + agecat_A + drinking_water_source_A +  fever_contact_A + mosquito_net_aic_A + id_site_A + gender_aic_A, data = malaria_climate_u))
+summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+ rainfall_hobo_30 + as.factor(agecat_A) +  fever_contact_A + mosquito_bites_aic_A + id_site_A + gender_aic_A, data = malaria_climate))
+table(malaria_climate_c$gender_aic_A)
+summary(spline.malaria.c <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + as.factor(agecat_A) +   fever_contact_A + mosquito_bites_aic_A  + gender_aic_A, data = malaria_climate_c))
+summary(spline.malaria.k <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30  + as.factor(agecat_A) + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A, data = malaria_climate_k))
+summary(spline.malaria.m <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+bs(temp_mean_hobo_30, df = 3) + rainfall_hobo_30 + as.factor(agecat_A) + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A, data = malaria_climate_m))
+summary(spline.malaria.u <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A+reportdiarrhea_A+reportnv_A+reportjoint_A+ rainfall_hobo_30 + as.factor(agecat_A) + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A, data = malaria_climate_u))
 
 #hold all effects constant except temp
   table(round(malaria_climate$temp_mean_hobo_30))
@@ -123,5 +123,10 @@ summary(spline.malaria.u <- lm(result_microscopy_malaria_kenya_A ~ reportcough_A
 
 wald.test(b = coef(spline.malaria), Sigma = vcov(spline.malaria), Terms = 4:6)
 exp(cbind(OR = coef(spline.malaria), confint(spline.malaria)))
+
+exp(cbind(OR = coef(spline.malaria.c), confint(spline.malaria.c)))
+exp(cbind(OR = coef(spline.malaria.k), confint(spline.malaria.k)))
+exp(cbind(OR = coef(spline.malaria.u), confint(spline.malaria.u)))
+exp(cbind(OR = coef(spline.malaria.m), confint(spline.malaria.m)))
 
 saveRDS(malaria_climate, file="malaria_climate.rds")
