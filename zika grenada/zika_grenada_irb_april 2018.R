@@ -14,28 +14,10 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 #export data from redcap to R (must be connected via cisco VPN)
 #ds <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 100)$data
 attach(ds)
-preg_cohort<-ds
-#preg_cohort <- read.csv("Zika Results .csv")
-preg_cohort$ID.Code<-as.factor(preg_cohort$ID.Code)
-preg_cohort$mom_id_orig_study
-table(preg_cohort$interpreted_colors.1)
 
-merged<-data.table(ds, key="mom_id_orig_study")[
-  data.table(preg_cohort, key="ID.Code"),
-  allow.cartesian=TRUE
-  ]
 
-delivery_date <- ymd(as.character(ds$delivery_date ))
-delivery_date[ds$delivery_date=="2007-01-15"]<-"2017-01-15"
-prenancy_date<-ds$delivery_date - 280
+ds<-ds[!grepl("--", ds$mother_record_id),]
 
-duration <- 280
-zika_start<- ymd(as.character("2016-06-12"))
-zika_end <- ymd(as.character("2016-10-01"))
-
-f <- "REDCap_export_june19.csv"
-write.csv(as.data.frame(ds), f )
-table(redcap_event_name)
 #split data into mom and child then remerge by id
 mom<-subset(ds, redcap_event_name=="mother_arm_1")
 mom <- Filter(function(mom)!all(is.na(mom)), mom)
@@ -44,7 +26,18 @@ child<-subset(ds, redcap_event_name=="child_arm_1")
 child <- Filter(function(child)!all(is.na(child)), child)
 total <- merge(mom, child, by="mother_record_id")
 ds<-total
+
+# irb -------------------------------------------------------------------
+table(ds$cohort___1)
+table(ds$cohort___2)
+table(ds$cohort___3)
+
+count(!is.na(ds$mom_id_orig_study))
+count(!is.na(ds$mom_id_orig_study_2))
+as.numeric(as.character(ds$mom_id_orig_study))
+# other -------------------------------------------------------------------
 attach(ds)
+
 #We will want to know how many kids were Zika exposed (8/206. 7/8 confirmed) 
 table(ever_had_zikv, confirmed_blood_test)
 table(pregnant, confirmed_blood_test) #kids were Zika exposed (8/206. 7/8 confirmed) 

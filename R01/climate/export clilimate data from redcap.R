@@ -6,13 +6,13 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
   Redcap.token <- readLines("api.key.txt") # Read API token from folder
   REDcap.URL  <- 'https://redcap.stanford.edu/api/'
   rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-  #climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
+climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
   #save backup from today
   currentDate <- Sys.Date() 
   FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
   save(vector_climate,file=FileName)
   #load most recent backup
-  load(FileName)
+#  load(FileName)
   climate<-vector_climate
   
   climate$month_collected <- as.yearmon(climate$date_collected)
@@ -48,8 +48,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
   # dates -------------------------------------------------------------
   climate$date_lag<-climate$date_collected-30
   climate$date_lag<-as.Date(climate$date_lag)
-  table(climate$date_lag)
-
+  table(round(climate$temp_mean_hobo), climate$redcap_event_name)
 # save climate data -------------------------------------------------------------
   save(climate,file="climate.rda")
 # monthly summary by site:chulaimbo -------------------------------------------------------------
