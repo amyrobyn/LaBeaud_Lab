@@ -20,19 +20,57 @@ temp.long <- within (temp.long, site[temp.long$site=="KI"] <-"Kisumu")
 temp.long <- within (temp.long, site[temp.long$site=="CH"] <-"Chulaimbo")
 plot(temp.long$date_collected, round(temp.long$meanTemp), exclude=NULL)
 
+
+# import climate data from redcap -----------------------------------------
+library(redcapAPI)
+library(REDCapR)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
+Redcap.token <- readLines("api.key.txt") # Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
+#climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R 
+#save backup from today
+currentDate <- Sys.Date() 
+FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+  save(climate,file=FileName)
+
+# or 2. load saved climate -----------------------------------------------------------------
+  currentDate <- Sys.Date() 
+  FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+#load most recent backup
+#  load(FileName)
+#or 3. import from redcap export  -----------------------------------------------------------------
+  climate<-  read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah/climate/20180411111858_pid11751_MeJzB3.csv")
 # rain climate -----------------------------------------------------------------
-load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/climate.rda")
-climate<-climate[which(climate$redcap_event_name=="ukunda_arm_1"|climate$redcap_event_name=="chulaimbo_village_arm_1"|climate$redcap_event_name=="obama_arm_1"|climate$redcap_event_name=="msambweni_arm_1"),]
+library(zoo)
+library(lubridate)
+climate$month_collected <- as.yearmon(climate$date_collected)
+table(climate$month_collected)
+climate$date_collected<-as.Date(climate$date_collected)
+climate$date_collected<-ymd(climate$date_collected)
+class(climate$date_collected)  
+
+ch.hosp.clim<-subset(climate, redcap_event_name=="chulaimbo_hospital_arm_1")
+ch.vill.clim<-subset(climate, redcap_event_name=="chulaimbo_village_arm_1")
+ch.clim<-merge(ch.hosp.clim, ch.vill.clim, by=c("date_collected"), all=T)
+ch.clim$daily_rainfall <- round(rowMeans(ch.clim[,c("daily_rainfall.x", "daily_rainfall.y")], na.rm=TRUE), 1)
+chulaimbo.clim <- ch.clim[,c("date_collected", "daily_rainfall", "redcap_event_name.x")]
+colnames(chulaimbo.clim)[3] <- "redcap_event_name"
+chulaimbo.clim$redcap_event_name<-as.character(chulaimbo.clim$redcap_event_name)
+table(chulaimbo.clim$redcap_event_name)
+climate<-climate[which(climate$redcap_event_name=="ukunda_arm_1"|climate$redcap_event_name=="obama_arm_1"|climate$redcap_event_name=="msambweni_arm_1"),]
+climate<-rbind.fill(climate,chulaimbo.clim)
+
 climate$site<-NA
+climate <- within (climate, site[climate$redcap_event_name=="chulaimbo_hospital_arm_1"] <-"Chulaimbo")
 climate <- within (climate, site[climate$redcap_event_name=="ukunda_arm_1"] <-"Ukunda")
 climate <- within (climate, site[climate$redcap_event_name=="obama_arm_1"] <-"Kisumu")
 climate <- within (climate, site[climate$redcap_event_name=="msambweni_arm_1"] <-"Msambweni")
-climate <- within (climate, site[climate$redcap_event_name=="chulaimbo_village_arm_1"] <-"Chulaimbo")
 climate <-climate[!sapply(climate, function (x) all(is.na(x) ))]
 time.min <-as.Date(as.character("2013/01/01"))
 time.max <-as.Date(as.character("2018/01/31"))
 
-all.dates<-seq(as.Date('2013/01/01'), as.Date('2018/01/31'), by = 'day',along.with = "site")
+all.dates<-seq(as.Date('2013/01/01'), as.Date('2018/01/31'), by = 'day')
 all.dates.frame <- data.frame(list(date_collected=all.dates))
 
 climate.m<-climate[which(climate$site=="Msambweni"),]
@@ -44,14 +82,21 @@ climate.u <- merge(all.dates.frame, climate.u, all.x=T, by=c("date_collected"))
 climate.c<-climate[which(climate$site=="Chulaimbo"),]
 climate.c <- merge(all.dates.frame, climate.c, all.x=T, by=c("date_collected"))
 climate<-rbind(climate.c,climate.k,climate.m,climate.u)
+rain<-climate[,c("date_collected","daily_rainfall","rainfall_hobo","site","daily_rainfall_long_term_mean")]
 
-rain<-climate[,c("date_collected","daily_rainfall","rainfall_hobo","site")]
-
+#rain <- within (rain, daily_rainfall[rain$daily_rainfall>120] <-NA)
 plot(rain$date_collected, round(rain$daily_rainfall), exclude=NULL)
-plot(rain$date_collected, round(rain$rainfall_hobo), exclude=NULL)
 
+temp.long <- merge(all.dates.frame, temp.long, all.x=T, by=c("date_collected"))
 climate<-merge(rain, temp.long, by = c("date_collected", "site") )
-#need to fix rain!
+
+table(!is.na(climate$daily_rainfall))
+climate <- within (climate, daily_rainfall[rain$daily_rainfall=="NaN"] <-NA)
+
+climate$month_collected <- as.yearmon(climate$date_collected)
+table(round(climate$daily_rainfall,climate$month_collected), exclude = NULL)
+
+library(dplyr)
 climate = climate %>%
   group_by(site) %>%
   arrange(site, date_collected) %>%
@@ -61,7 +106,6 @@ climate = climate %>%
   )
 
 table(round(climate$temp_mean_30), climate$site, exclude=NA)
-table(round(climate$rainfall_sum_30), exclude=NA)
 library(ggplot2)
 ggplot (climate, aes (x = date_collected, y = temp_mean_30, colour = site)) + geom_point ()
 ggplot (climate, aes (x = date_collected, y = rainfall_sum_30, colour = site)) + geom_point ()

@@ -6,28 +6,33 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
   Redcap.token <- readLines("api.key.txt") # Read API token from folder
   REDcap.URL  <- 'https://redcap.stanford.edu/api/'
   rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-#climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
+climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
   #save backup from today
   currentDate <- Sys.Date() 
   FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
 #  save(climate,file=FileName)
   #load most recent backup
   load(FileName)
-  climate$month_collected <- as.yearmon(climate$date_collected)
-  table(climate$month_collected)
-  
+climate<-  read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah/climate/20180411111858_pid11751_MeJzB3.csv")
+
   #format date
     library(zoo)
     library(lubridate)
+  climate$month_collected <- as.yearmon(climate$date_collected)
+  table(climate$month_collected)
   climate$date_collected<-as.Date(climate$date_collected)
   climate$date_collected<-ymd(climate$date_collected)
 class(climate$date_collected)  
+save(climate,file="climate.rda")
+
   #remove outliers
 plot(climate$date_collected,climate$rainfall_hobo)
 ggplot (climate, aes (x = date_collected, y = temp_mean_hobo, colour = redcap_event_name)) + geom_point ()
 ggplot (climate, aes (x = date_collected, y = rainfall_hobo, colour = redcap_event_name)) + geom_point ()
 
 climate <- within (climate, rainfall_hobo[climate$rainfall_hobo>120] <-NA)
+# save climate data -------------------------------------------------------------
+save(climate,file="climate.rda")
 
 #plot climate
   library(plotly)
