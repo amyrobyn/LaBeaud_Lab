@@ -6,15 +6,13 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
   Redcap.token <- readLines("api.key.txt") # Read API token from folder
   REDcap.URL  <- 'https://redcap.stanford.edu/api/'
   rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
+#climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R (must be connected via cisco VPN)
   #save backup from today
   currentDate <- Sys.Date() 
   FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
-  save(vector_climate,file=FileName)
+#  save(climate,file=FileName)
   #load most recent backup
-#  load(FileName)
-  climate<-vector_climate
-  
+  load(FileName)
   climate$month_collected <- as.yearmon(climate$date_collected)
   table(climate$month_collected)
   
@@ -23,10 +21,14 @@ climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_siz
     library(lubridate)
   climate$date_collected<-as.Date(climate$date_collected)
   climate$date_collected<-ymd(climate$date_collected)
-  
+class(climate$date_collected)  
   #remove outliers
-  climate <-climate[which(climate$rainfall_hobo<=120), ]
-  
+plot(climate$date_collected,climate$rainfall_hobo)
+ggplot (climate, aes (x = date_collected, y = temp_mean_hobo, colour = redcap_event_name)) + geom_point ()
+ggplot (climate, aes (x = date_collected, y = rainfall_hobo, colour = redcap_event_name)) + geom_point ()
+
+climate <- within (climate, rainfall_hobo[climate$rainfall_hobo>120] <-NA)
+
 #plot climate
   library(plotly)
   plot_hobo<-plot_ly(climate, x = ~date_collected, y = ~rainfall_hobo, type = 'scatter', mode="lines", name = 'rainfall hobo')%>%
@@ -46,9 +48,7 @@ climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_siz
   #   add_trace(data=temp, x = ~Date, y = ~lower, name = 'Min temp', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), yaxis = "y2")%>%
   
   # dates -------------------------------------------------------------
-  climate$date_lag<-climate$date_collected-30
-  climate$date_lag<-as.Date(climate$date_lag)
-  table(round(climate$temp_mean_hobo), climate$redcap_event_name)
+  table(round(climate$temp_mean_hobo), climate$redcap_event_name, exclude = NULL)
 # save climate data -------------------------------------------------------------
   save(climate,file="climate.rda")
 # monthly summary by site:chulaimbo -------------------------------------------------------------
