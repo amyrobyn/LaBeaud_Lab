@@ -79,28 +79,23 @@ malaria_climate<-merge(aicmalaria, climate, by.x = c("interview_date_aic_A","id_
 table(round(malaria_climate$temp_mean_30), malaria_climate$id_site_A, exclude = NULL)
 table(round(malaria_climate$rainfall_sum_30), malaria_climate$id_site_A, exclude = NULL)
 
-
-aicmalaria <- aicmalaria[ , !grepl("$_D|$_C|$_B|$_F|$_G|$_H" , names(aicmalaria) ) ]
-aicmalaria<-aicmalaria[order((grepl('date', names(aicmalaria)))+1L)]
-
-aicmalaria$interview_date_aic_A<-as.Date(aicmalaria$interview_date_aic_A)
-class(aicmalaria$interview_date_aic_A)
-
+malaria_climate <-malaria_climate[ , !grepl("$_D|$_C|$_B|$_F|$_G|$_H" , names(malaria_climate) ) ]
+malaria_climate<-malaria_climate[order((grepl('date', names(malaria_climate)))+1L)]
 # ses ---------------------------------------------------------------------
-ses<-(aicmalaria[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(aicmalaria))])
-aicmalaria$ses_sum<-rowSums(aicmalaria[, c("telephone_A","radio_A","television_A","bicycle_A","motor_vehicle_A", "domestic_worker_A")], na.rm = TRUE)
-table(aicmalaria$ses_sum)
+ses<-(malaria_climate[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(malaria_climate))])
+malaria_climate$ses_sum<-rowSums(malaria_climate[, c("telephone_A","radio_A","television_A","bicycle_A","motor_vehicle_A", "domestic_worker_A")], na.rm = TRUE)
+table(malaria_climate$ses_sum)
 
 #subset by site -----------------------------------------------------------------
-table(aicmalaria$id_site_A, exclude=NULL)
-aicmalaria_u<-aicmalaria[which(aicmalaria$id_site_A=="Ukunda"),]
-aicmalaria_k<-aicmalaria[which(aicmalaria$id_site_A=="Kisumu"),]
-aicmalaria_m<-aicmalaria[which(aicmalaria$id_site_A=="Msambweni"),]
-aicmalaria_c<-aicmalaria[which(aicmalaria$id_site_A=="Chulaimbo"),]
+table(malaria_climate$id_site_A, exclude=NULL)
+malaria_climate_u<-malaria_climate[which(malaria_climate$id_site_A=="Ukunda"),]
+malaria_climate_m<-malaria_climate[which(malaria_climate$id_site_A=="Msambweni"),]
+malaria_climate_c<-malaria_climate[which(malaria_climate$id_site_A=="Chulaimbo"),]
+malaria_climate_k<-malaria_climate[which(malaria_climate$id_site_A=="Kisumu"),]
 
 # table one ---------------------------------------------------------------
 library(tableone)
-vars<-c("ses_sum","rainfall_sum_30","temp_mean_30","rainfall_hobo","temp_mean_hobo","aic_calculated_age_A",  "temp_A", "roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "number_windows_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
+vars<-c("ses_sum","rainfall_sum_30","temp_mean_30","rainfall_hobo","aic_calculated_age_A",  "temp_A", "roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "number_windows_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
 factorVars<-c("roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
 
 tableOne_mal_c <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate_c)
@@ -112,8 +107,8 @@ tableOne_site <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "
 
 # scatter plot ------------------------------------------------------------
 my_cols <- c("#00AFBB", "#E7B800")  
-pairs(na.omit(aicmalaria[vars]), pch = 19,  cex = 0.5, col = my_cols[aicmalaria$result_microscopy_malaria_kenya_A], lower.panel=NULL)
-cor(na.omit(aicmalaria[vars]))
+pairs(na.omit(malaria_climate[vars]), pch = 19,  cex = 0.5, col = my_cols[aicmalaria$result_microscopy_malaria_kenya_A], lower.panel=NULL)
+cor(na.omit(malaria_climate[vars]))
 # non-linear temperature option 1. splines -------------------------------------------------------
 #install.packages("splines")
 library("splines")
