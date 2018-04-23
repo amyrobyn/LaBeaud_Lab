@@ -433,7 +433,6 @@ factorVars <- c(
   "outcome_A", 
   "outcome_hospitalized_A")
 tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = aicmalaria)
-tableOne
 
 print(tableOne, nonnormal = "aic_calculated_age_A", exact = "stage", quote = TRUE, noSpaces = TRUE)
 table1 <- print(tableOne, nonnormal = "aic_calculated_age_A", exact = "stage", quote = FALSE, noSpaces = TRUE, printToggle = FALSE)

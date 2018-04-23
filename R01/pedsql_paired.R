@@ -9,7 +9,6 @@ library(ggplot2)
 
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-R01_lab_results<-read.csv("20180328085529_pid10495_CenqVc.csv")
 
 #load("R01_lab_results 2017-12-01 .rda")
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
