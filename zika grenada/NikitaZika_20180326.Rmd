@@ -1,0 +1,185 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+### packages
+library(data.table)
+library(tableone)
+library(plyr)
+library(REDCapR)
+library(lubridate)
+library(ggplot2)
+library(plotly)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
+Redcap.token <- readLines("Redcap.token.zika.txt") # Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+#ds <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 100)$data
+
+ds <- redcap_read(  redcap_uri  = REDcap.URL,  toke = Redcap.token,  batch_size = 100, raw_or_label= "raw", fields_collapsed = "mother_record_id, cohort, mom_id_orig_study, mom_id_orig_study_2, parish, agrees_to_participate, reason_for_refusal, refusal_which_other, consented, enrollment_complete, location, mothers_age_calc, race, occupation, education, marrital_status, partner_contribution, partner_dob, partner_occupation, partner_education, divorced_or_separated, number_of_rooms, number_of_people_living_in, children_in_house, employed_full_time, employed_part_time, monthly_income, housing_type, flooring_type, latrine_type, air_conditioning, mosquito_screens, mosquitos_in_home, mosquito_bites, time_of_exposure, job_outdoors, other_time_outdoors, repellent, coil, spray, net, collect_rain_water, store_water, water_covered, water_collecting_items, travel, travel_destination, ever_had_zikv, confirmed_blood_test, symptoms, symptom_duration, symptoms_since, how_think_infected, how_acquired, pregnant, trimester, when, in_house, at_workplace, other_pregnancy_illness, specify_other_pregnancy_illness, first_trimester_illness, second_trimester_illness, third_trimester_illness, ever_had_dengue, tested_for_dengue, how_many_times, when_dengue, hospitalized_dengue, ever_had_chikv, tested_chikv, hospitalized_chikv, symptoms_chik, symptom_duration_chik, symptoms_since_chik, joint_pain_since_chik, joint_pain_today_chik, current_bout_duration_chik, joint_pain_last_week_chik, joint_pain_last_month_chik, how_think_infected_chik, how_acquired_chik, pregnant_chik, trimester_chik, yellow_fever_vaccine, yellow_fever_vaccine_date, medical_conditions___1,medical_conditions___2,medical_conditions___3,medical_conditions___4,medical_conditions___5,medical_conditions___6,medical_conditions___7,medical_conditions___8,medical_conditions___9,medical_conditions___10,medical_conditions___11,medical_conditions___12,medical_conditions___13,medical_conditions___14,medical_conditions___99, previous_pregnancy, current_medications, list_current_medications, zika_survey_complete, location_2, mothers_age_calc_2, race_2, occupation_2, education_2, marrital_status_2, partner_contribution_2, partner_dob_2, partner_occupation_2, partner_education_2, divorced_or_separated_2, number_of_rooms_2, number_of_people_living_in_2, children_in_house_2, employed_full_time_2, employed_part_time_2, monthly_income_2, housing_type_2, flooring_type_2, latrine_type_2, air_conditioning_2, mosquito_screens_2, mosquitos_in_home_2, mosquito_bites_2, time_of_exposure_2, job_outdoors_2, other_time_outdoors_2, repellent_2, coil_2, spray_2, net_2, collect_rain_water_2, store_water_2, water_covered_2, water_collecting_items_2___1,water_collecting_items_2___2,water_collecting_items_2___3,water_collecting_items_2___4,water_collecting_items_2___5,water_collecting_items_2___6,water_collecting_items_2___7,water_collecting_items_2___8,water_collecting_items_2___9,water_collecting_items_2___10,water_collecting_items_2___11,water_collecting_items_2___98,water_collecting_items_2___99, travel_2, travel_destination_2, ever_had_zikv_2, confirmed_blood_test_2, symptoms_2___1,symptoms_2___2,symptoms_2___3,symptoms_2___4,symptoms_2___5,symptoms_2___6,symptoms_2___7,symptoms_2___8,symptoms_2___9,symptoms_2___10,symptoms_2___11,symptoms_2___12,,symptoms_2___13,,symptoms_2___14,symptoms_2___15,symptoms_2___16,symptoms_2___17,symptoms_2___18,symptoms_2___19,symptoms_2___20,symptoms_2___21,symptoms_2___22,symptoms_2___23,symptoms_2___24,symptoms_2___25,symptoms_2___26,symptoms_2___27,symptoms_2___28,symptoms_2___29,symptoms_2___30,symptoms_2___31,symptoms_2___32,symptoms_2___3,symptoms_2___34""symptom_duration_2, symptoms_since_2, how_think_infected_2, how_acquired_2, pregnant_2, trimester_2, when_2, in_house_2, at_workplace_2, other_pregnancy_illness_2, specify_other_pregnancy_illness_2, first_trimester_illness_2___1, first_trimester_illness_2___2, first_trimester_illness_2___3, first_trimester_illness_2___4, first_trimester_illness_2___98, first_trimester_illness_2___97, first_trimester_illness_2___99, second_trimester_illness_2___1, second_trimester_illness_2___2, second_trimester_illness_2___3, second_trimester_illness_2___4, second_trimester_illness_2___98, second_trimester_illness_2___97, second_trimester_illness_2___99, third_trimester_illness_2___1, third_trimester_illness_2___2, third_trimester_illness_2___3, third_trimester_illness_2___4, third_trimester_illness_2___97, third_trimester_illness_2___98, third_trimester_illness_2___99, ever_had_dengue_2, tested_for_dengue_2, how_many_times_2, when_dengue_2, hospitalized_dengue_2, ever_had_chikv_2, tested_chikv_2, hospitalized_chikv_2, symptoms_chik_2___1, symptoms_chik_2___2, symptoms_chik_2___3, symptoms_chik_2___4, symptoms_chik_2___5, symptoms_chik_2___6,, symptoms_chik_2___7, symptoms_chik_2___8, symptoms_chik_2___9, symptoms_chik_2___10, symptoms_chik_2___11, symptoms_chik_2___12, symptoms_chik_2___13, symptoms_chik_2___14, symptoms_chik_2___15, symptoms_chik_2___16, symptoms_chik_2___17, symptoms_chik_2___18, symptoms_chik_2___19, symptoms_chik_2___20, symptoms_chik_2___21, symptoms_chik_2___22, symptoms_chik_2___23, symptoms_chik_2___24, symptoms_chik_2___25, symptoms_chik_2___26, symptoms_chik_2___27, symptoms_chik_2___28, symptoms_chik_2___29, symptoms_chik_2___30, symptoms_chik_2___31, symptoms_chik_2___32, symptoms_chik_2___33, symptoms_chik_2___34, symptom_duration_chik_2, symptoms_since_chik_2, joint_pain_since_chik_2, joint_pain_today_chik_2, current_bout_duration_chik_2, joint_pain_last_week_chik_2, joint_pain_last_month_chik_2, how_think_infected_chik_2, how_acquired_chik_2, pregnant_chik_2, trimester_chik_2, yellow_fever_vaccine_2, yellow_fever_vaccine_date_2, medical_conditions_2___1, medical_conditions_2___2, medical_conditions_2___3, medical_conditions_2___4, medical_conditions_2___5, medical_conditions_2___6, medical_conditions_2___7, medical_conditions_2___8, medical_conditions_2___9, medical_conditions_2___10, medical_conditions_2___11, medical_conditions_2___12, medical_conditions_2___13, medical_conditions_2___14, medical_conditions_2___99, previous_pregnancy_2, current_medications_2, list_current_medications_2, zika_survey_fu_complete, child_id, child_calculated_age, child_age_2, term_2, gestational_weeks_2, child_delivery, delivery_type, outcome_of_delivery, neonatal_resusitation, specify_neonatal_recusitation, cong_abnormal, specify_cong_abnormal, maternal_resusitation, specify_maternal_resus, child_referred, date_assessment, gender, apgar_one, apgar_ten, opv_vaccine, vac_utd, first_weight, second_weight, third_weight, first_hc, second_hc, third_hc, first_length, second_length, third_length, stdev_weight, mean_weight, mean_length, stdev_length, mean_hc, stdev_hc, temperature, heart_rate, resp_rate, color___1,color___2,color___3,color___4,color___5,color___6, cry, tone, moving_limbs, ant_fontanelle, sutures, facial_dysmoph, cleft, red_reflex, cap_refill, heart_sounds, murmur, breath_sounds, breath_noises, resp_effort, bowel_sounds, hernia, organomegaly, testes, patent_anus, hip_manouver, hip_creases, femoral_pulse, scoliosis, sacral_dimple, moro, grasp, suck, plantar_reflex, galant_reflex, nurse_assessment_form_complete, child_id_2, child_calculated_age_2, child_age_2_2, term_2_2, gestational_weeks_2_2, child_delivery_2, delivery_type_2, outcome_of_delivery_2, neonatal_resusitation_2, specify_neonatal_recusitation_2, cong_abnormal_2, specify_cong_abnormal_2, maternal_resusitation_2, specify_maternal_resus_2, child_referred_2, date_assessment_2, gender_2, apgar_one_2, apgar_ten_2, opv_vaccine_2, vac_utd_2, first_weight_2, second_weight_2, third_weight_2, first_hc_2, second_hc_2, third_hc_2, first_length_2, second_length_2, third_length_2, stdev_weight_2, mean_weight_2, mean_length_2, stdev_length_2, mean_hc_2, stdev_hc_2, temperature_2, heart_rate_2, resp_rate_2, color_2___1, color_2___2, color_2___3, color_2___4, color_2___5, color_2___6, cry_2, tone_2, moving_limbs_2, ant_fontanelle_2, sutures_2, facial_dysmoph_2, cleft_2, red_reflex_2, cap_refill_2, heart_sounds_2, murmur_2, breath_sounds_2, breath_noises___1,breath_noises___2, breath_noises___3, breath_noises___2, breath_noises___99, resp_effort___0,resp_effort___1,resp_effort___2,resp_effort___99, bowel_sounds_2, hernia_2, organomegaly_2, testes_2, patent_anus_2, hip_manouver_2, hip_creases_2, femoral_pulse_2, scoliosis_2, sacral_dimple_2, moro_2, grasp_2, suck_2, plantar_reflex_2, galant_reflex_2, nurse_assessment_form_fu_complete, tetracore_id, denv_ct, chikv_ct, zikv_ct, igg_results_multiplex_sero, zikv1_igg, zikv2_igg, zikv3_igg, denv1_igg, denv2_igg, denv3_igg, denv4_igg, wnv_igg, jev_igg, yfv_igg, tbev_igg, chikv1_igg, chikv2_igg, result, result_new_algorithm_igm, igm_results_multiplex_sero, exposed, zikv1_igm, zikv2_igm, zikv3_igm, denv1_igm, denv2_igm, denv3_igm, denv4_igm, wnv_igm, jev_igm, yfv_igm, tbev_igm, chikv1_igm, chikv2_igm, igm_ic, igm_nc, igm_scm, igm_scg, igm_fc, igm_results_multiplex_urine, igm_result_urine, exposed_2, naval_testing_complete, zika_id_code, zika_infection, symptomatic, symtomatic_asymtomatic, notes_origional_study, original_pregnancy_cohort_complete, mom_blood_date_inventoried, mom_blood_inv_tech, mom_blood_inv_tech_other, mom_blood_sample_inv, inventory_complete, date_collected, parish_initial, home_address_initial, participant_id_number, participant_surname, participant_first_name, dob_initial, phone_number_initial, surveyor_surname_initial, surveyor_first_name_initial, race_initial, occupation_initial, education_initial, mom_educ_initial, roof_type_initial, latrine_type_initial, flooring_type_initial, drinking_source, dwelling, number_rooms, number_people, num_children, outdoor_activity_initial, mosq_bite_4_weeks_initial, repellent_initial, coil_initial, mosq_net, know_zika_prevention, know_zika_bite_time, zika_info, zika_info_where, know_zika_symptoms, know_zika_symptoms_other, travel_6, travel_6_where, water_collect, water_collect_which, mosq_day, time_outdoor, freq_mosq_bite, chik_outbreak, chik_after, chik_confirmed, chik_house, chik_symptoms, chik_symptoms_other, chik_symptom_duration, duration_joint_pain, joint_pain_today, joint_pain_week, joint_pain_month, duration_joint_pain_now, meds_joint_pain, zika_diag, zika_diag_when, symptoms_zika, symptoms_shazam, rash_16, nausea_16, nodes_16, rash_my, nausea_my, nodes_my, dengue_yn, dengue_rem_date, dengue_mdy, denv_test, denv_confirmed, denv_symptoms, durations_denv_symptoms, yf_vac, yf_vac_when, pmh, meds, current_meds, num_pregs, last_mences, rash_preg, rash_preg_when, zika_diag_preg, zika_diag_preg_when, zika_initial_survey_complete, mom_blood_fu, childs_blood_sample_fu, serum_sample_febrile, urine_sample_febrile, serum_sample_origional, urine_sample_origional, sample_inventory_complete, sample_code, referring_name_f, reporting_address_f, phone_number_referring_f, email_referring_f, name_f, private_address_f, parish_f, phone_number_f, email_f, sex_f, dob_f, age_f, place_of_birth_f, mom_name_f, dad_name_f, fever_onset_f, other_symptom_f, date_onset_other_f, date_blood_collected_f, date_urine_collected_f, vaccines_f, vaccines_other_f, previous_denv_f, previous_denv_when_f, previous_chikv_f, previous_chikv_when_f, travel_2_wks_f, travel_2_wks_when_f, travel_2_wks_return_f, travel_2_wks_where_f, signs_symtpoms_f, signs_symtpoms_other_f, where_joint_f, where_rash_f, temp_f, bp_s_f, bp_d_f, resp_rate_f, heart_rate_f, tourniqet_test_f, preg_f, race_f, race_other_f, occupation_patient_f, occupation_patient_other_p_f, occupation_patient_other_f, educ_patient_f, educ_patient_other_f, educ_mom_f, educ_other_mom_f, educ_dad_f, educa_dad_other_f, roof_type_f, roof_type_other_f, latrine_type_f, floor_type_f, floor_type_other_f, screens_f, ac_f, rooms_f, persons_in_house_f, children_in_house_f, pmh_f, cancer_type_f, other_pmh_f, meds_f, which_meds_f, outdoors_f, insect_repel_f, clothing_f, mosq_coil_f, mosq_net_f, mosq_day_f, mosq_night_f, travel_6_f, where_travel_f, water_collect_home, water_collect_items, cistern, cistern_lid, ever_chikv_f, when_chikv_f, chikv_confirmed_f, ever_denv_f, denv_tested_f, denv_repeat_f, denv_when_f, denv_hosp_f, denv_hosp_when_f_2, denv_hosp_why_f, denv_hosp_where_f, zika_febrile_form_complete, aliquot_id, internal_control_value, internal_control_value_urine, date_run_denv_urine_mom, result_denv_urine_mom, ct_denv_urine_mom, denv_copy_ml_urine_mom, date_run_denv_serum_mom, result_denv_serum_mom, ct_denv_serum_mom, denv_copy_ml_serum_mom, date_run_chikv_urine_mom, result_chikv_urine_mom, ct_chikv_urine_mom, chikv_copy_ml_urine_mom, date_run_chikv_serum_mom, result_chikv_serum_mom, ct_chikv_serum_mom, chikv_copy_ml_serum_mom, date_run_zikv_urine_mom, result_zikv_urine_mom, ct_zikv_urine_mom, zikv_copy_ml_urine_mom, date_run_zikv_serum_mom, result_zikv_serum_mom, ct_zikv_serum_mom, zikv_copy_ml_serum_mom, mother_pcr_pinsky_lab_complete, cbmi, zlen, zwei, zwfl, zbmi, zhc, mir, anthro_scores_complete, date_tested_pgold_zikv, slide_barcode_pgold_zikv, tech_pgold_zikv, aliquot_id_pgold_zikv, result_zikv_igg_pgold, value_zikv_igg_pgold, value_zikv_igg_pgold_u, value_avidity_zikv_igg_pgold, result_avidity_zikv_igg_pgold, zikv_igg_pgold_complete, date_tested_pgold_denv, slide_barcode_pgold_denv, tech_pgold_denv, aliquot_id_pgold_denv, result_denv_igg_pgold, value_denv_igg_pgold, value_denv_igg_pgold_u, value_avidity_denv_igg_pgold, result_avidity_denv_igg_pgold, denv_igg_pgold_complete, date_tested_elisa_flavi_i, tech_elisa_flavi_i, aliquot_id_elisa_flavi_i, result_flavi_i_igg_elisa, value_flavi_i_igg_elisa, flavi_i_igg_elisa_complete, date_tested_elisa_flavi_fu, tech_elisa_flavi_fu, aliquot_id_elisa_flavi_fu, result_flavi_fu_igg_elisa, value_flavi_fu_igg_elisa, flavi_fu_igg_elisa_complete, date_tested_elisa_alpha_i, tech_elisa_alpha_i, aliquot_id_elisa_alpha_i, result_alpha_i_igg_elisa, value_alpha_i_igg_elisa, alpha_i_igg_elisa_complete, date_tested_elisa_alpha_fu, tech_elisa_alpha_fu, aliquot_id_elisa_alpha_fu, result_alpha_fu_igg_elisa, value_alpha_fu_igg_elisa, alpha_fu_igg_elisa_complete, result_zikav_igg_pgold, result_denvav_igg_pgold, date_tested_pgold, tech_pgold, which_other_pgold, igg_pgold_complete, to_delete_complete")
+
+```
+
+```{r}
+### data
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
+datElisa <- read.csv("ZikaPregnancyCohort_DATA_LABELS_2018-04-23_1223.csv", stringsAsFactors = FALSE)
+datGrenada <- read.csv("ZikaPregnancyCohort_DATA_2018-04-23_1236.csv", stringsAsFactors = FALSE)
+
+# datGrenadaLabels <- read.csv("ZikaPregnancyCohort_DATA_LABELS_2018-03-26_1025.csv", stringsAsFactors = FALSE)
+
+# datOG <- merge(datElisa, datGrenada, by.x = "Mother.Record.ID", by.y = "mother_record_id", all.x = TRUE)
+# test <- datOG[c(1:12), c(1:15, 42:100)]
+### looks like this is creating 4 records per sample -- 2 mother, 2 child. why?
+
+### this way prob works better -- need to trim columns though
+datGrenada2 <- datGrenada[datGrenada$mother_record_id %in% datElisa$Mother.Record.ID, ]
+
+datOG <- cbind(datElisa, datGrenada2)
+# test <- datOG[c(1:12), c(1:41)]
+### should i create one observation per family? take mother line and add columns "Delivery.Date......D.M.Y.", "Child.calculated.age..Compared.to.date.of.assessment..DD.MM.YYYY....mother_arm_1..date.", "mean.between.three.head.circumference", "BMI", "Length.Z.Score", "Weight.Z.Score", "Z.Score.weight.for.length", "Z.Score.BMI", "Z.Score.Head.Circumference, "Microcephalic."
+
+datGrenada2Moms <- datGrenada2[datGrenada2$redcap_event_name=="mother_arm_1", ]
+datGrenada2Baby <- datGrenada2[datGrenada2$redcap_event_name=="child_arm_1", ]
+datElisaMoms <- datElisa[datElisa$Event.Name=="Mother", ]
+datElisaBaby <- datElisa[datElisa$Event.Name=="Child", ]
+
+datMoms <- merge(datGrenada2Moms, datElisaMoms, by.x = "mother_record_id", by.y = "Mother.Record.ID")
+datBaby <- merge(datGrenada2Baby, datElisaBaby, by.x = "mother_record_id", by.y = "Mother.Record.ID")
+dat <- merge(datMoms, datElisaBaby, by.x = "mother_record_id", by.y = "Mother.Record.ID")
+# test <- dat[c(1:12), c(1:41, 1140:1199)]
+
+### dat is one row per family, has mother data then baby data from ELISA col 
+## remove all the unwanted vars starting with excel col HG (location_2, col 215) to OW (zika_survey_fu_complete, col 413) -- these are all empty cells
+## also SE (child_id_2, col 499) to VK (nurse_assessment_form_fu_complete, col 583)
+## colnames(dat) == "Complete..2.x" (col 1148) to "Complete..3.x" (col 1159)
+dat2 <- dat[, -c(215:413, 499:583, 1148:1159)]
+
+## from dat2 anything with .x is mom col 836:863, anything with .y is child col 864:903
+colnames(dat2)[836:863] <- sub(".x", ".Mom", colnames(dat2)[836:863])
+colnames(dat2)[864:903] <- sub(".y", ".Child", colnames(dat2)[864:903])
+
+### to ask Des -- only have IgG.pGOLD.Results.Mom for 81 moms -- have for 383 children
+## 142 flavi_I.IgG moms, 0 for child
+## 7/150 result_zikv_serum_mom positive -- pcr results for 150
+
+### what should be included in the model? as univariate first just to see single variable associations? stepwise? lasso?
+## talked to Des -- really only have pGold results for 81 moms
+## look at mom zika exposure and dengue exposure separately then do a model of microcephaly ~ age + zika exposure + zika avidity + dengue exposure + dengue avidity
+
+### big problem
+# > table(dat2$zikv.IgG.pGOLD.Result.Mom, dat2$Microcephalic..Child, useNA = "ifany")
+#           
+#              0   1
+#            278  30
+#   Negative  12   1
+#   Positive  66   2
+
+# > table(dat2$DENV.IgG.pGOLD.Result.Mom, dat2$Microcephalic..Child, useNA = "ifany")
+#           
+#              0   1
+#            278  30
+#   Negative   1   0
+#   Positive  77   3
+dat2$jMicrocephaly <- ifelse(dat2$Z.Score.Head.Circumference.y < -2.0, 1, 0)
+# > table(dat2$zikv.IgG.pGOLD.Result.Mom, dat2$jMicrocephaly, useNA = "ifany")
+#           
+#              0   1 <NA>
+#   Negative  11   2    0
+#   Positive  59   9    0
+#   <NA>     254  47    7
+
+# > table(dat2$DENV.IgG.pGOLD.Result.Mom, dat2$jMicrocephaly, useNA = "ifany")
+#           
+  #            0   1 <NA>
+  # Negative   1   0    0
+  # Positive  69  11    0
+  # <NA>     254  47    7
+
+dat2$zikv.IgG.pGOLD.Result.Mom[dat2$zikv.IgG.pGOLD.Result.Mom==""] <- NA
+dat2$DENV.IgG.pGOLD.Result.Mom[dat2$DENV.IgG.pGOLD.Result.Mom==""] <- NA
+dat2$Avidity.Result.Mom[dat2$Avidity.Result.Mom==""] <- NA
+dat2$Avidity.Result.1.Mom[dat2$Avidity.Result.1.Mom==""] <- NA
+
+# > table(dat2$Avidity.Result.Mom, useNA = "ifany")
+# 
+# less than 6 months more than 6 months       No Infection               <NA> 
+#                 66                  2                 13                308 
+# 
+# > table(dat2$Avidity.Result.1.Mom, useNA = "ifany")
+# 
+# less than 6 months more than 6 months       No Infection               <NA> 
+#                 23                 57                  1                308 
+
+factorVars <- c("jMicrocephaly", "zikv.IgG.pGOLD.Result.Mom", "Avidity.Result.Mom", "DENV.IgG.pGOLD.Result.Mom", "Avidity.Result.1.Mom")
+dat2[, factorVars] <- lapply(dat2[, factorVars], factor)
+
+## 04/23/18 write out dat2 for Amy
+saveRDS(dat2, "ZikaDatFinal.rds")
+
+## zika
+summary(glm(jMicrocephaly ~ zikv.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + zikv.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + relevel(Avidity.Result.Mom, "No Infection"), family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + relevel(Avidity.Result.Mom, "No Infection") + zikv.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+## denv
+summary(glm(jMicrocephaly ~ DENV.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + DENV.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + relevel(Avidity.Result.1.Mom, "No Infection"), family = "binomial", data = dat2))
+
+summary(glm(jMicrocephaly ~ mothers_age_calc + relevel(Avidity.Result.1.Mom, "No Infection") + DENV.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+
+## both
+summary(glm(jMicrocephaly ~ mothers_age_calc + relevel(Avidity.Result.Mom, "No Infection") + zikv.IgG.pGOLD.Result.Mom + relevel(Avidity.Result.1.Mom, "No Infection") + DENV.IgG.pGOLD.Result.Mom, family = "binomial", data = dat2))
+```
+
+```{r}
+### tab1 for child descriptive variables
+datBaby2 <- merge(datBaby, datElisaBaby, by.x = "mother_record_id", by.y = "Mother.Record.ID")
+datBaby3 <- datBaby2[, -c(215:413, 499:583, 1148:1159)]
+colnames(datBaby3)[836:863] <- sub(".x", ".Mom", colnames(datBaby3)[836:863])
+colnames(datBaby3)[864:903] <- sub(".y", ".Child", colnames(datBaby3)[864:903])
+datBaby3$jMicrocephaly <- ifelse(datBaby3$Z.Score.Head.Circumference.Child < -2.0, 1, 0)
+
+datChildTab1 <- datBaby3[, c(1,221, 225, 231:233, 252:253,894,896:901, 904)]
+datChildTab1 <- datChildTab1[!duplicated(datChildTab1),]
+### still 399 -- there are 5 sets of twins? for some reason have 2 records each and are just fucked up -- manually boot rows 115, 118, 157, 160, 323, 326, 345, 348, 361, 364
+datChildTab1 <- datChildTab1[!datChildTab1$rownumb %in% c(115,118,157,160,323,326,345,348,361,364),]
+
+
+require(tableone)
+tab1vars <- colnames(datChildTab1)[-c(1, 16:17)]
+tab1All <- CreateTableOne(vars = tab1vars, data = datChildTab1, factorVars = c("delivery_type", "cong_abnormal", "gender"))
+tab1 <- CreateTableOne(vars = tab1vars, strata = "jMicrocephaly" , data = datChildTab1, factorVars = c("delivery_type", "cong_abnormal", "gender"))
+print(tab1, smd=TRUE)
+
+tab1 <- print(tab1, quote = FALSE, noSpaces = TRUE, printToggle = FALSE, smd=TRUE)
+tab1All <- print(tab1All, quote = FALSE, noSpaces = TRUE, printToggle = FALSE, smd=TRUE)
+
+## Save to a CSV file
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
+write.csv(tab1, file = "table1zika_20180326.csv")
+write.csv(tab1All, "table1zikaOverall_20180326.csv")
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

@@ -1,3 +1,4 @@
+
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah")
 # temp climate -----------------------------------------------------------------
 #Usually, incubation periods vary depending on the species of Plasmodium causing malaria. The average incubation period is 9-14 days for Plasmodium falciparum, 12-17 days for infections by Plasmodium vivax and 18-40 days for infections caused by Plasmodium malariae[1].
@@ -28,11 +29,11 @@ plot(temp.long$date_collected, round(temp.long$meanTemp), exclude=NULL)
   Redcap.token <- readLines("api.key.txt") # Read API token from folder
   REDcap.URL  <- 'https://redcap.stanford.edu/api/'
   rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-#  climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R 
+  climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R 
   #save backup from today
   currentDate <- Sys.Date() 
   FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
-#    save(climate,file=FileName)
+    save(climate,file=FileName)
   
     # or 2. load saved climate -----------------------------------------------------------------
             currentDate <- Sys.Date() 
@@ -100,8 +101,8 @@ climate = climate %>%
   )
 # plot rolling means and sums over time -----------------------------------
 library(ggplot2)
-ggplot (climate, aes (x = date_collected, y = temp_mean_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Average Temperature (C) in last 30 days") 
-ggplot (climate, aes (x = date_collected, y = rainfall_sum_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Cummulative Precipitation (mm) in last 30 days") 
+ggplot (climate, aes (x = date_collected, y = temp_mean_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "2 months", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Average Temperature (C) in last 30 days") 
+ggplot (climate, aes (x = date_collected, y = rainfall_sum_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "2 months", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Cummulative Precipitation (mm) in last 30 days") 
 
 # malaria climate merge-----------------------------------------------------------------
 aicmalaria <- readRDS("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah/aicmalaria.rds")
@@ -181,27 +182,59 @@ summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30
 exp(cbind(OR = coef(spline.malaria), confint(spline.malaria)))
 anova(spline.malaria)
 
+table(round(malaria_climate$rainfall_sum_30))
 range(malaria_climate$temp_mean_30)
-range(malaria_climate$temp_mean_30)
-plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 1:506)), rug = FALSE, main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+range(malaria_climate$rainfall_sum_30)
+
+plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 1:384)), rug = FALSE, main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
 plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.6:31.02)), rug = FALSE, main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
 
 # by site -----------------------------------------------------------------
+table(round(malaria_climate_c$rainfall_sum_30))
+range(malaria_climate_c$temp_mean_30)
+range(malaria_climate_c$rainfall_sum_30)
 summary(spline.malaria.c <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) + agecat_A +   fever_contact_A + mosquito_bites_aic_A  + gender_aic_A + ses_sum, data = malaria_climate_c))
 anova(spline.malaria.c)
 exp(cbind(OR = coef(spline.malaria.c), confint(spline.malaria.c)))
+plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 16:371)), rug = FALSE, sub="Chulaimbo", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.52:26.45)), rug = FALSE, sub="Chulaimbo",main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
 
+table(round(malaria_climate_k$rainfall_sum_30))
+range(malaria_climate_k$temp_mean_30)
+range(malaria_climate_k$rainfall_sum_30)
 summary(spline.malaria.k <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) + agecat_A + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A + ses_sum, data = malaria_climate_k))
 exp(cbind(OR = coef(spline.malaria.k), confint(spline.malaria.k)))
 anova(spline.malaria.k)
+plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 16:367)), rug = FALSE, sub="Kisumu", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 24.08:28.15)), rug = FALSE, sub="Kisumu", main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
 
+table(round(malaria_climate_m$rainfall_sum_30))
+range(malaria_climate_m$temp_mean_30)
+range(malaria_climate_m$rainfall_sum_30)
 summary(spline.malaria.m <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) + agecat_A + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A +ses_sum , data = malaria_climate_m))
 exp(cbind(OR = coef(spline.malaria.m), confint(spline.malaria.m)))
 anova(spline.malaria.m)
+plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 1:384)), rug = FALSE, sub="Msambweni",main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 24.93:31.02)), rug = FALSE, sub="Msambweni", main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
 
+table(round(malaria_climate_u$rainfall_sum_30))
+range(malaria_climate_u$temp_mean_30)
+range(malaria_climate_u$rainfall_sum_30)
 summary(spline.malaria.u <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) +agecat_A + fever_contact_A + mosquito_bites_aic_A +  gender_aic_A + ses_sum, data = malaria_climate_u))
 exp(cbind(OR = coef(spline.malaria.u), confint(spline.malaria.u)))
 anova(spline.malaria.u)
+library("lattice")
+trellis.device() 
+trellis.par.set(list(axis.text = list(cex = 2), 
+                     par.ylab.text = list(cex = 1.5), 
+                     par.xlab.text = list(cex = 1.5),
+                     par.main.text = list(cex = 1.5),
+                     par.sub.text = list(cex = 1.5)
+)) 
+plot(effects::Effect(focal.predictors = c("rainfall_sum_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 1:306)), rug = FALSE, main="Precipitation Effect on Malaria Transmission",sub="Ukunda",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 25.15:30.15)), rug = FALSE, main="Temperature Effect on Malaria Transmission", sub="Ukunda",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
 
 # save merged dataset.  ---------------------------------------------------
 saveRDS(malaria_climate, file="malaria_climate.rds")
+

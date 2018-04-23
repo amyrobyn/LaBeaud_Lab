@@ -92,6 +92,10 @@ library("lubridate")
 library(tidyr)
 #    load("R01_lab_results.rda")
 R01_lab_results_visit<- R01_lab_results[which(R01_lab_results$redcap_event_name!="patient_informatio_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
+forsaidi<- R01_lab_results[which(!is.na(R01_lab_results$interview_date_aic) & (is.na(R01_lab_results$result_microscopy_malaria_kenya)) & (!is.na(R01_lab_results$result_igg_denv_kenya))),]
+forsaidi<-forsaidi[,c("person_id","id_city","redcap_event_name","interview_date_aic","result_microscopy_malaria_kenya","result_igg_denv_kenya","malaria_results","rdt_results","aic_symptom_fever","temp")]
+write.csv(forsaidi,"missing_microscopy.csv",na="")
 
 interview_dates<-R01_lab_results_visit[, grepl("person_id|redcap_event_name|interview_date|id_city|redcap_event_name|id_cohort", names(R01_lab_results_visit))]
 interview_dates<-interview_dates[, !grepl("u24", names(interview_dates))]

@@ -15,13 +15,5 @@ subset_dataframe$person_id <- gsub('RF0529', 'CF0529', subset_dataframe$person_i
 
 table(subset_dataframe$person_id)
 
-write.csv(as.data.frame(subset_dataframe), "subset_dataframe.csv")
+write.csv(as.data.frame(subset_dataframe), "subset_dataframe.csv",na="")
 
-Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
-REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-library(REDCapR)
-
-
-redcap_write(subset_dataframe, batch_size = 1, interbatch_delay = 2,
-             continue_on_error = FALSE, redcap_uri=REDcap.URL, token=Redcap.token, verbose = TRUE,
-             config_options = NULL)
