@@ -12,7 +12,7 @@ REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 
 
 #export data from redcap to R (must be connected via cisco VPN)
-#ds <- redcap_read(  redcap_uri  = REDcap.URL,  token       = Redcap.token,  batch_size = 100)$data
+#ds <- redcap_read(  redcap_uri  = REDcap.URL,  token   = Redcap.token,  batch_size = 100)$data
 attach(ds)
 preg_cohort<-ds
 #preg_cohort <- read.csv("Zika Results .csv")
