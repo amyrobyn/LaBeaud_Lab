@@ -18,6 +18,6 @@ ggplot(ds,aes(height_cm,child_weight_kg))+
   geom_line(aes(who_height,who_med, colour="blue"),size=2 ,alpha=.5) +
   geom_line(aes(who_height,ds$who_3sd, colour="red"),size=2,alpha=.5 ) +
   labs(title ="", x = "Height (cm)", y = "Weight (Kg)")+
-  scale_color_discrete(name = "Y series", labels = c("Child weight", "WHO Median", "WHO -3SD"))+
-  theme_classic(base_size = 30)
+  scale_color_discrete(name = "Y series", labels = c("Loess smoothed Regression \n 95% CI of Nyangatom median", "WHO Median", "WHO -3 SD"))+
+  theme_classic(base_size = 30)+ theme(legend.position="bottom")
 
