@@ -354,7 +354,7 @@ plot_ly(symptoms)%>%
   add_trace(x=~trimester, y=~adbominal, type="bar", name="adbominal pain**",error_y = ~list(value = adbominal_sd))%>%
   layout(
          xaxis = list(titlefont=list(size=34),title = "Trimester of Infection", tickfont = list(size=24)),
-         yaxis = list(titlefont=list(size=34),tickfont = list(size=24), title = 'Subjects',tickformat="%", showgrid = FALSE, zeroline = FALSE),
+         yaxis = list(titlefont=list(size=24),tickfont = list(size=24), title = 'Subjects',tickformat="%", showgrid = FALSE, zeroline = FALSE),
          margin=margin,
          legend=list(font=list(size=24), orientation="h"))
 
