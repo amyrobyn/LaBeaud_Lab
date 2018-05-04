@@ -5,16 +5,16 @@ library(tidyverse)
 
 nyg<-ggplot(ds,aes(height_cm,child_weight_kg))
 
-nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="glm")+labs(title ="GLM", x = "Height (cm)", y = "Weight (Kg)")
-nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="loess")+labs(title ="Loess", x = "Height (cm)", y = "Weight (Kg)")
-nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="lm")+labs(title ="LM", x = "Height (cm)", y = "Weight (Kg)")
+nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="glm")+labs(title ="GLM", x = "Height (cm)", y = "Weight (Kg)") +  geom_point(aes(height_cm,child_weight_kg))
+nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="loess")+labs(title ="Loess", x = "Height (cm)", y = "Weight (Kg)") +  geom_point(aes(height_cm,child_weight_kg))
+nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="lm")+labs(title ="LM", x = "Height (cm)", y = "Weight (Kg)") +  geom_point(aes(height_cm,child_weight_kg))
 
 
 
 ggplot(ds,aes(height_cm,child_weight_kg))+
   geom_point(aes(height_cm,child_weight_kg))+
   facet_grid(.~sex_child)+
-  geom_smooth(aes(height_cm,child_weight_kg, colour = "black"),level=.95,size=2,formula=y~log(x)) +
+  geom_smooth(aes(height_cm,child_weight_kg, colour = "black"),level=.95,size=2,formula=y~x,method="loess") +
   geom_line(aes(who_height,who_med, colour="blue"),size=2 ,alpha=.5) +
   geom_line(aes(who_height,ds$who_3sd, colour="red"),size=2,alpha=.5 ) +
   labs(title ="", x = "Height (cm)", y = "Weight (Kg)")+
