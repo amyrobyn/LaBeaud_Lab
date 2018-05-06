@@ -460,8 +460,8 @@ plot_ly(symptoms)%>%
     )
 # load dummy compmlications and merge with full database ------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH 2017 abstracts/priyanka- fogarty nd")
-load("complications.dum.rda")
-cohort<-merge(complications,cohort, by=c("participant_id", "redcap_event_name"), all.y=T)
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH/ASTMH 2017 abstracts/priyanka- fogarty nd/complications.dum.rda")
+cohort<-merge(complications,cases, by=c("participant_id", "redcap_event_name"), all.y=T)
 
 table(cohort$abp__sum, cohort$preg_chikvpos)
 table(cohort$compl__sum, cohort$preg_chikvpos)
@@ -470,6 +470,7 @@ table(cohort$ffm__sum, cohort$preg_chikvpos)
 
 # problems ----------------------------------------------------------------
 table(cohort$other_pregnancy_illness, cohort$pregnancy_illness)
+
 cohort <- within(cohort, other_pregnancy_illness[grepl("CHIKV", cohort$list_pregnancy_illness_category2) & (is.na(cohort$list_pregnancy_illness_category)|cohort$list_pregnancy_illness_category=="") ] <- 0)
 cohort <- within(cohort, other_pregnancy_illness[!is.na(cohort$list_pregnancy_illness_category) & cohort$list_pregnancy_illness_category!=""] <- 1)
 
