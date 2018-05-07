@@ -22,6 +22,9 @@ save(chikv_nd,file=FileName)
 load("chikv_nd 2018-01-24 .rda")
 
 # table one ---------------------------------------------------------------
+table(chikv_nd$result_child)
+
+
 chikv_nd$mother_igg<-chikv_nd$result_mother
 chikv_nd <- within(chikv_nd, mother_igg[result_mother==98|result_mother==99|result_mother==100 ] <- NA)
 
@@ -30,10 +33,30 @@ chikv_nd <- within(chikv_nd, child_igg[child_igg==98|child_igg==99|child_igg==10
 
 chikv_nd <- within(chikv_nd, alcohol[alcohol==99] <- NA)
 
-vars<-c("race", "mother_age","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
+
+vars<-c("first_few_months_illness","height","race", "mother_age","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
 factor<-c("race","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
 table1_chikv_child <- CreateTableOne(vars = vars, factor=factor, strata = "child_igg", data = chikv_nd)
+table1_chikv_child <- print(table1_chikv_child, nonnormal = vars, exact = vars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+write.csv(table1_chikv_child, file = "table1_chikv_child.csv")
+
+"pregnancy_experience","first_trimester_illness","second_trimester_illness","third_trimester_illness","previous_pregnancy"
+vars<-c("mode_of_delivery","pregnancy_illness","race", "mother_age","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
+factor<-c("race","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
 table1_chikv_mother <- CreateTableOne(vars = vars, factor=factor, strata = "mother_igg", data = chikv_nd)
+table1_chikv_mother <- print(table1_chikv_mother, nonnormal = vars, exact = vars, quote = FALSE, noSpaces = TRUE, printToggle = FALSE)
+write.csv(table1_chikv_mother, file = "table1_chikv_mother.csv")
+
+chikv_nd <- within(chikv_nd, pregnant[pregnant==99] <- NA)
+table(chikv_nd$pregnant,chikv_nd$mother_igg)
+table(chikv_nd$mother_igg)
+
+table(chikv_nd$mode_of_delivery,chikv_nd$mother_igg)
+33/(383+33)*100
+13/(13+82)*100
+
+vars<-c("mother_igg","pregnancy_illness","race", "mother_age","education","marrital_status","monthly_income","medical_conditions___6","medical_conditions___10","alcohol","smoking")
+table1_chikv_mother <- CreateTableOne(vars = vars, factor=factor, strata = "pregnant", data = chikv_nd)
 
 
 print(table1_internda_exposed, nonnormal=c("total_cognitive_score","mean_cognitive_score","total_fine_motor_score","mean_fine_motor_score","total_gross_motor_score","mean_gross_motor_score","total_expressive_language_score","mean_expressive_language_score","total_receptive_language_score","mean_receptive_language_score","total_language_score","mean_language_score","total_overall_score","mean_overall_score"), quote = TRUE, includeNA=TRUE)
@@ -59,7 +82,6 @@ pairwise.t.test(as.factor(chikv_nd$education), chikv_nd$mother_igg, p.adjust="bo
   
 # tested both mom and baby-----------------------------------------------------------------
 #cohort<-as.data.frame(chikv_nd[which(!is.na(chikv_nd$result_mother) & !is.na(chikv_nd$result_child) & chikv_nd$result_mother!=98 & chikv_nd$result_child!=98), ])#421 tested both mother and child.
-
 
 # outcome pregchikv pos ---------------------------------------------------
 cohort$preg_chikvpos<-cohort$result_mother*-1

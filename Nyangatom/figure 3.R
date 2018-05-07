@@ -26,6 +26,6 @@ plot<-ggplot(ds,aes(height_cm,child_weight_kg))+
   geom_line(aes(who_height,who_3sd, colour="red"),size=2,alpha=.5 ) +
   labs(title ="", x = "Height (cm)", y = "Weight (Kg)")+ 
   scale_color_discrete(name = "", labels = c("Loess smoothed\n regression & 95% CI       ", "WHO\n Median       ", "WHO\n -2 SD       ","WHO\n -3 SD       "))+
-  theme_classic(base_size = 30)+ theme(legend.position="bottom")
+  theme_classic(base_size = 30)+ theme(legend.position="bottom") + guides(color=guide_legend(override.aes=list(fill=NA)))
 
-plot+ theme(legend.text	= element_text(colour = "black",size= 30),strip.text = element_text(colour = "black",size= 30))+ scale_size("Observervations \n& sampling weight",range = c(1,3),breaks=c(16,22,23),labels=c("15.1","21.9","23.5"))
+plot+ theme(legend.text	= element_text(colour = "black",size= 30),strip.text = element_text(colour = "black",size= 30))+ scale_size("",range = c(1,3),breaks=c(16,22,23),labels=c("15.1","21.9","23.5"))
