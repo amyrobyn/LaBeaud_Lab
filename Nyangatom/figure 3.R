@@ -10,6 +10,7 @@ summary(ds.w)
 table(ds$sweight_child)
 
 nyg<-ggplot(ds,aes(height_cm,child_weight_kg, weight=sweight_child))
+#dev.off()
 
 nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="glm")+labs(title ="GLM", x = "Height (cm)", y = "Weight (Kg)") +  geom_point(aes(height_cm,child_weight_kg))
 nyg+geom_smooth(aes(height_cm,child_weight_kg),level=.95,size=2,formula=y~x,method="loess")+labs(title ="Loess", x = "Height (cm)", y = "Weight (Kg)") +  geom_point(aes(height_cm,child_weight_kg))
