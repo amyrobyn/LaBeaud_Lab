@@ -89,8 +89,8 @@ r01_wide$pairs_ab<-ifelse(r01_wide$elapsed.time_visit_a_arm_1>=14 & r01_wide$ela
 
 table(r01_wide$person_id[r01_wide$pairs_ab==1],r01_wide$pairs_ab[r01_wide$pairs_ab==1])
 summary(r01_wide$elapsed.time_visit_b_arm_1)
-r01_wide[r01_wide$elapsed.time_visit_b_arm_1<1 , c("person_id","acute_visit_a_arm_1","acute_visit_b_arm_1","elapsed.time_visit_b_arm_1")]
-negative<-r01_wide[which(r01_wide$elapsed.time_visit_b_arm_1<1),]
+
+negative<-r01_wide[which(r01_wide$elapsed.time_visit_b_arm_1<0),]
 write.csv(negative,"neg.csv")
 
 table(r01_wide$person_id[r01_wide$pairs_ab==1],r01_wide$pairs_ab[r01_wide$pairs_ab==1])
@@ -100,6 +100,9 @@ r01_wide$pairs_de<-ifelse(r01_wide$elapsed.time_visit_d_arm_1>=14 & r01_wide$ela
 r01_wide$pairs_ef<-ifelse(r01_wide$elapsed.time_visit_e_arm_1>=14 & r01_wide$elapsed.time_visit_e_arm_1<=84 & r01_wide$acute_visit_e_arm_1==1 & r01_wide$acute_visit_f_arm_1==0, 1, 0)    
 r01_wide$pairs_fg<-ifelse(r01_wide$elapsed.time_visit_f_arm_1>=14 & r01_wide$elapsed.time_visit_f_arm_1<=84 & r01_wide$acute_visit_f_arm_1==1 & r01_wide$acute_visit_g_arm_1==0, 1, 0)    
 r01_wide$pairs_gh<-ifelse(r01_wide$elapsed.time_visit_g_arm_1>=14 & r01_wide$elapsed.time_visit_g_arm_1<=84 & r01_wide$acute_visit_g_arm_1==1 & r01_wide$acute_visit_h_arm_1==0, 1, 0)    
+pairs<-r01_wide[c("person_id","pairs_ab","pairs_bc","pairs_cd","pairs_de","pairs_ef","pairs_fg","pairs_gh"),]
+pairs<-r01_wide[, grepl("pairs_|elapsed.time|person_id", names(r01_wide))]
+write.csv(pairs,"pairs.csv")
 
 table(r01_wide$pairs_ab)
 table(r01_wide$pairs_bc)
