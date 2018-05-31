@@ -16,14 +16,14 @@ R01_lab_results$dob<-ifelse(!is.na(R01_lab_results$date_of_birth),R01_lab_result
 R01_lab_results$dob<-as.Date(R01_lab_results$dob,  format = "%Y-%m-%d")
 
 R01_lab_results$sex<-ifelse(!is.na(R01_lab_results$gender),R01_lab_results$gender,ifelse(!is.na(R01_lab_results$gender_aic),R01_lab_results$gender_aic,R01_lab_results$u24_gender))
+library(dplyr)
+R01_lab_results<-R01_lab_results%>%group_by(person_id)%>%dplyr::mutate(dob.mean=mean(dob,na.rm=T),dob.sd=sd(dob,na.rm=T)/30,gender.mean=mean(sex,na.rm=T),gender.sd=sd(sex,na.rm=T))
 
 R01_lab_results<-R01_lab_results[order(-(grepl('person_id|redcap', names(R01_lab_results)))+1L)]
 gender_sd<-R01_lab_results[which(R01_lab_results$gender.sd>0),]
 gender_sd<-gender_sd[c("person_id","redcap_event_name","gender","gender.mean","gender.sd","gender_aic")]
 write.csv(gender_sd,"gender_sd.csv")
 
-library(dplyr)
-R01_lab_results<-R01_lab_results%>%group_by(person_id)%>%dplyr::mutate(dob.mean=mean(dob,na.rm=T),dob.sd=sd(dob,na.rm=T)/30,gender.mean=mean(sex,na.rm=T),gender.sd=sd(sex,na.rm=T))
 
 R01_lab_results$age_today<-(Sys.Date() - R01_lab_results$dob.mean)/365
 R01_lab_results$age.cc <- R01_lab_results$age_today
@@ -40,7 +40,7 @@ R01_lab_results<-R01_lab_results[order(-(grepl('dob', names(R01_lab_results)))+1
 R01_lab_results<-R01_lab_results[order(-(grepl('person_id|redcap', names(R01_lab_results)))+1L)]
 dob_sd<-R01_lab_results[which(R01_lab_results$dob.sd>12),]
 dob_sd<-dob_sd[c("dob.sd","person_id","redcap_event_name","dob","dob.mean","date_of_birth","date_of_birth_aic")]
-#write.csv(dob_sd,"dob.sd.csv")
+write.csv(dob_sd,"dob.sd.csv")
 
 
 R01_lab_results$cc <- NA
@@ -110,7 +110,7 @@ set.seed(1234)
     u24_matched_controls<- u24_all_matched_controls[c("sex","age.cc","person_id","case_control")]
     
     u24_all_matched_controls<- u24_all_matched_controls[c("sex","age.cc","person_id","case_control","child_surname","child_first_name","child_second_name","child_third_name","child_fourth_name","c_surname","c_f_name","c_s_name","c_t_name","c_fth_name","phone_number","phonenumber","mother_surname","mother_first_name","mother_second_name","mother_third_name","mother_fourth_name","father_surname","father_first_name","father_second_name","father_third_name","father_fourth_name","phone_number_aic","village_aic","village")]
-        write.csv(u24_all_matched_controls,"controls_identfied.csv")
+    write.csv(u24_all_matched_controls,"controls_identfied.csv")
     u24_all_cases<-as.data.frame(R01_lab_results[which(R01_lab_results$u24_participant==1)  , ])
     u24_all_cases$case_control<-1
     u24_all_cases<-u24_all_cases[order(-(grepl('sex|age.cc|case_control|person_id|p_score_i', names(u24_all_cases)))+1L)]
