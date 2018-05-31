@@ -16,8 +16,12 @@ write.csv(coast_may_2017_present_denv,"denv_may2017_present.csv")
 
 # chikv --------------------------------------------------------------------
 R01_lab_results$date_tested_pcr_chikv_kenya<-as.Date(as.character(as.factor(R01_lab_results$date_tested_pcr_chikv_kenya)),"%Y-%m-%d")
-coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C" & (R01_lab_results$int_date>="2017-10-01"|R01_lab_results$date_tested_pcr_chikv_kenya>="2017-10-01"))  , ]
-coast_nov_2017_present<- coast_nov_2017_present[-which(coast_nov_2017_present$int_date<"2017-09-30")  , ]
+
+coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C")  , ]
+
+#coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C" & (R01_lab_results$int_date>="2017-10-01"|R01_lab_results$date_tested_pcr_chikv_kenya>="2017-10-01"))  , ]
+#coast_nov_2017_present<- coast_nov_2017_present[-which(coast_nov_2017_present$int_date<"2017-09-30")  , ]
+
 table(coast_nov_2017_present$infected_chikv_stfd)
 #load("pedsql_pairs_acute.rda")
 #load("pedsql_merge.rda")
@@ -159,9 +163,9 @@ table(coast_nov_2017_present$City, exclude = NULL)
 colours <- c("blue", "red")
 table(coast_nov_2017_present$int_date, coast_nov_2017_present$infected_chikv_stfd)
 
-barplot(table(coast_nov_2017_present$infected_chikv_stfd),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of PCR Positive Cases")
+barplot(table(coast_nov_2017_present$infected_chikv_stfd),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Subjects")
 
-barplot(table(coast_nov_2017_present$infected_chikv_stfd, coast_nov_2017_present$month_year),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of PCR Positive Cases", xlab = "Date of Febrile Visit")
+barplot(table(coast_nov_2017_present$infected_chikv_stfd, coast_nov_2017_present$month_year),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of Subjects", xlab = "Date of Febrile Visit")
 legend("topleft", c("Negative","Positive"), cex=1.3, bty="n", fill=colours)
 
 barplot(table(coast_nov_2017_present$infected_chikv_stfd, coast_nov_2017_present$aic_symptom_joint_pains ),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of PCR Positive Cases", xlab = "Date of Febrile Visit")
