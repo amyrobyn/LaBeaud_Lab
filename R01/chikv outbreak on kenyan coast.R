@@ -1,6 +1,6 @@
 #chikv outbreak in kenyan coast
 # import data -------------------------------------------------------------
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/ASTMH/2018/chikv outbreak")
+setwd("C:/Users/amykr/Box Sync/Amy's Externally Shareable Files/chikv outbreak")
 
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")    
 R01_lab_results<-R01_lab_results[, !grepl("pedsql", names(R01_lab_results))]
@@ -19,8 +19,8 @@ R01_lab_results$date_tested_pcr_chikv_kenya<-as.Date(as.character(as.factor(R01_
 
 coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C")  , ]
 
-#coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C" & (R01_lab_results$int_date>="2017-10-01"|R01_lab_results$date_tested_pcr_chikv_kenya>="2017-10-01"))  , ]
-#coast_nov_2017_present<- coast_nov_2017_present[-which(coast_nov_2017_present$int_date<"2017-09-30")  , ]
+coast_nov_2017_present<- R01_lab_results[which(R01_lab_results$site=="C" & (R01_lab_results$int_date>="2017-10-01"|R01_lab_results$date_tested_pcr_chikv_kenya>="2017-10-01"))  , ]
+coast_nov_2017_present<- coast_nov_2017_present[-which(coast_nov_2017_present$int_date<"2017-09-30")  , ]
 
 table(coast_nov_2017_present$infected_chikv_stfd)
 #load("pedsql_pairs_acute.rda")
@@ -168,6 +168,14 @@ barplot(table(coast_nov_2017_present$infected_chikv_stfd),beside=T,col=colours, 
 barplot(table(coast_nov_2017_present$infected_chikv_stfd, coast_nov_2017_present$month_year),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of Subjects", xlab = "Date of Febrile Visit")
 legend("topleft", c("Negative","Positive"), cex=1.3, bty="n", fill=colours)
 
+coast_nov_2017_present$malaria_factor<-coast_nov_2017_present$malaria
+coast_nov_2017_present <- within(coast_nov_2017_present, malaria_factor[coast_nov_2017_present$malaria==0] <- "Malaria Negative")
+coast_nov_2017_present <- within(coast_nov_2017_present, malaria_factor[coast_nov_2017_present$malaria==1] <- "Malaria Positive")
+
+ggplot(coast_nov_2017_present,aes(x=int_date.x, y=infected_chikv_stfd))+geom_bar(stat="identity")+ theme_bw(base_size = 50)+  labs(title ="", x = "week", y = "Number of \ncases positive") + scale_x_date(date_breaks = "1 week", date_labels =  "%d %m %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),text = element_text(size = 20))
+ggplot(coast_nov_2017_present,aes(x=int_date.x, y=infected_chikv_stfd))+geom_smooth()+ theme_bw(base_size = 50)+  labs(title ="", x = "week", y = "Proportion of \ncases positive") + scale_x_date(date_breaks = "1 week", date_labels =  "%d %m %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),text = element_text(size = 20))
+ggplot(coast_nov_2017_present,aes(x=int_date.x, y=infected_chikv_stfd))+geom_smooth()+ theme_bw(base_size = 50)+  labs(title ="", x = "week", y = "Proportion of \ncases positive") + scale_x_date(date_breaks = "1 week", date_labels =  "%d %m %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),text = element_text(size = 20))+facet_grid(malaria_factor~., scales = "free")+theme(strip.text.y = element_text(angle = 0))
+
 barplot(table(coast_nov_2017_present$infected_chikv_stfd, coast_nov_2017_present$aic_symptom_joint_pains ),beside=T,col=colours, main="CHIKV Outbreak on Coast of Kenya", ylab = "Number of PCR Positive Cases", xlab = "Date of Febrile Visit")
 legend("topleft", c("None","Joint Pain"), cex=1.3, bty="n", fill=colours)
 
@@ -184,7 +192,7 @@ monthly_infection <- ddply(coast_nov_2017_present, .(month_year, City),
 ##merge with paired pedsql data (acute and convalescent)-----------------------------------------------------------------------
 write.csv(coast_nov_2017_present,"coast_nov_2017_present.csv")
 
-chikv_outbreak_ids<-coast_nov_2017_present[, grepl("person_id|redcap_event_name|int_date|infected_chikv|result_pcr|date_tested_pcr_chikv_kenya", names(coast_nov_2017_present))]
+chikv_outbreak_ids<-coast_nov_2017_present[, grepl("person_id|redcap_event_name|int_date|infected_chikv|result_pcr|date_tested_pcr_chikv_kenya|village|travel", names(coast_nov_2017_present))]
 chikv_outbreak_ids<- chikv_outbreak_ids[which(chikv_outbreak_ids$infected_chikv_stfd==1)  , ]
 write.csv(chikv_outbreak_ids,"chikv_outbreak_ids.csv")
 table(coast_nov_2017_present$outcome)
