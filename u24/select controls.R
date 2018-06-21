@@ -1,9 +1,12 @@
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-load("R01_lab_results 2018-05-17 .rda")
+load("R01_lab_results 2018-06-21 .rda")
 table(round(R01_lab_results$u24_age_calc))
 
 controls<-readRDS("controls.rds")
+controls<- controls[ ! controls$person_id %in% c("GC0008007", "GC0016006", "GC0311004", "LC0033006", "LC0091005", "LC0171010", "LC0191004", "LC0199006", "LC0210014", "LC0210017", "LC0607004", "MF0393", "MF0463", "MF0572", "MF0630", "MF0808", "MF0840", "MF0927", "MF1000", "MF1013", "MF1245", "MF1248", "MF1391", "MF1529", "MF1557", "MF1572", "MF1618", "MF1655", "MF1763", "MF1773"), ]#remove controls who refused.
+
+
 cases<-readRDS("cases.rds")
 u24.cc<-readRDS("u24.rds")
 u24_results<- R01_lab_results[which(R01_lab_results$redcap_event_name=="visit_u24_arm_1"& R01_lab_results$u24_participant==1)  , ]
@@ -47,12 +50,12 @@ R01_lab_results$cc <- NA
 R01_lab_results <- within(R01_lab_results, cc[u24_strata =="control"] <- 0)
 R01_lab_results <- within(R01_lab_results, cc[(R01_lab_results$u24_strata =="denv"|R01_lab_results$u24_strata =="chikv"|R01_lab_results$u24_strata =="both")&R01_lab_results$u24_participant==1] <- 1)
 
-
 matchControls<- R01_lab_results[which((!is.na(R01_lab_results$sex)&!is.na(R01_lab_results$age.cc)&!is.na(R01_lab_results$cc)&R01_lab_results$dob.sd<=12 & R01_lab_results$gender.sd==0)|R01_lab_results$u24_participant==1)  , ]#exclude controls with high sd or missing  age or gender
 matchControls<- R01_lab_results[which((!is.na(R01_lab_results$sex)&!is.na(R01_lab_results$age.cc)&!is.na(R01_lab_results$cc))), ]#exclude u24 without gender or without dob.
 matchControls <- with(matchControls, matchControls[order(person_id),])
 matchControls<-matchControls[!duplicated(matchControls$person_id), ]
 
+table(matchControls$u24_strata,matchControls$u24_participant)
 table(matchControls$cc)
 matchControls<- matchControls[c("sex","age.cc","cc","person_id","u24_strata","u24_village","u24_participant")]
 matchControls<-as.data.frame(matchControls[which(matchControls$cc==0|matchControls$u24_participant==1)  , ])
@@ -67,13 +70,13 @@ controls<-as.data.frame(matchControls[which(matchControls$cc==0)  , ])
 cases<-as.data.frame(matchControls[which(matchControls$cc==1)  , ])
 cases <- cases[order(cases$p_score_i),] 
 
-group <-list(seq(1, 88, by = 3),seq(1, 88, by = 3),seq(1, 88, by = 3))
+group <-list(seq(1, 95, by = 3),seq(1, 95, by = 3),seq(1, 95, by = 3))
   group<-as.data.frame(group)
   library(tidyverse)
   group<-gather(group)
   group <- group[order(group$value),] 
   group<-group["value"]
-  group<-as.data.frame(group[c(1:88),])
+  group<-as.data.frame(group[c(1:95),])
   cases<-cbind(group,cases)
   colnames(cases)[1] <- "group"
   cases$group<-as.factor(cases$group)
@@ -83,11 +86,12 @@ group <-list(seq(1, 88, by = 3),seq(1, 88, by = 3),seq(1, 88, by = 3))
   cases2$cc<-1
   cases2$person_id<-"case"
   table(controls$cc)
-  controls<- controls[c("sex","age.cc","cc","person_id","p_score_i")]
+  controls2<- controls[c("sex","age.cc","cc","person_id","p_score_i")]
   cases2<- cases2[c("sex","age.cc","cc","person_id","p_score_i")]
   
 
-  case_30_control_all<-  rbind(cases2,controls)
+  case_30_control_all<-  rbind(cases2,controls2)
+  case_30_control_all2<-  rbind.fill(cases2,controls)
   table(case_30_control_all$cc)
   case_30_control_all$case_control<-as.numeric(case_30_control_all$cc)
   
