@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "rm(list=ls()) #remove previous variable assignments\n\n#devtools::install_github(\"nutterb/redcapAPI\") # install API from here instead of inside R\n# install VPN network if not set up: https://uit.stanford.edu/service/vpn\n# connect to VPN network before starting this code\n\n# install libraries\nlibrary(redcapAPI)\nlibrary(REDCapR)\nlibrary(RCurl)\nlibrary(plyr)\n\n# make connection to REDCap\nsetwd(\"C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector\") # get redcap token from folder\nREDcap.URL  <- 'https://redcap.stanford.edu/api/'\nclim.vec.token <- readLines(\"api.key.txt\") # Read API token from folder\n\n# import all data frome redcap\nvectorData <- redcap_read(redcap_uri  = REDcap.URL, token = clim.vec.token, batch_size = 300)$data\n",
+    "created" : 1528235098986.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1268393502",
+    "id" : "8901F89E",
+    "lastKnownWriteTime" : 1528235193,
+    "last_content_update" : 1528235198672,
+    "path" : "~/GitHub/lebeaud_lab/R01/vector/vector and space.R",
+    "project_path" : "vector and space.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
