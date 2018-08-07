@@ -324,17 +324,13 @@ pedsql_wide$elapsed.time_visit_f_arm_1 <- as.numeric(pedsql_wide$int_date_visit_
 pedsql_wide$elapsed.time_visit_g_arm_1 <- as.numeric(pedsql_wide$int_date_visit_g_arm_1 - pedsql_wide$int_date_visit_f_arm_1)
 pedsql_wide$elapsed.time_visit_h_arm_1 <- as.numeric(pedsql_wide$int_date_visit_h_arm_1 - pedsql_wide$int_date_visit_g_arm_1)
 
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_b_arm_1<0), c("person_id","elapsed.time_visit_b_arm_1", "int_date_visit_a_arm_1","int_date_visit_b_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_c_arm_1<0), c("person_id","elapsed.time_visit_c_arm_1", "int_date_visit_b_arm_1","int_date_visit_c_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_d_arm_1<0), c("person_id","elapsed.time_visit_d_arm_1", "int_date_visit_c_arm_1","int_date_visit_d_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_e_arm_1<0), c("person_id","elapsed.time_visit_e_arm_1", "int_date_visit_d_arm_1","int_date_visit_e_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_f_arm_1<0), c("person_id","elapsed.time_visit_f_arm_1", "int_date_visit_e_arm_1","int_date_visit_f_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_g_arm_1<0), c("person_id","elapsed.time_visit_g_arm_1", "int_date_visit_f_arm_1","int_date_visit_g_arm_1")]
-pedsql_wide[which(pedsql_wide$elapsed.time_visit_h_arm_1<0), c("person_id","elapsed.time_visit_h_arm_1", "int_date_visit_g_arm_1","int_date_visit_h_arm_1")]
 
 pedsql_wide<-pedsql_wide[order(-(grepl('elapsed.time|int_date', names(pedsql_wide)))+1L)]
 
 pedsql_wide$pairs_ab<-ifelse(pedsql_wide$elapsed.time_visit_b_arm_1>=14 & pedsql_wide$elapsed.time_visit_b_arm_1<=84 & pedsql_wide$acute_visit_a_arm_1 ==1 & !is.na(pedsql_wide$pedsql_date_visit_a_arm_1) & pedsql_wide$acute_visit_b_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1), 1, 0)    
+pedsql_wide[which(pedsql_wide$pairs_ab==1), c("person_id","pairs_ab","elapsed.time_visit_b_arm_1", "int_date_visit_a_arm_1","int_date_visit_b_arm_1","acute_visit_b_arm_1","acute_visit_a_arm_1")]
+table(pedsql_wide$elapsed.time_visit_b_arm_1[pedsql_wide$pairs_ab==1])
+
 pedsql_wide$pairs_bc<-ifelse(pedsql_wide$elapsed.time_visit_c_arm_1>=14 & pedsql_wide$elapsed.time_visit_c_arm_1<=84 & pedsql_wide$acute_visit_b_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_b_arm_1) & pedsql_wide$acute_visit_c_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1), 1, 0)    
 pedsql_wide$pairs_cd<-ifelse(pedsql_wide$elapsed.time_visit_d_arm_1>=14 & pedsql_wide$elapsed.time_visit_d_arm_1<=84 & pedsql_wide$acute_visit_c_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_c_arm_1) & pedsql_wide$acute_visit_d_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1), 1, 0)    
 pedsql_wide$pairs_de<-ifelse(pedsql_wide$elapsed.time_visit_e_arm_1>=14 & pedsql_wide$elapsed.time_visit_e_arm_1<=84 & pedsql_wide$acute_visit_d_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_d_arm_1) & pedsql_wide$acute_visit_e_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_e_arm_1), 1, 0)    
@@ -346,9 +342,13 @@ pedsql_wide$pairs_gh<-ifelse(pedsql_wide$elapsed.time_visit_h_arm_1>=14 & pedsql
     write.csv(negative_time,"negative_time.csv")#cornelius is working on cleaning these up. 
 
 #make var for acute and follow up measures at acute visit  based on acute. 
-pedsql_pairs<- pedsql_wide[, grepl("person_id|pairs|mean|acute|elapsed.time", names(pedsql_wide) ) ]
+pedsql_pairs<- pedsql_wide[, grepl("person_id|pairs|mean|acute|elapsed.time|int_date", names(pedsql_wide) ) ]
 pedsql_pairs<- pedsql_pairs[, !grepl("u24", names(pedsql_pairs) ) ]
 pedsql_pairs$pair_sum <- as.integer(rowSums(pedsql_pairs[ , grep("pairs" , names(pedsql_pairs))], na.rm =TRUE))
+
+#remove acute and put in seperate data frame
+acute<- as.data.frame(pedsql_pairs[, grepl("person_id|acute", names(pedsql_pairs) ) ])
+pedsql_pairs<- pedsql_pairs[, !grepl("acute", names(pedsql_pairs) ) ]
 
 #order
 pedsql_pairs<-pedsql_pairs[,order(colnames(pedsql_pairs))]
@@ -364,28 +364,20 @@ pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_a_arm_1', names(pedsql_pairs)))+
 pedsql_pairs<-pedsql_pairs[order(-(grepl('patient_informatio_arm_1', names(pedsql_pairs)))+1L)]
 
 
-#remove acute and put in seperate data frame
-acute<- as.data.frame(pedsql_pairs[, grepl("person_id|acute", names(pedsql_pairs) ) ])
-pedsql_pairs<- pedsql_pairs[, !grepl("acute", names(pedsql_pairs) ) ]
 #reshape
-nameVec <- names(pedsql_pairs)
-pedsqlvar<-grep("mean", names(pedsql_all_coinfection), value = TRUE)
-v.names=c("pedsql_parent_psych_mean","pedsql_child_psych_mean","pedsql_child_emotional_mean", "pedsql_child_physical_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_total_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean","elapsed.time") 
+v.names=c("elapsed.time","int_date","pedsql_child_emotional_mean", "pedsql_child_physical_mean","pedsql_child_psych_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_total_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean","pedsql_parent_psych_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean") 
 times = c("patient_informatio_arm_1", "visit_a_arm_1", "visit_b_arm_1", "visit_c_arm_1", "visit_d_arm_1", "visit_e_arm_1", "visit_f_arm_1", "visit_g_arm_1", "visit_h_arm_1")
-pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying=c(1:117),  direction = "long", timevar = "redcap_event_name", times = times, v.names=v.names )
+colnames(pedsql_pairs)
+pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying=c(1:126),  direction = "long", timevar = "redcap_event_name", times = times, v.names=v.names )
 colnames(david_coinfection_strata_hospitalization)[colnames(david_coinfection_strata_hospitalization)=="redcap_event"] <- "redcap_event_name"
 pedsql_pairs_long_strata <- join(pedsql_pairs_long, david_coinfection_strata_hospitalization,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
-table(pedsql_pairs_long_strata$ses_sum)
-quantile(pedsql_pairs_long_strata$elapsed.time, na.rm = T, c(.10, .20, .3, .4, .5, .6, .7, .8, .9))
-pedsql_pairs_long_strata$elapsed.time.bin<-cut(pedsql_pairs_long_strata$elapsed.time, c(62, 70, 75, 81, 90, 99, 100))
+colnames(pedsql_pairs_long_strata)
 
-total_timetovis<-ggplot(pedsql_pairs_long_strata,aes(elapsed.time.bin,pedsql_child_total_mean))
+total_timetovis<-ggplot(pedsql_pairs_long_strata,aes(elapsed.time,pedsql_child_total_mean))
 total_timetovis+ geom_point()+ geom_smooth(method = "loess")+facet_grid(.~strata_all)
-
+table(pedsql_pairs_long_strata$elapsed.time,pedsql_pairs_long_strata$strata_all)
   visits_timetovisit<-ggplot(pedsql_pairs_long,aes(elapsed.time))
   visits_timetovisit+ geom_histogram()
-      
-
 pedsql_pairs_long_strata.full<-pedsql_pairs_long_strata[c("elapsed.time","elapsed.time.bin","pedsql_child_total_mean","strata_all","gender_all","age_group","ses_sum","mom_highest_level_education_aic","pair_sum")]
 pedsql_pairs_long_strata.full <-  pedsql_pairs_long_strata.full[complete.cases(pedsql_pairs_long_strata.full), ] 
 pedsql_pairs_long_strata.full<-pedsql_pairs_long_strata.full[which((pedsql_pairs_long_strata.full$pair_sum>=1 & pedsql_pairs_long_strata.full$elapsed.time<=84)),]
@@ -400,8 +392,7 @@ pedsql_pairs_long_strata.full$pedsql_child_total_mean.bin<-cut(pedsql_pairs_long
       acute_long<-reshape(acute, idvar = "person_id", varying=c(1:9),  direction = "long", timevar = "redcap_event_name", times =times, v.names="acute")
       pedsql_pairs_long <- merge(acute_long, pedsql_pairs_long,  by=c("person_id", "redcap_event_name"), all = TRUE)
         table(acute_long$acute)
-        table(pedsql_pairs_long$acute, exclude = NULL)
-        
+
       pedsql_pairs_long_ab<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_ab==1 & pedsql_pairs_long$redcap_event_name=="visit_a_arm_1")| (pedsql_pairs_long$pairs_ab==1 & pedsql_pairs_long$redcap_event_name=="visit_b_arm_1")),]
       pedsql_pairs_long_ab <- pedsql_pairs_long_ab[, grepl("person_id|redcap|mean|acute|_ab|elapsed.time", names(pedsql_pairs_long_ab) ) ]
 
@@ -425,7 +416,6 @@ pedsql_pairs_long_strata.full$pedsql_child_total_mean.bin<-cut(pedsql_pairs_long
 
 # pair the acute and conv data -------------------------------------------------------------
       pedsql_pairs_long_bind<-rbind.fill(pedsql_pairs_long_ab, pedsql_pairs_long_bc, pedsql_pairs_long_cd , pedsql_pairs_long_de, pedsql_pairs_long_ef, pedsql_pairs_long_fg, pedsql_pairs_long_gh)      
-
       #keep unique person ids and event names.> df[!duplicated(df[1:3]),]
         pedsql_pairs_long_bind<-pedsql_pairs_long_bind[!duplicated(pedsql_pairs_long_bind[1:2]), ]
         n_distinct(pedsql_pairs_long_bind$person_id, pedsql_pairs_long_bind$redcap_event_name)
@@ -486,5 +476,3 @@ pedsql_pairs_long_strata.full$pedsql_child_total_mean.bin<-cut(pedsql_pairs_long
       pedsql_pairs_acute$pedsql_parent_psych_mean_z<-(pedsql_pairs_acute$pedsql_parent_psych_mean_change-mean(pedsql_pairs_acute$pedsql_parent_psych_mean_change, na.rm = TRUE))/sd(pedsql_pairs_acute$pedsql_parent_psych_mean_change, na.rm = TRUE)
 
       save(pedsql_pairs_acute,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/pedsql_pairs_acute.rda")#save for use in others
-
-

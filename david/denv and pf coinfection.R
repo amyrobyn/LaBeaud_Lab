@@ -1,3 +1,8 @@
+library("tableone")
+library("plyr")
+library("dplyr")
+#install.packages("stringr")
+library(stringr)
 # import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
 #load data that has been cleaned previously
@@ -10,105 +15,104 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   cases<-cases[which(cases$site=="W"), ]
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
-
-
-# #create acute variable  ------------------------------------------------------------------------
+  
+  
+  # #create acute variable  ------------------------------------------------------------------------
   cases$acute<-NA
-    cases <- within(cases, acute[cases$visit_type==1] <- 1)
-    cases <- within(cases, acute[cases$visit_type==2] <- 1)
-    cases <- within(cases, acute[cases$visit_type==3] <- 0)
-    cases <- within(cases, acute[cases$visit_type==4] <- 1)
-    cases <- within(cases, acute[cases$visit_type==5] <- 0)
-
+  cases <- within(cases, acute[cases$visit_type==1] <- 1)
+  cases <- within(cases, acute[cases$visit_type==2] <- 1)
+  cases <- within(cases, acute[cases$visit_type==3] <- 0)
+  cases <- within(cases, acute[cases$visit_type==4] <- 1)
+  cases <- within(cases, acute[cases$visit_type==5] <- 0)
+  
   #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
-    cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
-    cases <- within(cases, acute[cases$roof_type!=""] <- 1)
-    cases <- within(cases, acute[cases$pregnant!=""] <- 1)
+  cases <- within(cases, acute[cases$kid_highest_level_education_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$occupation_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$oth_educ_level_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$mom_highest_level_education_aic!=""] <- 1)
+  cases <- within(cases, acute[cases$roof_type!=""] <- 1)
+  cases <- within(cases, acute[cases$pregnant!=""] <- 1)
   #if it is visit a,call it acute
-    cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1" & cases$Cohort=="F"] <- 1)
+  cases <- within(cases, acute[cases$redcap_event=="visit_a_arm_1" & cases$Cohort=="F"] <- 1)
   
   #if they have fever, call it acute
-    cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
-    cases <- within(cases, acute[cases$temp>=38] <- 1)
+  cases <- within(cases, acute[cases$aic_symptom_fever==1] <- 1)
+  cases <- within(cases, acute[cases$temp>=38] <- 1)
   
   #otherwise, it is not acute
-    cases <- within(cases, acute[cases$acute!=1] <- 0)
-    table(cases$acute)
-
-# count number per group for subject diagram------------------------------------------------------------------------
-library("dplyr")
+  cases <- within(cases, acute[cases$acute!=1] <- 0)
+  table(cases$acute)
+  
+  # count number per group for subject diagram------------------------------------------------------------------------
   n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9772 patients reviewed
   aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2056 patients included in study (aic, west)
   afi<-  sum(cases$acute==1, na.rm = TRUE)#2809 afi's
-#denv  case defination------------------------------------------------------------------------
+  #denv  case defination------------------------------------------------------------------------
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
-    cases$infected_denv_stfd<-NA
-    cases$infected_denv_stfd[cases$tested_denv_stfd_igg ==1 |cases$result_pcr_denv_kenya==0|cases$result_pcr_denv_stfd==0]<-0
-    cases$infected_denv_stfd[cases$seroc_denv_stfd_igg==1|cases$result_pcr_denv_kenya==1|cases$result_pcr_denv_stfd==1]<-1
-      table(cases$seroc_denv_stfd_igg)
-      table(cases$infected_denv_stfd)  
-    
+  cases$infected_denv_stfd<-NA
+  cases$infected_denv_stfd[cases$tested_denv_stfd_igg ==1 |cases$result_pcr_denv_kenya==0|cases$result_pcr_denv_stfd==0]<-0
+  cases$infected_denv_stfd[cases$seroc_denv_stfd_igg==1|cases$result_pcr_denv_kenya==1|cases$result_pcr_denv_stfd==1]<-1
+  table(cases$seroc_denv_stfd_igg)
+  table(cases$infected_denv_stfd)  
+  
   #table of denv at acute visit. 
-    denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
-#malaria case defination------------------------------------------------------------------------
-#Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
-    cases$malaria<-NA
-    cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
-    cases <- within(cases, malaria[cases$rdt_result==0] <- 0)#rdt
-    cases <- within(cases, malaria[cases$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
-    cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==0] <- 0)#microscopy. this goes last so that it overwrites all the other's if it exists.
-
-    cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
-    cases <- within(cases, malaria[cases$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
-    cases <- within(cases, malaria[cases$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
-    table(cases$malaria)
-#denv by pcr or serology ------------------------------------------------------------------------
-    cases$pcr_denv<-NA
-    cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==0] <- 0)
-    cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==0] <- 0)
-    cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==1] <- 1)
-    cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==1] <- 1)
-    table(cases$pcr_denv)
-    table(cases$seroc_denv_stfd_igg)
+  denv_acute<-  sum(cases$infected_denv_stfd==1 & cases$acute==1, na.rm = TRUE)#126 denv infected (seroconverter or PCR +)
+  #malaria case defination------------------------------------------------------------------------
+  #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
+  cases$malaria<-NA
+  cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
+  cases <- within(cases, malaria[cases$rdt_result==0] <- 0)#rdt
+  cases <- within(cases, malaria[cases$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
+  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==0] <- 0)#microscopy. this goes last so that it overwrites all the other's if it exists.
+  
+  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
+  cases <- within(cases, malaria[cases$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
+  cases <- within(cases, malaria[cases$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
+  table(cases$malaria)
+  #denv by pcr or serology ------------------------------------------------------------------------
+  cases$pcr_denv<-NA
+  cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==0] <- 0)
+  cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==0] <- 0)
+  cases <- within(cases, pcr_denv[cases$result_pcr_denv_kenya==1] <- 1)
+  cases <- within(cases, pcr_denv[cases$result_pcr_denv_stfd==1] <- 1)
+  table(cases$pcr_denv)
+  table(cases$seroc_denv_stfd_igg)
   table(cases$seroc_denv_stfd_igg, cases$pcr_denv, exclude = NULL)#87 by pcr, 6 by igg seroconversion.
   table(cases$infected_denv_stfd, cases$malaria, exclude = NULL)
   table(cases$infected_denv_stfd, exclude = NULL)
-#  #some need to be malaria tested to be included in sample ------------------------------------------------------------------------
-    not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
-    table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
-    table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
-#  keep acute only ------------------------------------------------------------------------
+  #  #some need to be malaria tested to be included in sample ------------------------------------------------------------------------
+  not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
+  table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
+  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
+  #  keep acute only ------------------------------------------------------------------------
   cases<-cases[which(cases$acute==1), ]
-
-#  keep only those tested for both denv and malaria ------------------------------------------------------------------------
-    #define denv testing as pcr or paired igg.
-    cases$tested_malaria<-NA
-    cases <- within(cases, tested_malaria[!is.na(cases$malaria)] <- 1)
-    cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
-    cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
-#count just tested for denv not malaria  #just tested for malaria not denv
-    table(cases$tested_malaria, exclude = NULL)#malaria tested = 2178 NA = 631
-    table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1904 NA = 905
-    table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 362 not malaria tested but denv tested. 88 malaria tested but not denv tested. 543 tested for neither. 1816 tested for both
-    denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1816 tested for both
-    
-    denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#543
-    denv_not_tested_malaria_tested <-  sum(is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#88
-    denv_tested_malaria_not_tested <-  sum(!is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#362
-    
+  
+  #  keep only those tested for both denv and malaria ------------------------------------------------------------------------
+  #define denv testing as pcr or paired igg.
+  cases$tested_malaria<-NA
+  cases <- within(cases, tested_malaria[!is.na(cases$malaria)] <- 1)
+  cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
+  cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
+  #count just tested for denv not malaria  #just tested for malaria not denv
+  table(cases$tested_malaria, exclude = NULL)#malaria tested = 2178 NA = 631
+  table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1904 NA = 905
+  table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 362 not malaria tested but denv tested. 88 malaria tested but not denv tested. 543 tested for neither. 1816 tested for both
+  denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1816 tested for both
+  
+  denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#543
+  denv_not_tested_malaria_tested <-  sum(is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#88
+  denv_tested_malaria_not_tested <-  sum(!is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#362
+  
   #keep only those tested for both
-    cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
-#flow chart of subjects.    
+  cases<-cases[which(!is.na(cases$malaria) & cases$tested_denv_stfd_igg==1  & cases$acute==1), ]
+  #flow chart of subjects.    
   n_events_tested<-  sum(length(cases$person_id))#1816 acute visits tested for both denv and malaria.
   n_subjects_tested<-  sum(n_distinct(cases$person_id), na.rm = TRUE)#1729 unique subjects.
   
-#  strata for malaria and denv------------------------------------------------------------------------
+  #  strata for malaria and denv------------------------------------------------------------------------
   #denv and any malaria  
-#Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
+  #Can you then create a DENV/malaria where all episodes can be defined as DENV/malaria pos, DENV pos, malaria pos, or DENV/malaria neg?
   #What I would like is the cases defined as follows:
   #DENV: positive by RT-PCR, or IgG seroconversion (I've run your code but there are symptoms variables that give me errors.says they don't exist). Can you also query how many seroconverted bc, de, fg?
   #this is the same way i have defined infection for desiree.
@@ -119,7 +123,7 @@ library("dplyr")
   denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#717
   denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#1008
   
-# malaria species------------------------------------------------------------------------
+  # malaria species------------------------------------------------------------------------
   cases$malaria_species<-NA
   
   cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
@@ -139,7 +143,7 @@ library("dplyr")
   cases$malaria_pf<-NA
   cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==0 & cases$malaria!=1] <- 0)#rdt
   cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==1] <- 1)#rdt
-
+  
   cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==0 & !is.na(cases$result_microscopy_malaria_kenya) & cases$malaria!=1] <- 0)#rdt
   cases <- within(cases, malaria_pf[cases$microscopy_malaria_pf_kenya___1==1] <- 1)#rdt
   
@@ -148,7 +152,7 @@ library("dplyr")
   #1. Of the 1816, what was the distribution of Pf vs other species? Basically, I want to say this: "In our cohort, among the subjects with malaria whose Plasmodium species could be identified by blood smear microscopy, X of Y (%) were identified as Pf. P. malariae was identified in 7 subjects with malaria."
   table(cases$malaria)  
   table(cases$malaria_pf)  
-
+  
   non_id_malaria<-cases[which(cases$malaria==1 & is.na(cases$malaria_pf)), ]
   non_id_malaria <-non_id_malaria[, grepl("person_id|redcap|malaria", names(non_id_malaria) ) ]
   f <- "non_id_malaria.csv"
@@ -158,28 +162,8 @@ library("dplyr")
   non_pf <-non_pf[, grepl("person_id|redcap|malaria", names(non_pf) ) ]
   f <- "non_pf.csv"
   write.csv(as.data.frame(non_pf), f )
-  
-  ten_p_pf<-cases[which(cases$malaria_pf==1), ]
-  ten_p_pf<-ten_p_pf[sample(nrow(ten_p_pf), 80), ]
-  ten_p_pf <-ten_p_pf[, grepl("person_id|redcap|malaria", names(ten_p_pf) ) ]
-  f <- "ten_p_pf.csv"
-  write.csv(as.data.frame(ten_p_pf), f )
 
-  
-  ten_p_malaria_neg<-cases[which(cases$malaria==0), ]
-  ten_p_malaria_neg<-ten_p_malaria_neg[sample(nrow(ten_p_malaria_neg), 80), ]
-  ten_p_malaria_neg <-ten_p_malaria_neg[, grepl("person_id|redcap|malaria", names(ten_p_malaria_neg) ) ]
-  f <- "ten_p_malaria_neg.csv"
-  write.csv(as.data.frame(ten_p_malaria_neg), f )
-  
-  #all ovale pos, from owhole r01.
-  ovale_pos<-R01_lab_results[which(R01_lab_results$microscopy_malaria_po_kenya___1==1), ]
-  ovale_pos <-ovale_pos[, grepl("person_id|redcap|malaria", names(ovale_pos) ) ]
-  f <- "ovale_pos.csv"
-  write.csv(as.data.frame(ovale_pos), f )
-  
-  
-# pf malaria strata------------------------------------------------------------------------
+  # pf malaria strata------------------------------------------------------------------------
   table(cases$malaria_pf, cases$infected_denv_stfd)
   denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
   denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#35
@@ -187,67 +171,68 @@ library("dplyr")
   denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#497
   denv_neg_pf_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==1, na.rm = TRUE)#719
   
-#repate analyasis for both pf and malaria
-      
-    #create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
-          cases$strata_all<-NA
-          cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==1] <- "malaria_pos_&_denv_pos")
-          cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==0] <- "malaria_pos_&_denv_neg")
-          cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==0] <- "malaria_neg_&_denv neg")
-          cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==1] <- "malaria_neg_&_denv_pos")
-          table(cases$strata_all)
-          
-    #create strata: 1 = pf+ & denv + | 2 = pf + denv - | 3= pf- & denv - | 4= pf - & denv + 
-          #d+, pf+, m+ / d+ pf- m - / d+pf-, m+ / d-p-m+ / d-pf-m- / d-pf+m+
-    cases$strata<-NA
-      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
-      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
-      
-      cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
-      cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
-      
-      cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
-
-      cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
-      table(cases$strata)  
-      table(cases$strata_all)  
-#save dataset------------------------------------------------------------------------
-      
-save(cases,file="cases.rda")
-load("cases.rda")
-names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
-
-##merge with paired pedsql data (acute and convalescent)-----------------------------------------------------------------------
-library("plyr")
+  #repate analyasis for both pf and malaria
+  
+  #create strata: 1 = malaria+ & denv + | 2 = malaria+ denv - | 3= malaria- & denv - | 4= malaria- & denv + 
+  cases$strata_all<-NA
+  cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==1] <- "malaria_pos_&_denv_pos")
+  cases <- within(cases, strata_all[cases$malaria==1 & cases$infected_denv_stfd==0] <- "malaria_pos_&_denv_neg")
+  cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==0] <- "malaria_neg_&_denv neg")
+  cases <- within(cases, strata_all[cases$malaria==0 & cases$infected_denv_stfd==1] <- "malaria_neg_&_denv_pos")
+  table(cases$strata_all)
+  pedsqlnonna<-cases[,c("person_id","redcap_event_name","strata_all","result_pcr_denv_kenya","result_pcr_denv_stfd","result_microscopy_malaria_kenya","density_microscpy_pf_kenya","interview_date_aic","rdt_results","temp","result_igg_denv_kenya","result_igg_denv_stfd")]
+  write.csv(pedsqlnonna,"pedsql_denv_malaria_strata_all.csv")
+  
+  #create strata: 1 = pf+ & denv + | 2 = pf + denv - | 3= pf- & denv - | 4= pf - & denv + 
+  #d+, pf+, m+ / d+ pf- m - / d+pf-, m+ / d-p-m+ / d-pf-m- / d-pf+m+
+  cases$strata<-NA
+  cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
+  cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==1] <- "pf_pos_&_denv_pos")
+  
+  cases <- within(cases, strata[cases$microscopy_malaria_pf_kenya___1==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
+  cases <- within(cases, strata[cases$result_rdt_malaria_kenya==1 & cases$infected_denv_stfd==0] <- "pf_pos_&_denv_neg")
+  
+  cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==0] <- "pf_neg_&_denv_neg")
+  
+  cases <- within(cases, strata[cases$malaria==0 & cases$infected_denv_stfd==1] <- "pf_neg_&_denv_pos")
+  table(cases$strata)  
+  table(cases$strata_all)  
+  #save dataset------------------------------------------------------------------------
+  
+  save(cases,file="cases.rda")
+  load("cases.rda")
+  names(cases)[names(cases) == 'redcap_event'] <- 'redcap_event_name'
+  
+  ##merge with paired pedsql data (acute and convalescent)-----------------------------------------------------------------------
   load("pedsql_pairs_acute.rda")
-
+  
   names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
   cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
   cases_pedsql<-cases_pedsql[order(-(grepl('person_id|redcap|pedsql_', names(cases_pedsql)))+1L)]
-
-  table(cases_pedsql$pedsql_parent_social_mean_acute_paired,cases_pedsql$pedsql_parent_social_mean_conv_paired)
-
+  
+  #table(cases_pedsql$pedsql_parent_social_mean_acute_paired,cases_pedsql$pedsql_parent_social_mean_conv_paired)
+  
   cases<-cases_pedsql
   cases<-cases[order(-(grepl('person_id|redcap|pedsql_', names(cases)))+1L)]
   conv_paired_peds<-cases[which(!is.na(cases$pedsql_parent_total_mean_conv_paired)), ]
   table(cases$pedsql_parent_total_mean_conv_paired)
   
-##how to merge  with unpaired pedsql data?? if we don't know when the convalescent visit is, and we are only looking at acute visits, then what is the unpaired data?-----------------------------------------------------------------------
-
-# outcome hospitalized ----------------------------------------------------
+  ##how to merge  with unpaired pedsql data?? if we don't know when the convalescent visit is, and we are only looking at acute visits, then what is the unpaired data?-----------------------------------------------------------------------
+  
+  # outcome hospitalized ----------------------------------------------------
   cases$outcome_hospitalized<-as.numeric(as.character(cases$outcome_hospitalized))
   cases <- within(cases, outcome_hospitalized[outcome_hospitalized==8] <-1 )
   table(cases$outcome_hospitalized)
-# demographics ------------------------------------------------------------
-
+  # demographics ------------------------------------------------------------
+  
   #ses- create an index
   cases <- within(cases, kid_highest_level_education_aic[cases$kid_highest_level_education_aic==9|cases$kid_highest_level_education_aic==5] <- NA)
   cases <- within(cases, mom_highest_level_education_aic[cases$mom_highest_level_education_aic==9|cases$mom_highest_level_education_aic==5] <- NA)
   cases <- within(cases, roof_type[cases$roof_type==9|cases$roof_type==4] <- NA)
   cases <- within(cases, latrine_type[cases$latrine_type==9|cases$latrine_type==6] <- NA)
   cases <- within(cases, floor_type[cases$floor_type==9|cases$floor_type==5] <- NA)
-
-
+  
+  
   cases <- within(cases, drinking_water_source[cases$drinking_water_source==9|cases$drinking_water_source==6] <- NA)
   cases$drinking_water_source<-  as.numeric(as.character(cases$drinking_water_source))
   class(cases$drinking_water_source)
@@ -274,7 +259,7 @@ library("plyr")
   cases <- within(cases, radio[cases$radio==8] <- NA)
   class(cases$radio)
   
-
+  
   cases$television<-  as.numeric(as.character(cases$television))
   cases <- within(cases, television[cases$television==8] <- NA)
   class(cases$television)
@@ -292,47 +277,45 @@ library("plyr")
   cases <- within(cases, domestic_worker[cases$domestic_worker==8] <- NA)
   class(cases$domestic_worker)
   table(cases$domestic_worker)
-
+  
   ses<-(cases[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(cases))])
   cases$ses_sum<-rowSums(cases[, c("telephone","radio","television","bicycle","motor_vehicle", "domestic_worker")], na.rm = TRUE)
   table(cases$ses_sum)
+  
+  class(cases$aic_calculated_age)
+  cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
+  cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
+  cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
+  
+  # demography tables ------------------------------------------------------------------
+  ## Create Table 1 stratified by denv/pf status.
+  ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
 
-    class(cases$aic_calculated_age)
-    cases$aic_calculated_age<-as.numeric(as.character(cases$aic_calculated_age))
-    library("tableone")
-    cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
-    cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
+  dem_factorVars <- c("City")
+  dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
+  dem_tableOne_strata <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
+  dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = cases)
+  
+  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+  dem_tableOne_strata.csv <-print(dem_tableOne_strata, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
+  write.csv(dem_tableOne_strata.csv, file = "dem_tableOne_strata.csv")
+  
+  dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
+  write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
+  
+  #   #mosquito tables ------------------------------------------------------------------
+  cases$mosquito_bites_aic<-as.numeric(as.character(cases$mosquito_bites_aic))
+  cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
+  
+  cases$mosquito_coil_aic<-as.numeric(as.character(cases$mosquito_coil_aic))
+  cases <- within(cases, mosquito_coil_aic[cases$mosquito_coil_aic==8] <-NA )
+  
+  cases$outdoor_activity_aic<-as.numeric(as.character(cases$outdoor_activity_aic))
+  cases <- within(cases, outdoor_activity_aic[cases$outdoor_activity_aic==8] <-NA )
     
-# demography tables ------------------------------------------------------------------
-    ## Create Table 1 stratified by denv/pf status.
-    ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
-    library("tableone")
-    
-    dem_factorVars <- c("City")
-    dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
-    dem_tableOne_strata <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
-    dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = cases)
-    
-    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-    dem_tableOne_strata.csv <-print(dem_tableOne_strata, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-    write.csv(dem_tableOne_strata.csv, file = "dem_tableOne_strata.csv")
-    
-    dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-    write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
-    
-#   #mosquito tables ------------------------------------------------------------------
-    cases$mosquito_bites_aic<-as.numeric(as.character(cases$mosquito_bites_aic))
-    cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
-
-    cases$mosquito_coil_aic<-as.numeric(as.character(cases$mosquito_coil_aic))
-    cases <- within(cases, mosquito_coil_aic[cases$mosquito_coil_aic==8] <-NA )
-
-    cases$outdoor_activity_aic<-as.numeric(as.character(cases$outdoor_activity_aic))
-    cases <- within(cases, outdoor_activity_aic[cases$outdoor_activity_aic==8] <-NA )
-
     cases$mosquito_net_aic<-as.numeric(as.character(cases$mosquito_net_aic))
     cases <- within(cases, mosquito_net_aic[cases$mosquito_net_aic==8] <-NA )
-
+    
     mosq_vars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
     mosq_factorVars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
     
@@ -341,51 +324,49 @@ library("plyr")
     #summary(mosq_tableOne)
     mosq_tableOne_strata.csv <-print(mosq_tableOne_strata, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
     write.csv(mosq_tableOne_strata.csv, file = "mosq_tableOne_strata.csv")
-
+    
     mosq_tableOne_strata_all.csv <-print(mosq_tableOne_strata_all, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
     write.csv(mosq_tableOne_strata_all.csv, file = "mosq_tableOne_strata_all.csv")
     
-
     
-#2. Do you think we could do specific sub-analyses? For example, can we ask specifically just what was the difference in SES and mosquito habits in the Pf +DENV/Pf subjects?
+    
+    #2. Do you think we could do specific sub-analyses? For example, can we ask specifically just what was the difference in SES and mosquito habits in the Pf +DENV/Pf subjects?
     pf_pos<-cases[which(cases$strata=="pf_pos_&_denv_neg"|cases$strata=="pf_pos_&_denv_pos"), ]
     dem__mosq_vars=c("gender_all","aic_calculated_age","ses_sum", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
     dem_mosq_factorVars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","gender_all") 
-
-    pf_city_dem_tableOne <- CreateTableOne(vars = dem__mosq_vars, factorVars = dem_mosq_factorVars, strata = "City", data = pf_pos)
-
     
-#3.	Table 1 info for PE, and outcomes analysis
-# pedsql paired data ------------------------------------------------------
-    table(cases_pedsql$pedsql_parent_social_mean_conv_paired,cases_pedsql$pedsql_parent_social_mean_acute_paired)
-
+    pf_city_dem_tableOne <- CreateTableOne(vars = dem__mosq_vars, factorVars = dem_mosq_factorVars, strata = "City", data = pf_pos)
+    
+    
+    #3.	Table 1 info for PE, and outcomes analysis
+    # pedsql paired data ------------------------------------------------------
     pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
     pedsql_paired_tableOne_strata <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
     #print table one (assume non normal distribution)
-      pedsql_paired_tableOne_strata_non.csv <-print(pedsql_paired_tableOne_strata, 
-                                         nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired"), 
-                                         quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-      write.csv(pedsql_paired_tableOne.csv, file = "pedsql_paired_tableOne.csv")
-      
+    pedsql_paired_tableOne_strata_non.csv <-print(pedsql_paired_tableOne_strata, 
+                                                  nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired"), 
+                                                  quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+    write.csv(pedsql_paired_tableOne_strata_non.csv, file = "pedsql_paired_tableOne.csv")
+    
     #print table one (assume normal distribution)
-      pedsql_paired_tableOne_strata_normal.csv <-print(pedsql_paired_tableOne_strata, 
-                                                    quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-      write.csv(pedsql_paired_tableOne_strata_normal.csv, file = "pedsql_paired_tableOne_strata_normal.csv")
-
-      
-      pedsql_paired_tableOne_strata_all <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata_all", data = cases)
-      #print table one (assume non normal distribution)
-      pedsql_paired_tableOne_strata_all_non.csv <-print(pedsql_paired_tableOne_strata_all, 
-                                                    nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired"), 
-                                                    quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-      write.csv(pedsql_paired_tableOne_strata_all_non.csv, file = "pedsql_paired_tableOne_strata_all_non.csv")
-      
-      #print table one (assume normal distribution)
-      pedsql_paired_tableOne_strata_all_normal.csv <-print(pedsql_paired_tableOne_strata_all, 
-                                                       quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-      write.csv(pedsql_paired_tableOne_strata_all_normal.csv, file = "pedsql_paired_tableOne_strata_all_normal.csv")
-      
- 
+    pedsql_paired_tableOne_strata_normal.csv <-print(pedsql_paired_tableOne_strata, 
+                                                     quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+    write.csv(pedsql_paired_tableOne_strata_normal.csv, file = "pedsql_paired_tableOne_strata_normal.csv")
+    
+    
+    pedsql_paired_tableOne_strata_all <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata_all", data = cases)
+    #print table one (assume non normal distribution)
+    pedsql_paired_tableOne_strata_all_non.csv <-print(pedsql_paired_tableOne_strata_all, 
+                                                      nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired"), 
+                                                      quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+    write.csv(pedsql_paired_tableOne_strata_all_non.csv, file = "pedsql_paired_tableOne_strata_all_non.csv")
+    
+    #print table one (assume normal distribution)
+    pedsql_paired_tableOne_strata_all_normal.csv <-print(pedsql_paired_tableOne_strata_all, 
+                                                         quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+    write.csv(pedsql_paired_tableOne_strata_all_normal.csv, file = "pedsql_paired_tableOne_strata_all_normal.csv")
+    
+    
            
       pedsql<-cases[, grepl("person_id|pedsql|strata|hospitalized", names(cases))]
 
@@ -418,8 +399,8 @@ library("plyr")
       table(cases$nausea_vomitting)
       
       #ims
-      symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==0|symptoms$aic_symptom_seizures==0] <- 0)
-      symptoms <- within(symptoms, aic_symptom_impaired_mental_status[symptoms$aic_symptom_fits==1|symptoms$aic_symptom_seizures==1] <- 1)
+      cases <- within(cases, aic_symptom_impaired_mental_status[aic_symptom_fits==0|aic_symptom_seizures==0] <- 0)
+      cases <- within(cases, aic_symptom_impaired_mental_status[aic_symptom_fits==1|aic_symptom_seizures==1] <- 1)
       
       #bodyache
       cases <- within(cases, body_ache[cases$aic_symptom_general_body_ache==0] <- 0)
@@ -513,7 +494,6 @@ cases<-merge(meds,cases,by=c("person_id","redcap_event_name"), all=TRUE)
     cases <- within(cases, antiparasite[cases$med_antihelmenthic==1|cases$med_antimalarial==1] <- 1)
     table(cases$antiparasite)
     
-    library(stringr)
     cases$number_meds <- str_count(cases$all_meds.x, "_")
     cases$number_meds<-cases$number_meds+1
     table(cases$number_meds)
@@ -528,30 +508,30 @@ cases<-merge(meds,cases,by=c("person_id","redcap_event_name"), all=TRUE)
 
     med_tableOne_strata_all <- CreateTableOne(vars = med_vars, factorVars = med_factorVars, strata = "strata_all", data = cases)
     med_tableOne_strata_all.csv<-print(med_tableOne_strata_all, 
-                                   quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+                                       quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
     
     write.csv(med_tableOne_strata_all.csv, file = "med_tableOne_strata_all.csv")
     
-# physical exam --------------------------------------------------------------------
+    # physical exam --------------------------------------------------------------------
     pe<-grep("aic_pe", names(cases), value=TRUE)
     pe_tableOne_strata <- CreateTableOne(vars = pe, factorVars = pe, strata = "strata", data = cases)
     pe_tableOne_strata.csv<-print(pe_tableOne_strata, 
-                                       quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+                                  quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
     
     write.csv(pe_tableOne_strata.csv, file = "pe_tableOne_strata.csv")
-
+    
     pe_tableOne_strata_all <- CreateTableOne(vars = pe, factorVars = pe, strata = "strata_all", data = cases)
     pe_tableOne_strata_all.csv<-print(pe_tableOne_strata_all, 
-                                  quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+                                      quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
     
     write.csv(pe_tableOne_strata_all.csv, file = "pe_tableOne_strata_all.csv")
     
-# save and export data ----------------------------------------------------
+    # save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
-#export to csv
+    #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
     f <- "david_denv_pf_cohort.csv"
     write.csv(as.data.frame(cases), f )
-# save and export strata and hospitalization data ----------------------------------------------------
-    david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome", names(cases))]
-    save(david_coinfection_strata_hospitalization,file="david_coinfection_strata_hospitalization.rda")
+    # save and export strata and hospitalization data ----------------------------------------------------
+    david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome|gender_all|age|ses_sum|mom_highest_level_education", names(cases))]
+    save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/david_coinfection_strata_hospitalization.rda")

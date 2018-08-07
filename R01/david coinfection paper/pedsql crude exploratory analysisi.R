@@ -5,14 +5,26 @@
 # packages -----------------------------------------------------------------
 library(dplyr)
 library(plyr)
-library(redcapAPI)
-library(REDCapR)
 library(ggplot2)
 
 # get data -----------------------------------------------------------------
+library(redcapAPI)
+library(REDCapR)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-load("R01_lab_results 2018-04-11 .rda")
+Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data#export data from redcap to R (must be connected via cisco VPN)
+library(beepr)
+beep(sound=4)
+#load("R01_lab_results 2018-05-15 .rda")
 
+
+# exclude only febrile fu's -------------------------------------------------
+
+# look at raw patterns across four coinfection strata -------------------------------------------------
+load("david_coinfection_strata_hospitalization.rda")
+
+# time to follow up visit -------------------------------------------------
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
 table(R01_lab_results$redcap_event_name)
@@ -39,7 +51,7 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
   
   table(pedsql_child_total$pedsql_child_total_mean)
   hist(pedsql_child_total$pedsql_child_total_mean)
-write.csv(pedsql_child_total, "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/pedsql_child_total.csv")  
+write.csv(pedsql_child_total, "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/pedsql_child_total.csv")
 
 #parents
 #select partent variables from pedsql
@@ -62,8 +74,6 @@ table(pedsql_parent_total$pedsql_parent_total_mean)
 table(pedsql_parent_total$pedsql_parent_total_mean)
 hist(pedsql_parent_total$pedsql_parent_total_mean)
 write.csv(pedsql_parent_total, "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/pedsql_parent_total.csv")
-
-
 
 library(doBy)
 summaryBy(pedsql_parent_total_mean ~ gender_all + strata_all, data=pedsql_parent_total , FUN=c(length,mean,sd))

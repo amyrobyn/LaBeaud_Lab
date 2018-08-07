@@ -10,28 +10,30 @@ library(ggplot2)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-
-#export data from redcap to R (must be connected via cisco VPN)
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data#export data from redcap to R (must be connected via cisco VPN)
 library(beepr)
 beep(sound=4)
 
 currentDate <- Sys.Date() 
 FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
-#save(R01_lab_results,file=FileName)
-#load(FileName)
+save(R01_lab_results,file=FileName)
+load(FileName)
+R01_lab_results_inventory<- R01_lab_results[c("person_id","redcap_event_name","cdna_sample_num","tempus_sample_num","serum_num_stfd","cdna_at_stfd","num_stfd_cdna")]
+
+#load("R01_lab_results 2018-05-25 .rda")
+
 R01_lab_results<- R01_lab_results[which(!is.na(R01_lab_results$redcap_event_name))  , ]
 R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
 
 # query specific id/value -------------------------------------------------
 #names for u24
-R01_lab_results[R01_lab_results$person_id=="CF0175" , c("village_aic", "child_first_name", "child_second_name","child_third_name","child_fourth_name","child_surname","phone_number_aic","mother_first_name","mother_second_name","mother_third_name","mother_fourth_name","mother_surname","father_first_name","father_second_name","father_third_name","father_fourth_name","father_surname")]
-#microscopy results for melisa  
-R01_lab_results[R01_lab_results$person_id=="CF0175" , c("redcap_event_name","result_microscopy_malaria_kenya","density_microscpy_pf_kenya","interview_date_aic","rdt_results","temp","aic_symptom_fever","result_igg_denv_kenya","interviewer_name_aic")]
+R01_lab_results[R01_lab_results$person_id=="MF1654" , c("village_aic", "child_first_name", "child_second_name","child_third_name","child_fourth_name","child_surname","phone_number_aic","mother_first_name","mother_second_name","mother_third_name","mother_fourth_name","mother_surname","father_first_name","father_second_name","father_third_name","father_fourth_name","father_surname")]
+#microscopy and denv results  
+R01_lab_results[R01_lab_results$person_id=="GC0057004" , c("redcap_event_name","result_microscopy_malaria_kenya","density_microscpy_pf_kenya","interview_date_aic","rdt_results","temp","result_igg_denv_kenya","result_igg_denv_stfd","result_igg_chikv_stfd","result_igg_chikv_kenya","interviewer_name_aic","result_pcr_chikv_kenya","result_pcr_chikv_stfd")]
 #aic form for david
 R01_lab_results[R01_lab_results$person_id=="CF0175" , c("redcap_event_name","result_microscopy_malaria_kenya","density_microscpy_pf_kenya","interview_date_aic","rdt_results","result_igg_denv_kenya","interviewer_name_aic","date_tested_igg_denv_kenya","date_tested_igg_chikv_kenya")]
 R01_lab_results$date_tested_igg_chikv_kenya
+
 
 table(R01_lab_results$outcome, R01_lab_results$outcome_hospitalized, R01_lab_results$outcome_where_hospitalized)
 
@@ -373,7 +375,7 @@ names(seroconverter_long)[names(seroconverter_long) == 'chikv_kenya_igg'] <- 'se
 names(seroconverter_long)[names(seroconverter_long) == 'denv_stfd_igg'] <- 'seroc_denv_stfd_igg'
 names(seroconverter_long)[names(seroconverter_long) == 'chikv_stfd_igg'] <- 'seroc_chikv_stfd_igg'
 
-
+save(aic_symptoms,file="aic_symptoms.rda")
 # merging the created data sets back to main -----------------------------------------------------------------
 R01_lab_results <- merge(seroconverter_long, R01_lab_results,  by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
 R01_lab_results <- merge(aic_symptoms, R01_lab_results, by=c("person_id", "redcap_event_name"), all = TRUE)  #merge symptoms to redcap data
@@ -450,10 +452,10 @@ table(R01_lab_results$age_group, exclude = NULL)
 
 # deidentify -----------------------------------------------------------------
 #take name out of event.
-names(R01_lab_results)[names(R01_lab_results) == 'redcap_event_name'] <- 'redcap_event'
-identifiers<-grep("name|gps", names(R01_lab_results), value = TRUE)
+#names(R01_lab_results)[names(R01_lab_results) == 'redcap_event_name'] <- 'redcap_event'
+#identifiers<-grep("name|gps", names(R01_lab_results), value = TRUE)
 #R01_lab_results<-R01_lab_results[ , !(names(R01_lab_results) %in% identifiers)]#turn of the deidentifiers to export the u24 data. 
-names(R01_lab_results)[names(R01_lab_results) == 'redcap_event'] <- 'redcap_event_name'
+#names(R01_lab_results)[names(R01_lab_results) == 'redcap_event'] <- 'redcap_event_name'
 
 # incidence -----------------------------------------------------------------
 table(R01_lab_results$seroc_denv_kenya_igg, R01_lab_results$seroc_denv_stfd_igg, exclude=NULL)
@@ -742,6 +744,7 @@ print(tableOne, quote = TRUE,
 tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "prev_chikv_stfd", data = R01_lab_results)
 print(tableOne, quote = TRUE,
       exact=c("site", "City", "Cohort", "rural", "Female"))
+library(tableone)
 
 tableOne <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "infected_chikv_stfd", data = R01_lab_results)
 print(tableOne, quote = TRUE,
@@ -1059,9 +1062,10 @@ R01_lab_results$gender_all[!is.na(R01_lab_results$gender_aic)] = R01_lab_results
 table(R01_lab_results$gender_all, exclude = NULL)
 
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-f <- "redcap_data_cleaned.csv"
 save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
-#save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on 12/13/17 for david conifection paper.
+
+#save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on 5/23/18 for david conifection paper.
+
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
 R01_lab_results$malaria<-NA
 R01_lab_results <- within(R01_lab_results, malaria[R01_lab_results$result_rdt_malaria_keny==0] <- 0)#rdt
