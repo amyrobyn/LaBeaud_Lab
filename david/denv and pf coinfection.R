@@ -5,16 +5,17 @@ library("dplyr")
 library(stringr)
 # import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-#load data that has been cleaned previously
-  load("R01_lab_results.david.coinfection.dataset.rda") #load the data from your local directory (this will save you time later rather than always downolading from redcap.)
+load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 8/8/18 for david conifection paper.
+
+cases<- R01_lab_results[which(R01_lab_results$int_date<="2018-06-30")  , ]#subset to visits before june 30.
 
 # subset our data to david's cohort of aic west ---------------------------
-  R01_lab_results<- R01_lab_results[which(R01_lab_results$redcap_event_name!="visit_a2_arm_1" & R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1")  , ]
-  cases<-R01_lab_results[which(R01_lab_results$Cohort=="F" | R01_lab_results$Cohort=="M" ), ]
   cases <- as.data.frame(cases)
   cases<-cases[which(cases$site=="W"), ]
   cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
   cases <- cases[, !grepl("u24|sample", names(cases) ) ]
+  cases<-cases[which(cases$Cohort=="F" | cases$Cohort=="M" ), ]
+  cases<- cases[which(cases$redcap_event_name=="visit_a_arm_1" | cases$redcap_event_name=="visit_b_arm_1")  , ]
   
   
   # #create acute variable  ------------------------------------------------------------------------
@@ -42,11 +43,14 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1] <- 0)
   table(cases$acute)
-  
+
   # count number per group for subject diagram------------------------------------------------------------------------
-  n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #9772 patients reviewed
-  aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2056 patients included in study (aic, west)
-  afi<-  sum(cases$acute==1, na.rm = TRUE)#2809 afi's
+  n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #10,899 patients reviewed
+  cases<-cases[which((cases$acute==1&cases$redcap_event_name=="visit_a_arm_1")|(cases$acute!=1&cases$redcap_event_name=="visit_b_arm_1")), ]
+  aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2,205 patients included in study (aic, west)
+  table(cases$redcap_event_name)
+  afi<-  sum(cases$acute==1, na.rm = TRUE)#2203 afi's
+  
   #denv  case defination------------------------------------------------------------------------
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
@@ -84,7 +88,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   #  #some need to be malaria tested to be included in sample ------------------------------------------------------------------------
   not_malaria_tested<-cases[which(is.na(cases$malaria) & cases$infected_denv_stfd==1), ]
   table(is.na(cases$malaria) & cases$infected_denv_stfd==1)
-  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
+#  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)
   #  keep acute only ------------------------------------------------------------------------
   cases<-cases[which(cases$acute==1), ]
   
@@ -95,9 +99,10 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   cases <- within(cases, tested_denv_stfd_igg[!is.na(cases$infected_denv_stfd) |cases$tested_denv_stfd_igg==1] <- 1)
   cases <- within(cases, tested_denv_stfd_igg[cases$tested_denv_stfd_igg==0 ] <- NA)
   #count just tested for denv not malaria  #just tested for malaria not denv
-  table(cases$tested_malaria, exclude = NULL)#malaria tested = 2178 NA = 631
-  table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 1904 NA = 905
-  table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 362 not malaria tested but denv tested. 88 malaria tested but not denv tested. 543 tested for neither. 1816 tested for both
+  table(cases$tested_malaria, exclude = NULL)#malaria tested = 2171 NA = 32
+  table(cases$tested_denv_stfd_igg, exclude = NULL)#denv tested = 2037 NA = 166
+  table(cases$tested_denv_stfd_igg, cases$tested_malaria, exclude = NULL)# 32 not malaria tested but denv tested. 166 malaria tested but not denv tested. 0 tested for neither. 2005 tested for both
+  
   denv_tested_malaria_tested <-  sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria), na.rm = TRUE)#1816 tested for both
   
   denv_not_tested_malaria_not_tested  <-  sum(is.na(cases$infected_denv_stfd) & is.na(cases$malaria), na.rm = TRUE)#543
@@ -118,28 +123,12 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   #this is the same way i have defined infection for desiree.
   
   table(cases$malaria, cases$infected_denv_stfd, exclude = NULL)
-  denv_pos_malaria_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria==0, na.rm = TRUE)#43
-  denv_pos_malaria_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria==1, na.rm = TRUE)#48
-  denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#717
-  denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#1008
+  denv_pos_malaria_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria==0, na.rm = TRUE)#42
+  denv_pos_malaria_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria==1, na.rm = TRUE)#47
+  denv_neg_malaria_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria==0, na.rm = TRUE)#876
+  denv_neg_malaria_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria==1, na.rm = TRUE)#1040
   
   # malaria species------------------------------------------------------------------------
-  cases$malaria_species<-NA
-  
-  cases_malariawide<- cases[, grepl("person_id|redcap_event_name|microscopy_malaria_p|microscopy_malaria_n", names(cases) ) ]
-  cases_malariawide<-cases_malariawide[,order(colnames(cases_malariawide))]
-  cases_malariawide<-as.data.frame(cases_malariawide)
-  cases_malariawide<-reshape(cases_malariawide, idvar = c("person_id", "redcap_event_name"), varying = 1:5,  direction = "long", timevar = "species", times=c("ni", "pf","pm","po","pv"), v.names=c("microscopy_malaria"))
-  
-  cases_malariawide<- within(cases_malariawide, species[microscopy_malaria!=1] <- NA)
-  cases_malariawide<-cases_malariawide[which(!is.na(cases_malariawide$species)),]
-  
-  cases_malariawide<-cases_malariawide %>% group_by(person_id,redcap_event_name) %>% mutate(malaria_coinfection = n())
-  cases_malariawide<-aggregate( .~ person_id+redcap_event_name, cases_malariawide, function(x) toString(unique(x)))
-  
-  table(cases_malariawide$species)
-  ((764+2+5)/(976+48))*100
-  
   cases$malaria_pf<-NA
   cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==0 & cases$malaria!=1] <- 0)#rdt
   cases <- within(cases, malaria_pf[cases$result_rdt_malaria_keny==1] <- 1)#rdt
@@ -166,10 +155,10 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   # pf malaria strata------------------------------------------------------------------------
   table(cases$malaria_pf, cases$infected_denv_stfd)
   denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
-  denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#35
-  denv_pos_pf_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==1, na.rm = TRUE)#40
-  denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#497
-  denv_neg_pf_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==1, na.rm = TRUE)#719
+  denv_pos_pf_neg <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==0, na.rm = TRUE)#1511
+  denv_pos_pf_pos <-  sum(cases$infected_denv_stfd==1 & cases$malaria_pf==1, na.rm = TRUE)#27
+  denv_neg_pf_neg <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==0, na.rm = TRUE)#665
+  denv_neg_pf_pos <-  sum(cases$infected_denv_stfd==0 & cases$malaria_pf==1, na.rm = TRUE)#796
   
   #repate analyasis for both pf and malaria
   
@@ -207,7 +196,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   load("pedsql_pairs_acute.rda")
   
   names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
-  cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" , type="full")
+  cases_pedsql <- join(cases, pedsql_pairs_acute,  by=c("person_id", "redcap_event_name"), match = "all" , type="left")
   cases_pedsql<-cases_pedsql[order(-(grepl('person_id|redcap|pedsql_', names(cases_pedsql)))+1L)]
   
   #table(cases_pedsql$pedsql_parent_social_mean_acute_paired,cases_pedsql$pedsql_parent_social_mean_conv_paired)
@@ -216,7 +205,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   cases<-cases[order(-(grepl('person_id|redcap|pedsql_', names(cases)))+1L)]
   conv_paired_peds<-cases[which(!is.na(cases$pedsql_parent_total_mean_conv_paired)), ]
   table(cases$pedsql_parent_total_mean_conv_paired)
-  
   ##how to merge  with unpaired pedsql data?? if we don't know when the convalescent visit is, and we are only looking at acute visits, then what is the unpaired data?-----------------------------------------------------------------------
   
   # outcome hospitalized ----------------------------------------------------
@@ -287,23 +275,11 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   cases<-cases[order(-(grepl('pedsql_', names(cases)))+1L)]
   cases<-cases[order(-(grepl('_mean', names(cases)))+1L)]
   
-  # demography tables ------------------------------------------------------------------
-  ## Create Table 1 stratified by denv/pf status.
+# demography tables ------------------------------------------------------------------
+  ## 1.	What are risk factors for co-infection (demographics?)
+  ##Create Table 1 for demographics stratified by denv/malaria status.
   ## Tests are by oneway.test/t.test for continuous, chisq.test for categorical
-
-  dem_factorVars <- c("City")
-  dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum")
-  dem_tableOne_strata <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata", data = cases)
-  dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = cases)
-  
-  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-  dem_tableOne_strata.csv <-print(dem_tableOne_strata, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-  write.csv(dem_tableOne_strata.csv, file = "dem_tableOne_strata.csv")
-  
-  dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-  write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
-  
-  #   #mosquito tables ------------------------------------------------------------------
+#mosquito vars 
   cases$mosquito_bites_aic<-as.numeric(as.character(cases$mosquito_bites_aic))
   cases <- within(cases, mosquito_bites_aic[cases$mosquito_bites_aic==8] <-NA )
   
@@ -312,48 +288,72 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
   
   cases$outdoor_activity_aic<-as.numeric(as.character(cases$outdoor_activity_aic))
   cases <- within(cases, outdoor_activity_aic[cases$outdoor_activity_aic==8] <-NA )
+  cases$mosquito_net_aic<-as.numeric(as.character(cases$mosquito_net_aic))
+  cases <- within(cases, mosquito_net_aic[cases$mosquito_net_aic==8] <-NA )
+#print tables    
     
-    cases$mosquito_net_aic<-as.numeric(as.character(cases$mosquito_net_aic))
-    cases <- within(cases, mosquito_net_aic[cases$mosquito_net_aic==8] <-NA )
+    dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic")
+    dem_factorVars <- c("City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
+    dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = cases)
+    dem_tableOne_total <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars,  data = cases)
     
-    mosq_vars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
-    mosq_factorVars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
+    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+
+    dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all",    "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"),  quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
+    dem_tableOne_total.csv <-print(dem_tableOne_total, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all",    "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"),  quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
+    write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
+    write.csv(dem_tableOne_total.csv, file = "dem_tableOne_total.csv")
     
-    mosq_tableOne_strata <- CreateTableOne(vars = mosq_vars, strata = "strata", factorVars=mosq_factorVars, data = cases)
-    mosq_tableOne_strata_all <- CreateTableOne(vars = mosq_vars, strata = "strata_all", factorVars=mosq_factorVars, data = cases)
-    #summary(mosq_tableOne)
-    mosq_tableOne_strata.csv <-print(mosq_tableOne_strata, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-    write.csv(mosq_tableOne_strata.csv, file = "mosq_tableOne_strata.csv")
-    
-    mosq_tableOne_strata_all.csv <-print(mosq_tableOne_strata_all, exact = c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-    write.csv(mosq_tableOne_strata_all.csv, file = "mosq_tableOne_strata_all.csv")
-    
-    
-    
-    #2. Do you think we could do specific sub-analyses? For example, can we ask specifically just what was the difference in SES and mosquito habits in the Pf +DENV/Pf subjects?
-    pf_pos<-cases[which(cases$strata=="pf_pos_&_denv_neg"|cases$strata=="pf_pos_&_denv_pos"), ]
-    dem__mosq_vars=c("gender_all","aic_calculated_age","ses_sum", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
-    dem_mosq_factorVars <- c("mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","gender_all") 
-    
-    pf_city_dem_tableOne <- CreateTableOne(vars = dem__mosq_vars, factorVars = dem_mosq_factorVars, strata = "City", data = pf_pos)
-    
-    
-    #3.	Table 1 info for PE, and outcomes analysis
-    # pedsql paired data ------------------------------------------------------
-    pedsql_paired_vars <- c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired")
-    pedsql_paired_tableOne_strata <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata", data = cases)
-    #print table one (assume non normal distribution)
-    pedsql_paired_tableOne_strata_non.csv <-print(pedsql_paired_tableOne_strata, 
-                                                  nonnormal=c("pedsql_child_school_mean_acute_paired", "pedsql_child_school_mean_conv_paired", "pedsql_child_social_mean_acute_paired", "pedsql_child_social_mean_conv_paired", "pedsql_parent_school_mean_acute_paired", "pedsql_parent_school_mean_conv_paired", "pedsql_parent_social_mean_acute_paired", "pedsql_parent_social_mean_conv_paired", "pedsql_child_physical_mean_acute_paired", "pedsql_child_physical_mean_conv_paired", "pedsql_parent_physical_mean_acute_paired", "pedsql_parent_physical_mean_conv_paired", "pedsql_child_emotional_mean_acute_paired", "pedsql_child_emotional_mean_conv_paired", "pedsql_parent_emotional_mean_acute_paired", "pedsql_parent_emotional_mean_conv_paired"), 
-                                                  quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    write.csv(pedsql_paired_tableOne_strata_non.csv, file = "pedsql_paired_tableOne.csv")
-    
-    #print table one (assume normal distribution)
-    pedsql_paired_tableOne_strata_normal.csv <-print(pedsql_paired_tableOne_strata, 
-                                                     quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    write.csv(pedsql_paired_tableOne_strata_normal.csv, file = "pedsql_paired_tableOne_strata_normal.csv")
-    
-    
+
+#3.	Table info for PE, and outcomes analysis
+#Table 2, OR of symptom/sign in reference to co-infection 
+# 2.	Does co-infection present differently clinically than solo-infection (symptoms, signs, pedsQL acute)?
+pedsql<- cases[which(cases$redcap_event_name=="visit_a_arm_1")  , ]#acute only.
+pedsql<-pedsql[, grepl("pedsql|strata_all", names(pedsql))]
+pedsql<-pedsql[, !grepl("child|infant|teen|812|mean|sum|type|group|complete|comments|idno|date|interviewer", names(pedsql))]
+pedsql<-pedsql[order(-(grepl('strata', names(pedsql)))+1L)]
+
+pedsql$strata_all<-as.factor(pedsql$strata_all)
+pedsql$strata_all = relevel(pedsql$strata_all, ref = "malaria_pos_&_denv_pos")
+
+#median tables
+pedsql_vars<-names(pedsql[,-1])
+pedsql.tableone <- CreateTableOne(vars = pedsql_vars, factorVars = pedsql_vars, strata = "strata_all", data = pedsql)
+  pedsql.tableone.median.cat.csv<-print(pedsql.tableone, nonnormal=pedsql_vars,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+  write.csv(pedsql.tableone.median.cat.csv, file = "pedsql.tableone.median.cat.csv")
+
+pedsql.tableone <- CreateTableOne(vars = pedsql_vars, strata = "strata_all", data = pedsql)
+  pedsql.tableone.median.cont.csv<-print(pedsql.tableone, nonnormal=pedsql_vars,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
+  write.csv(pedsql.tableone.median.cont.csv, file = "pedsql.tableone.median.cont.csv")
+
+
+#or tables
+library(nnet)
+model<-multinom(pedsql$strata_all ~ pedsql$pedsql_angry+0)
+exp(coef(model))
+
+
+multi1<-lapply( pedsql[,-1], function(x) multinom(pedsql$strata_all ~ factor(x)+0))#remove factor if we decide to use cont.
+
+coef<-lapply(multi1, coefficients)
+or<-lapply(coef, exp)
+lapply(or, function(x) write.table( data.frame(x), 'or.csv'  , append= T, sep=',' ))
+lapply(names(multi1), function(x) write.table( data.frame(x), 'names.csv'  , append= T, sep=',' ))
+
+#https://stats.stackexchange.com/questions/63222/getting-p-values-for-multinom-in-r-nnet-package
+#install.packages("afex")
+library(afex)
+set_sum_contrasts() # use sum coding, necessary to make type III LR tests valid
+library(car)
+Anova(test,type="III")
+#install.packages("AER")
+library(AER)
+coeftest(test)
+p<-lapply(multi1, coeftest)
+ptable<-lapply(p, tidy)
+lapply(ptable, function(x) write.table( data.frame(x), 'pedsql_acute_OR_cat.csv'  , append= T, sep=',' ))
+
+# pedsql paired data ------------------------------------------------------
     pedsql_paired_tableOne_strata_all <- CreateTableOne(vars = pedsql_paired_vars, strata = "strata_all", data = cases)
     #print table one (assume non normal distribution)
     pedsql_paired_tableOne_strata_all_non.csv <-print(pedsql_paired_tableOne_strata_all, 
@@ -417,16 +417,6 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
     symptom_vars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "nausea_vomitting")
     symptom_factorVars <- c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache","nausea_vomitting")
     
-    symptoms_tableOne_strata <- CreateTableOne(vars = symptom_vars, factorVars = symptom_factorVars, strata = "strata", data = cases)
-    #summary(symptoms_tableOne)
-    symptoms_tableOne_strata.csv<-print(symptoms_tableOne_strata, 
-          exact = c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "temp", "outcome_hospitalized","nausea_vomitting"),
-          nonnormal=c("heart_rate", "temp"),
-          quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    
-    write.csv(symptoms_tableOne_strata.csv, file = "symptoms_tableOne_strata.csv")
-
-    
     symptoms_tableOne_strata_all <- CreateTableOne(vars = symptom_vars, factorVars = symptom_factorVars, strata = "strata_all", data = cases)
     #summary(symptoms_tableOne)
     symptoms_tableOne_strata_all.csv<-print(symptoms_tableOne_strata_all, 
@@ -436,96 +426,7 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data
     
     write.csv(symptoms_tableOne_strata_all.csv, file = "symptoms_tableOne_strata_all.csv")
     
-    
 
-# meds --------------------------------------------------------------------
-  cases$all_meds<-NA
-    cases$all_meds<-cases$meds_prescribed
-    
-    cases$all_meds<-tolower(cases$all_meds)
-    cases$all_meds <- gsub('  ', ' ', cases$all_meds)
-    cases$all_meds <- gsub(' ', '_', cases$all_meds)
-    
-    cases$all_meds<-gsub("chloramphenicol|teo|t.e.o|flagyl|flaggyl|ciproxin|augumentin|cefxime|ciproxin|chlamphenicol|cefixime|ciproxin|ciprofloxin|intravenous_metronidazole|nitrofurantion|ciprofloxacin|flagyla|  |gentamicin|metronidazole|floxapen|flucloxacill|trinidazole|vedrox|ampiclox|cloxacillin|ampicillin|albendaxole|albedazole|tinidazole|tetracycline|augmentin|amoxicillin|ceftriaxone|penicillian|septrin|antibiotic|ceftrizin|cotrimoxazole|cefuroxime|erythromycin|gentamycin|cipro", "antibacterial", cases$all_meds)
-    cases$all_meds<-gsub("im_quinine|artesunate|artesun|sp|quinine|coartem|quinnie|atersunate|quinnine|paludrin|quinnie|duocotecxin|pheramine|artsun|atesunate|atesa|artesinate|doxycline", "antimalarial", cases$all_meds)
-    cases$all_meds<-gsub("albendazole|abz|mebendazole|benzimidazole|diloxanide", "antihelmenthic", cases$all_meds)
-    cases$all_meds<-gsub("guaifenesin|xpen|expectants|expectant|tricoff|expectant|expectants|expectant|expectant", "expectorant", cases$all_meds)
-    cases$all_meds<-gsub("syrup|unibrolcoldcap|unibrol|tricohist|trichohist|cold_cap|ascoril", "cough", cases$all_meds)
-    cases$all_meds<-gsub( "cetrizine hydrochloride|chlorepheramine|chlore|hydrocrt|hydrocortisone|cetrizine|piriton|priton|hydroctisone_cream|hydroctisone|hydroctione|cpm|pitriton|probeta-n", "allergy", cases$all_meds)
-    cases$all_meds<-gsub("calamine_lotion|cream|lotion|eye_ointment", "topical", cases$all_meds)
-    cases$all_meds<-gsub("zinc_tablet|vitamin|vit|zinc|multisupplement|supplement|ranferon|ferrous_sulphate|mult|folic_acid|folic|ferrous|haemoton", "supplement", cases$all_meds)
-    cases$all_meds<-gsub("paracentamol|paracetamol|ibuprofen|diclofenac|calpol", "antipyretic", cases$all_meds)
-    cases$all_meds<-gsub("ketoconazole|griseofulvin|clotrimazole|clotrimazone|grisofluvin|graeofulvin|graseofulvin|greseofulvin|nystatin_oral_mouth_paint", "antifungal", cases$all_meds)
-    cases$all_meds<-gsub("voline_gel|voltaren|dinac|duclofenac", "painmed", cases$all_meds)
-    cases$all_meds<-gsub("ors|o.r.s.", "ors", cases$all_meds)
-    cases$all_meds<-gsub("iv|i.v.|ivs|i.v.s.|i.v", "iv", cases$all_meds)
-    cases$all_meds<-gsub("ventolin|ventoli|sabutanol|salbutamol|albutol", "bronchospasm", cases$all_meds)
-    cases$all_meds<-gsub("plasil", "gerd", cases$all_meds)
-    cases$all_meds<-gsub("diloxanide", "antiamoeba", cases$all_meds)
-    cases$all_meds<-gsub("admission|admitted|admit", "admit", cases$all_meds)
-    
-# dummy meds vars ---------------------------------------------------------
-    #subset meds
-    meds<-cases[, c("person_id", "redcap_event_name","all_meds", "meds_prescribed")]
-    meds <- lapply(meds, function(x) {
-      gsub("NA", "", x)
-    })
-    meds <- lapply(meds, function(x) {
-      gsub(",none", "", x)
-    })
-    meds<-as.data.frame(meds)
-
-    #create dummy vars for all meds
-    lev <- levels(factor(meds$all_meds))
-    lev <- unique(unlist(strsplit(lev, "_")))
-    mnames <- gsub(" ", "_", paste("med", lev, sep = "_"))
-    result <- matrix(data = "0", nrow = length(meds$all_meds), ncol = length(lev))
-    char.med <- as.character(meds$all_meds)
-    for (i in 1:length(lev)) {
-      result[grep(lev[i], char.med, fixed = TRUE), i] <- "1"
-    }
-    result <- data.frame(result, stringsAsFactors = TRUE)
-    colnames(result) <- mnames
-    meds <- cbind(meds,result)
-cases<-merge(meds,cases,by=c("person_id","redcap_event_name"), all=TRUE)    
-
-    cases$antiparasite <- NA
-    cases <- within(cases, antiparasite[cases$med_antihelmenthic==0|cases$med_antimalarial==0] <- 0)
-    cases <- within(cases, antiparasite[cases$med_antihelmenthic==1|cases$med_antimalarial==1] <- 1)
-    table(cases$antiparasite)
-    
-    cases$number_meds <- str_count(cases$all_meds.x, "_")
-    cases$number_meds<-cases$number_meds+1
-    table(cases$number_meds)
-    
-    med_vars=c("number_meds","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_other","med_antipyretic")
-    med_factorVars <- c("med_antibacterial", "med_antihelmenthic","med_antimalarial","med_other","med_antipyretic")
-    med_tableOne_strata <- CreateTableOne(vars = med_vars, factorVars = med_factorVars, strata = "strata", data = cases)
-    med_tableOne_strata.csv<-print(med_tableOne_strata, 
-                                        quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    
-    write.csv(med_tableOne_strata.csv, file = "med_tableOne_strata.csv")
-
-    med_tableOne_strata_all <- CreateTableOne(vars = med_vars, factorVars = med_factorVars, strata = "strata_all", data = cases)
-    med_tableOne_strata_all.csv<-print(med_tableOne_strata_all, 
-                                       quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    
-    write.csv(med_tableOne_strata_all.csv, file = "med_tableOne_strata_all.csv")
-    
-    # physical exam --------------------------------------------------------------------
-    pe<-grep("aic_pe", names(cases), value=TRUE)
-    pe_tableOne_strata <- CreateTableOne(vars = pe, factorVars = pe, strata = "strata", data = cases)
-    pe_tableOne_strata.csv<-print(pe_tableOne_strata, 
-                                  quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    
-    write.csv(pe_tableOne_strata.csv, file = "pe_tableOne_strata.csv")
-    
-    pe_tableOne_strata_all <- CreateTableOne(vars = pe, factorVars = pe, strata = "strata_all", data = cases)
-    pe_tableOne_strata_all.csv<-print(pe_tableOne_strata_all, 
-                                      quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
-    
-    write.csv(pe_tableOne_strata_all.csv, file = "pe_tableOne_strata_all.csv")
-    
     # save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
     #export to csv
