@@ -329,9 +329,6 @@ pedsql.tableone <- CreateTableOne(vars = pedsql_vars, strata = "strata_all", dat
 
 #or tables
 library(nnet)
-model<-multinom(pedsql$strata_all ~ pedsql$pedsql_angry+0)
-exp(coef(model))
-
 
 multi1<-lapply( pedsql[,-1], function(x) multinom(pedsql$strata_all ~ factor(x)+0))#remove factor if we decide to use cont.
 
@@ -426,7 +423,30 @@ lapply(ptable, function(x) write.table( data.frame(x), 'pedsql_acute_OR_cat.csv'
     
     write.csv(symptoms_tableOne_strata_all.csv, file = "symptoms_tableOne_strata_all.csv")
     
-
+    
+#Table 2, OR of symptom/sign in reference to co-infection 
+    symptoms <- cases[c("strata_all",symptom_vars)]
+    
+    multi1<-lapply( symptoms[,-1], function(x) multinom(symptoms$strata_all ~ x+0))#remove factor if we decide to use cont.
+    
+    coef<-lapply(multi1, coefficients)
+    or<-lapply(coef, exp)
+    lapply(or, function(x) write.table( data.frame(x), 'symptoms_or.csv'  , append= T, sep=',' ))
+    lapply(names(multi1), function(x) write.table( data.frame(x), 'symptoms_names.csv'  , append= T, sep=',' ))
+    
+    #https://stats.stackexchange.com/questions/63222/getting-p-values-for-multinom-in-r-nnet-package
+    #install.packages("afex")
+    library(afex)
+    set_sum_contrasts() # use sum coding, necessary to make type III LR tests valid
+    library(car)
+    #install.packages("AER")
+    library(AER)
+    p<-lapply(multi1, coeftest)
+    library(broom)
+    ptable<-lapply(p, tidy)
+    lapply(ptable, function(x) write.table( data.frame(x), 'symtoms_acute_OR.csv'  , append= T, sep=',' ))
+    
+    
     # save and export data ----------------------------------------------------
     save(cases,file="david_denv_pf_cohort.rda")
     #export to csv
