@@ -5,20 +5,23 @@ library("dplyr")
 library(stringr)
 # import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 8/8/18 for david conifection paper.
-
+#load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 8/8/18 for david conifection paper.
 cases<- R01_lab_results[which(R01_lab_results$int_date<="2018-06-30")  , ]#subset to visits before june 30.
+sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
 
 # subset our data to david's cohort of aic west ---------------------------
-  cases <- as.data.frame(cases)
+  cases<-cases[which(cases$Cohort=="F"), ]
+  sum(n_distinct(cases$person_id, na.rm = FALSE)) #6489
   cases<-cases[which(cases$site=="W"), ]
-  cases<-cases[which(cases$redcap_event!="patient_informatio_arm_1"), ]
-  cases <- cases[, !grepl("u24|sample", names(cases) ) ]
-  cases<-cases[which(cases$Cohort=="F" | cases$Cohort=="M" ), ]
-  cases<- cases[which(cases$redcap_event_name=="visit_a_arm_1" | cases$redcap_event_name=="visit_b_arm_1")  , ]
+  sum(n_distinct(cases$person_id, na.rm = FALSE)) #2277
+  cases$id_cohort<-substr(cases$person_id, 2, 2)
+  cases$id_city<-substr(cases$person_id, 1, 1)
+
   
-  
+  table(cases$redcap_event_name,cases$id_city)
+
   # #create acute variable  ------------------------------------------------------------------------
+  cases <- cases[, !grepl("u24|sample", names(cases) ) ]
   cases$acute<-NA
   cases <- within(cases, acute[cases$visit_type==1] <- 1)
   cases <- within(cases, acute[cases$visit_type==2] <- 1)
@@ -42,15 +45,18 @@ cases<- R01_lab_results[which(R01_lab_results$int_date<="2018-06-30")  , ]#subse
   
   #otherwise, it is not acute
   cases <- within(cases, acute[cases$acute!=1] <- 0)
-  table(cases$acute)
+  table(cases$redcap_event_name, cases$acute)#3074 afi.2203 at a, 707 at b.
 
   # count number per group for subject diagram------------------------------------------------------------------------
+  cases<- cases[which(cases$redcap_event_name=="visit_a_arm_1"|cases$redcap_event_name=="visit_b_arm_1")  , ]
+  sum(n_distinct(cases$person_id, na.rm = FALSE)) #2276
+  
   n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #10,899 patients reviewed
   cases<-cases[which((cases$acute==1&cases$redcap_event_name=="visit_a_arm_1")|(cases$acute!=1&cases$redcap_event_name=="visit_b_arm_1")), ]
   aic_n<-sum(n_distinct(cases$person_id, na.rm = FALSE)) #2,205 patients included in study (aic, west)
   table(cases$redcap_event_name)
   afi<-  sum(cases$acute==1, na.rm = TRUE)#2203 afi's
-  
+
   #denv  case defination------------------------------------------------------------------------
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
@@ -448,7 +454,7 @@ lapply(ptable, function(x) write.table( data.frame(x), 'pedsql_acute_OR_cat.csv'
     
     
     # save and export data ----------------------------------------------------
-    save(cases,file="david_denv_pf_cohort.rda")
+    save(cases,file="david_denv_malaria_cohort.rda")
     #export to csv
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
     f <- "david_denv_pf_cohort.csv"
