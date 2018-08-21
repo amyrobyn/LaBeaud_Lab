@@ -172,9 +172,11 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
   cases <- within(cases, excluded[is.na(cases$malaria)|is.na(cases$infected_denv_stfd)] <- "excluded")
   table(cases$excluded)
   
-  table(cases$excluded,cases$malaria)
+  cases[cases$excluded=="excluded" & is.na(cases$malaria) & cases$infected_denv_stfd==1, c("person_id","int_date","infected_denv_stfd","malaria")]
+  co_infected <- cases[cases$strata_all=="malaria_pos_denv_pos", c("person_id","redcap_event_name","int_date","infected_denv_stfd","malaria","strata_all")]
+  
   table(cases$excluded,cases$infected_denv_stfd)
-  t.test(cases$age~cases$excluded )  
+  t.test(cases$age~cases$excluded)
   boxplot(cases$age~cases$excluded,data=cases, main="Age by Group", xlab="Groups", ylab="Years")
   
   pedsqlnonna<-cases[,c("person_id","redcap_event_name","strata_all","result_pcr_denv_kenya","result_pcr_denv_stfd","result_microscopy_malaria_kenya","density_microscpy_pf_kenya","interview_date_aic","rdt_results","temp","result_igg_denv_kenya","result_igg_denv_stfd")]
@@ -445,12 +447,12 @@ hist(cases$pedsql_parent_emotional_mean_conv_paired)
     cases <- fastDummies::dummy_cols(cases, select_columns = "strata_all")
     fits <- lapply(vars, function(x) {glm(substitute(i~strata_all_malaria_neg_denv_neg+strata_all_malaria_neg_denv_pos+strata_all_malaria_pos_denv_neg -1, list(i = as.name(x))), family="binomial", data = cases)})
     test<-glm(temp~strata_all_malaria_neg_denv_neg+strata_all_malaria_neg_denv_pos+strata_all_malaria_pos_denv_neg -1, family="gaussian", data = cases)
-    exp(test$coefficients)
-    summary(test)
-    table(cases$aic_symptom_fever, cases$strata_all)
+
     coef<-lapply(fits, coefficients)
-    or<-lapply(coef, exp)
-    lapply(or, function(x) write.table( data.frame(x), 'symptoms_or4.csv'  , append= T, sep=',' ))
+    coef<-lapply(fits, function(x) {exp(cbind("Odds ratio" = coef(x), confint(x, level = 0.95,method="boot", parallel="multicore", ncpus=4)))})
+
+    lapply(coef, function(x) write.table( data.frame(x), 'symptoms_or.bootstrap.csv'  , append= T, sep=',' ))
+    
     #https://stats.stackexchange.com/questions/63222/getting-p-values-for-multinom-in-r-nnet-package
     #install.packages("afex")
     library(afex)
@@ -473,3 +475,6 @@ hist(cases$pedsql_parent_emotional_mean_conv_paired)
     # save and export strata and hospitalization data ----------------------------------------------------
     david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome|gender_all|ses_sum|mom_highest_level_education", names(cases))]
     save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/david_coinfection_strata_hospitalization.rda")
+
+    table(cases$excluded)
+    
