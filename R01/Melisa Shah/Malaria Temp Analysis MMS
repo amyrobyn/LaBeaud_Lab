@@ -2,6 +2,12 @@
 setwd("/Users/melisashah/Documents/Malaria Stanford/Rdata")
 load ("malaria_climate.rda")
 
+malaria_climate_u<-malaria_climate[which(malaria_climate$id_site_A=="Ukunda"),]
+malaria_climate_m<-malaria_climate[which(malaria_climate$id_site_A=="Msambweni"),]
+malaria_climate_c<-malaria_climate[which(malaria_climate$id_site_A=="Chulaimbo"),]
+malaria_climate_k<-malaria_climate[which(malaria_climate$id_site_A=="Kisumu"),]
+
+
 malaria_climate$id_site_A<-as.factor(malaria_climate$id_site_A)
 malaria_climate$drinking_water_source_A<-as.factor(malaria_climate$drinking_water_source_A)
 malaria_climate$gender_aic_A<-as.factor(malaria_climate$gender_aic_A)
