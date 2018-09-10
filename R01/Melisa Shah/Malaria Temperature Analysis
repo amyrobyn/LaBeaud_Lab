@@ -1,0 +1,168 @@
+# Malaria Temperature analysis Final
+setwd("/Users/melisashah/Documents/Malaria Stanford/Rdata")
+load ("malaria_climate.rda")
+
+malaria_climate$id_site_A<-as.factor(malaria_climate$id_site_A)
+malaria_climate$drinking_water_source_A<-as.factor(malaria_climate$drinking_water_source_A)
+malaria_climate$gender_aic_A<-as.factor(malaria_climate$gender_aic_A)
+malaria_climate$fever_contact_A<-as.factor(malaria_climate$fever_contact_A)
+malaria_climate$mosquito_net_aic_A<-as.factor(malaria_climate$mosquito_net_aic_A)
+
+# table one ---------------------------------------------------------------
+library(tableone)
+vars<-c("ses_sum","rain_mean_30","temp_mean_30","aic_calculated_age_A", "agecat2", "temp_A", "roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "number_windows_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "net", "poorses")
+factorVars<-c("roof_type_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A", "agecat1", "agecat2")
+
+tableOne_mal_all <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate)
+
+tableOne_mal_c <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate_c)
+tableOne_mal_k <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate_k)
+tableOne_mal_m <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate_m)
+tableOne_mal_u <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "result_microscopy_malaria_kenya_A", data = malaria_climate_u)
+tableOne_site <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "id_site_A", data = malaria_climate)
+
+tableOne_mal_c
+tableOne_mal_k
+tableOne_mal_m
+tableOne_mal_u
+tableOne_mal_all
+
+vars<-c("ses_sum","rain_mean_30", "microA", "daily_rainfall", "temp_mean_30","temp_mean_30_1","temp_mean_30_2", "temp_mean_30_3", "temp_mean_30_4","meanTemp", "aic_calculated_age_A", "temp_A", "roof_type_A", "television_A", "latrine_type_A", "floor_type_A", "drinking_water_source_A", "number_windows_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "net", "poorses")
+factorVars<-c("roof_type_A", "net", "poorses", "latrine_type_A", "floor_type_A", "television_A", "drinking_water_source_A", "gender_aic_A", "fever_contact_A", "mosquito_bites_aic_A", "mosquito_net_aic_A")
+tableOne_site <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "id_site_A", data = malaria_climate)
+tableOne_site
+
+# non-linear temperature option 1. splines -------------------------------------------------------
+library("splines")
+
+# correlation  ------------------------------------------------------------
+corrvars<-c("result_microscopy_malaria_kenya_A","temp_mean_30", "rain_mean_30",  "net" ,"id_site_A", "gender_aic_A","ses_sum")
+my_cols <- c("#00AFBB", "#E7B800")  
+pairs(na.omit(malaria_climate[corrvars]), pch = 19,  cex = 0.5, col = my_cols[aicmalaria$result_microscopy_malaria_kenya_A], lower.panel=NULL)
+cor(na.omit(malaria_climate[vars]))
+
+# random intercept for site -----------------------------------------------------------------
+library(lmerTest)
+library(lme4)
+summary(spline.malaria.random <- lmer(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + aic_calculated_age_A + net + (1|id_site_A) + gender_aic_A + ses_sum, data = malaria_climate))
+anova(spline.malaria.random)
+exp(confint(spline.malaria.random, method="boot", parallel="multicore", ncpus=4))
+
+# All sites ----------------------------------------------------------------------
+summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + bs(aic_calculated_age_A, df = 4) + net  + id_site_A + gender_aic_A + poorses, data = malaria_climate))
+exp(cbind(OR = coef(spline.malaria), confint(spline.malaria)))
+anova(spline.malaria)
+
+table(round(malaria_climate$rain_mean_30))
+range(malaria_climate$temp_mean_30)
+range(malaria_climate$rain_mean_30)
+
+plot(effects::Effect(focal.predictors = c("rain_mean_30"), mod = spline.malaria, xlevels = list(rain_mean_30 = 1:384)), rug = FALSE, main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.6:31.02)), rug = FALSE, main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+plot(effects::Effect(focal.predictors = c("aic_calculated_age_A"), mod = spline.malaria, xlevels = list(aic_calculated_age_A = 0:20)), rug = FALSE, main="Age Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Age at Time of Visit")
+
+#adding year into the model
+summary(malaria_climate$interview_date_aic_A)
+malaria_climate$year = as.factor(format(malaria_climate$interview_date_aic_A, "%Y"))
+summary(malaria_climate$year)
+
+malaria_climate_c$year = as.factor(format(malaria_climate_c$interview_date_aic_A, "%Y"))
+summary(malaria_climate_c$year)
+
+malaria_climate_k$year = as.factor(format(malaria_climate_k$interview_date_aic_A, "%Y"))
+summary(malaria_climate_k$year)
+
+malaria_climate_m$year = as.factor(format(malaria_climate_m$interview_date_aic_A, "%Y"))
+summary(malaria_climate_m$year)
+
+malaria_climate_u$year = as.factor(format(malaria_climate_u$interview_date_aic_A, "%Y"))
+summary(malaria_climate_u$year)
+
+# by site -----------------------------------------------------------------
+#Chulaimbo
+range(malaria_climate_c$temp_mean_30)
+range(malaria_climate_c$rain_mean_30)
+summary(spline.malaria.c <- lm(microA ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + bs(aic_calculated_age_A, df=3) + net  + gender_aic_A + ses_sum, data = malaria_climate_c))
+anova(spline.malaria.c)
+exp(cbind(OR = coef(spline.malaria.c), confint(spline.malaria.c)))
+plot(effects::Effect(focal.predictors = c("rain_mean_30"), mod = spline.malaria, xlevels = list(rain_mean_30 = 16:371)), rug = FALSE, sub="Chulaimbo", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.52:26.45)), rug = FALSE, sub="Chulaimbo",main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+summary(spline.malaria.c <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3), data = malaria_climate_c))
+exp(cbind(OR = coef(spline.malaria.c), confint(spline.malaria.c)))
+anova(spline.malaria.c)
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria.c, xlevels = list(temp_mean_30 = 22.52:26.46)), rug = FALSE, main="Temperature Effect on Malaria Transmission in Chulaimbo" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+
+
+#Kisumu
+range(malaria_climate_k$temp_mean_30)
+range(malaria_climate_k$rain_mean_30)
+summary(spline.malaria.k <- lm(microA ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + bs(aic_calculated_age_A, df=3) + net  + gender_aic_A + ses_sum, data = malaria_climate_k))
+anova(spline.malaria.k)
+exp(cbind(OR = coef(spline.malaria.k), confint(spline.malaria.k)))
+plot(effects::Effect(focal.predictors = c("rain_mean_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 16:371)), rug = FALSE, sub="Kisumu", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.52:26.45)), rug = FALSE, sub="Kisumu",main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+summary(spline.malaria.k <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3), data = malaria_climate_k))
+exp(cbind(OR = coef(spline.malaria.k), confint(spline.malaria.k)))
+anova(spline.malaria.k)
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria.k, xlevels = list(temp_mean_30 = 22.52:26.46)), rug = FALSE, main="Temperature Effect on Malaria Transmission in Kisumu" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+
+
+#Msambweni
+range(malaria_climate_m$temp_mean_30)
+range(malaria_climate_m$rain_mean_30)
+summary(spline.malaria.m <- lm(microA ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + bs(aic_calculated_age_A, df=3) + net  + gender_aic_A + ses_sum, data = malaria_climate_m))
+anova(spline.malaria.m)
+exp(cbind(OR = coef(spline.malaria.m), confint(spline.malaria.m)))
+plot(effects::Effect(focal.predictors = c("rain_mean_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 16:371)), rug = FALSE, sub="Msambweni", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.52:26.45)), rug = FALSE, sub="Msambweni",main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+
+summary(spline.malaria.m <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3), data = malaria_climate_m))
+exp(cbind(OR = coef(spline.malaria.m), confint(spline.malaria.m)))
+anova(spline.malaria.m)
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria.m, xlevels = list(temp_mean_30 = 22.52:26.46)), rug = FALSE, main="Temperature Effect on Malaria Transmission in Msambweni" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+
+
+#Ukunda
+range(malaria_climate_u$temp_mean_30)
+range(malaria_climate_u$rain_mean_30)
+summary(spline.malaria.u <- lm(microA ~ bs(temp_mean_30, df = 3) + bs(rain_mean_30, df = 4) + bs(aic_calculated_age_A, df=3) + net  + gender_aic_A + ses_sum, data = malaria_climate_u))
+anova(spline.malaria.u)
+exp(cbind(OR = coef(spline.malaria.m), confint(spline.malaria.u)))
+plot(effects::Effect(focal.predictors = c("rain_mean_30"), mod = spline.malaria, xlevels = list(rainfall_sum_30 = 16:371)), rug = FALSE, sub="Ukunda", main="Precipitation Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Cummulative Precipitation (mm) in last 30 days")
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria, xlevels = list(temp_mean_30 = 22.52:26.45)), rug = FALSE, sub="Ukunda",main="Temperature Effect on Malaria Transmission" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+summary(spline.malaria.u <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3), data = malaria_climate_u))
+exp(cbind(OR = coef(spline.malaria.u), confint(spline.malaria.u)))
+anova(spline.malaria.u)
+plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria.u, xlevels = list(temp_mean_30 = 22.52:26.46)), rug = FALSE, main="Temperature Effect on Malaria Transmission in Ukunda" ,ylab="Probablity of Plasmodium Positive Microscopy", xlab="Average Temperature (C) in last 30 days")
+
+# working with GAMS
+library(mgcv)
+logit2prob <- function(logit)
+{odds <- exp(logit)
+prob <- odds / (1 + odds)
+return(prob)}
+
+gam1<-gam(microA~s(temp_mean_30), family="binomial", data = malaria_climate_c)
+summary(gam1)
+plot(gam1, scale=0, main="Temp Effect on Malaria Transmission",sub="Chulaimbo",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Mean Temperature 30 days prior")
+
+gam1<-gam(microA~s(temp_mean_30), family="binomial", data = malaria_climate_k)
+summary(gam1)
+plot(gam1, scale=0, main="Temp Effect on Malaria Transmission",sub="Kisumu",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Mean Temperature 30 days prior")
+
+gam1<-gam(microA~s(temp_mean_30), family="binomial", data = malaria_climate_m)
+summary(gam1)
+plot(gam1, scale=0, main="Temp Effect on Malaria Transmission",sub="Msambweni",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Mean Temperature 30 days prior")
+
+gam1<-gam(microA~s(temp_mean_30), family="binomial", data = malaria_climate_u)
+summary(gam1)
+plot(gam1, scale=0, main="Temp Effect on Malaria Transmission",sub="Ukunda",ylab="Probablity of Plasmodium Positive Microscopy", xlab="Mean Temperature 30 days prior")
+
+
