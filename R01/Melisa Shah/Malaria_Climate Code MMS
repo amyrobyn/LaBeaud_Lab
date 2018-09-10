@@ -1,0 +1,247 @@
+# get climate data -----------------------------------------------------------------
+setwd("/Users/melisashah/Documents/Malaria Stanford/Rdata")
+Redcap.token <- readLines("Redcap.token.vector.txt") #Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
+redcap_clim_vec <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data
+
+# making a backup file
+save(redcap_clim_vec, file="redcap_clim_vec.rda") # done 9/4/18
+
+########### start here ##################
+setwd("/Users/melisashah/Documents/Malaria Stanford/Rdata")
+load("redcap_clim_vec.rda")
+climate<-redcap_clim_vec
+climate$date <- as.Date(climate$date_collected, "%Y-%m-%d")
+save(climate,file="climate.rda")
+
+# temp climate -----------------------------------------------------------------
+newgapfilled<-read.csv("newgapfilled.csv")
+temp<-newgapfilled[,c("Date", "meanTemp.CH","meanTemp.KI","meanTemp.MS", "meanTemp.UK")]
+temp$Date <- as.Date(temp$Date, "%Y-%m-%d")
+plot(temp$Date, (temp$meanTemp.CH), exclude=NULL)
+plot(temp$Date, (temp$meanTemp.KI), exclude=NULL)
+plot(temp$Date, (temp$meanTemp.MS), exclude=NULL)
+plot(temp$Date, (temp$meanTemp.UK), exclude=NULL)
+
+temp.long<-reshape(temp, varying=c("meanTemp.CH","meanTemp.KI","meanTemp.MS", "meanTemp.UK"), direction="long", idvar="Date", sep=".",timevar ="site")
+colnames(temp.long)[1] <- "date_collected"
+temp.long$date_collected <- as.Date(temp.long$date_collected, "%Y-%m-%d")
+temp.long <- within (temp.long, site[temp.long$site=="UK"] <-"Ukunda")
+temp.long <- within (temp.long, site[temp.long$site=="MS"] <-"Msambweni")
+temp.long <- within (temp.long, site[temp.long$site=="KI"] <-"Kisumu")
+temp.long <- within (temp.long, site[temp.long$site=="CH"] <-"Chulaimbo")
+plot(temp.long$date_collected, round(temp.long$meanTemp), exclude=NULL)
+#temp long is now a list of daily dates x 4 for each site followed by mean temp
+#Now lets add a few columns with the 1, 2, 3,4 week lags. 
+
+# make rolling means for temperature over time -----------------------------------
+library(dplyr)
+library(zoo)
+  temp.long=temp.long %>%
+    group_by(site) %>%
+    arrange(site, date_collected) %>%
+    mutate(
+      temp_mean_30 = rollmean(x = meanTemp, 30, align = "right", fill = NA)
+    )
+  
+  temp.long=temp.long %>%
+    mutate(temp.lag1 = lag(meanTemp, n=7)) %>%
+    mutate(temp_mean_30_1 = rollapply(data=temp.lag1,
+                                      width=30,
+                                      FUN=mean,
+                                      align="right",
+                                      fill=NA,
+                                      nr.rm=T))
+
+  temp.long=temp.long %>%
+    mutate(temp.lag2 = lag(meanTemp, n=14)) %>%
+    mutate(temp_mean_30_2 = rollapply(data=temp.lag2,
+                                      width=30,
+                                      FUN=mean,
+                                      align="right",
+                                      fill=NA,
+                                      nr.rm=T))
+  
+  temp.long=temp.long %>%
+    mutate(temp.lag3 = lag(meanTemp, n=21)) %>%
+    mutate(temp_mean_30_3 = rollapply(data=temp.lag3,
+                                      width=30,
+                                      FUN=mean,
+                                      align="right",
+                                      fill=NA,
+                                      nr.rm=T))
+  
+  
+  temp.long=temp.long %>%
+    mutate(temp.lag4 = lag(meanTemp, n=28)) %>%
+    mutate(temp_mean_30_4 = rollapply(data=temp.lag4,
+                                      width=30,
+                                      FUN=mean,
+                                      align="right",
+                                      fill=NA,
+                                      nr.rm=T))
+  
+
+
+
+# rain climate -----------------------------------------------------------------
+library(zoo)
+library(lubridate)
+climate$month_collected <- as.yearmon(climate$date_collected)
+climate$date_collected<-as.Date(climate$date_collected)
+climate$date_collected<-ymd(climate$date_collected)
+
+library(plyr)
+ch.hosp.clim<-subset(climate, redcap_event_name=="chulaimbo_hospital_arm_1")
+ch.vill.clim<-subset(climate, redcap_event_name=="chulaimbo_village_arm_1")
+ch.clim<-merge(ch.hosp.clim, ch.vill.clim, by=c("date_collected"), all=T)
+ch.clim$daily_rainfall <- round(rowMeans(ch.clim[,c("daily_rainfall.x", "daily_rainfall.y")], na.rm=TRUE), 1)
+chulaimbo.clim <- ch.clim[,c("date_collected", "daily_rainfall", "redcap_event_name.x")]
+colnames(chulaimbo.clim)[3] <- "redcap_event_name"
+chulaimbo.clim$redcap_event_name<-as.character(chulaimbo.clim$redcap_event_name)
+table(chulaimbo.clim$redcap_event_name)
+climate<-climate[which(climate$redcap_event_name=="ukunda_arm_1"|climate$redcap_event_name=="obama_arm_1"|climate$redcap_event_name=="msambweni_arm_1"),]
+climate<-rbind.fill(climate,chulaimbo.clim)
+
+climate$site<-NA
+climate <- within (climate, site[climate$redcap_event_name=="chulaimbo_hospital_arm_1"] <-"Chulaimbo")
+climate <- within (climate, site[climate$redcap_event_name=="ukunda_arm_1"] <-"Ukunda")
+climate <- within (climate, site[climate$redcap_event_name=="obama_arm_1"] <-"Kisumu")
+climate <- within (climate, site[climate$redcap_event_name=="msambweni_arm_1"] <-"Msambweni")
+climate <-climate[!sapply(climate, function (x) all(is.na(x) ))]
+time.min <-as.Date(as.character("2013/01/01"))
+time.max <-as.Date(as.character("2018/08/31"))
+
+table(climate$site)
+
+all.dates<-seq(as.Date('2013/01/01'), as.Date('2018/08/31'), by = 'day')
+all.dates.frame <- data.frame(list(date_collected=all.dates))
+
+climate.m<-climate[which(climate$site=="Msambweni"),]
+climate.m <- merge(all.dates.frame, climate.m, all.x=T, by=c("date_collected"))
+climate.m=climate.m %>%
+  group_by(site) %>%
+  arrange(site, date_collected) %>%
+  mutate(
+    rain_mean_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
+  )
+
+climate.k<-climate[which(climate$site=="Kisumu"),]
+climate.k <- merge(all.dates.frame, climate.k, all.x=T, by=c("date_collected"))
+climate.k=climate.k %>%
+  group_by(site) %>%
+  arrange(site, date_collected) %>%
+  mutate(
+    rain_mean_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
+  )
+
+
+climate.u<-climate[which(climate$site=="Ukunda"),]
+climate.u <- merge(all.dates.frame, climate.u, all.x=T, by=c("date_collected"))
+climate.u=climate.u %>%
+  group_by(site) %>%
+  arrange(site, date_collected) %>%
+  mutate(
+    rain_mean_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
+  )
+
+climate.c<-climate[which(climate$site=="Chulaimbo"),]
+climate.c <- merge(all.dates.frame, climate.c, all.x=T, by=c("date_collected"))
+climate.c=climate.c %>%
+  group_by(site) %>%
+  arrange(site, date_collected) %>%
+  mutate(
+    rain_mean_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
+  )
+
+
+
+climate<-rbind(climate.c,climate.k,climate.m,climate.u)
+rain<-climate[,c("date_collected","daily_rainfall","rainfall_hobo","site","daily_rainfall_long_term_mean", "rain_mean_30")]
+
+plot(rain$date_collected, round(rain$daily_rainfall), exclude=NULL)
+
+
+
+# merge temperature and rain together
+temp.long <- merge(all.dates.frame, temp.long, all.x=T, by=c("date_collected"))
+climate<-merge(rain, temp.long, by = c("date_collected", "site") )
+climate <- climate[which(!is.na(climate$site)), ]
+
+library(ggplot2)
+plot(climate$date_collected, climate$meanTemp)
+ggplot(data=climate, aes(x=date_collected)) +
+  geom_line(aes(y=meanTemp, col=site))
++ labs(title="Temperature across time", subtitle="by site", 
+       caption="Source RO1", y="Temperature in Celcius", color=NULL) +
+  scale_x_date(labels=lbls, breaks=brks)+
+  scale_color_manual(labels = c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda"), 
+                     values = c("Chulaimbo"="#00ba38", "Kisumu"="#f8766d")) +  # line color
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, size = 8),  # rotate x axis text
+        panel.grid.minor = element_blank())
+
+# plot rolling means and sums over time -----------------------------------
+library(ggplot2)
+ggplot (climate, aes (x = date_collected, y = temp_mean_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Average Temperature (C) in last 30 days") 
+ggplot (climate, aes (x = date_collected, y = rain_mean_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Cummulative Precipitation (mm) in last 30 days") 
+
+
+# Didn't use this after all
+install.packages('xts')
+library(xts)
+library(zoo)
+dates<-as.Date(climate$date_collected)
+data<-malaria_climate[c("meanTemp", "site")]
+xts<-xts(x=data, order.by=dates)
+xts$meanTemp_1 <- lag(xts$meanTemp,7)
+xts$meanTemp_2 <- lag(xts$meanTemp,14)
+xts$meanTemp_3 <- lag(xts$meanTemp,21)
+xts$meanTemp_4 <- lag(xts$meanTemp,28)
+  
+
+# malaria climate merge-----------------------------------------------------------------
+load("aicmalaria.rda")
+aicmalaria <- aicmalaria[ , grepl("person_id|redcap_event|id_site|interview_date_aic_A|result_microscopy_malaria_kenya_A|aic_calculated_age_A|agecat|temp_A|roof_type_A|latrine_type_A|floor_type_A|drinking_water_source_A|number_windows_A|gender_aic_A|fever_contact_A|mosquito_bites_aic_A|mosquito_net_aic_A|telephone|radio|television|bicycle|motor_vehicle|domestic_worker|report" , names(aicmalaria) ) ]
+aicmalaria$interview_date_aic_A<-as.Date(aicmalaria$interview_date_aic_A)
+class(aicmalaria$interview_date_aic_A)
+class(climate$date_collected)
+table(aicmalaria$id_site_A)
+table(climate$site)
+malaria_climate<-merge(aicmalaria, climate, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected","site"), all.x = T) 
+
+table(round(malaria_climate$temp_mean_30), malaria_climate$id_site_A, exclude = NULL)
+table(round(malaria_climate$rain_mean_30), malaria_climate$id_site_A, exclude = NULL)
+
+
+table(malaria_climate$rain_mean_30)
+
+malaria_climate <-malaria_climate[ , !grepl("$_D|$_C|$_B|$_F|$_G|$_H" , names(malaria_climate) ) ]
+malaria_climate<-malaria_climate[order((grepl('date', names(malaria_climate)))+1L)]
+
+ses<-(malaria_climate[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_worker", names(malaria_climate))])
+malaria_climate$ses_sum<-rowSums(malaria_climate[, c("telephone_A","radio_A","television_A","bicycle_A","motor_vehicle_A", "domestic_worker_A")], na.rm = TRUE)
+table(malaria_climate$ses_sum)
+
+#fixing mosquito net aic A, creating a 0 and 1 variable, 1=always, 2=sometimes, 3=Rarely, 4=Never. 
+table(malaria_climate$mosquito_net_aic_A, useNA="ifany")
+malaria_climate$net <- 0
+malaria_climate <- within(malaria_climate, net[malaria_climate$mosquito_net_aic_A=="1"] <- 1)
+table(malaria_climate$net, useNA="ifany")
+
+table(malaria_climate$ses_sum, useNA="ifany")
+malaria_climate$poorses <- 0
+malaria_climate <- within(malaria_climate, poorses[malaria_climate$ses_sum < 2] <- 1)
+table(malaria_climate$poorses, useNA="ifany")
+
+# Creating variables for microscopy positive and the inverse microa and invmicroA
+malaria_climate$microA <- malaria_climate$result_microscopy_malaria_kenya_A
+table(malaria_climate$microA, useNA="ifany")
+
+table(malaria_climate$id_site_A, exclude=NULL)
+malaria_climate_u<-malaria_climate[which(malaria_climate$id_site_A=="Ukunda"),]
+malaria_climate_m<-malaria_climate[which(malaria_climate$id_site_A=="Msambweni"),]
+malaria_climate_c<-malaria_climate[which(malaria_climate$id_site_A=="Chulaimbo"),]
+malaria_climate_k<-malaria_climate[which(malaria_climate$id_site_A=="Kisumu"),]
+
+save(malaria_climate, file="malaria_climate.rda") #done 9/9/18
