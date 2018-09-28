@@ -16,7 +16,7 @@ source("igrowup_restricted.r")
 growth.over.time<-readxl::read_excel("C:/Users/amykr/Box Sync/U24 Project/nutrition/growth over time.xlsx")
 growth.over.time <- within(growth.over.time, sex[growth.over.time$sex==1] <-"f")
 growth.over.time <- within(growth.over.time, sex[growth.over.time$sex==0] <-"m")
-z_scores<-growth.over.time[c("person_id","height","sex","weight","age")]
+z_scores<-growth.over.time[c("person_id","redcap_event_name","height","sex","weight","age")]
 
 library(tidyr)
 z_scores<-z_scores %>% drop_na(height,age,sex,weight)
@@ -31,5 +31,5 @@ wfawho2007<-read.table("wfawho2007.txt",header=T,sep="",skip=0)
 hfawho2007<-read.table("hfawho2007.txt",header=T,sep="",skip=0)
 bfawho2007<-read.table("bfawho2007.txt",header=T,sep="",skip=0)
 source("who2007.r")
-fiveplus<-as.data.frame(z_scores[which(z_scores$AGE>5),])
-who2007(mydf=fiveplus, sex=sex, age=agemonth, weight=WEIGHT,height=HEIGHT,FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_5plus_long")
+fiveplus<-as.data.frame(z_scores[which(z_scores$age>5),])
+who2007(mydf=fiveplus, sex=sex, age=agemonth, weight=weight,height=height, FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_5plus_long")
