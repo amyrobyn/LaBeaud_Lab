@@ -12,7 +12,7 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
 # subset our data to david's cohort of aic west ---------------------------
   cases<-cases[which(cases$Cohort=="F"), ]
   sum(n_distinct(cases$person_id, na.rm = FALSE)) #6489
-  cases<-cases[which(cases$site=="W"), ]
+#  cases<-cases[which(cases$site=="W"), ]
   sum(n_distinct(cases$person_id, na.rm = FALSE)) #2277
   cases$id_cohort<-substr(cases$person_id, 2, 2)
   cases$id_city<-substr(cases$person_id, 1, 1)
@@ -60,9 +60,9 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
   #denv  case defination------------------------------------------------------------------------
   #redefine infected_denv_stfd to exclude ufi. 
   #stfd denv igg seroconverters or PCR positives as infected.
-  cases$infected_denv_stfd<-NA
-  cases$infected_denv_stfd[cases$tested_denv_stfd_igg ==1 |cases$result_pcr_denv_kenya==0|cases$result_pcr_denv_stfd==0]<-0
-  cases$infected_denv_stfd[cases$seroc_denv_stfd_igg==1|cases$result_pcr_denv_kenya==1|cases$result_pcr_denv_stfd==1]<-1
+  R01_lab_results$infected_denv_kenya[R01_lab_results$tested_denv_kenya_igg ==1 | R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0|R01_lab_results$denv_result_ufi==0]<-0
+  R01_lab_results$infected_denv_kenya[R01_lab_results$seroc_denv_kenya_igg==1|R01_lab_results$result_pcr_denv_kenya==1|R01_lab_results$result_pcr_denv_stfd==1|R01_lab_results$denv_result_ufi==1]<-1
+  table(R01_lab_results$infected_denv_kenya, R01_lab_results$denv_result_ufi)
   table(cases$seroc_denv_stfd_igg)
   table(cases$infected_denv_stfd)  
   
@@ -476,5 +476,5 @@ hist(cases$pedsql_parent_emotional_mean_conv_paired)
     david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome|gender_all|ses_sum|mom_highest_level_education", names(cases))]
     save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/david_coinfection_strata_hospitalization.rda")
 
-    table(cases$excluded)
+    table(cases$strata_all)
     
