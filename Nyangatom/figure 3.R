@@ -34,6 +34,8 @@ df2 <- data.frame(x = gg1$data[[1]]$x,
                   ymax = gg1$data[[2]]$y)
 
 # use the loess data to add the 'ribbon' to plot 
+
+table(ds$sweight_child)
 library(ggplot2)
 fig3<-ggplot()+ 
   geom_ribbon(data = df2, aes(x = x, ymin = ymin, ymax = ymax,fill = "grey"), alpha = 0.2)+
@@ -47,12 +49,13 @@ fig3<-ggplot()+
   scale_fill_identity(name = '', guide = FALSE,labels = c('grey'='WHO median to -3SD')) +
   scale_linetype_manual(name = "",values = c("Nyangatom 99%CI"=1, "WHO -2SD" = 2))+
   scale_size("Sample Weights",range = c(1,3),breaks=c(16,22,23),labels=c("15.1","21.9","23.5"))+
-  theme(legend.text	= element_text(colour = "black",size= 12, family="Arial"),
+  scale_x_continuous(limits = c(70, 130))+
+theme(legend.text	= element_text(colour = "black",size= 12, family="Arial"),
         strip.text = element_text(colour = "black",size= 12),
         strip.background = element_rect(colour = "white", fill = "white")  )
 
 
 # print to tiff -----------------------------------------------------------
-tiff(file = "C:/Users/amykr/Box Sync/Amy's Externally Shareable Files/fig 3/fig3_arial12_MI_99CI_legend4.tiff", width = 6200, height = 3200, units = "px", res = 600)
+tiff(file = "C:/Users/amykr/Box Sync/Amy's Externally Shareable Files/fig 3/fig3_arial12_MI_99CI_legend5.tiff", width = 6200, height = 3200, units = "px", res = 600)
 fig3
 dev.off()
