@@ -146,9 +146,40 @@ height.age
 dev.off()
 
 # only the u24 visit ------------------------------------------------------
-u24_results<-u24_results[which(u24_results$redcap_event_name=="u24_arm_1"),]
-table(u24_results$redcap_event_name,u24_results$u24_participant)
+u24_results<-u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"),]
 
+# nutrtion scores ---------------------------------------------------------
+u24_results$flesh.foods<-rowsum(u24_results$child_w_freq_fish,u24_results$child_w_freq_organ_meat_iron_rich,u24_results$child_w_freq_flesh_meats,na.rm = TRUE)
+
+dataList=list(c("child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_flesh_meats"))
+for(i in dataList){print(i)}
+attach(u24_results)
+
+for (i in dataList){
+  ifelse()
+  (i)[(i)=="0"] <-0
+  }
+
+u24_results$x[u24_results$x=="1-3"] <-2
+u24_results$x[u24_results$x=="4-6"] <-5
+u24_results$x[u24_results$'x'=="7-9"] <-8
+u24_results$x[u24_results$'x'=="10+"] <-10
+
+
+table(u24_results$child_w_freq_fish)
+
+who_dd<-
+flesh food (meat, poultry, fish, and organ meat)
+dairy products
+eggs
+grains or tubers
+pulses or legumes or nuts
+vitamin-A-rich fruits and vegetables
+other fruits and vegetables 
+FAO categories?
+  
+
+# dates --------------------------------------------------------------------
 u24_results$u24_date_of_birth<-lubridate::as_date(u24_results$u24_date_of_birth)
 u24_results$u24_interview_date<-as.Date(u24_results$u24_interview_date)
 u24_results$u24_when_dengue<-lubridate::as_date(u24_results$u24_when_dengue)

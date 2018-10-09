@@ -16,6 +16,9 @@ beep(sound=4)
 
 currentDate <- Sys.Date() 
 FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
+
+table(R01_lab_results$redcap_event_name,R01_lab_results$u24_participant,exclude = NULL)
+
 save(R01_lab_results,file=FileName)
 load(FileName)
 R01_lab_results_inventory<- R01_lab_results[c("person_id","redcap_event_name","cdna_sample_num","tempus_sample_num","serum_num_stfd","cdna_at_stfd","num_stfd_cdna")]
@@ -101,7 +104,12 @@ write.csv(forsaidi,"missing_microscopy.csv",na="")
 
 interview_dates<-R01_lab_results_visit[, grepl("person_id|redcap_event_name|interview_date|id_city|redcap_event_name|id_cohort", names(R01_lab_results_visit))]
 interview_dates<-interview_dates[, !grepl("u24", names(interview_dates))]
-interview_dates[is.na(interview_dates)] = ''
+interview_dates$interview_date_aic<-as.character(interview_dates$interview_date_aic)
+interview_dates$interview_date_aic[is.na(interview_dates$interview_date_aic)] <- ""
+
+interview_dates$interview_date<-as.character(interview_dates$interview_date)
+interview_dates$interview_date[is.na(interview_dates$interview_date)] <- ""
+
 interview_dates<-unite(interview_dates, int_date, interview_date_aic:interview_date, sep='')
 R01_lab_results<- merge(interview_dates, R01_lab_results,  by=c("person_id", "redcap_event_name", "id_city", "id_cohort"), all = TRUE)
 
@@ -294,6 +302,8 @@ physical_exam<-as.data.frame(cbind(ids, physical_exam))
 # reshape testing vars -----------------------------------------------------------------
 #tested
 tested<-R01_lab_results[, grepl("person_id|redcap_event|tested_", names(R01_lab_results))]
+tested<-tested[, !grepl("freezer|rack|sample", names(tested))]
+
 tested<-tested[, !grepl("date", names(tested))]
 
 tested<-tested[which(tested$redcap_event_name=="patient_informatio_arm_1"),]
@@ -336,7 +346,7 @@ head(tested_long)
 # reshape sereoconverter vars -----------------------------------------------------------------
 #seroconversion
 seroconverter<-R01_lab_results[, grepl("person_id|redcap_event|ab_|bc_|cd_|de_|ef_|fg_|gh_", names(R01_lab_results))]
-seroconverter<-seroconverter[, !grepl("malaria|tested", names(seroconverter))]
+seroconverter<-seroconverter[, !grepl("malaria|tested|freezer|rack|sample", names(seroconverter))]
 seroconverter<-seroconverter[which(seroconverter$redcap_event_name=="patient_informatio_arm_1"),]
 
 #order
@@ -541,7 +551,7 @@ table(R01_lab_results$prnt_result_wnv)
 R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi==0]<-0
 R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_lab_results$result_pcr_chikv_kenya==1|R01_lab_results$chikv_result_ufi==1]<-1
 table(R01_lab_results$infected_chikv_stfd)  
-119/(4151)*100
+439/(439+6369)*100
 
 table(R01_lab_results$infected_chikv_stfd, R01_lab_results$id_cohort)  
 56/(56+3418)*100#aic inc
@@ -1064,7 +1074,7 @@ table(R01_lab_results$gender_all, exclude = NULL)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 save(R01_lab_results,file="R01_lab_results.clean.rda")    #save as r data frame for use in other analysis. 
 
-#save(R01_lab_results,file="R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on 5/23/18 for david conifection paper.
+save(R01_lab_results,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/R01_lab_results.david.coinfection.dataset.rda")    #save as r data frame for use in other analysis. #final data set made on august 8, 18 for david conifection paper.
 
 #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
 R01_lab_results$malaria<-NA
