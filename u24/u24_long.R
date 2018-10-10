@@ -123,15 +123,21 @@ df2 <- data.frame(x = gg1$data[[1]]$x,
 
 library("extrafont")
 table(u24_results$combined_strata)
+u24_results$incident<-ifelse(grepl("Recent",u24_results$combined_strata),'Incident','Ever')
+table(u24_results$incident)
+u24_results$strata<-gsub("Recent ","",u24_results$combined_strata)
+u24_results$strata<-gsub("control","Control",u24_results$strata)
+table(u24_results$strata)
+
 height.age<-ggplot()+ 
   geom_ribbon(data = df2, aes(x = x, ymin = ymin, ymax = ymax,fill = "grey"), alpha = 0.2)+
   geom_smooth(data =u24_results,aes(age.month,height, color="Cohort\nLoess Regression\n& 95% CI", linetype="Cohort\nLoess Regression\n& 95% CI"),level=.95,size=1,formula=y~x,method="loess",alpha=.9) +
   geom_line(data =height.length.age,aes(age.month,who_height.2sd,color="WHO -2SD", linetype="WHO -2SD"),size=1,alpha=.9) +
-  geom_jitter(data =u24_results,mapping=aes(x=age.month,y=height,shape=combined_strata),alpha=.5,size=3,position = "jitter")+
+  geom_jitter(data =u24_results,mapping=aes(x=age.month,y=height,shape=strata,color=incident),alpha=.5,size=3,position = "jitter")+
   facet_grid(.~sex)+
   labs(title ="", x = "Age (months)", y = "Height (cm)")+ 
   theme_classic(base_size = 12, base_family="Arial")+ theme(legend.position = "bottom") + guides(color=guide_legend(override.aes=list(fill=NA)))+
-  scale_color_manual(name = "", values = c("Cohort\nLoess Regression\n& 95% CI"="black","WHO -2SD" = "black"), labels = c("Cohort\nLoess Regression\n& 95% CI","WHO -2SD"))+
+  scale_color_manual(name = "", values = c("Cohort\nLoess Regression\n& 95% CI"="black",Incident="red",Ever="black","WHO -2SD" = "black"), labels = c("Cohort\nLoess Regression\n& 95% CI","Incident","Ever","WHO -2SD"))+
   scale_fill_identity(name = '', guide = FALSE,labels = c('grey'='WHO median to -3SD')) +
   scale_linetype_manual(name = "",values = c("Cohort\nLoess Regression\n& 95% CI"=1, "WHO -2SD" = 3))+
   scale_shape_manual("Exposure Categories",values=1:7)+
@@ -141,7 +147,7 @@ height.age<-ggplot()+
   )
 
 setwd(  "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
-tiff(file = "anthro_exposed.tiff", width = 7000, height = 3200, units = "px", res = 600)
+tiff(file = "anthro_exposed.tiff", width = 8000, height = 3200, units = "px", res = 600)
 height.age
 dev.off()
 
@@ -149,35 +155,41 @@ dev.off()
 u24_results<-u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"),]
 
 # nutrtion scores ---------------------------------------------------------
-u24_results$flesh.foods<-rowsum(u24_results$child_w_freq_fish,u24_results$child_w_freq_organ_meat_iron_rich,u24_results$child_w_freq_flesh_meats,na.rm = TRUE)
+u24_results<-R01_lab_results
 
-dataList=list(c("child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_flesh_meats"))
-for(i in dataList){print(i)}
-attach(u24_results)
+food_groups<-names(u24_results[grep("child_w_freq_",names(u24_results))])
+for(i in food_groups ){
+  u24_results[[i]][u24_results[[i]]==0]   <-0
+  u24_results[[i]][u24_results[[i]]==1] <-2
+  u24_results[[i]][u24_results[[i]]==2] <-5
+  u24_results[[i]][u24_results[[i]]==3] <-8
+  u24_results[[i]][u24_results[[i]]==4] <-10
+  u24_results[[i]][u24_results[[i]]==99] <-NA
+}
 
-for (i in dataList){
-  ifelse()
-  (i)[(i)=="0"] <-0
-  }
+for(i in food_groups ){
+  var<-paste(i,"bin",sep="_")
+  u24_results[[var]][u24_results[[i]]==0] <-0
+  u24_results[[var]][u24_results[[i]]>0] <-1
+}
 
-u24_results$x[u24_results$x=="1-3"] <-2
-u24_results$x[u24_results$x=="4-6"] <-5
-u24_results$x[u24_results$'x'=="7-9"] <-8
-u24_results$x[u24_results$'x'=="10+"] <-10
+u24_results$flesh<-rowSums(u24_results[c("child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_flesh_meats")])
+u24_results$grains_tubers<-rowSums(u24_results[c("child_w_freq_white_tubers_and_roots","child_w_freq_breads_cereals")])
+u24_results$vit_a_fruit_veg<-rowSums(u24_results[c("child_w_freq_vitamin_a_rich_vegetables","child_w_freq_vitamin_a_rich_fruits")])
+u24_results$other_fruit_veg<-rowSums(u24_results[c("child_w_freq_dark_leafy_vegetables","child_w_freq_other_fruits","child_w_freq_other_vegetables")])
+who_food_groups<-c("flesh", "child_w_freq_milk_milk_products", "child_w_freq_eggs", "grains_tubers" , "child_w_freq_legumes_nuts_seeds", "vit_a_fruit_veg", "other_fruit_veg")
 
+for(i in who_food_groups){
+  var<-paste(i,"bin",sep="_")
+  u24_results[[var]][u24_results[[i]]==0] <-0
+  u24_results[[var]][u24_results[[i]]>0] <-1
+}
 
-table(u24_results$child_w_freq_fish)
-
-who_dd<-
-flesh food (meat, poultry, fish, and organ meat)
-dairy products
-eggs
-grains or tubers
-pulses or legumes or nuts
-vitamin-A-rich fruits and vegetables
-other fruits and vegetables 
-FAO categories?
-  
+who_food_groups_bin<-c("flesh_bin", "child_w_freq_milk_milk_products_bin", "child_w_freq_eggs_bin", "grains_tubers_bin" , "child_w_freq_legumes_nuts_seeds_bin", "vit_a_fruit_veg_bin", "other_fruit_veg_bin")
+u24_results$diet_diversity_score<-rowSums(u24_results[who_food_groups_bin])
+table(u24_results$diet_diversity_score)
+u24_results$animal_protein<-rowSums(u24_results[c("flesh_bin", "child_w_freq_milk_milk_products_bin", "child_w_freq_eggs_bin")])
+table(u24_results$animal_protein)
 
 # dates --------------------------------------------------------------------
 u24_results$u24_date_of_birth<-lubridate::as_date(u24_results$u24_date_of_birth)
