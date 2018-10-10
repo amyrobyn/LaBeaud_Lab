@@ -152,11 +152,9 @@ height.age
 dev.off()
 
 # only the u24 visit ------------------------------------------------------
-u24_results<-u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"),]
+u24_results<-u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"&u24_results$u24_participant==1),]
 
 # nutrtion scores ---------------------------------------------------------
-u24_results<-R01_lab_results
-
 food_groups<-names(u24_results[grep("child_w_freq_",names(u24_results))])
 for(i in food_groups ){
   u24_results[[i]][u24_results[[i]]==0]   <-0
@@ -173,11 +171,12 @@ for(i in food_groups ){
   u24_results[[var]][u24_results[[i]]>0] <-1
 }
 
-u24_results$flesh<-rowSums(u24_results[c("child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_flesh_meats")])
-u24_results$grains_tubers<-rowSums(u24_results[c("child_w_freq_white_tubers_and_roots","child_w_freq_breads_cereals")])
-u24_results$vit_a_fruit_veg<-rowSums(u24_results[c("child_w_freq_vitamin_a_rich_vegetables","child_w_freq_vitamin_a_rich_fruits")])
-u24_results$other_fruit_veg<-rowSums(u24_results[c("child_w_freq_dark_leafy_vegetables","child_w_freq_other_fruits","child_w_freq_other_vegetables")])
-who_food_groups<-c("flesh", "child_w_freq_milk_milk_products", "child_w_freq_eggs", "grains_tubers" , "child_w_freq_legumes_nuts_seeds", "vit_a_fruit_veg", "other_fruit_veg")
+u24_results$flesh<-rowSums(u24_results[c("child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_flesh_meats")],na.rm=T)
+u24_results$grains_tubers<-rowSums(u24_results[c("child_w_freq_white_tubers_and_roots","child_w_freq_breads_cereals")],na.rm=T)
+u24_results$vit_a_fruit_veg<-rowSums(u24_results[c("child_w_freq_vitamin_a_rich_vegetables","child_w_freq_vitamin_a_rich_fruits")],na.rm=T)
+u24_results$other_fruit_veg<-rowSums(u24_results[c("child_w_freq_dark_leafy_vegetables","child_w_freq_other_fruits","child_w_freq_other_vegetables")],na.rm=T)
+
+who_food_groups<-c("flesh", "grains_tubers", "vit_a_fruit_veg", "other_fruit_veg")
 
 for(i in who_food_groups){
   var<-paste(i,"bin",sep="_")
@@ -188,8 +187,15 @@ for(i in who_food_groups){
 who_food_groups_bin<-c("flesh_bin", "child_w_freq_milk_milk_products_bin", "child_w_freq_eggs_bin", "grains_tubers_bin" , "child_w_freq_legumes_nuts_seeds_bin", "vit_a_fruit_veg_bin", "other_fruit_veg_bin")
 u24_results$diet_diversity_score<-rowSums(u24_results[who_food_groups_bin])
 table(u24_results$diet_diversity_score)
+
 u24_results$animal_protein<-rowSums(u24_results[c("flesh_bin", "child_w_freq_milk_milk_products_bin", "child_w_freq_eggs_bin")])
 table(u24_results$animal_protein)
+
+u24_results_nutrition<-u24_results[ , grepl( "redcap_event_name|bin|child_w_freq_|strata|z|height|weight|diet_diversity|animal_protein|flesh|grains_tubers|vit_a_fruit_veg|other_fruit_veg" , names(u24_results) ) ]
+u24_results_nutrition<-u24_results_nutrition[ , !grepl( "aic|zone|trizol|hospitaliz|history|immunizations|complete" , names(u24_results_nutrition) ) ]
+write.csv(u24_results_nutrition,file="u24_results_nutrition.csv",na="")
+
+# pedsql ------------------------------------------------------------------
 
 # dates --------------------------------------------------------------------
 u24_results$u24_date_of_birth<-lubridate::as_date(u24_results$u24_date_of_birth)
