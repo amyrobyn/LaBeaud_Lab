@@ -4,13 +4,13 @@ library("dplyr")
 #install.packages("stringr")
 library(stringr)
 # import data -------------------------------------------------------------
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
-load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 8/8/18 for david conifection paper.
-cases<- R01_lab_results[which(R01_lab_results$int_date<="2018-06-30")  , ]#subset to visits before june 30.
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
+load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 11/16/18 for david conifection paper.
+cases<- R01_lab_results[which(R01_lab_results$int_date<="2018-11-16")  , ]#subset to visits before june 30.
 sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
 
 # subset our data to david's cohort of aic west ---------------------------
-  cases<-cases[which(cases$Cohort=="F"), ]
+  cases<-cases[which(cases$Cohort=="AIC"), ]
   sum(n_distinct(cases$person_id, na.rm = FALSE)) #6489
 #  cases<-cases[which(cases$site=="W"), ]
   sum(n_distinct(cases$person_id, na.rm = FALSE)) #2277
@@ -71,14 +71,10 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
   #malaria case defination------------------------------------------------------------------------
   #Malaria: positive by result_microscopy_malaria_kenya, or if NA, then positive by malaria_result
   cases$malaria<-NA
-  cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0] <- 0)#rdt
-  cases <- within(cases, malaria[cases$rdt_result==0] <- 0)#rdt
-  cases <- within(cases, malaria[cases$malaria_results==0] <- 0)# Results of malaria blood smear	(+++ system)
-  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==0] <- 0)#microscopy. this goes last so that it overwrites all the other's if it exists.
+  cases <- within(cases, malaria[cases$result_rdt_malaria_keny==0|cases$rdt_result==0|cases$malaria_results==0|cases$result_microscopy_malaria_kenya==0] <- 0)
+  cases <- within(cases, malaria[cases$malaria_results>0|cases$rdt_results==1] <- 1)# Results of malaria blood smear	(+++ system)|rdt
+  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this is gold standard and overwrites all other.
   
-  cases <- within(cases, malaria[cases$result_microscopy_malaria_kenya==1] <- 1) #this goes first. only use the others if this is missing.
-  cases <- within(cases, malaria[cases$malaria_results>0 & is.na(result_microscopy_malaria_kenya)] <- 1)# Results of malaria blood smear	(+++ system)
-  cases <- within(cases, malaria[cases$rdt_results==1 & is.na(result_microscopy_malaria_kenya)] <- 1)#rdt
   table(cases$malaria)
   #denv by pcr or serology ------------------------------------------------------------------------
   cases$pcr_denv<-NA
@@ -142,14 +138,6 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
   table(cases$malaria)  
   table(cases$malaria_pf)  
   
-  non_id_malaria<-cases[which(cases$malaria==1 & is.na(cases$malaria_pf)), ]
-  non_id_malaria <-non_id_malaria[, grepl("person_id|redcap|malaria", names(non_id_malaria) ) ]
-  write.csv(as.data.frame(non_id_malaria), "non_id_malaria.csv")
-  
-  non_pf<-cases[which(cases$malaria==1 & cases$microscopy_malaria_pm_kenya___1==1 & cases$microscopy_malaria_pf_kenya___1==0), ]
-  non_pf <-non_pf[, grepl("person_id|redcap|malaria", names(non_pf) ) ]
-  write.csv(as.data.frame(non_pf), "non_pf.csv")
-
   # pf malaria strata------------------------------------------------------------------------
   table(cases$malaria_pf, cases$infected_denv_stfd)
   denv_pf_tested_events<-sum(!is.na(cases$infected_denv_stfd) & !is.na(cases$malaria_pf), na.rm = TRUE)
@@ -302,7 +290,7 @@ sum(n_distinct(cases$person_id, na.rm = FALSE)) #9988 patients reviewed
   cases$mosquito_net_aic<-as.numeric(as.character(cases$mosquito_net_aic))
   cases <- within(cases, mosquito_net_aic[cases$mosquito_net_aic==8] <-NA )
 #print tables for urban vs rural   
-  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
   dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","mom_highest_level_education_aic")
     dem_factorVars <- c("City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
     dem_tableOne_site <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "City", data = cases)
@@ -330,8 +318,7 @@ pedsql<-pedsql[, !grepl("child|infant|teen|812|mean|sum|type|group|complete|comm
 pedsql<-pedsql[order(-(grepl('strata', names(pedsql)))+1L)]
 
 pedsql$strata_all<-as.factor(pedsql$strata_all)
-pedsql$strata_all = relevel(pedsql$strata_all, ref = "malaria_pos_&_denv_pos")
-
+pedsql$strata_all = relevel(pedsql$strata_all, ref = "malaria_pos_denv_pos")
 #median tables
 pedsql_vars<-names(pedsql[,-1])
 pedsql.tableone <- CreateTableOne(vars = pedsql_vars, factorVars = pedsql_vars, strata = "strata_all", data = pedsql)
@@ -385,7 +372,7 @@ hist(cases$pedsql_parent_emotional_mean_conv_paired)
            
       pedsql<-cases[, grepl("person_id|pedsql|strata|hospitalized", names(cases))]
 
-      write.csv(as.data.frame(pedsql), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/pedsql.csv" )
+      write.csv(as.data.frame(pedsql), "C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/pedsql.csv" )
       
 # symptoms table ----------------------------------------------------------
       #fix the bleeding and body_ache variables to replace NA with zero.
@@ -469,12 +456,12 @@ hist(cases$pedsql_parent_emotional_mean_conv_paired)
     # save and export data ----------------------------------------------------
     save(cases,file="david_denv_malaria_cohort.rda")
     #export to csv
-    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data")
+    setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
     f <- "david_denv_pf_cohort.csv"
     write.csv(as.data.frame(cases), f )
     # save and export strata and hospitalization data ----------------------------------------------------
     david_coinfection_strata_hospitalization<-cases[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome|gender_all|ses_sum|mom_highest_level_education", names(cases))]
-    save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfectin paper/data/david_coinfection_strata_hospitalization.rda")
+    save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/david_coinfection_strata_hospitalization.rda")
 
     table(cases$strata_all)
     
