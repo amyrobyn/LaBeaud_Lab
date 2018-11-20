@@ -6,23 +6,7 @@ library(dplyr)
 library(janitor)
 library(plyr)
 # get data -----------------------------------------------------------------
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")#use for david paper. dataset created 8/8/18
-load("R01_lab_results 2018-11-16 .rda")
-load("aic_symptoms.rda")
-# format data -----------------------------------------------------------------
-  R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2)
-  AIC<- R01_lab_results[which(R01_lab_results$id_cohort=="F"),]
-  AIC<- AIC[which(AIC$redcap_event_name!="patient_informatio_arm_1"&AIC$redcap_event_name!="visit_a2_arm_1"&AIC$redcap_event_name!="visit_b2_arm_1"&AIC$redcap_event_name!="visit_c2_arm_1"&AIC$redcap_event_name!="visit_d2_arm_1"&AIC$redcap_event_name!="visit_u24_arm_1"),]
-  table(AIC$redcap_event)
-  AIC$id_cohort<-substr(AIC$person_id, 2, 2)
-  AIC$id_city<-substr(AIC$person_id, 1, 1)
-  AIC$person_id<-as.character(AIC$person_id)
-  AIC$redcap_event_name<-as.character(AIC$redcap_event_name)
-  AIC$int_date <-ymd(AIC$interview_date_aic)
-
-# define acute febrile illness ------------------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
-
+load("AIC.rda")
 # pedsql ------------------------------------------------------------------
 AIC<-AIC[order(-(grepl('pedsql', names(AIC)))+1L)]
 AIC_no_pedsql<-AIC[, !grepl("pedsql", names(AIC))]
@@ -61,8 +45,7 @@ pedsql_child_total$pedsql_child_total_mean<-round(pedsql_child_total$pedsql_chil
 pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_mean[pedsql_child_total$not_missing_child<(15/2)] <- NA)
 pedsql_child_total<-pedsql_child_total[order(-(grepl('pedsql_child_total_mean', names(pedsql_child_total)))+1L)]
 hist(pedsql_child_total$pedsql_child_total_mean)
-count(!is.na(pedsql_child_total$pedsql_child_total_mean))
-
+plyr::count(!is.na(pedsql_child_total$pedsql_child_total_mean))
 #merge back to database
 pedsql_child_total<-pedsql_child_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_total))]
 pedsql_child_total<-as.data.frame(pedsql_child_total)
@@ -83,7 +66,7 @@ pedsql_child_physical$pedsql_child_physical_mean<-round(pedsql_child_physical$pe
 pedsql_child_physical<- within(pedsql_child_physical, pedsql_child_physical_mean[pedsql_child_physical$not_missing_child_physical<2.5] <- NA)
 
 hist(pedsql_child_physical$pedsql_child_physical_mean, breaks=110)
-count(!is.na(pedsql_child_physical$pedsql_child_physical_mean))
+plyr::count(!is.na(pedsql_child_physical$pedsql_child_physical_mean))
 
 #merge back to database
 pedsql_child_physical<-pedsql_child_physical[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_physical))]
@@ -99,7 +82,7 @@ pedsql_child_emotional$pedsql_child_emotional_mean<-round(pedsql_child_emotional
 pedsql_child_emotional<- within(pedsql_child_emotional, pedsql_child_emotional_mean[pedsql_child_emotional$not_missing_child_emotional<1.5] <- NA)
 
 hist(pedsql_child_emotional$pedsql_child_emotional_mean, breaks=110)
-count(!is.na(pedsql_child_emotional$pedsql_child_emotional_mean))
+plyr::count(!is.na(pedsql_child_emotional$pedsql_child_emotional_mean))
 #merge back to database
 pedsql_child_emotional<-pedsql_child_emotional[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_emotional))]
 pedsql_merge <- merge(pedsql_child_emotional, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -113,7 +96,7 @@ pedsql_child_social$pedsql_child_social_sum<-rowSums(pedsql_child_social[, grep(
 pedsql_child_social$pedsql_child_social_mean<-round(pedsql_child_social$pedsql_child_social_sum/pedsql_child_social$not_missing_child_social)
 pedsql_child_social<- within(pedsql_child_social, pedsql_child_social_mean[pedsql_child_social$not_missing_child_social<1.5] <- NA)
 
-count(!is.na(pedsql_child_social$pedsql_child_social_mean))
+plyr::count(!is.na(pedsql_child_social$pedsql_child_social_mean))
 hist(pedsql_child_social$pedsql_child_social_mean, breaks=110)
 #merge back to database
 pedsql_child_social<-pedsql_child_social[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_social))]
@@ -128,7 +111,7 @@ pedsql_child_school$pedsql_child_school_sum<-rowSums(pedsql_child_school[, grep(
 pedsql_child_school$pedsql_child_school_mean<-round(pedsql_child_school$pedsql_child_school_sum/pedsql_child_school$not_missing_child_school)
 pedsql_child_school<- within(pedsql_child_school, pedsql_child_school_mean[pedsql_child_school$not_missing_child_school<1.5] <- NA)
 
-count(!is.na(pedsql_child_school$pedsql_child_school_mean))
+plyr::count(!is.na(pedsql_child_school$pedsql_child_school_mean))
 hist(pedsql_child_school$pedsql_child_school_mean, breaks=110)
 #merge back to database
 pedsql_child_school<-pedsql_child_school[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_school))]
@@ -143,7 +126,7 @@ pedsql_child_psych$pedsql_child_psych_mean<-round(pedsql_child_psych$pedsql_chil
 pedsql_child_psych<- within(pedsql_child_psych, pedsql_child_psych_mean[pedsql_child_psych$not_missing_child_psych<5] <- NA)
 
 hist(pedsql_child_psych$pedsql_child_psych_mean, breaks=110)
-count(!is.na(pedsql_child_psych$pedsql_child_psych_mean))
+plyr::count(!is.na(pedsql_child_psych$pedsql_child_psych_mean))
 #merge back to database
 pedsql_child_psych<-pedsql_child_psych[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_psych))]
 pedsql_merge <- merge(pedsql_child_psych, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
@@ -161,7 +144,7 @@ pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_mean[pedsq
 pedsql_parent_total<-pedsql_parent_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_total))]
 pedsql_merge <- merge(pedsql_parent_total, pedsql_merge,  by=c("person_id", "redcap_event_name"), all = TRUE)
 hist(pedsql_parent_total$pedsql_parent_total_mean, breaks = 110)
-count(!is.na(pedsql_parent_total$pedsql_parent_total_mean))
+plyr::count(!is.na(pedsql_parent_total$pedsql_parent_total_mean))
 
 # physical vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -244,9 +227,8 @@ AIC_no_pedsql <- AIC_no_pedsql[, grepl("person_id|redcap_event", names(AIC_no_pe
 AIC_no_pedsql<-unique(AIC_no_pedsql)
 pedsql_merge<-unique(pedsql_merge)
 save(pedsql_merge,file="pedsql_merge.rda")
-AIC <- merge(AIC_no_pedsql, pedsql_merge,  by=c("person_id", "redcap_event"), all = TRUE)
-
-pedsql <- AIC[, grepl("person_id|redcap_event|pedsql|acute|int_date|strata_all", names(AIC) ) ]
+pedsql <- merge(AIC_no_pedsql, pedsql_merge,  by=c("person_id", "redcap_event"), all = TRUE)
+pedsql <- pedsql[, grepl("person_id|redcap_event|pedsql|acute|int_date|strata_all", names(pedsql) ) ]
 save(pedsql,file="pedsql_all.rda")
 
 # unpaired pedsql by strata -----------------------------------------------
@@ -313,7 +295,6 @@ pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_c_arm_1', names(pedsql_pairs)))+
 pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_b_arm_1', names(pedsql_pairs)))+1L)]
 pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_a_arm_1', names(pedsql_pairs)))+1L)]
 pedsql_pairs<-pedsql_pairs[order(-(grepl('patient_informatio_arm_1', names(pedsql_pairs)))+1L)]
-pedsql_pairs$pair_sum
 table(pedsql_pairs$pair_sum)
 #reshape
 #v.names=c("elapsed.time","int_date","pedsql_child_emotional_mean", "pedsql_child_physical_mean","pedsql_child_psych_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_total_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean","pedsql_parent_psych_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean") 
@@ -410,6 +391,6 @@ colnames<-colnames(pedsql_pairs)
       
       summary(pedsql_pairs_acute$pedsql_parent_psych_mean_z)
       hist(pedsql_pairs_acute$pedsql_parent_psych_mean_z,breaks=110,exclude=NULL)
-      count(!is.na(pedsql_pairs_acute$pedsql_parent_psych_mean_z))
+      plyr::count(!is.na(pedsql_pairs_acute$pedsql_parent_psych_mean_z))
       save(pedsql_pairs_acute,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/pedsql_pairs_acute.rda")#save for use in others
       
