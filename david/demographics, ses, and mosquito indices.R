@@ -1,5 +1,4 @@
 # demographics ------------------------------------------------------------
-
 #ses- create an index
 AIC <- within(AIC, kid_highest_level_education_aic[AIC$kid_highest_level_education_aic==9|AIC$kid_highest_level_education_aic==5] <- NA)
 AIC <- within(AIC, mom_highest_level_education_aic[AIC$mom_highest_level_education_aic==9|AIC$mom_highest_level_education_aic==5] <- NA)
@@ -76,4 +75,15 @@ AIC <- within(AIC, mosquito_coil_aic[AIC$mosquito_coil_aic==8] <-NA )
 AIC$outdoor_activity_aic<-as.numeric(as.character(AIC$outdoor_activity_aic))
 AIC <- within(AIC, outdoor_activity_aic[AIC$outdoor_activity_aic==8] <-NA )
 AIC$mosquito_net_aic<-as.numeric(as.character(AIC$mosquito_net_aic))
-AIC <- within(AIC, mosquito_net_aic[AIC$mosquito_net_aic==8] <-NA )
+AIC <- within(AIC, mosquito_net_aic[AIC$mosquito_net_aic==9] <-NA )
+
+AIC$mosquito_deterrent<-NA
+AIC <- within(AIC, mosquito_deterrent[AIC$mosquito_net_aic>=2|AIC$mosquito_coil_aic==0] <-0 )
+AIC <- within(AIC, mosquito_deterrent[AIC$mosquito_net_aic==1|AIC$mosquito_coil_aic==1] <-1 )
+table(AIC$mosquito_deterrent)
+
+AIC$always_net<-NA
+AIC <- within(AIC, always_net[AIC$mosquito_net_aic>=2] <-0 )
+AIC <- within(AIC, always_net[AIC$mosquito_net_aic==1] <-1 )
+table(AIC$always_net)
+                              

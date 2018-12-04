@@ -1,3 +1,4 @@
+library(tableone)
 # import data -------------------------------------------------------------
   #source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/export r01 data from redcap and create binary vars.R")#don't run every time
       setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
@@ -23,46 +24,50 @@ table(AIC$redcap_event_name)
 
 AIC<-AIC[which((AIC$age>=1&AIC$age<=17)|is.na(AIC$age)),]#ages 1-17
 patients_reviewed<-sum(dplyr::n_distinct(AIC$person_id[AIC$redcap_event_name=="visit_a_arm_1"], na.rm = FALSE))
-
 tapply(AIC$int_date, AIC$redcap_event_name, summary)
 
 # anthropometrics ------------------------------------------------------------------------
 #don't need to run every time
 #source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/u24/igrowup_longitudinal.R")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/z_scores.rda")
+zbmi<-z[which(z$zbmi>5|z$zbmi< (-5)),]
+zhfa<-z[which(z$zhfa>5|z$zhfa< (-5)),]
+write.csv(zhfa,file="height for age out of bounds.csv")
+write.csv(zbmi,file="bmi out of bounds.csv")
+
 AIC<-merge(AIC,z,by=c("person_id","redcap_event_name"),all.x=T)
 colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
 # define acute febrile illness ------------------------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
-table(AIC$acute,AIC$redcap_event_name)
+table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
 
 AIC_B<-AIC[which(AIC$acute!=1 & AIC$redcap_event_name=="visit_b_arm_1"), ]
 AIC<-AIC[which(AIC$acute==1&(AIC$redcap_event_name=="visit_a_arm_1")), ]
 table(AIC$acute,AIC$redcap_event_name)
 
-var<-c("age","height","sex", "weight","cbmi", "zhfa", "zwfa", "zbfa", "fhfa", "fwfa", "fbfa", "clenhei", "triskin", "subskin", "oedema", "sw", "zlen", "zwei", "zwfl", "zbmi", "zhc", "zac", "zts", "zss", "flen", "fwei", "fwfl", "fbmi", "fhc", "fac", "fts", "fss")
+var<-c("age","height","sex","zhfa", "zbmi")
 
-acute_by_city <- tableone::CreateTableOne(vars = var, strata = "id_city", data = AIC)
+acute_by_city <- CreateTableOne(vars = var, strata = "id_city", data = AIC)
 print(acute_by_city,nonnormal=c("age"))
-acute_by_site <- tableone::CreateTableOne(vars = var, strata = "site", data = AIC)
+acute_by_site <- CreateTableOne(vars = var, strata = "site", data = AIC)
 print(acute_by_site,nonnormal=c("age"))
 AIC$urban<-NA
 AIC <- within(AIC, urban[id_city=="K"|id_city=="U"] <-1 )
 AIC <- within(AIC, urban[id_city=="C"|id_city=="M"] <-0 )
 
-acute <- tableone::CreateTableOne(vars = var, data = AIC)
+acute <- CreateTableOne(vars = var, data = AIC)
 print(acute,nonnormal=c("age"))
 
-acute_urban <- tableone::CreateTableOne(vars = var, strata = "urban",data = AIC)
+acute_urban <- CreateTableOne(vars = var, strata = "urban",data = AIC)
 print(acute_urban,nonnormal=c("age"))
 
 #denv and malaria case definition------------------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/strata definitions.R")
-table(AIC$strata_all,AIC$acute)
 AIC$int_date_my<-format(as.Date(AIC$int_date), "%Y-%m")
-AIC_nonNA<-AIC[which(!is.na(AIC$denv_strata)),]
+AIC_nonNA<-AIC[which(!is.na(AIC$denv_strata)),c("denv_strata","int_date_my","int_date")]
+write.csv(AIC_nonNA,file="strata_date.csv")
 library(ggplot2)
-p<-ggplot2::ggplot(AIC_nonNA, aes(x = int_date_my,fill=denv_strata,color=denv_strata)) + 
+ggplot(AIC_nonNA, aes(x = int_date_my,fill=denv_strata,color=denv_strata)) + 
   scale_fill_manual(values=c("grey", "transparent", "black"))+
   scale_color_manual(values=c("black", "black", "black"))+
 #  scale_x_date(date_breaks = "1 month", date_labels =  "%b %Y") +
@@ -88,6 +93,8 @@ table(AIC$malaria)
 table(AIC$malaria)/sum(table(AIC$malaria))*1000
 summary(AIC$malaria)*1000
 tapply(AIC$malaria, AIC$year, summary)
+tapply(AIC$malaria, AIC$id_city, summary)
+
 tapply(AIC$age,is.na(AIC$malaria), summary)
 boxplot(age ~ is.na(AIC$malaria), data = AIC)
 wilcox.test(AIC$age~is.na(AIC$malaria),na.rm=T)
@@ -105,84 +112,67 @@ table(AIC$microscopy_malaria_po_kenya___1,AIC$microscopy_malaria_pf_kenya___1,ex
 table(AIC$result_microscopy_malaria_kenya,AIC$microscopy_malaria_pf_kenya___1,exclude = NULL)  
 
 # included vs excluded tables ---------------------------------------------
-excluded <- tableone::CreateTableOne(vars = var, strata = "excluded",data = AIC)
+excluded <- CreateTableOne(vars = var, strata = "excluded",data = AIC)
 print(excluded,nonnormal=c("age"))
-aic <- tableone::CreateTableOne(vars = var, ,data = AIC)
+aic <- CreateTableOne(vars = var, ,data = AIC)
 print(aic,nonnormal=c("age"))
 
 # cases tested for both malaria and denv ----------------------------------
 AIC<-AIC[which(!is.na(AIC$malaria) & !is.na(AIC$infected_denv_stfd)), ]
 save(AIC,file="AIC.rda")
+table(AIC$malaria)
+
 # infection strata tables ---------------------------------------------
-strata <- tableone::CreateTableOne(vars = var, strata = "strata_all",data = AIC)
+strata <- CreateTableOne(vars = var, strata = "strata_all",data = AIC)
 print(strata,nonnormal=c("age"))
-aic <- tableone::CreateTableOne(vars = var, ,data = AIC)
+aic <- CreateTableOne(vars = var, ,data = AIC)
 print(aic,nonnormal=c("age"))
 table(AIC$strata_all)
 table(AIC$strata_all,AIC$site)
 table(AIC$strata_all,AIC$id_city)
-(113/833)*100
 results <- fastDummies::dummy_cols(AIC,select_columns = "strata_all")
 strata<-c("strata_all_malaria_pos_denv_pos","strata_all_malaria_pos_denv_neg","strata_all_malaria_neg_denv_neg","strata_all_malaria_neg_denv_pos")
-city <-tableone::CreateTableOne(vars = strata,factorVars = strata, strata = "id_city", data = results)
-urban <-tableone::CreateTableOne(vars = strata,factorVars = strata, strata = "urban", data = results)
-site <-tableone::CreateTableOne(vars = strata,factorVars = strata, strata = "site", data = results)
-total <-tableone::CreateTableOne(vars = strata,factorVars = strata, data = results)
+city <-CreateTableOne(vars = strata,factorVars = strata, strata = "id_city", data = results)
+urban <-CreateTableOne(vars = strata,factorVars = strata, strata = "urban", data = results)
+site <-CreateTableOne(vars = strata,factorVars = strata, strata = "site", data = results)
+total <-CreateTableOne(vars = strata,factorVars = strata, data = results)
 
-t.test(strata_all_malaria_pos_denv_pos~site,na.rm=T, data=results)
-t.test(strata_all_malaria_pos_denv_neg~site,na.rm=T, data=results)
-t.test(strata_all_malaria_neg_denv_neg~site,na.rm=T, data=results)
-t.test(strata_all_malaria_neg_denv_pos~site,na.rm=T, data=results)
+# outcome hospitalized ----------------------------------------------------
+ AIC$outcome_hospitalized<-as.numeric(as.character(AIC$outcome_hospitalized))
+ AIC <- within(AIC, outcome_hospitalized[outcome_hospitalized==8] <-1 )
+ table(AIC$outcome_hospitalized)
+# demographics, ses, and mosquito indices ------------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
+table(AIC$ses_sum)
+table(AIC$strata_all)
 
-t.test(strata_all_malaria_pos_denv_neg~urban,na.rm=T, data=results)
-t.test(strata_all_malaria_pos_denv_pos~urban,na.rm=T, data=results)
-t.test(strata_all_malaria_neg_denv_neg~urban,na.rm=T, data=results)
-t.test(strata_all_malaria_neg_denv_pos~urban,na.rm=T, data=results)
+# demographic tables and graphs -------------------------------------------------------
+ source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demogarphy or tables.R")
 
-aov(results$strata_all_malaria_pos_denv_neg~results$id_city)
-pairwise.t.test(results$strata_all_malaria_pos_denv_pos,results$id_city,p.adjust.method = "BH")
-
-aov(results$strata_all_malaria_pos_denv_neg~results$id_city)
-pairwise.t.test(results$strata_all_malaria_pos_denv_neg,results$id_city,p.adjust.method = "BH")
-
-aov(results$strata_all_malaria_pos_denv_neg~results$id_city)
-pairwise.t.test(results$strata_all_malaria_neg_denv_neg,results$id_city,p.adjust.method = "BH")
-
-aov(results$strata_all_malaria_pos_denv_neg~results$id_city)
-pairwise.t.test(results$strata_all_malaria_neg_denv_pos,results$id_city,p.adjust.method = "BH")
+# pe and symptoms table ----------------------------------------------------------
+ source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/symptoms.R")
 
 ##merge with paired(acute and convalescent) pedsql data -----------------------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/calculate pedsql scores and pair.r")
  load("AIC.rda")
  names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
  names(AIC)[names(AIC) == 'redcap_event'] <- 'redcap_event_name'
- AIC <- join(AIC, pedsql_pairs_acute, by=c("person_id", "redcap_event_name"), match = "first" , type="full")
+ pedsql_pairs_acute<-pedsql_pairs_acute[which(pedsql_pairs_acute$redcap_event_name=="visit_a_arm_1"),]
+ table(pedsql_pairs_acute$redcap_event_name)
+ 
+ AIC <- join(AIC, pedsql_pairs_acute, by=c("person_id", "redcap_event_name"), match = "first" , type="left")
+ 
  AIC<-AIC[order(-(grepl('person_id|redcap|pedsql_', names(AIC)))+1L)]
+ 
+ source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/acute visit outcomes- pe, pedsql.R")
+ 
 ##merge with unpaired pedsql data -----------------------------------------------------------------------
  load("pedsql_unpaired.rda")
  names(pedsql_unpaired)[names(pedsql_unpaired) == 'redcap_event'] <- 'redcap_event_name'
+ pedsql_unpaired<-pedsql_unpaired[which(pedsql_unpaired$redcap_event_name=="visit_a_arm_1"),]
+ table(pedsql_unpaired$redcap_event_name)
  AIC <- join(AIC, pedsql_unpaired, by=c("person_id", "redcap_event_name"), match = "first" , type="left")
- 
- # outcome hospitalized ----------------------------------------------------
- AIC$outcome_hospitalized<-as.numeric(as.character(AIC$outcome_hospitalized))
- AIC <- within(AIC, outcome_hospitalized[outcome_hospitalized==8] <-1 )
- table(AIC$outcome_hospitalized)
-# demographics, ses, and mosquito indices ------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
-# physcial exam -----------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/acute visit outcomes- pe, pedsql.R")
-# symptoms table ----------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/symptoms.R")
-# keep only ab visits -----------------------------------------------------
- sum(n_distinct(AIC$person_id, na.rm = FALSE)) #2276
- n<-sum(n_distinct(R01_lab_results$person_id, na.rm = FALSE)) #10,899 patients reviewed
- AIC<-AIC[which((AIC$acute==1&AIC$redcap_event_name=="visit_a_arm_1")|(AIC$acute!=1&AIC$redcap_event_name=="visit_b_arm_1")), ]
- aic_n<-sum(n_distinct(AIC$person_id, na.rm = FALSE)) #2,205 patients included in study (aic, west)
- table(AIC$redcap_event_name)
- afi<- sum(AIC$acute==1, na.rm = TRUE)#2203 afi's
-
- AIC<-AIC[which(AIC$acute==1), ]#is this right? we only want the acute visit in here and only the pedsql outcome at conv?
- 
+ nrow(AIC)
 # save and export data ----------------------------------------------------
  save(AIC,file="david_denv_malaria_cohort.rda")
 # save and export strata and hospitalization data ----------------------------------------------------
@@ -196,22 +186,7 @@ source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/acute visit outcomes- 
  pedsql_tableOne_unpaired_acute <- CreateTableOne(vars = pedsqlvar, strata = "strata_all", data = pedsql_all_coinfection_acute,includeNA=T)
  df<-AIC
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/histograms.R")
- 
-# demographic tables and graphs -------------------------------------------------------
- dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","mom_highest_level_education_aic")
- dem_factorVars <- c("City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
- dem_tableOne_site <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "City", data = AIC)
- dem_tableOne_site.csv <-print(dem_tableOne_site, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
- write.csv(dem_tableOne_site.csv, file = "dem_tableOne_site.csv")
- 
- dem_tableOne_total <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, data = AIC)
- dem_tableOne_total.csv <-print(dem_tableOne_total, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
- write.csv(dem_tableOne_total.csv, file = "dem_tableOne_total.csv")
- 
- dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = AIC)
- dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all", "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"), quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
- write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
- 
+
  AIC$pedsql_parent_emotional_mean_acute_paired
  AIC<-AIC[order(-(grepl('pedsql_', names(AIC))))]
  AIC<-AIC[order(-(grepl('person_id|redcap', names(AIC))))]
