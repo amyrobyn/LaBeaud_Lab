@@ -15,10 +15,7 @@ table(R01_lab_results$id_cohort, R01_lab_results$redcap_event_name)
 R01_lab_results$id_visit<-as.integer(factor(R01_lab_results$redcap_event_name))
 R01_lab_results$id_visit<-R01_lab_results$id_visit-1
 
-
 # sites, city, rural ------------------------------------------------------
-
-#site
 R01_lab_results$id_city<-substr(R01_lab_results$person_id, 1, 1)
 R01_lab_results$site<-NA
 table(R01_lab_results$id_city)
@@ -67,8 +64,6 @@ interview_dates$interview_date[is.na(interview_dates$interview_date)] <- ""
 
 interview_dates<-tidyr::unite(interview_dates, int_date, interview_date_aic:interview_date, sep='')
 R01_lab_results<- merge(interview_dates, R01_lab_results,  by=c("person_id", "redcap_event_name", "id_city", "id_cohort"), all = TRUE)
-
-#dates
 
 class(R01_lab_results$int_date)
 
