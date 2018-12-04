@@ -77,24 +77,3 @@ AIC$outdoor_activity_aic<-as.numeric(as.character(AIC$outdoor_activity_aic))
 AIC <- within(AIC, outdoor_activity_aic[AIC$outdoor_activity_aic==8] <-NA )
 AIC$mosquito_net_aic<-as.numeric(as.character(AIC$mosquito_net_aic))
 AIC <- within(AIC, mosquito_net_aic[AIC$mosquito_net_aic==8] <-NA )
-
-#print tables for urban vs rural   
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
-dem_vars=c("City", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","mom_highest_level_education_aic")
-dem_factorVars <- c("City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic") 
-dem_tableOne_site <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "City", data = AIC)
-
-dem_tableOne_site.csv <-print(dem_tableOne_total, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all",    "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"),  quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-write.csv(dem_tableOne_site.csv, file = "dem_tableOne_site.csv")
-
-#keep only those tested for both
-AIC<-AIC[which(!is.na(AIC$malaria) & AIC$tested_denv_stfd_igg==1  & AIC$acute==1), ]
-
-#print tables    
-dem_tableOne_strata_all <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars, strata = "strata_all", data = AIC)
-dem_tableOne_total <- CreateTableOne(vars = dem_vars, factorVars = dem_factorVars,  data = AIC)
-
-dem_tableOne_strata_all.csv <-print(dem_tableOne_strata_all, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all",    "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"),  quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-dem_tableOne_total.csv <-print(dem_tableOne_total, nonnormal=c("aic_calculated_age"), exact = c("id_city", "gender_all",    "mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic"),  quote = F, noSpaces = TRUE, includeNA=TRUE,, printToggle = FALSE)
-write.csv(dem_tableOne_strata_all.csv, file = "dem_tableOne_strata_all.csv")
-write.csv(dem_tableOne_total.csv, file = "dem_tableOne_total.csv")

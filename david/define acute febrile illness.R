@@ -24,3 +24,11 @@ AIC <- within(AIC, acute[AIC$temp>=38] <- 1)
 #otherwise, it is not acute
 AIC <- within(AIC, acute[AIC$acute!=1] <- 0)
 table(AIC$redcap_event_name, AIC$acute)
+table(AIC$aic_symptom_fever,AIC$temp>=38)
+
+table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
+acute<-AIC[which(AIC$redcap_event_name=="visit_a_arm_1"),c("acute","aic_symptom_fever","temp","visit_type","redcap_event_name","person_id")]
+table(acute$aic_symptom_fever,acute$temp>=38,acute$visit_type,exclude=NULL)
+table(acute$temp>=38,exclude=NULL)
+table(acute$visit_type,exclude=NULL)
+table(acute$acute)  
