@@ -56,7 +56,6 @@ ses<-(AIC[, grepl("telephone|radio|television|bicycle|motor_vehicle|domestic_wor
 AIC$ses_sum<-rowSums(AIC[, c("telephone","radio","television","bicycle","motor_vehicle", "domestic_worker")], na.rm = TRUE)
 table(AIC$ses_sum)
 
-class(AIC$aic_calculated_age)
 AIC$aic_calculated_age<-as.numeric(as.character(AIC$aic_calculated_age))
 AIC<-AIC[order(-(grepl('pedsql_', names(AIC)))+1L)]
 AIC<-AIC[order(-(grepl('_mean', names(AIC)))+1L)]

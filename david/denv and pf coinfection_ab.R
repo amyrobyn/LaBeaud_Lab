@@ -37,6 +37,7 @@ write.csv(zbmi,file="bmi out of bounds.csv")
 
 AIC<-merge(AIC,z,by=c("person_id","redcap_event_name"),all.x=T)
 colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
+
 # define acute febrile illness ------------------------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
 table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
@@ -45,10 +46,11 @@ AIC_B<-AIC[which(AIC$acute!=1 & AIC$redcap_event_name=="visit_b_arm_1"), ]
 AIC<-AIC[which(AIC$acute==1&(AIC$redcap_event_name=="visit_a_arm_1")), ]
 table(AIC$acute,AIC$redcap_event_name)
 
-var<-c("age","height","sex","zhfa", "zbmi")
+var<-c("age","height","sex","zhfa", "zbmi","ses_sum")
 
 acute_by_city <- CreateTableOne(vars = var, strata = "id_city", data = AIC)
 print(acute_by_city,nonnormal=c("age"))
+
 acute_by_site <- CreateTableOne(vars = var, strata = "site", data = AIC)
 print(acute_by_site,nonnormal=c("age"))
 AIC$urban<-NA
@@ -60,6 +62,9 @@ print(acute,nonnormal=c("age"))
 
 acute_urban <- CreateTableOne(vars = var, strata = "urban",data = AIC)
 print(acute_urban,nonnormal=c("age"))
+
+# demographics, ses, and mosquito indices ------------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
 
 #denv and malaria case definition------------------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/strata definitions.R")
@@ -136,16 +141,13 @@ city <-CreateTableOne(vars = strata,factorVars = strata, strata = "id_city", dat
 urban <-CreateTableOne(vars = strata,factorVars = strata, strata = "urban", data = results)
 site <-CreateTableOne(vars = strata,factorVars = strata, strata = "site", data = results)
 total <-CreateTableOne(vars = strata,factorVars = strata, data = results)
+# ses pca ------------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/ses pca.R")
 
 # outcome hospitalized ----------------------------------------------------
  AIC$outcome_hospitalized<-as.numeric(as.character(AIC$outcome_hospitalized))
  AIC <- within(AIC, outcome_hospitalized[outcome_hospitalized==8] <-1 )
  table(AIC$outcome_hospitalized)
-# demographics, ses, and mosquito indices ------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
-table(AIC$ses_sum)
-table(AIC$strata_all)
-
 # demographic tables and graphs -------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demogarphy or tables.R")
 
