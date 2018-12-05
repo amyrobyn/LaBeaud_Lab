@@ -9,6 +9,7 @@ AIC <- within(AIC, acute[AIC$temp>=38] <- 1)
 table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
 #if they ask an initial survey question (see odk aic inital and follow up forms), it is an initial visit.
 AIC <- within(AIC, acute[AIC$kid_highest_level_education_aic!=""] <- 1)
+AIC <- within(AIC, acute[AIC$occupation_aic!=""] <- 1)
 table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
 
 #otherwise, it is not acute

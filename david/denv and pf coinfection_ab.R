@@ -37,6 +37,8 @@ write.csv(zbmi,file="bmi out of bounds.csv")
 
 AIC<-merge(AIC,z,by=c("person_id","redcap_event_name"),all.x=T)
 colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
+# demographics, ses, and mosquito indices ------------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
 
 # define acute febrile illness ------------------------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
@@ -62,9 +64,6 @@ print(acute,nonnormal=c("age"))
 
 acute_urban <- CreateTableOne(vars = var, strata = "urban",data = AIC)
 print(acute_urban,nonnormal=c("age"))
-
-# demographics, ses, and mosquito indices ------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
 
 #denv and malaria case definition------------------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/strata definitions.R")
@@ -141,17 +140,24 @@ city <-CreateTableOne(vars = strata,factorVars = strata, strata = "id_city", dat
 urban <-CreateTableOne(vars = strata,factorVars = strata, strata = "urban", data = results)
 site <-CreateTableOne(vars = strata,factorVars = strata, strata = "site", data = results)
 total <-CreateTableOne(vars = strata,factorVars = strata, data = results)
+pairwise.t.test(AIC$age, AIC$strata_all, p.adj = "bonf",paired = FALSE,alternative = "two.sided")
+
+# physical exam -------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/physical exam.R")
+
+# demographic tables and graphs -------------------------------------------------------
+source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demogarphy or tables.R")
+
 # ses pca ------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/ses pca.R")
+table(AIC$strata_all)
 
 # outcome hospitalized ----------------------------------------------------
  AIC$outcome_hospitalized<-as.numeric(as.character(AIC$outcome_hospitalized))
  AIC <- within(AIC, outcome_hospitalized[outcome_hospitalized==8] <-1 )
  table(AIC$outcome_hospitalized)
-# demographic tables and graphs -------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demogarphy or tables.R")
 
-# pe and symptoms table ----------------------------------------------------------
+# symptoms table ----------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/symptoms.R")
 
 ##merge with paired(acute and convalescent) pedsql data -----------------------------------------------------------------------
@@ -181,6 +187,9 @@ source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/ses pca.R")
  david_coinfection_strata_hospitalization<-AIC[, grepl("person_id|redcap_event_name|strata|outcome_hospitalized|outcome|gender_all|ses_sum|mom_highest_level_education", names(AIC))]
  save(david_coinfection_strata_hospitalization,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/david_coinfection_strata_hospitalization.rda")
  table(AIC$strata_all)
+ 
+ AIC$aic_pe_abnormal_gait
+ 
 # pedsql tables and graphs -------------------------------------------------------
  list<-grep("mean_acute_paired|mean_conv_paired|change|mean_z", names(AIC), value = TRUE)
  pedsqlvar_aic<-pedsqlvar_aic[pedsqlvar_aic != "home_lifestyle_changes"]

@@ -55,14 +55,18 @@ write.csv(symptoms_tableOne_strata_all.csv, file = "symptoms_tableOne_strata_all
 
 #Table 2, OR of symptom/sign in reference to co-infection 
 vars <-c("aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "nausea_vomitting")
-AIC <- fastDummies::dummy_cols(AIC, select_columns = "strata_all")
-fits <- lapply(vars, function(x) {glm(substitute(i~strata_all_malaria_neg_denv_neg+strata_all_malaria_neg_denv_pos+strata_all_malaria_pos_denv_neg -1, list(i = as.name(x))), family="binomial", data = AIC)})
-test<-glm(aic_symptom_abdominal_pain~strata_all_malaria_neg_denv_neg+strata_all_malaria_neg_denv_pos+strata_all_malaria_pos_denv_neg -1, family="binomial", data = AIC)
+#AIC <- fastDummies::dummy_cols(AIC, select_columns = "strata_all")
+table(AIC$strata_all)
+
+test<-glm(aic_symptom_abdominal_pain~factor(strata_all), family="binomial", data = AIC)
+fits <- lapply(vars, function(x) {glm(substitute(i~factor(strata_all), list(i = as.name(x))), family="binomial", data = AIC)})
+exp(coefficients(test))
+exp(confint(test))
 
 coef<-lapply(fits, coefficients)
 coef<-lapply(fits, function(x) {exp(cbind("Odds ratio" = coef(x), confint(x, level = 0.95, parallel="multicore", ncpus=4)))})
 
-lapply(coef, function(x) write.table( data.frame(x), 'symptoms_or.ci_dec4.csv'  , append= T, sep=',' ))
+lapply(coef, function(x) write.table( data.frame(x), 'symptoms_or.ci_dec5.csv'  , append= T, sep=',' ))
 
 #https://stats.stackexchange.com/questions/63222/getting-p-values-for-multinom-in-r-nnet-package
 #install.packages("afex")
@@ -74,4 +78,4 @@ library(AER)
 p<-lapply(fits, coeftest)
 library(broom)
 ptable<-lapply(p, tidy)
-lapply(ptable, function(x) write.table( data.frame(x), 'symtoms_acute_OR_dec4.csv'  , append= T, sep=',' ))
+lapply(ptable, function(x) write.table( data.frame(x), 'symtoms_acute_OR_dec5.csv'  , append= T, sep=',' ))
