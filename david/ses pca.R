@@ -17,3 +17,5 @@ plot(prop_varex, xlab = "Principal Component",ylab = "Proportion of Variance Exp
 
 ses<-cbind(ses,ses.pca$x)
 AIC<-merge(ses,AIC,by=c("person_id","redcap_event_name"), all.y=T)
+colnames(AIC)[colnames(AIC) == 'id_city.y'] <- 'id_city'
+colnames(AIC)[colnames(AIC) == 'strata_all.y'] <- 'strata_all'
