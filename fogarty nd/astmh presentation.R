@@ -19,7 +19,7 @@ currentDate <- Sys.Date()
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 save(chikv_nd,file=FileName)
 
-load("chikv_nd 2018-01-24 .rda")
+#load(FileName)
 
 # table one ---------------------------------------------------------------
 table(chikv_nd$result_child)
