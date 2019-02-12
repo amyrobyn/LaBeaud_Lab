@@ -1,13 +1,13 @@
 library(tidyverse)
 library(tableone)
 # import data -------------------------------------------------------------
-  #source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/export r01 data from redcap and create binary vars.R")#don't run every time
+  #source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/export r01 data from redcap and create binary vars.R")#don't run every time
       setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
       load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 11/16/18 for david conifection paper.
 
 # format data -------------------------------------------------------------
 AIC<- R01_lab_results[which(R01_lab_results$redcap_event_name!="patient_informatio_arm_1" & R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1"),]
-AIC<-AIC[which(AIC$id_cohort=="F"), ]
+AIC<-AIC[which(AIC$id_cohort=="F"),]
 table(AIC$id_cohort)
 patients_reviewed<-sum(dplyr::n_distinct(AIC$person_id[AIC$redcap_event_name=="visit_a_arm_1"], na.rm = FALSE))
 table(AIC$redcap_event_name)
@@ -29,7 +29,7 @@ tapply(AIC$int_date, AIC$redcap_event_name, summary)
 
 # anthropometrics ------------------------------------------------------------------------
 #don't need to run every time
-#source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/u24/igrowup_longitudinal.R")
+#source("C:/Users/amykr/Documents/GitHub/labeaud_lab/u24/igrowup_longitudinal.R")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/z_scores.rda")
 zbmi<-z[which(z$zbmi>5|z$zbmi< (-5)),]
 zhfa<-z[which(z$zhfa>5|z$zhfa< (-5)),]
@@ -39,10 +39,10 @@ write.csv(zbmi,file="bmi out of bounds.csv")
 AIC<-merge(AIC,z,by=c("person_id","redcap_event_name"),all.x=T)
 colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
 # demographics, ses, and mosquito indices ------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demographics, ses, and mosquito indices.r")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/demographics, ses, and mosquito indices.r")
 
 # define acute febrile illness ------------------------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
+ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/define acute febrile illness.r")
 table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
 
 AIC_B<-AIC[which(AIC$redcap_event_name=="visit_b_arm_1"), ]
@@ -79,7 +79,7 @@ boxplot(AIC$age~AIC$site)
 boxplot(AIC$age)
 
 #denv and malaria case definition------------------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/strata definitions.R")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/strata definitions.R")
 AIC$int_date_my<-format(as.Date(AIC$int_date), "%Y-%m")
 AIC_nonNA<-AIC[which(!is.na(AIC$denv_strata)),c("denv_strata","int_date_my","int_date")]
 write.csv(AIC_nonNA,file="strata_date.csv")
@@ -162,13 +162,13 @@ total <-CreateTableOne(vars = strata,factorVars = strata, data = results)
 pairwise.t.test(AIC$age, AIC$strata_all, p.adj = "bonf",paired = FALSE,alternative = "two.sided")
 
 # physical exam -------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/physical exam.R")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/physical exam.R")
 
 # demographic tables and graphs -------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/demogarphy or tables.R")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/demogarphy or tables.R")
 
 # ses pca ------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/ses pca.R")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/ses pca.R")
 table(AIC$strata_all)
 
 # outcome hospitalized ----------------------------------------------------
@@ -177,11 +177,11 @@ table(AIC$strata_all)
  table(AIC$outcome_hospitalized)
 
 # symptoms table ----------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/symptoms.R")
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/cmh.R")
+ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/symptoms.R")
+ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/cmh.R")
  
 ##merge with paired(acute and convalescent) pedsql data -----------------------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/calculate pedsql scores and pair.r")
+ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/calculate pedsql scores and pair.r")
  load("AIC.rda")
  names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
  names(AIC)[names(AIC) == 'redcap_event'] <- 'redcap_event_name'
@@ -197,8 +197,8 @@ table(AIC$strata_all)
 levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg_denv_pos", "Malaria"="malaria_pos_denv_neg","Coinfection"="malaria_pos_denv_pos")
  table(AIC$strata_all)
  AIC$strata_all<- revalue(AIC$strata_all, c("malaria_neg_denv_neg"="Neg", "malaria_neg_denv_pos"="DENV", "malaria_pos_denv_neg"="Malaria","malaria_pos_denv_pos"="Coinfection"))
- 
-# source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/acute visit outcomes-pedsql.R")
+
+# source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/acute visit outcomes-pedsql.R")
  
 ##merge with unpaired pedsql data -----------------------------------------------------------------------
  load("pedsql_unpaired.rda")
@@ -214,11 +214,87 @@ levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg
  AIC_B<-merge(AIC, AIC_B,all.y = T,by="person_id",suffix=c("","_b"))
  AIC_B_febrile<-AIC_B[which(AIC_B$acute_b==1& !is.na(AIC_B$strata_all)), ]#only keep those that have an a strata
  AIC_B_afebrile<-AIC_B[which(AIC_B$acute_b==0 & !is.na(AIC_B$strata_all)), ]#only keep those that have an a strata
+ 
+ 
 
 # save and export data ----------------------------------------------------
  save(AIC,file="david_denv_malaria_cohort.rda")
  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
  load("david_denv_malaria_cohort.rda")
+#Table 7. Characteristics of PedsQL data by infection group-----------------------------------------------------------------------
+AIC$strata_all <- factor(AIC$strata_all, levels = c("malaria_pos_denv_pos", "malaria_neg_denv_pos", "malaria_pos_denv_neg","malaria_neg_denv_neg"))
+ 
+table(AIC$strata_all)
+table(AIC$pairs_ab_conv_paired,AIC$strata_all, exclude = NA)
+table(!is.na(AIC$pedsql_parent_total_mean_acute_paired),AIC$strata_all)
+table(!is.na(AIC$pedsql_parent_total_mean_conv_paired),AIC$strata_all)
+
+AIC$strata_all<-as.factor(AIC$strata_all)
+
+vars<-c("pedsql_parent_total_mean_acute_paired","pedsql_parent_physical_mean_acute_paired","pedsql_parent_emotional_mean_acute_paired","pedsql_parent_social_mean_acute_paired","pedsql_parent_school_mean_acute_paired","pedsql_parent_total_mean_conv_paired","pedsql_parent_physical_mean_conv_paired","pedsql_parent_emotional_mean_conv_paired","pedsql_parent_social_mean_conv_paired","pedsql_parent_school_mean_conv_paired")
+
+acutevars<-c("pedsql_parent_total_mean_acute_paired","pedsql_parent_physical_mean_acute_paired","pedsql_parent_emotional_mean_acute_paired","pedsql_parent_social_mean_acute_paired","pedsql_parent_school_mean_acute_paired")
+convvars<-c("pedsql_parent_total_mean_conv_paired","pedsql_parent_physical_mean_conv_paired","pedsql_parent_emotional_mean_conv_paired","pedsql_parent_social_mean_conv_paired","pedsql_parent_school_mean_conv_paired")
+tableone::CreateTableOne(vars,"strata_all",AIC,includeNA=F,test=T)
+#acute total
+AIC$abnormal_pedsql_parent_total_mean_acute<-ifelse(AIC$pedsql_parent_total_mean_acute_paired<100&!is.na(AIC$pedsql_parent_total_mean_acute_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_total_mean_acute<-AIC[AIC$abnormal_pedsql_parent_total_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_total_mean_acute_paired","strata_all",abnormal_pedsql_parent_total_mean_acute,includeNA=F,test=T)
+
+#conv total
+AIC$abnormal_pedsql_parent_total_mean_conv<-ifelse(AIC$pedsql_parent_total_mean_conv_paired<100&!is.na(AIC$pedsql_parent_total_mean_conv_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_total_mean_conv,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_total_mean_conv<-AIC[AIC$abnormal_pedsql_parent_total_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_total_mean_conv_paired","strata_all",abnormal_pedsql_parent_total_mean_conv,includeNA=F,test=T)
+
+#acute physical
+AIC$abnormal_pedsql_parent_physical_mean_acute<-ifelse(AIC$pedsql_parent_physical_mean_acute_paired<100&!is.na(AIC$pedsql_parent_physical_mean_acute_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_physical_mean_acute,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_physical_mean_acute<-AIC[AIC$abnormal_pedsql_parent_physical_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_physical_mean_acute_paired","strata_all",abnormal_pedsql_parent_physical_mean_acute,includeNA=F,test=T)
+
+#conv physical
+AIC$abnormal_pedsql_parent_physical_mean_conv<-ifelse(AIC$pedsql_parent_physical_mean_conv_paired<100&!is.na(AIC$pedsql_parent_physical_mean_conv_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_physical_mean_conv,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_physical_mean_conv<-AIC[AIC$abnormal_pedsql_parent_physical_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_physical_mean_conv_paired","strata_all",abnormal_pedsql_parent_physical_mean_conv,includeNA=F,test=T)
+
+#acute social
+AIC$abnormal_pedsql_parent_social_mean_acute<-ifelse(AIC$pedsql_parent_social_mean_acute_paired<100&!is.na(AIC$pedsql_parent_social_mean_acute_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_social_mean_acute,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_social_mean_acute<-AIC[AIC$abnormal_pedsql_parent_social_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_social_mean_acute_paired","strata_all",abnormal_pedsql_parent_social_mean_acute,includeNA=F,test=T)
+
+#conv social
+AIC$abnormal_pedsql_parent_social_mean_conv<-ifelse(AIC$pedsql_parent_social_mean_conv_paired<100&!is.na(AIC$pedsql_parent_social_mean_conv_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_social_mean_conv,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_social_mean_conv<-AIC[AIC$abnormal_pedsql_parent_social_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_social_mean_conv_paired","strata_all",abnormal_pedsql_parent_social_mean_conv,includeNA=F,test=T)
+
+#acute school
+AIC$abnormal_pedsql_parent_school_mean_acute<-ifelse(AIC$pedsql_parent_school_mean_acute_paired<100&!is.na(AIC$pedsql_parent_school_mean_acute_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_school_mean_acute,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_school_mean_acute<-AIC[AIC$abnormal_pedsql_parent_school_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_school_mean_acute_paired","strata_all",abnormal_pedsql_parent_school_mean_acute,includeNA=F,test=T)
+
+#conv school
+AIC$abnormal_pedsql_parent_school_mean_conv<-ifelse(AIC$pedsql_parent_school_mean_conv_paired<100&!is.na(AIC$pedsql_parent_school_mean_conv_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_school_mean_conv,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_school_mean_conv<-AIC[AIC$abnormal_pedsql_parent_school_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_school_mean_conv_paired","strata_all",abnormal_pedsql_parent_school_mean_conv,includeNA=F,test=T)
+
+#acute emotional
+AIC$abnormal_pedsql_parent_emotional_mean_acute<-ifelse(AIC$pedsql_parent_emotional_mean_acute_paired<100&!is.na(AIC$pedsql_parent_emotional_mean_acute_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_emotional_mean_acute,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_emotional_mean_acute<-AIC[AIC$abnormal_pedsql_parent_emotional_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_emotional_mean_acute_paired","strata_all",abnormal_pedsql_parent_emotional_mean_acute,includeNA=F,test=T)
+
+#conv emotional
+AIC$abnormal_pedsql_parent_emotional_mean_conv<-ifelse(AIC$pedsql_parent_emotional_mean_conv_paired<100&!is.na(AIC$pedsql_parent_emotional_mean_conv_paired),1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_emotional_mean_conv,AIC$strata_all), margin=2)
+abnormal_pedsql_parent_emotional_mean_conv<-AIC[AIC$abnormal_pedsql_parent_emotional_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_emotional_mean_conv_paired","strata_all",abnormal_pedsql_parent_emotional_mean_conv,includeNA=F,test=T)
 
 # pedsql tables and graphs -------------------------------------------------------
 library(ggplot2)
@@ -298,14 +374,13 @@ p <- lapply(c("pedsql_child_total_mean_change","pedsql_child_emotional_mean_chan
 do.call(gridExtra::grid.arrange, c(p, top = "Paired change over time to follow up"))
 dev.off() # Close the file
 
-
 # other -------------------------------------------------------------------
 list<-grep("mean_acute_paired|mean_conv_paired|change|mean_z", names(AIC), value = TRUE)
  pedsqlvar_aic<-pedsqlvar_aic[pedsqlvar_aic != "home_lifestyle_changes"]
  pedsql_paired_tableOne <- CreateTableOne(vars = pedsqlvar_aic, strata = "strata_all", data = AIC)
  pedsql_tableOne_unpaired_acute <- CreateTableOne(vars = pedsqlvar, strata = "strata_all", data = pedsql_all_coinfection_acute,includeNA=T)
  df<-AIC
- source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/histograms.R")
+ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/histograms.R")
 
  AIC$pedsql_parent_emotional_mean_acute_paired
  AIC<-AIC[order(-(grepl('pedsql_', names(AIC))))]

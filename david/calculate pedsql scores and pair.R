@@ -20,7 +20,7 @@ AIC<- AIC[which(AIC$id_cohort=="F"&AIC$redcap_event_name!="patient_informatio_ar
 table(AIC$redcap_event)
 
 # define acute febrile illness ------------------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/david/define acute febrile illness.r")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/define acute febrile illness.r")
 AIC<-AIC[ , !(names(AIC) %in% c("aic_symptom_fever"))]
 
 # pedsql ------------------------------------------------------------------
