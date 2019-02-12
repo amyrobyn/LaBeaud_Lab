@@ -222,7 +222,7 @@ levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg
  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
  load("david_denv_malaria_cohort.rda")
 #Table 7. Characteristics of PedsQL data by infection group-----------------------------------------------------------------------
-AIC$strata_all <- factor(AIC$strata_all, levels = c("malaria_pos_denv_pos", "malaria_neg_denv_pos", "malaria_pos_denv_neg","malaria_neg_denv_neg"))
+#AIC$strata_all <- factor(AIC$strata_all, levels = c("malaria_pos_denv_pos", "malaria_neg_denv_pos", "malaria_pos_denv_neg","malaria_neg_denv_neg"))
  
 table(AIC$strata_all)
 table(AIC$pairs_ab_conv_paired,AIC$strata_all, exclude = NA)
@@ -237,64 +237,75 @@ acutevars<-c("pedsql_parent_total_mean_acute_paired","pedsql_parent_physical_mea
 convvars<-c("pedsql_parent_total_mean_conv_paired","pedsql_parent_physical_mean_conv_paired","pedsql_parent_emotional_mean_conv_paired","pedsql_parent_social_mean_conv_paired","pedsql_parent_school_mean_conv_paired")
 tableone::CreateTableOne(vars,"strata_all",AIC,includeNA=F,test=T)
 #acute total
-AIC$abnormal_pedsql_parent_total_mean_acute<-ifelse(AIC$pedsql_parent_total_mean_acute_paired<100&!is.na(AIC$pedsql_parent_total_mean_acute_paired),1,0)
+AIC$abnormal_pedsql_parent_total_mean_acute<-ifelse(AIC$pedsql_parent_total_mean_acute_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all)
 abnormal_pedsql_parent_total_mean_acute<-AIC[AIC$abnormal_pedsql_parent_total_mean_acute==1,]
 tableone::CreateTableOne("pedsql_parent_total_mean_acute_paired","strata_all",abnormal_pedsql_parent_total_mean_acute,includeNA=F,test=T)
 
 #conv total
-AIC$abnormal_pedsql_parent_total_mean_conv<-ifelse(AIC$pedsql_parent_total_mean_conv_paired<100&!is.na(AIC$pedsql_parent_total_mean_conv_paired),1,0)
+AIC$abnormal_pedsql_parent_total_mean_conv<-ifelse(AIC$pedsql_parent_total_mean_conv_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_total_mean_conv,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_total_mean_conv,AIC$strata_all)
 abnormal_pedsql_parent_total_mean_conv<-AIC[AIC$abnormal_pedsql_parent_total_mean_conv==1,]
 tableone::CreateTableOne("pedsql_parent_total_mean_conv_paired","strata_all",abnormal_pedsql_parent_total_mean_conv,includeNA=F,test=T)
 
 #acute physical
-AIC$abnormal_pedsql_parent_physical_mean_acute<-ifelse(AIC$pedsql_parent_physical_mean_acute_paired<100&!is.na(AIC$pedsql_parent_physical_mean_acute_paired),1,0)
+AIC$abnormal_pedsql_parent_physical_mean_acute<-ifelse(AIC$pedsql_parent_physical_mean_acute_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_physical_mean_acute,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_physical_mean_acute,AIC$strata_all)
 abnormal_pedsql_parent_physical_mean_acute<-AIC[AIC$abnormal_pedsql_parent_physical_mean_acute==1,]
 tableone::CreateTableOne("pedsql_parent_physical_mean_acute_paired","strata_all",abnormal_pedsql_parent_physical_mean_acute,includeNA=F,test=T)
 
 #conv physical
-AIC$abnormal_pedsql_parent_physical_mean_conv<-ifelse(AIC$pedsql_parent_physical_mean_conv_paired<100&!is.na(AIC$pedsql_parent_physical_mean_conv_paired),1,0)
+AIC$abnormal_pedsql_parent_physical_mean_conv<-ifelse(AIC$pedsql_parent_physical_mean_conv_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_physical_mean_conv,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_physical_mean_conv,AIC$strata_all)
 abnormal_pedsql_parent_physical_mean_conv<-AIC[AIC$abnormal_pedsql_parent_physical_mean_conv==1,]
 tableone::CreateTableOne("pedsql_parent_physical_mean_conv_paired","strata_all",abnormal_pedsql_parent_physical_mean_conv,includeNA=F,test=T)
 
 #acute social
-AIC$abnormal_pedsql_parent_social_mean_acute<-ifelse(AIC$pedsql_parent_social_mean_acute_paired<100&!is.na(AIC$pedsql_parent_social_mean_acute_paired),1,0)
+AIC$abnormal_pedsql_parent_social_mean_acute<-ifelse(AIC$pedsql_parent_social_mean_acute_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_social_mean_acute,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_social_mean_acute,AIC$strata_all)
 abnormal_pedsql_parent_social_mean_acute<-AIC[AIC$abnormal_pedsql_parent_social_mean_acute==1,]
 tableone::CreateTableOne("pedsql_parent_social_mean_acute_paired","strata_all",abnormal_pedsql_parent_social_mean_acute,includeNA=F,test=T)
 
 #conv social
-AIC$abnormal_pedsql_parent_social_mean_conv<-ifelse(AIC$pedsql_parent_social_mean_conv_paired<100&!is.na(AIC$pedsql_parent_social_mean_conv_paired),1,0)
+AIC$abnormal_pedsql_parent_social_mean_conv<-ifelse(AIC$pedsql_parent_social_mean_conv_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_social_mean_conv,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_social_mean_conv,AIC$strata_all)
 abnormal_pedsql_parent_social_mean_conv<-AIC[AIC$abnormal_pedsql_parent_social_mean_conv==1,]
 tableone::CreateTableOne("pedsql_parent_social_mean_conv_paired","strata_all",abnormal_pedsql_parent_social_mean_conv,includeNA=F,test=T)
 
-#acute school
-AIC$abnormal_pedsql_parent_school_mean_acute<-ifelse(AIC$pedsql_parent_school_mean_acute_paired<100&!is.na(AIC$pedsql_parent_school_mean_acute_paired),1,0)
-prop.table(table(AIC$abnormal_pedsql_parent_school_mean_acute,AIC$strata_all), margin=2)
-abnormal_pedsql_parent_school_mean_acute<-AIC[AIC$abnormal_pedsql_parent_school_mean_acute==1,]
-tableone::CreateTableOne("pedsql_parent_school_mean_acute_paired","strata_all",abnormal_pedsql_parent_school_mean_acute,includeNA=F,test=T)
-
-#conv school
-AIC$abnormal_pedsql_parent_school_mean_conv<-ifelse(AIC$pedsql_parent_school_mean_conv_paired<100&!is.na(AIC$pedsql_parent_school_mean_conv_paired),1,0)
-prop.table(table(AIC$abnormal_pedsql_parent_school_mean_conv,AIC$strata_all), margin=2)
-abnormal_pedsql_parent_school_mean_conv<-AIC[AIC$abnormal_pedsql_parent_school_mean_conv==1,]
-tableone::CreateTableOne("pedsql_parent_school_mean_conv_paired","strata_all",abnormal_pedsql_parent_school_mean_conv,includeNA=F,test=T)
-
 #acute emotional
-AIC$abnormal_pedsql_parent_emotional_mean_acute<-ifelse(AIC$pedsql_parent_emotional_mean_acute_paired<100&!is.na(AIC$pedsql_parent_emotional_mean_acute_paired),1,0)
+AIC$abnormal_pedsql_parent_emotional_mean_acute<-ifelse(AIC$pedsql_parent_emotional_mean_acute_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_emotional_mean_acute,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_emotional_mean_acute,AIC$strata_all)
 abnormal_pedsql_parent_emotional_mean_acute<-AIC[AIC$abnormal_pedsql_parent_emotional_mean_acute==1,]
 tableone::CreateTableOne("pedsql_parent_emotional_mean_acute_paired","strata_all",abnormal_pedsql_parent_emotional_mean_acute,includeNA=F,test=T)
 
 #conv emotional
-AIC$abnormal_pedsql_parent_emotional_mean_conv<-ifelse(AIC$pedsql_parent_emotional_mean_conv_paired<100&!is.na(AIC$pedsql_parent_emotional_mean_conv_paired),1,0)
+AIC$abnormal_pedsql_parent_emotional_mean_conv<-ifelse(AIC$pedsql_parent_emotional_mean_conv_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_emotional_mean_conv,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_emotional_mean_conv,AIC$strata_all)
 abnormal_pedsql_parent_emotional_mean_conv<-AIC[AIC$abnormal_pedsql_parent_emotional_mean_conv==1,]
 tableone::CreateTableOne("pedsql_parent_emotional_mean_conv_paired","strata_all",abnormal_pedsql_parent_emotional_mean_conv,includeNA=F,test=T)
+
+#acute school
+AIC$abnormal_pedsql_parent_school_mean_acute<-ifelse(AIC$pedsql_parent_school_mean_acute_paired<100,1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_school_mean_acute,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_school_mean_acute,AIC$strata_all)
+abnormal_pedsql_parent_school_mean_acute<-AIC[AIC$abnormal_pedsql_parent_school_mean_acute==1,]
+tableone::CreateTableOne("pedsql_parent_school_mean_acute_paired","strata_all",abnormal_pedsql_parent_school_mean_acute,includeNA=F,test=T)
+
+#conv school
+AIC$abnormal_pedsql_parent_school_mean_conv<-ifelse(AIC$pedsql_parent_school_mean_conv_paired<100,1,0)
+prop.table(table(AIC$abnormal_pedsql_parent_school_mean_conv,AIC$strata_all), margin=2)
+table(AIC$abnormal_pedsql_parent_school_mean_conv,AIC$strata_all)
+abnormal_pedsql_parent_school_mean_conv<-AIC[AIC$abnormal_pedsql_parent_school_mean_conv==1,]
+tableone::CreateTableOne("pedsql_parent_school_mean_conv_paired","strata_all",abnormal_pedsql_parent_school_mean_conv,includeNA=F,test=T)
+
 
 # pedsql tables and graphs -------------------------------------------------------
 library(ggplot2)
