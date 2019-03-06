@@ -70,8 +70,19 @@ coast_oubreak<-coast_oubreak[ !is.na(coast_oubreak$strata_chikv_malaria),]
 
 library(plyr)
 coast_oubreak$City<-revalue(coast_oubreak$City, c("M"="Rural", "U"="Urban"))
+coast_oubreak$infected_chikv_stfd<-as.factor(coast_oubreak$infected_chikv_stfd)
 coast_oubreak$infected_chikv_stfd<-revalue(coast_oubreak$infected_chikv_stfd, c("0"="Negative", "1"="Positive"))
+coast_oubreak$infected_chikv_stfd <- factor(coast_oubreak$infected_chikv_stfd, levels = c("Positive", "Negative"))
+coast_oubreak$City <- factor(coast_oubreak$City, levels = c("Urban", "Rural"))
 
+prop.table(table(coast_oubreak$infected_chikv_stfd,coast_oubreak$City), margin=2)
+table(coast_oubreak$infected_chikv_stfd,coast_oubreak$City)
+fisher.test(coast_oubreak$infected_chikv_stfd,coast_oubreak$City,or = 1, alternative = "two.sided",conf.int = TRUE, conf.level = 0.95)
+
+prop.table(table(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all), margin=2)
+table(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all)
+fisher.test(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all,or = 1, alternative = "two.sided",conf.int = TRUE, conf.level = 0.95)
+summary(coast_oubreak$age)
 library(ggpubr)
 coast_oubreak$int_date_my<-format(as.Date(coast_oubreak$int_date), "%Y-%m")
 coast_oubreak$int_date_week<-format(as.Date(coast_oubreak$int_date), "%Y-%W")
