@@ -9,14 +9,14 @@ library(lubridate)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
 Redcap.token <- readLines("Redcap.token.R01.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-#R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data#export data from redcap to R (must be connected via cisco VPN)
+R01_lab_results <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 300)$data#export data from redcap to R (must be connected via cisco VPN)
 beep(sound=4)
 
 currentDate <- Sys.Date() 
 FileName <- paste("R01_lab_results",currentDate,".rda",sep=" ") 
 save(R01_lab_results,file=FileName)
 
-load("R01_lab_results 2019-03-07 .rda")
+#load("R01_lab_results 2019-03-07 .rda")
 u24ids<-R01_lab_results[R01_lab_results$u24_participant == 1,c("person_id")]
 
 R01_lab_results[R01_lab_results$person_id =="MF2013",c("person_id","redcap_event_name","result_pcr_denv_stfd","result_pcr_denv_kenya","result_pcr_chikv_stfd","result_pcr_chikv_kenya","denv_result_ufi","denv_result_ufi2","chikv_result_ufi","chikv_result_ufi2","result_igg_chikv_kenya","result_igg_denv_kenya","result_igg_chikv_stfd","result_igg_denv_stfd","prnt_80_chikv","prnt_80_denv","u24_participant","ab_chikv_kenya_igg","prev_chikv_igg_stfd_all_pcr","prev_denv_igg_stfd_all_pcr")]
@@ -549,127 +549,7 @@ table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural, exclude=NULL)
 table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
 table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
 
-denv_incidence_time_city<-  plot_ly() %>%
-  add_trace(x=monthly_infection$month_year, y = monthly_infection$infected_denv_stfd_sd+monthly_infection$infected_denv_stfd_inc, name = 'Max', type = 'scatter', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE, split=monthly_infection$City)%>%
-  add_trace(x=monthly_infection$month_year, y =monthly_infection$infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, split=monthly_infection$City)%>%
-  layout(title='Incident DENV over Time', 
-         titlefont=f3, 
-         xaxis = a, 
-         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2, range = c(0,1) ),legend=legend, 
-         margin = margin)
-
-library(plotly)
-chikv_incidence_time_city<-  plot_ly() %>%
-  add_trace(x=monthly_infection$month_year, y = monthly_infection$infected_chikv_stfd_sd+monthly_infection$infected_chikv_stfd_inc, name = 'Max', type = 'scatter', mode = 'lines+markers', fill = 'tonexty', fillcolor='rgba(0,100,80,0.2)', line = list(color = 'transparent'), connectgaps=TRUE, showlegend=FALSE, split=monthly_infection$City)%>%
-  add_trace(x=monthly_infection$month_year, y =monthly_infection$infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, split=monthly_infection$City)%>%
-  layout(title='Incident CHIKV over Time', 
-         titlefont=f3, 
-         xaxis = a, 
-         yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2,range = c(0,1)),legend=legend, 
-         margin = margin)
-
-
-
-age_chikv_incidence<-ggplot() + geom_bar(data = age_infection, aes(age_group, infected_chikv_stfd_inc), stat="identity")+
-  geom_errorbar(data =  age_prev, aes(age_group, infected_chikv_stfd_inc, 
-                                      ymin = 0, 
-                                      ymax = infected_chikv_stfd_inc + infected_chikv_stfd_sd),
-                width = 0.4)
-age_denv_incidence<-ggplot() + geom_bar(data = age_infection, aes(age_group, infected_denv_stfd_inc), stat="identity")+
-  geom_errorbar(data =  age_prev, aes(age_group, infected_denv_stfd_inc, 
-                                      ymin = 0, 
-                                      ymax = infected_denv_stfd_inc + infected_denv_stfd_sd),
-                width = 0.4)
-
-age_chikv_prev<-ggplot() + geom_bar(data = age_prev, aes(age_group, infected_chikv_stfd_inc), stat="identity")+
-  geom_errorbar(data =  age_prev, aes(age_group, infected_chikv_stfd_inc, 
-                                      ymin = 0, 
-                                      ymax = infected_chikv_stfd_inc + infected_chikv_stfd_sd),
-                width = 0.4)
-
-age_denv_prev<-ggplot() + geom_bar(data = age_prev, aes(age_group, infected_denv_stfd_inc), stat="identity")+
-  geom_errorbar(data =  age_prev, aes(age_group, infected_denv_stfd_inc, 
-                                      ymin = 0, 
-                                      ymax = infected_denv_stfd_inc + infected_denv_stfd_sd),
-                width = 0.4)
-
-print(age_chikv_incidence 
-      + ggtitle("CHIKV Incident Exposure by Age")
-      + labs(y="Proportion subjects Exposed", x = "")
-      + theme(legend.position="bottom")
-      + theme(legend.title = element_blank())
-      + theme(legend.text = element_text( size=20, face="bold"))
-      + theme(plot.title = element_text( size=40, face="bold"))
-      + theme(axis.title = element_text( size=20, face="bold"))
-      + theme(axis.text = element_text( size=20, face="bold"))
-      + theme(plot.title = element_text(hjust = 0.5))
-)
-
-
-
-###either denv or chikv incidence---------------------------------------------------
-table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$Cohort)
-table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$age_group, exclude = NULL)
-
-###either denv or chikv prevalence---------------------------------------------------
-R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_stfd ==0|R01_lab_results$prev_chikv_stfd==0]<-0
-R01_lab_results$prev_denv_chikv_all[R01_lab_results$prev_denv_stfd ==1|R01_lab_results$prev_chikv_stfd==1]<-1
-table(R01_lab_results$prev_denv_chikv_all, R01_lab_results$age_group, exclude = NULL)
-table(R01_lab_results$tested_denv_chikv, R01_lab_results$age_group, exclude = NULL)
-
-####get incidence by age group numberator and denominator ---------------------------------------------------
-#denv
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$tested_denv, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$age_group, exclude = NULL)
-table(R01_lab_results$tested_denv, R01_lab_results$age_group, exclude = NULL)
-#chikv
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$age_group, exclude = NULL)
-table(R01_lab_results$tested_chikv, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$tested_chikv, R01_lab_results$age_group, exclude = NULL)
-#denv or chikv
-table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$age_group, exclude = NULL)
-table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$tested_denv_chikv, R01_lab_results$age_group, exclude = NULL)
-
-
-##get incidence by cohort numberator and denominator---------------------------------------------------
-table(R01_lab_results$infected_denv_stfd, R01_lab_results$Cohort)
-table(R01_lab_results$tested_denv, R01_lab_results$Cohort)
-
-table(R01_lab_results$infected_chikv_stfd, R01_lab_results$Cohort)
-table(R01_lab_results$tested_chikv, R01_lab_results$Cohort)
-
-table(R01_lab_results$infected_denv_chikv_stfd, R01_lab_results$Cohort, exclude = NULL)
-table(R01_lab_results$tested_denv_chikv, R01_lab_results$Cohort, exclude = NULL)
-
-#some need age  to be included in sample
-no_age<-R01_lab_results[which(is.na(R01_lab_results$age_group) & !is.na(R01_lab_results$prev_denv_chikv_all)), ]
-no_age<-no_age[, grepl("person_id|redcap_event_name|date|prev_denv_chikv_all", names(no_age))]
-table(is.na(R01_lab_results$age_group) & R01_lab_results$prev_denv_chikv_all==1)
-write.csv(as.data.frame(no_age), "no_age.csv", na="", row.names = F )
-
-#prevalence
-table(R01_lab_results$prev_chikv_igg_stfd_all_pcr)
-(195/6992)*100#prevalence of chikv.
-table(R01_lab_results$prev_chikv_igg_stfd_all_pcr, R01_lab_results$site)
-(145/(145+2958))*100#prevalence of chikv west
-(50/(50+3839))*100#prevalence of chikv coast
-table(R01_lab_results$prev_denv_igg_stfd_all_pcr)
-(268/6748)*100#prevalence of denv.
-table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$site)
-(154/(154+3442))*100#prevalence of denv coast
-(114/(114+3038))*100#prevalence of denv west
-
-table(R01_lab_results$prev_denv_igg_stfd_all_pcr, R01_lab_results$rural)
-(103/(103+3184))*100#prevalence of denv urban
-(165/(165+3296))*100#prevalence of denv rural
-
-
 # meds prescribed ---------------------------------------------------------
-#load("R01_lab_results 2018-03-21 .rda")  
-
 R01_lab_results$malaria_treatment_other_kenya<-gsub(",", "_", R01_lab_results$malaria_treatment_other_kenya)
 R01_lab_results$all_meds<-NA
 R01_lab_results$all_meds<-paste(R01_lab_results$meds_prescribed, R01_lab_results$malaria_treatment_other_kenya, sep="_")
