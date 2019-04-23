@@ -1,21 +1,19 @@
 library(tidyverse)
 library(tableone)
 # import data -------------------------------------------------------------
-  #source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/export r01 data from redcap and create binary vars.R")#don't run every time
-      setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
-      load("R01_lab_results.david.coinfection.dataset.rda")#load data that has been cleaned previously#final data set made on 11/16/18 for david conifection paper.
+#source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/export r01 data from redcap and create binary vars.R")#don't run every time
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
+load("R01_lab_results.david.coinfection.dataset_nov16_2018.rda")#load data that has been cleaned previously#final data set made on 11/16/18 for david conifection paper.
 
 # format data -------------------------------------------------------------
 AIC<- R01_lab_results[which(R01_lab_results$redcap_event_name!="patient_informatio_arm_1" & R01_lab_results$redcap_event_name!="visit_a2_arm_1"&R01_lab_results$redcap_event_name!="visit_b2_arm_1"&R01_lab_results$redcap_event_name!="visit_c2_arm_1"&R01_lab_results$redcap_event_name!="visit_d2_arm_1"&R01_lab_results$redcap_event_name!="visit_u24_arm_1"),]
-AIC<-AIC[which(AIC$id_cohort=="F"),]
-table(AIC$id_cohort)
-patients_reviewed<-sum(dplyr::n_distinct(AIC$person_id[AIC$redcap_event_name=="visit_a_arm_1"], na.rm = FALSE))
-table(AIC$redcap_event_name)
-
 AIC$id_cohort<-substr(AIC$person_id, 2, 2)
 AIC$id_city<-substr(AIC$person_id, 1, 1)
-
 AIC <- within(AIC, id_city[id_city=="R"] <-"C" )
+
+AIC<-AIC[which(AIC$id_cohort=="F"),]
+patients_reviewed<-sum(dplyr::n_distinct(AIC$person_id[AIC$redcap_event_name=="visit_a_arm_1"], na.rm = FALSE))
+table(AIC$redcap_event_name)
 
 AIC$person_id<-as.character(AIC$person_id)
 AIC$redcap_event_name<-as.character(AIC$redcap_event_name)
@@ -42,7 +40,7 @@ colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/demographics, ses, and mosquito indices.r")
 
 # define acute febrile illness ------------------------------------------------------------------------
- source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/define acute febrile illness.r")
+source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/define acute febrile illness.r")
 table(AIC$acute,AIC$redcap_event_name,exclude = NULL)
 
 AIC_B<-AIC[which(AIC$redcap_event_name=="visit_b_arm_1"), ]
@@ -50,22 +48,23 @@ AIC_B<-AIC[which(AIC$redcap_event_name=="visit_b_arm_1"), ]
 AIC<-AIC[which(AIC$acute==1&(AIC$redcap_event_name=="visit_a_arm_1")), ]
 table(AIC$acute,AIC$redcap_event_name)
 
-var<-c("age","height","sex","zhfa", "zbmi","ses_sum")
-
+var<-c("age","height","sex","zhfa", "zbmi","ses_sum","infected_denv_stfd","malaria","strata_all")
+acute<-CreateTableOne(vars = var, data = AIC)
+print(acute)
 acute_by_city <- CreateTableOne(vars = var, strata = "id_city", data = AIC)
-print(acute_by_city,nonnormal=c("age"))
+print(acute_by_city)
 
 acute_by_site <- CreateTableOne(vars = var, strata = "site", data = AIC)
-print(acute_by_site,nonnormal=c("age"))
+print(acute_by_site)
 AIC$urban<-NA
 AIC <- within(AIC, urban[id_city=="K"|id_city=="U"] <-"urban" )
 AIC <- within(AIC, urban[id_city=="C"|id_city=="M"] <-"rural" )
 
 acute <- CreateTableOne(vars = var, data = AIC)
-print(acute,nonnormal=c("age"))
+print(acute)
 
 acute_urban <- CreateTableOne(vars = var, strata = "urban",data = AIC)
-print(acute_urban,nonnormal=c("age"))
+print(acute_urban)
 
 boxplot(AIC$age~AIC$id_city)
 boxplot(AIC$age~AIC$urban)
@@ -80,6 +79,7 @@ boxplot(AIC$age)
 
 #denv and malaria case definition------------------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/strata definitions.R")
+
 AIC$int_date_my<-format(as.Date(AIC$int_date), "%Y-%m")
 AIC_nonNA<-AIC[which(!is.na(AIC$denv_strata)),c("denv_strata","int_date_my","int_date")]
 write.csv(AIC_nonNA,file="strata_date.csv")
@@ -103,7 +103,8 @@ write.csv(PRNT,"PRNT.csv")
 # denv tables -------------------------------------------------
 table(!is.na(AIC$infected_denv_stfd))
 table(AIC$infected_denv_stfd)
-table(AIC$infected_denv_stfd)/sum(table(AIC$infected_denv_stfd))*1000
+502/(502+4975)*100
+table(AIC$infected_denv_stfd)/sum(table(AIC$infected_denv_stfd))*100
 tapply(AIC$infected_denv_stfd, AIC$year, table)
 
 tapply(AIC$age,is.na(AIC$infected_denv_stfd), summary,na.rm=T)
@@ -113,8 +114,8 @@ wilcox.test(age~is.na(infected_denv_stfd),na.action="na.omit",paired = FALSE,con
 # malaria tables -------------------------------------------------
 table(!is.na(AIC$malaria))
 table(AIC$malaria)
-table(AIC$malaria)/sum(table(AIC$malaria))*1000
-summary(AIC$malaria)*1000
+table(AIC$malaria)/sum(table(AIC$malaria))*100
+summary(AIC$malaria)*100
 tapply(AIC$malaria, AIC$year, summary)
 tapply(AIC$malaria, AIC$id_city, summary)
 
@@ -134,11 +135,32 @@ table(AIC$microscopy_malaria_pm_kenya___1,AIC$microscopy_malaria_pf_kenya___1,ex
 table(AIC$microscopy_malaria_po_kenya___1,AIC$microscopy_malaria_pf_kenya___1,exclude = NULL)  
 table(AIC$result_microscopy_malaria_kenya,AIC$microscopy_malaria_pf_kenya___1,exclude = NULL)  
 
+table(AIC$result_microscopy_malaria_kenya,AIC$microscopy_malaria_pf_kenya___1,exclude = NULL)  
+table(AIC$malaria)/sum(table(AIC$malaria))
+table(AIC$microscopy_malaria_pf_kenya___1,exclude = NULL)  
+table(AIC$result_microscopy_malaria_kenya,exclude = NULL)  
+
 # included vs excluded tables ---------------------------------------------
+final<-AIC[AIC$excluded=="included",]
+final$final<-"Final"
+initial<-AIC
+initial$final<-"initial"
+library(plyr)
+initial_final<-rbind(initial,final)
+full_final <- CreateTableOne(vars = var,strata="final", data = initial_final)
+
 excluded <- CreateTableOne(vars = var, strata = "excluded",data = AIC)
-print(excluded,nonnormal=c("age"))
-aic <- CreateTableOne(vars = var, ,data = AIC)
-print(aic,nonnormal=c("age"))
+print(excluded)
+AIC$age_round<-round(AIC$age,0)
+library(ggplot2)
+ggplot(AIC, alpha = 0.2, aes(x = age_round))+ stat_bin(aes(y=..density..), binwidth=.5,position='identity')+facet_grid(excluded~.)+theme_bw()+xlab("age in years")+
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17))
+                                      
+table(AIC$age_round,AIC$excluded)
+aic <- CreateTableOne(vars = var, data = AIC)
+aic <- CreateTableOne(vars = var, strata="excluded",data = AIC)
+print(aic)
+print(aic)
 
 # cases tested for both malaria and denv ----------------------------------
 AIC<-AIC[which(!is.na(AIC$malaria) & !is.na(AIC$infected_denv_stfd)), ]
@@ -147,9 +169,9 @@ table(AIC$malaria)
 
 # infection strata tables ---------------------------------------------
 strata <- CreateTableOne(vars = var, strata = "strata_all",data = AIC)
-print(strata,nonnormal=c("age"))
+print(strata)
 aic <- CreateTableOne(vars = var, ,data = AIC)
-print(aic,nonnormal=c("age"))
+print(aic)
 table(AIC$strata_all)
 table(AIC$strata_all,AIC$site)
 table(AIC$strata_all,AIC$id_city)
@@ -158,8 +180,12 @@ strata<-c("strata_all_malaria_pos_denv_pos","strata_all_malaria_pos_denv_neg","s
 city <-CreateTableOne(vars = strata,factorVars = strata, strata = "id_city", data = results)
 urban <-CreateTableOne(vars = strata,factorVars = strata, strata = "urban", data = results)
 site <-CreateTableOne(vars = strata,factorVars = strata, strata = "site", data = results)
+
 total <-CreateTableOne(vars = strata,factorVars = strata, data = results)
 pairwise.t.test(AIC$age, AIC$strata_all, p.adj = "bonf",paired = FALSE,alternative = "two.sided")
+table(AIC$strata_all)/sum(table(AIC$strata_all))*100
+table(AIC$strata_all)
+table(AIC$malaria)
 
 # physical exam -------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/physical exam.R")
@@ -189,6 +215,9 @@ table(AIC$strata_all)
  table(pedsql_pairs_acute$redcap_event_name)
  library(tidyverse)
  class(pedsql_pairs_acute)
+ 
+ save(pedsql_pairs_acute,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/pedsql_pairs_acute_a.rda")
+
  
  AIC <- join(AIC, pedsql_pairs_acute, by=c("person_id", "redcap_event_name"), match = "first" , type="left")
  AIC<-AIC[order(-(grepl('person_id|redcap|pedsql_', names(AIC)))+1L)]
@@ -242,6 +271,8 @@ prop.table(table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all), ma
 table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all)
 abnormal_pedsql_parent_total_mean_acute<-AIC[AIC$abnormal_pedsql_parent_total_mean_acute==1,]
 tableone::CreateTableOne("pedsql_parent_total_mean_acute_paired","strata_all",abnormal_pedsql_parent_total_mean_acute,includeNA=F,test=T)
+
+table(is.na(AIC$pedsql_parent_school_mean_acute_paired),AIC$strata_all)
 
 #conv total
 AIC$abnormal_pedsql_parent_total_mean_conv<-ifelse(AIC$pedsql_parent_total_mean_conv_paired<100,1,0)
