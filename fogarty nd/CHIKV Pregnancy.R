@@ -14,15 +14,31 @@ setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/fogarty chikv")
 Redcap.token <- readLines("API_code.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 200)$data#export data from redcap to R (must be connected via cisco VPN)
+chikv_nd <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 50)$data#export data from redcap to R (must be connected via cisco VPN)
 
 currentDate <- Sys.Date() 
 FileName <- paste("chikv_nd",currentDate,".rda",sep=" ") 
 save(chikv_nd,file=FileName)
 
-load(FileName)
+#load(FileName)
 cohort<-chikv_nd
-cohort<-read.csv("C:/Users/amykr/Downloads/CSComplicationsCHIKV.csv", header=TRUE) #import csv for complications analysis
+cohort<-read.csv("CSComplicationsCHIKV.csv", header=TRUE) #import csv for complications analysis
+
+# infection timing --------------------------------------------------------
+cohort$when<-zoo::as.Date(cohort$when)
+cohort$childs_birth_date<-zoo::as.Date(cohort$childs_birth_date)
+cohort$days_delivery_chikv<- as.numeric(cohort$when - cohort$childs_birth_date)
+
+summary(cohort$days_delivery_chikv)
+hist(cohort$days_delivery_chikv,breaks=c(-1234,-15,-3,-2,966))
+
+cohort$partum<-NA
+cohort<-within(cohort,partum[cohort$days_delivery_chikv <= -15] <- 1 )
+
+cohort<-within(cohort,partum[cohort$days_delivery_chikv>=-15 & cohort$days_delivery_chikv <= -3]<-2)
+cohort<-within(cohort,partum[cohort$days_delivery_chikv>=-2 & cohort$days_delivery_chikv<=2]<-3)
+
+table(cohort$partum)
 
 #establish strata
 #cohort<-as.data.frame(cohort[which(!is.na(cohort$result_mother) & cohort$result_mother!=98),])
@@ -92,6 +108,7 @@ table(strata5.group$strata5, exclude = NULL)
 vars2<-c("joint_pain_today","joint_pain_since", "joint_pain_last_week","joint_pain_last_month", "symptoms___1", "symptoms___2", "symptoms___3", "symptoms___4", "symptoms___5", "symptoms___6", "symptoms___7", "symptoms___8", "symptoms___9", "symptoms___10", "symptoms___11", "symptoms___12", "symptoms___13", "symptoms___14", "symptoms___15", "symptoms___16", "symptoms___17", "symptoms___18", "symptoms___19", "symptoms___20", "symptoms___21", "symptoms___22", "symptoms___23", "symptoms___24", "symptoms___25", "symptoms___26", "symptoms___27", "symptoms___28", "symptoms___29", "symptoms___30", "symptoms___31", "symptoms___32", "symptoms___33", "symptoms___34","specify_other_pregnancy_illness")
 cohort[vars2] <- sapply(cohort[vars2],as.factor)
 testa<-CreateTableOne(vars = vars2, strata = "strata5", data = cohort)
+
 testa<-print(testa, nonnormal = vars2)
 write.csv(testa, file = "pregnancy_severity5.csv")
 testb<-CreateTableOne(vars = vars2, strata = "strata3",data =cohort)
@@ -249,10 +266,13 @@ write.csv(t1, file = "gestationalweeks.csv")
 
 
 #maternal characteristics comparison
-
+cohort<- within(cohort, mother_age[cohort$mother_age>60|cohort$mother_age<15] <- NA) 
 vars3 <-c("mother_age","occupation","previous_pregnancy","race","education","marrital_status","divorced_or_separated","repellent","coil","spray","net","collect_rain_water","store_water")
 cohort[vars3] <- sapply(cohort[vars3],as.factor)
+cohort$mother_age<-as.numeric(cohort$mother_age)
 test10a<-CreateTableOne(vars=vars3, strata = "strata1", data = cohort)
+p <- test10a[,"p.value"]
+test10a$MetaData$
 test10b<-CreateTableOne(vars=vars3, strata = "strata2", data = cohort)
 test10c<-CreateTableOne(vars=vars3, strata = "strata3", data = cohort)
 test10d<-CreateTableOne(vars=vars3, strata = "strata4", data = cohort)
@@ -394,6 +414,7 @@ write.csv(neonatal6d, file="month_general_neonatal_outcomes4.csv")
 write.csv(neonatal6e, file="month_general_neonatal_outcomes5.csv")
 monthcomposite<-c("seizures_month", "NICU_month", "respiratorydistress_month")
 class(monthcomposite)
+monthcomposite<-as.numeric(monthcomposite)
 cohort$monthcompositivesevere_sum<-as.integer(rowSums(cohort[ , monthcomposite]))
 neonatal7a<-CreateTableOne(vars="monthcompositivesevere_sum", strata="strata1", data = cohort)
 neonatal7b<-CreateTableOne(vars="monthcompositivesevere_sum", strata="strata2", data = cohort)
@@ -435,3 +456,121 @@ class(cohort$symptoms_sum)
 test4<-CreateTableOne(vars="symptoms_sum", strata="strata1", data=cohort)
 test4<-print(test4)
 write.csv(test4, file = "totalsymptoms1.csv")
+
+
+
+# model logit -------------------------------------------------------------
+### 2 weeks 
+cohort$neonatal_2weeks <- as.integer(rowSums(cohort[ , grep("_2week" , names(cohort))]))
+table(cohort$neonatal_2weeks)
+cohort$neonatal_2weeks_binary <- as.numeric(cohort$neonatal_2weeks>=1)
+table(cohort$neonatal_2weeks_binary)
+
+model_2weeeks <- glm(neonatal_2weeks_binary ~mother_age.x + gestatiol_age_weeks.x,family=binomial(link='logit'),data=cohort)
+
+summary(model_2weeeks)
+anova(model_2weeeks, test="Chisq")
+exp(cbind(OR = coef(model_2weeeks), confint(model_2weeeks)))
+
+
+### 4 weeks 
+cohort$neonatal_month <- as.integer(rowSums(cohort[ , grep("_month" , names(cohort))]))
+table(cohort$neonatal_month)
+cohort$neonatal_month_binary <- as.numeric(cohort$neonatal_month>=1)
+table(cohort$neonatal_month_binary)
+
+model_month <- glm(neonatal_month_binary ~mother_age.x + gestatiol_age_weeks.x,family=binomial(link='logit'),data=cohort)
+
+summary(model_month)
+anova(model_month, test="Chisq")
+exp(cbind(OR = coef(model_month), confint(model_month)))
+
+
+# model beta binomial -----------------------------------------------------
+install.packages("gamlss")
+library("gamlss")
+
+# model poisson -----------------------------------------------------------
+
+
+
+# kaplan meier curve of joint pain by group ---------------------------------------------------------------
+### duration of jp 
+## I couldn't get your code to run so i am importing clea data.
+# please insert the correct strata here. my n is larger than yours in the table.
+library(readr)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/fogarty chikv")
+cohort <- read_csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/fogarty chikv/FogartyNDCHIKV_DATA_2019-02-07_1043.csv")
+
+cohort$strata5<-NA
+cohort<-within(cohort, strata5[result_mother==1 & pregnant==0]<-0)
+cohort <- within(cohort, strata5[result_mother==1 & pregnant ==1&symptoms___4==1&(symptoms___1==1|symptoms___3==1|symptoms___5==1|symptoms___6==1|symptoms___25==1)] <- 1)
+
+strata5_excluded<-cohort[which(is.na(cohort$strata5)),]
+table(cohort$strata5,exclude = NULL)
+
+cohort$dd<-as.numeric(cohort$primary_date-cohort$when)
+
+cohort$duration<-ifelse(cohort$joint_pain_since!=1,cohort$dd,NA)
+cohort$duration<-ifelse(cohort$joint_pain_last_month==1,cohort$dd-30,NA)
+cohort$duration<-ifelse(cohort$joint_pain_last_week==1,cohort$dd-7,cohort$duration)
+cohort$duration<-ifelse(cohort$joint_pain_today==1,cohort$dd,cohort$duration)
+
+cohort$pregnant<-as.factor(cohort$pregnant)
+library(ggplot2)
+ggplot<-ggplot(cohort,aes(x=pregnant,y=duration))
+ggplot + geom_boxplot()
+
+library(statar)
+cohort$dd_cat<-xtile(cohort$dd, n = 10)
+table(cohort$dd_cat)
+hist(cohort$dd)
+library(plyr)
+library(tidyverse)
+fig <- ddply(cohort, .(pregnant,dd_cat),
+             summarise, 
+             joint_pain_today_mean = mean(joint_pain_today, na.rm = TRUE),
+             joint_pain_last_week_mean = mean(joint_pain_last_week, na.rm = TRUE),
+             joint_pain_last_month_mean = mean(joint_pain_last_month, na.rm = TRUE),
+             joint_pain_today_sd = sd(joint_pain_today, na.rm = TRUE),
+             joint_pain_last_week_sd = sd(joint_pain_last_week, na.rm = TRUE),
+             joint_pain_last_month_sd = sd(joint_pain_last_month, na.rm = TRUE)
+)
+
+### survival analysis 
+cohort$today<-cohort$primary_date
+cohort$last_week<-cohort$primary_date-7
+cohort$last_month<-cohort$primary_date-30
+cohort$onset<-cohort$when
+
+cohort_covariates<-cohort[c("participant_id","mother_age","race")]
+names(cohort_covariates)<-c("id", "mother_age","race")
+cohort_covariates<-subset(cohort_covariates,!duplicated(cohort_covariates$id))
+cohort_long<-cohort[c("participant_id","strata5","onset","joint_pain_today", "joint_pain_last_week", "joint_pain_last_month","last_week","last_month","today")]
+names(cohort_long)<-c("id", "strata5","onset","jp_today","jp_lastweek","jp_lastmonth", "date_lastweek","date_lastmonth","date_today")
+cohort_long<-as.data.frame(subset(cohort_long,!duplicated(cohort_long$id)))
+
+cohort_long<-reshape(cohort_long, varying = 4:9, timevar = "when", idvar = "id", direction="long",sep="_")
+cohort_long<-merge(cohort_long,cohort_covariates,by="id")
+
+library(survival)
+#install.packages("survminer")
+library(survminer)
+library(dplyr)
+cohort_long$fu<-as.numeric(cohort_long$date-cohort_long$onset)
+cohort_long$jp_cure<-NA
+cohort_long <- within(cohort_long, jp_cure[jp==0] <- 1)
+cohort_long <- within(cohort_long, jp_cure[jp==1] <- 0)
+table(cohort_long$jp_cure)
+require("survival")
+fit <-survfit(Surv(fu, jp)~strata5, data=cohort_long)
+tiff(filename = "joint_paint_preg.tiff",width = 5200, height = 4200, units = "px", res = 800)
+ggsurvplot(fit, data = cohort_long, legend = "top", surv.median.line = "hv", legend.title = "CHIKV Infection Timing", legend.labs = c("Not pregnant", "Pregnant"), pval = TRUE, conf.int = TRUE, risk.table = TRUE, tables.height = 0.2, tables.theme = theme_cleantable(), ggtheme = theme_bw())+xlab("Time (days from acute infection)")+ylab("Persistance of joint pain")
+dev.off()   
+write.csv(cohort_long,"joint_point_duration_days.csv")
+cohort_jp<-cohort[,c("pregnant","joint_pain_today","joint_pain_last_week","joint_pain_last_month","onset","joint_pain_since","participant_id")]
+write.csv(cohort_jp,"joint_point.csv")
+
+### cox ph model of joint pain by group ---------------------------------------------------------------
+fit <-survfit(Surv(fu, jp)~strata5+ mother_age + race, data=cohort_long)
+summary( coxph(Surv(fu, jp) ~ strata5+ mother_age + race, cohort_long),na.action="na.omit")
