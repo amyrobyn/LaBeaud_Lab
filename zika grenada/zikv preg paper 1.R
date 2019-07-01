@@ -194,31 +194,180 @@ write.csv(sup.table1, file = "sup.table1.csv")
   #Delivery Outcomes, growth parameters, and congenital abnormalities/complications
   #Term Pre-term, Gestational Weeks, Delivery Type, Apgars, Outcome of Delivery - include respiratory distress, meconium aspiration, intrapartum fever; Neonatal Resuscitation required, Clinical parameters (fontanelles, sutures, dysmorphic facial features, cleft lip palate, reflexes). Seizures 
     child_outcome_vars.delivery<-grep("term_2|gestational_weeks_2_2|delivery_type|apgar_one|apgar_five|apgar_ten|outcome_of_delivery|neonatal_resusitation|ant_fontanelle|sutures|facial_dysmoph|cleft|red_reflex|plantar_reflex|galant_reflex|suck|grasp|moro",names(ds2),value = T)
+    child_outcome_vars.delivery<-grep(".pn|.12",child_outcome_vars.delivery,value = T)
     child_outcomes <- CreateTableOne(vars = child_outcome_vars.delivery, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "Delivery_Outcomes.csv")
+
+# define normal/abnormal --------------------------------------------------------------------
+    ds2$ant_fontanelle.pn.abnormal<-ifelse(ds2$ant_fontanelle.pn == "sunken"|ds2$ant_fontanelle.pn == "tense/buldging", 1, ifelse(ds2$ant_fontanelle.pn=="Normal",0,NA))
+    table(ds2$ant_fontanelle.pn.abnormal)
     
-    #growth
+    ds2$apgar_one.pn.abnormal<-ifelse(ds2$apgar_one.pn <7, 1, ifelse(ds2$apgar_one.pn>=7,0,NA))
+    table(ds2$apgar_one.pn.abnormal)
+
+    ds2$apgar_ten.pn.abnormal<-ifelse(ds2$apgar_ten.pn <7, 1, ifelse(ds2$apgar_ten.pn>=7,0,NA))
+    table(ds2$apgar_ten.pn.abnormal)
+
+    ds2$apgar_one_2.12.abnormal<-ifelse(ds2$apgar_one_2.12 <7, 1, ifelse(ds2$apgar_one_2.12>=7,0,NA))
+    table(ds2$apgar_one_2.12.abnormal)
+    
+    ds2$apgar_five.12.abnormal<-ifelse(ds2$apgar_five.12 <7, 1, ifelse(ds2$apgar_five.12>=7,0,NA))
+    table(ds2$apgar_five.12.abnormal)
+    
+    ds2$apgar_ten_2.12.abnormal<-ifelse(ds2$apgar_ten_2.12 <7, 1, ifelse(ds2$apgar_ten_2.12>=7,0,NA))
+    table(ds2$apgar_ten_2.12.abnormal)
+    
+    ds2$cleft.pn.abnormal<-ifelse(ds2$cleft.pn == "Yes", 1, ifelse(ds2$cleft.pn=="No",0,NA))
+    table(ds2$cleft.pn.abnormal)
+    
+    ds2$cleft_2.12.abnormal<-ifelse(ds2$cleft_2.12 == "Yes", 1, ifelse(ds2$cleft_2.12=="No",0,NA))
+    table(ds2$cleft_2.12.abnormal)
+    
+    ds2$facial_dysmoph.pn.abnormal<-ifelse(ds2$facial_dysmoph.pn == "Yes", 1, ifelse(ds2$facial_dysmoph.pn=="No",0,NA))
+    table(ds2$facial_dysmoph.pn.abnormal)
+
+    ds2$facial_dysmoph_2.12.abnormal<-ifelse(ds2$facial_dysmoph_2.12 == "Yes", 1, ifelse(ds2$facial_dysmoph_2.12=="No",0,NA))
+    table(ds2$facial_dysmoph_2.12.abnormal)
+
+    ds2$galant_reflex.pn.abnormal<-ifelse(ds2$galant_reflex.pn == "absent", 1, ifelse(ds2$galant_reflex.pn=="present",0,NA))
+    table(ds2$galant_reflex.pn.abnormal)
+    
+    ds2$gestational_weeks_2_2.12.abnormal_preterm<-ifelse(ds2$gestational_weeks_2_2.12 < 37, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
+    table(ds2$gestational_weeks_2_2.12.abnormal_preterm)
+
+    ds2$gestational_weeks_2_2.12.abnormal_preterm<-ifelse(ds2$gestational_weeks_2_2.12 > 41, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
+    table(ds2$gestational_weeks_2_2.12.abnormal_lateterm)
+
+    ds2$neonatal_resusitation.pn.abnormal<-ifelse(ds2$neonatal_resusitation.pn == "Yes", 1, ifelse(ds2$neonatal_resusitation.pn=="No",0,NA))
+    table(ds2$neonatal_resusitation.pn.abnormal)
+    
+    ds2$outcome_of_delivery.pn.abnormal<-ifelse(ds2$outcome_of_delivery.pn == "Respiratory distress syndrome" | ds2$outcome_of_delivery.pn == "Meconium aspiration", 1, ifelse(ds2$outcome_of_delivery.pn=="No complications",0,NA))
+    table(ds2$outcome_of_delivery.pn.abnormal)
+    
+    ds2$plantar_reflex.pn.abnormal<-ifelse(ds2$plantar_reflex.pn  == "Absent", 1, ifelse(ds2$plantar_reflex.pn =="Present",0,NA))
+    table(ds2$plantar_reflex.pn.abnormal)
+    
+    ds2$plantar_reflex_2.12.abnormal<-ifelse(ds2$plantar_reflex_2.12  == "Absent", 1, ifelse(ds2$plantar_reflex_2.12 =="Present",0,NA))
+    table(ds2$plantar_reflex_2.12.abnormal)
+    
+    ds2$red_reflex.pn.abnormal<-ifelse(ds2$red_reflex.pn  == "No", 1, ifelse(ds2$red_reflex.pn =="Yes",0,NA))
+    table(ds2$red_reflex.pn.abnormal)
+    
+    ds2$red_reflex_2.12.abnormal<-ifelse(ds2$red_reflex_2.12  == "No", 1, ifelse(ds2$red_reflex_2.12 =="Yes",0,NA))
+    table(ds2$red_reflex_2.12.abnormal)
+    
+    ds2$suck.pn.abnormal<-ifelse(ds2$suck.pn  == "absent", 1, ifelse(ds2$suck.pn =="present",0,NA))
+    table(ds2$suck.pn.abnormal)
+    
+    ds2$sutures.pn.abnormal<-ifelse(ds2$sutures.pn== "Overriding"|ds2$sutures.pn== "Split", 1, ifelse(ds2$sutures.pn =="Normal",0,NA))
+    table(ds2$sutures.pn.abnormal)
+    
+    ds2$sutures_2.12.abnormal<-ifelse(ds2$sutures_2.12== "Overriding"|ds2$sutures_2.12== "Split", 1, ifelse(ds2$sutures_2.12 =="Normal",0,NA))
+    table(ds2$sutures_2.12.abnormal)
+    
+    
+    child_outcome_vars.delivery.pn<-grep(".pn",names(ds2),value = T)
+    child_outcome_vars.delivery.pn<-grep(".abnormal",child_outcome_vars.delivery.pn,value = T)
+    child_outcome_vars.delivery.pn<- grep("cong|muscle_tone|ultrasound",child_outcome_vars.delivery.pn,value = T,invert = T)
+    ds2$sum_delivery_Outcomes_abnormal.pn<-rowSums(ds2[child_outcome_vars.delivery.pn],na.rm = T)
+    table(ds2$sum_delivery_Outcomes_abnormal.pn)
+    ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_delivery_Outcomes_abnormal.pn)) + geom_boxplot() 
+    
+    child_outcome_vars.delivery.12<-grep(".12",names(ds2),value = T)
+    child_outcome_vars.delivery.12<-grep(".abnormal",child_outcome_vars.delivery.12,value = T)
+    child_outcome_vars.delivery.12<- grep("cong|muscle_tone|ultrasound",child_outcome_vars.delivery.12,value = T,invert = T)
+    ds2$sum_delivery_Outcomes_abnormal.12<-rowSums(ds2[child_outcome_vars.delivery.12],na.rm = T)
+    table(ds2$sum_delivery_Outcomes_abnormal.12)
+    ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_delivery_Outcomes_abnormal.12)) + geom_boxplot() 
+    
+    child_outcome_vars.delivery<-grep(".pn|.12",names(ds2),value = T)
+    child_outcome_vars.delivery<-grep(".abnormal",child_outcome_vars.delivery,value = T)
+    child_outcome_vars.delivery<- grep("cong|muscle_tone|ultrasound",child_outcome_vars.delivery,value = T,invert = T)
+    
+    child_outcomes <- CreateTableOne(vars = child_outcome_vars.delivery, data = ds2,strata = "zikv_exposed_mom")
+    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = T,smd=T)
+    write.csv(child_outcomes, file = "Delivery_Outcomes_abnormal.csv")
+    
+# growth --------------------------------------------------------------------
     #Birth: Z-scores for BMI, length, weight, and head circumference and microcephaly
     #12 month visit: Z-scores for BMI, length, weight, and head circumference and microcephaly
     child_outcome_vars<-grep("zhei|zlen|zhc|zbmi|zwei|zwfl|mic",names(ds2),value = T)
-    child_outcome_vars.pn<-grep(".pn",child_outcome_vars,value=T)
-    child_outcome_vars.12<-grep(".12",child_outcome_vars,value=T)
-    
+
     child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "child_growth.csv")
+# define normal/abnormal --------------------------------------------------------------------
+    zscores<-grep("zhei|zlen|zhc|zbmi|zwei|zwfl",names(ds2),value = T)
+    abnormal<-function(x) ifelse(ds2[x] >= 2|ds2[x] <= -2, 1, ifelse(ds2[x] > -2 & ds2[x] < 2,0,NA))
+    zscores_matrix<-lapply(zscores, abnormal)
+    
+    rename<-function(x) paste(x,"abnormal",sep=".")
+    zscores<-lapply(zscores, rename)
+    zscores_matrix<-as.data.frame(zscores_matrix)
 
+    colnames(zscores_matrix)<-zscores
+    ds2<-cbind(ds2,zscores_matrix)
+    
+    ds2$mic_nurse_2.12.abnormal<-as.numeric(as.factor(ds2$mic_nurse_2.12))-1
+    child_outcomes.12<-grep(".12",child_outcome_vars,value = T)
+    child_outcomes.12<-grep(".abnormal|mic",child_outcomes.12,value = T)
+    ds2$sum_growth_Outcomes_abnormal.12<-rowSums(ds2[child_outcomes.12],na.rm = T)
+    table(ds2$sum_growth_Outcomes_abnormal.12)
+    ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal.12)) + geom_boxplot() 
+
+    child_outcomes.pn<-grep(".pn",child_outcome_vars,value = T)
+    child_outcomes.pn<-grep(".abnormal|mic",child_outcomes.pn,value = T)
+    ds2$sum_growth_Outcomes_abnormal.pn<-rowSums(ds2[child_outcomes.pn],na.rm = T)
+    table(ds2$sum_growth_Outcomes_abnormal.pn)
+    ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal.pn)) + geom_boxplot() 
+
+    child_outcomes<-grep("z|mic|mir|sum_growth_Outcomes_abnormal",names(ds2),value = T)
+    child_outcomes<-grep("abnormal|mic|mir|sum_growth_Outcomes_abnormal",child_outcomes,value = T)
+    child_outcomes_vars<-grep("pn|12",child_outcomes,value = T)
+    
+    child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2,strata = "zikv_exposed_mom")
+    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+    write.csv(child_outcomes, file = "child_growth_abnormal.csv")
+    
     #Congenital abnormalities/Complications 
     #Ocular, Skeletal, Microcephaly, Seizures, Chromosomal 
     child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex",names(ds2),value = T)
+    child_outcome_vars<-grep("pn|12",child_outcome_vars,value = T)
     child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "Congenital_abnormalities_Complications.csv")
+    
+    # define normal/abnormal --------------------------------------------------
+    ds2$chromosomal_abn.12.abnormal<-ifelse(ds2$chromosomal_abn.12== "Yes", 1, ifelse(ds2$chromosomal_abn.12 =="No",0,NA))
+    table(ds2$chromosomal_abn.12.abnormal)
+    ds2$cong_abnormal.pn.abnormal<-ifelse(ds2$cong_abnormal.pn== "Yes", 1, ifelse(ds2$cong_abnormal.pn =="No",0,NA))
+    table(ds2$cong_abnormal.pn.abnormal)
 
+    ds2$gait.12.abnormal<-ifelse(ds2$gait.12== "Abnormal", 1, ifelse(ds2$gait.12 =="Normal",0,NA))
+    table(ds2$gait.12.abnormal)
+    
+    ds2$red_reflex.pn.abnormal<-ifelse(ds2$red_reflex.pn== "No", 1, ifelse(ds2$red_reflex.pn =="Yes",0,NA))
+    table(ds2$red_reflex.pn.abnormal)
+    
+    ds2$red_reflex_2.12.abnormal<-ifelse(ds2$red_reflex_2.12== "No", 1, ifelse(ds2$red_reflex_2.12 =="Yes",0,NA))
+    table(ds2$red_reflex_2.12.abnormal)
+    
+    
+    child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex",names(ds2),value = T)
+    child_outcome_vars.pn<-grep(".12.abnormal",child_outcome_vars,value = T)
+    child_outcome_vars.12<-grep(".12.abnormal",child_outcome_vars,value = T)
+    ds2$sum_Congenital_Outcomes_abnormal.12<-rowSums(ds2[child_outcome_vars.12],na.rm = T)
+    ds2$sum_Congenital_Outcomes_abnormal.pn<-rowSums(ds2[child_outcome_vars.pn],na.rm = T)
+    child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex|sum_Congenital",names(ds2),value = T)
+    child_outcome_vars<-grep(".pn.abnormal|.12.abnormal|sum_Congenital",child_outcome_vars,value = T)
+    
+    child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
+    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,test=F)
+    write.csv(child_outcomes, file = "Congenital_abnormalities_Complications_abnormal.csv")
     
 #other 
-    child_outcome_vars<-grep("heart_rate|resp_rate|color|cry|tone|moving_limbs|cap_refill|child_referred|gender",names(ds2),value = T)
+    child_outcome_vars<-grep("heart_rate|resp_rate|color|cry|tone|moving_limbs|cap_refill|child_referred|gender|muscle_tone_abnormal|resp_rate|temperature",names(ds2),value = T)
     child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "other.csv")
