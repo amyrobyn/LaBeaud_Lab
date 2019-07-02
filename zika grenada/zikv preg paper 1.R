@@ -233,12 +233,9 @@ write.csv(sup.table1, file = "sup.table1.csv")
     ds2$galant_reflex.pn.abnormal<-ifelse(ds2$galant_reflex.pn == "absent", 1, ifelse(ds2$galant_reflex.pn=="present",0,NA))
     table(ds2$galant_reflex.pn.abnormal)
     
-    ds2$gestational_weeks_2_2.12.abnormal_preterm<-ifelse(ds2$gestational_weeks_2_2.12 < 37, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
-    table(ds2$gestational_weeks_2_2.12.abnormal_preterm)
-
-    ds2$gestational_weeks_2_2.12.abnormal_preterm<-ifelse(ds2$gestational_weeks_2_2.12 > 41, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
-    table(ds2$gestational_weeks_2_2.12.abnormal_lateterm)
-
+    #ds2$gestational_weeks_2_2.12.abnormal_preterm<-ifelse(ds2$gestational_weeks_2_2.12 < 37, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
+    #ds2$gestational_weeks_2_2.12.abnormal_lateterm<-ifelse(ds2$gestational_weeks_2_2.12 > 41, 1, ifelse(ds2$gestational_weeks_2_2.12>=37 & ds2$gestational_weeks_2_2.12<41,0,NA))
+    
     ds2$neonatal_resusitation.pn.abnormal<-ifelse(ds2$neonatal_resusitation.pn == "Yes", 1, ifelse(ds2$neonatal_resusitation.pn=="No",0,NA))
     table(ds2$neonatal_resusitation.pn.abnormal)
     
@@ -305,13 +302,15 @@ write.csv(sup.table1, file = "sup.table1.csv")
     rename<-function(x) paste(x,"abnormal",sep=".")
     zscores<-lapply(zscores, rename)
     zscores_matrix<-as.data.frame(zscores_matrix)
-
     colnames(zscores_matrix)<-zscores
     ds2<-cbind(ds2,zscores_matrix)
+    ds2$zhc_2.12.abnormal
     
-    ds2$mic_nurse_2.12.abnormal<-as.numeric(as.factor(ds2$mic_nurse_2.12))-1
-    child_outcomes.12<-grep(".12",child_outcome_vars,value = T)
-    child_outcomes.12<-grep(".abnormal|mic",child_outcomes.12,value = T)
+    zscores_matrix$zhc_2.12.abnormal
+    ds2$mic_nurse_2.12<-as.numeric(as.factor(ds2$mic_nurse_2.12))-1
+    child_outcomes.12<-grep(".12",names(ds2),value = T)
+    child_outcomes.12<-grep("z|mic",child_outcomes.12,value = T)
+    child_outcomes.12<-grep("abnormal|mic",child_outcomes.12,value = T)
     ds2$sum_growth_Outcomes_abnormal.12<-rowSums(ds2[child_outcomes.12],na.rm = T)
     table(ds2$sum_growth_Outcomes_abnormal.12)
     ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal.12)) + geom_boxplot() 
@@ -386,37 +385,44 @@ factorVars <- c("mir.pn", "result_zikv_igg_pgold", "result_avidity_zikv_igg_pgol
 ds2[, factorVars] <- lapply(ds2[, factorVars], factor)
 
 # zika -------------------------------------------------------------------
-summary(glm(mir.pn ~ result_zikv_igg_pgold, family = "binomial", data = ds2))
+ds2$sum_outcomes.pn<-rowSums(ds2[,c("sum_delivery_Outcomes_abnormal.pn","sum_Congenital_Outcomes_abnormal.pn","sum_growth_Outcomes_abnormal.pn")],na.rm = T)
+table(ds2$sum_outcomes.pn)
+ds2$sum_outcomes.12<-rowSums(ds2[,c("sum_delivery_Outcomes_abnormal.12","sum_Congenital_Outcomes_abnormal.12","sum_growth_Outcomes_abnormal.12")],na.rm = T)
+table(ds2$sum_outcomes.12)
 
-summary(glm(mir.pn ~ mothers_age_calc + result_zikv_igg_pgold, family = "binomial", data = ds2))
+ds3<-ds2[complete.cases(ds2[c("zikv_exposed_mom","sum_outcomes.12","sum_outcomes.pn","mom_age_delivery")]), ] 
+#ds3<-ds2
+save(ds3,file="ds3.rda")
 
-summary(glm(mir.pn ~ mothers_age_calc + relevel(result_avidity_zikv_igg_pgold, "0"), family = "binomial", data = ds2))
+# model outcomes ----------------------------------------------------------
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/ms zika spectrum of disease")
+load("ds3.rda")
+ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Negative"|ds2$result_zikv_serum_mom.mom=="Negative"] <- "Negative")
+ds3$education.mom.cat<-NA
+ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Primary School"]<- "Primary")
+ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Secondary School"]<- "Secondary +")
+ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Bachelor's degree"|ds3$education.mom=="Graduate or Professional degree"]<- "college +")
+table(ds3$education.mom.cat)
 
-summary(glm(mir.pn ~ mothers_age_calc + relevel(result_avidity_zikv_igg_pgold, "0") + result_zikv_igg_pgold, family = "binomial", data = ds2))
+hist(ds3$sum_outcomes.12)
+hist(ds3$sum_outcomes.pn)
 
-# denv -------------------------------------------------------------------
-summary(glm(mir.pn ~ result_denv_igg_pgold, family = "binomial", data = ds2))
+require(R2BayesX)
+require(dplyr)
+require(ggplot2)
+ggplot(ds3, aes(x = factor(zikv_exposed_mom), y = sum_outcomes)) + geom_boxplot()
 
-summary(glm(mir.pn ~ mothers_age_calc + result_denv_igg_pgold, family = "binomial", data = ds2))
 
-summary(glm(mir.pn ~ mothers_age_calc + relevel(result_avidity_denv_igg_pgold, "0"), family = "binomial", data = ds2))
+m1<-R2BayesX::bayesx(sum_outcomes~0,
+                     data=ds3,method="REML", family="poisson",zipdistopt = "zip",criterion = "MSEP")
 
-summary(glm(mir.pn ~ mothers_age_calc + relevel(result_avidity_denv_igg_pgold, "0") + result_denv_igg_pgold, family = "binomial", data = ds2))
+m2<-R2BayesX::bayesx(sum_outcomes.pn~as.factor(zikv_exposed_mom)+sx(mom_age_delivery)+as.factor(education.mom.cat)+sx(gestational_weeks_2_2.12),
+                     data=ds3,method="REML", family="poisson",zipdistopt = "zip",criterion = "MSEP",na.rm=T)
 
-# both -------------------------------------------------------------------
-summary(glm(mir.pn ~ mothers_age_calc +result_denv_igg_pgold+ relevel(result_avidity_denv_igg_pgold, "0") + result_zikv_igg_pgold + relevel(result_avidity_zikv_igg_pgold, "0"), family = "binomial", data = ds2))
+m3<-R2BayesX::bayesx(sum_outcomes.pn~as.factor(zikv_exposed_mom)+sx(mom_age_delivery)+as.factor(education.mom.cat)+sx(gestational_weeks_2_2.12),
+                     data=ds3,method="STEP", family="poisson",zipdistopt = "zip",criterion = "MSEP",na.rm=T)
 
-# tab1 for child descriptive variables -------------------------------------------------------------------
-require(tableone)
-tab1vars <- c("cohort___1","cohort___2","cohort___3")
-tab1_cohort <- CreateTableOne(vars = tab1vars, data = ds2, factorVars = c("delivery_type.pn", "cong_abnormal.pn", "gender.pn"))
-tab1_cohort <- CreateTableOne(vars = tab1vars, strata = "mir.pn" , data = ds2, factorVars = c("delivery_type.pn", "cong_abnormal.pn", "gender.pn"))
-print(tab1, smd=TRUE)
+summary(c(m1,m2,m3))
+exp(coef(m2))
 
-tab1 <- print(tab1, quote = FALSE, noSpaces = TRUE, printToggle = FALSE, smd=TRUE)
-tab1All <- print(tab1All, quote = FALSE, noSpaces = TRUE, printToggle = FALSE, smd=TRUE)
-
-## Save to a CSV file
-setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
-write.csv(tab1, file = "table1zika_20180326.csv")
-write.csv(tab1All, "table1zikaOverall_20180326.csv")
+plot(m2)
