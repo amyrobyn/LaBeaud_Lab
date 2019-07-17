@@ -61,6 +61,9 @@ ds2[ds2==""]<-NA
 write.csv(ds2[,grepl("mother_record_id|mom_id_orig_study|redcap_repeat_instance|redcap_event_name|pgold",colnames(ds2))],"pgold_testing.csv",na="")
 ds2602<-ds2[ds2$mom_id_orig_study_2.mom==2602&!is.na(ds2$mom_id_orig_study_2.mom),c("date.mom","mother_record_id","mom_id_orig_study_2.mom")]
 
+deidentify<-ds
+write.csv(deidentify,"zikv.csv")
+
 # #make sure the child # didn't change over visits. -------------------------------------------------------------------
 twin_ids<-ds[ds$redcap_repeat_instance>1&!is.na(ds$redcap_repeat_instance),"mother_record_id"]
 twins<-subset(ds, (c(mother_record_id) %in% twin_ids))
@@ -119,26 +122,49 @@ write.csv(ds2[,c("mother_record_id","mom_id_orig_study.mom","mom_id_orig_study_2
     ds2$mom_age_delivery<-as.numeric(round((as.Date(ds2$delivery_date.pn)-as.Date(ds2$dob.mom))/365,1))
     ds2[ds2$dob.mom>"2001-01-29"|ds2$dob.mom=="",c("mother_record_id","dob.mom","delivery_date.pn","mom_age_delivery","mothers_age_calc.mom","date.mom")]
     ds2 <- within(ds2, mom_age_delivery[ds2$mom_age_delivery<15|ds2$mom_age_delivery>50] <- NA)
-    
+    ds2$mom_40plus<-ifelse(ds2$mom_age_delivery >=40, 1, ifelse(ds2$mom_age_delivery<40,0,NA))
+
 #calculate dad age at deliery and remove outliers over 80 and under 15
   ds2$dad_age_delivery<-as.numeric(round((as.Date(ds2$delivery_date.pn)-lubridate::as_date(ds2$partner_dob.mom))/365,1))
   ds2 <- within(ds2, dad_age_delivery[ds2$dad_age_delivery<15|ds2$dad_age_delivery>80] <- NA)
-  
-#Table 1: Maternal demographics of cohort by exposure status: age, education, income, geography: home parish, medical history, marital status, paternal age, occupation
+  ds2$dad_40plus<-ifelse(ds2$dad_age_delivery >=40, 1, ifelse(ds2$dad_age_delivery<40,0,NA))
 
-    factor <- c("coil.mom","repellent.mom","occupation.mom","marrital_status.mom","education.mom","monthly_income.mom","delivery_type.pn", "cong_abnormal.pn", "gender.pn","parish.mom","previous_pregnancy.mom") 
+#Table 1: Maternal demographics of cohort by exposure status: age, education, income, geography: home parish, medical history, marital status, paternal age, occupation
+  ds2$education.mom.cat<-NA
+  ds2 <- within(ds2, education.mom.cat[ds2$education.mom=="Primary School"]<- "Primary")
+  ds2 <- within(ds2, education.mom.cat[ds2$education.mom=="Secondary School"]<- "Secondary +")
+  ds2 <- within(ds2, education.mom.cat[ds2$education.mom=="Bachelor's degree"|ds3$education.mom=="Graduate or Professional degree"]<- "college +")
+  table(ds2$education.mom.cat)
+
+  ds2$any_mosquito_protection<-NA
+  ds2 <- within(ds2, any_mosquito_protection[ds2$coil.mom=="Never" & ds2$mosquito_screens.mom=="None of them" & ds2$repellent.mom=="Never"]<- "No")
+  ds2 <- within(ds2, any_mosquito_protection[ds2$coil.mom=="Always" |ds2$coil.mom=="Sometimes"| ds2$coil.mom=="Ocasionally"|ds2$coil.mom=="Often"|ds2$mosquito_screens.mom=="Some of them"|ds2$mosquito_screens.mom=="Most of them"|ds2$mosquito_screens.mom=="All of them"|ds2$repellent.mom=="Always" |ds2$repellent.mom=="Sometimes"| ds2$repellent.mom=="Ocasionally"|ds2$repellent.mom=="Often"]<- "Yes")
+
+  ds2$parity<-NA
+  ds2 <- within(ds2, parity[ds2$previous_pregnancy.mom=="0"]<- "nulliparous")
+  ds2 <- within(ds2, parity[ds2$previous_pregnancy.mom=="1" |ds2$previous_pregnancy.mom=="2"| ds2$previous_pregnancy.mom=="3+"]<- "parous")
+
+  ds2$cdv_risk<-NA
+  ds2 <- within(ds2, cdv_risk[ds2$medical_conditions___3.mom=="Unchecked" & ds2$medical_conditions___6.mom=="Unchecked" & ds2$medical_conditions___7.mom=="Unchecked" & ds2$medical_conditions___8.mom=="Unchecked"]<- "no risk")
+  ds2 <- within(ds2, cdv_risk[ds2$medical_conditions___3.mom=="Checked" | ds2$medical_conditions___6.mom=="Checked" | ds2$medical_conditions___7.mom=="Checked" | ds2$medical_conditions___8.mom=="Checked"]<- "At risk")
+
+ds2$asthma_resp<-NA
+  ds2 <- within(ds2, asthma_resp[ds2$medical_conditions___1.mom=="Unchecked" & ds2$medical_conditions___2.mom=="Unchecked"]<- "0")
+  ds2 <- within(ds2, asthma_resp[ds2$medical_conditions___1.mom=="Checked" | ds2$medical_conditions___2.mom=="Checked"]<- "1")
+  
+    factor <- c("coil.mom","repellent.mom","occupation.mom","marrital_status.mom","education.mom.cat","monthly_income.mom","latrine_type.mom","air_conditioning.mom","delivery_type.pn", "cong_abnormal.pn", "gender.pn","parish.mom","previous_pregnancy.mom") 
     ds2[factor] <- lapply(ds2[factor], as.factor) 
-    tab1vars <- c("parish.mom","mom_age_delivery","occupation.mom","medical_conditions___1.mom","medical_conditions___2.mom","medical_conditions___3.mom","medical_conditions___4.mom","medical_conditions___5.mom","medical_conditions___6.mom","medical_conditions___7.mom","medical_conditions___8.mom","medical_conditions___9.mom","medical_conditions___10.mom","medical_conditions___11.mom","medical_conditions___12.mom","medical_conditions___13.mom","medical_conditions___14.mom","previous_pregnancy.mom","repellent.mom","coil.mom","marrital_status.mom","education.mom","monthly_income.mom","dad_age_delivery")
+    tab1vars <- c("parish.mom","mom_40plus","occupation.mom","asthma_resp","medical_conditions___10.mom","medical_conditions___12.mom","medical_conditions___13.mom","cdv_risk","parity","marrital_status.mom","education.mom.cat","monthly_income.mom","latrine_type.mom","dad_40plus","any_mosquito_protection")
     require(tableone)
     tab1All <- CreateTableOne(vars = tab1vars, data = ds2[ds2$redcap_repeat_instance==1,], factorVars = factor)
     tab1All<-print(tab1All,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,cramVars = tab1vars)
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/ms zika spectrum of disease")
     write.csv(tab1All, file = "Table 1_maternal_demographics.csv")
 
-    
     tab1All <- CreateTableOne(vars = tab1vars, strata = "zikv_exposed_mom" , data = ds2[ds2$redcap_repeat_instance==1,], factorVars = factor)
     tab1All<-print(tab1All,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,cramVars = tab1vars,smd=T)
     write.csv(tab1All, file = "Table 1_maternal_demographics_strata.csv")
+    
     p<-as.data.frame(tab1All[,3])
     p<-p[p$p!="",]
     p.adjust(p, method = p.adjust.methods)
@@ -187,7 +213,7 @@ print(sup.table1, cramVars = symptoms_zika_var)
 sup.table1<-print(sup.table1,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE)
 write.csv(sup.table1, file = "sup.table1.csv")
 
-#define otucomes
+#define outcomes
 #Table 2: a. child birth outcomes nurse assessment form postnatal:anthropometric, birth complication; b. child 12-month outcomes: strength, deep tendon reflexes --------
     ds2<-ds2 %>% select(sort(names(.)))
 #    ds2<-ds2[, !(colnames(ds2) %in% c("term_2.pn","gender_2.12","child_bmi.pn"))]
@@ -398,11 +424,6 @@ save(ds3,file="ds3.rda")
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/ms zika spectrum of disease")
 load("ds3.rda")
 ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Negative"|ds2$result_zikv_serum_mom.mom=="Negative"] <- "Negative")
-ds3$education.mom.cat<-NA
-ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Primary School"]<- "Primary")
-ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Secondary School"]<- "Secondary +")
-ds3 <- within(ds3, education.mom.cat[ds3$education.mom=="Bachelor's degree"|ds3$education.mom=="Graduate or Professional degree"]<- "college +")
-table(ds3$education.mom.cat)
 
 hist(ds3$sum_outcomes.12)
 hist(ds3$sum_outcomes.pn)
