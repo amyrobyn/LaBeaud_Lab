@@ -11,7 +11,7 @@ currentDate <- Sys.Date()
 FileName <- paste("zika",currentDate,".rda",sep=" ") 
 #save(ds,file=FileName)
 
-load("zika 2019-06-24 .rda")
+load("zika 2019-07-18 .rda")
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
 
 # merge -------------------------------------------------------------------
@@ -85,8 +85,8 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
     ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Positive"|ds2$result_zikv_serum_mom.mom=="Positive"] <- "Positive")
     
     ds2$zikv_exposed_mom<-NA
-    ds2 <- within(ds2, zikv_exposed_mom[ds2$result_zikv_igg_pgold.mom=="Negative"|ds2$result_zikv_igg_pgold_fu.mom=="Negative"] <- "mom zikv Unexposed")
-    ds2 <- within(ds2, zikv_exposed_mom[ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive"|ds2$result_zikv_igg_pgold_fu.mom=="Positive"] <- "mom ZIKV Exposed")
+    ds2 <- within(ds2, zikv_exposed_mom[ds2$result_zikv_igg_pgold.mom=="Negative"|ds2$result_zikv_igg_pgold_fu.mom=="Negative"] <- "mom_zikv_Unexposed")
+    ds2 <- within(ds2, zikv_exposed_mom[ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive"|ds2$result_zikv_igg_pgold_fu.mom=="Positive"] <- "mom_ZIKV_Exposed")
     
     table(ds2$zikv_exposed_mom,ds2$redcap_repeat_instance, exclude = NULL)
     table(ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive",ds2$cohort___1.mom,ds2$redcap_repeat_instance, exclude = NULL)
@@ -151,7 +151,6 @@ write.csv(ds2[,c("mother_record_id","mom_id_orig_study.mom","mom_id_orig_study_2
 ds2$asthma_resp<-NA
   ds2 <- within(ds2, asthma_resp[ds2$medical_conditions___1.mom=="Unchecked" & ds2$medical_conditions___2.mom=="Unchecked"]<- "0")
   ds2 <- within(ds2, asthma_resp[ds2$medical_conditions___1.mom=="Checked" | ds2$medical_conditions___2.mom=="Checked"]<- "1")
-  
     factor <- c("coil.mom","repellent.mom","occupation.mom","marrital_status.mom","education.mom.cat","monthly_income.mom","latrine_type.mom","air_conditioning.mom","delivery_type.pn", "cong_abnormal.pn", "gender.pn","parish.mom","previous_pregnancy.mom") 
     ds2[factor] <- lapply(ds2[factor], as.factor) 
     tab1vars <- c("parish.mom","mom_40plus","occupation.mom","asthma_resp","medical_conditions___10.mom","medical_conditions___12.mom","medical_conditions___13.mom","cdv_risk","parity","marrital_status.mom","education.mom.cat","monthly_income.mom","latrine_type.mom","dad_40plus","any_mosquito_protection")
@@ -167,25 +166,23 @@ ds2$asthma_resp<-NA
     
     p<-as.data.frame(tab1All[,3])
     p<-p[p$p!="",]
-    p.adjust(p, method = p.adjust.methods)
+    p<-p.adjust(p, method = p.adjust.methods)
     
 
 # figure 1: Frequency boxplots of symptoms amongst zika positive moms: zika symptoms at antenatal visit or recall symptoms during pregnancy.  -----------------------------------------------------------------
-source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/symptoms combined.R")
+source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/symptoms combined.R")#combine the data from zika_survey "During your Zika illness, what symptoms did you have?" and zika_initial_survey "Did you experience any of the following symptoms during your Zika illness?"
 ds2<-merge(ds2,symptoms_zika,by="mother_record_id",all.x = T)
 
 ds2$cohort<-NA
 ds2 <- within(ds2, cohort[ds2$cohort___3.mom=="Checked"] <- "Zika Follow Up")
 ds2 <- within(ds2, cohort[ds2$cohort___1.mom=="Checked"] <- "Original Pregnancy")
 ds2 <- within(ds2, cohort[ds2$cohort___2.mom=="Checked"] <- "Febrile Zika")
-table(ds2$cohort)
 
-zikv_pos<-subset(ds2,ds2$zikv_exposed_mom=="ZIKV Exposed")
+zikv_pos<-subset(ds2,ds2$zikv_exposed_mom=="mom ZIKV Exposed")
 
-symptoms_zika_var<-names(ds2[,c(1160:1195)])
 symptoms_zika_var<-rlist::list.append(symptoms_zika_var,"trimester.mom")
 
-symptoms_zika <- CreateTableOne(vars = symptoms_zika_var, data = zikv_pos , factorVars = symptoms_zika_var)
+symptoms_zika <- CreateTableOne(vars = symptoms_zika_var, data = zikv_pos, factorVars = symptoms_zika_var)
 symptoms_zika<-print(symptoms_zika,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,cramVars = symptoms_zika_var)
 write.csv(symptoms_zika, file = "symptoms_zika.csv")
 
@@ -219,12 +216,13 @@ write.csv(sup.table1, file = "sup.table1.csv")
 #    ds2<-ds2[, !(colnames(ds2) %in% c("term_2.pn","gender_2.12","child_bmi.pn"))]
   #Delivery Outcomes, growth parameters, and congenital abnormalities/complications
   #Term Pre-term, Gestational Weeks, Delivery Type, Apgars, Outcome of Delivery - include respiratory distress, meconium aspiration, intrapartum fever; Neonatal Resuscitation required, Clinical parameters (fontanelles, sutures, dysmorphic facial features, cleft lip palate, reflexes). Seizures 
-    child_outcome_vars.delivery<-grep("term_2|gestational_weeks_2_2|delivery_type|apgar_one|apgar_five|apgar_ten|outcome_of_delivery|neonatal_resusitation|ant_fontanelle|sutures|facial_dysmoph|cleft|red_reflex|plantar_reflex|galant_reflex|suck|grasp|moro",names(ds2),value = T)
+    child_outcome_vars.delivery<-grep("term_2|gestational_weeks_2_2|delivery_type|apgar_one|apgar_five|apgar_ten|outcome_of_delivery|neonatal_resusitation|ant_fontanelle|sutures|facial_dysmoph|cleft|red_reflex|plantar_reflex|galant_reflex|suck|grasp|moro|cong_abnormal|specify_cong_abnormal|chromosomal_abn|z_seizures|heart_rate|resp_rate|color|cry|tone|moving_limbs|cap_refill|child_referred|gender|muscle_tone_abnormal|resp_rate|temperature",names(ds2),value = T)
+    
     child_outcome_vars.delivery<-grep(".pn|.12",child_outcome_vars.delivery,value = T)
     child_outcomes <- CreateTableOne(vars = child_outcome_vars.delivery, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "Delivery_Outcomes.csv")
-
+    
 # define normal/abnormal --------------------------------------------------------------------
     ds2$ant_fontanelle.pn.abnormal<-ifelse(ds2$ant_fontanelle.pn == "sunken"|ds2$ant_fontanelle.pn == "tense/buldging", 1, ifelse(ds2$ant_fontanelle.pn=="Normal",0,NA))
     table(ds2$ant_fontanelle.pn.abnormal)
@@ -305,11 +303,15 @@ write.csv(sup.table1, file = "sup.table1.csv")
     ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_delivery_Outcomes_abnormal.12)) + geom_boxplot() 
     
     child_outcome_vars.delivery<-grep(".pn|.12",names(ds2),value = T)
-    child_outcome_vars.delivery<-grep(".abnormal",child_outcome_vars.delivery,value = T)
-    child_outcome_vars.delivery<- grep("cong|muscle_tone|ultrasound",child_outcome_vars.delivery,value = T,invert = T)
+    child_outcome_vars.delivery<-grep(".abnormal|term_2|gestational_weeks_2_2|delivery_type|apgar_one|apgar_five|apgar_ten|outcome_of_delivery|sutures|galant_reflex|suck|grasp|moro|cong_abnormal|specify_cong_abnormal|chromosomal_abn|z_seizures|heart_rate|resp_rate|cry|tone|moving_limbs|cap_refill|child_referred|gender|muscle_tone_abnormal|resp_rate|temperature",child_outcome_vars.delivery,value = T)
+#    child_outcome_vars.delivery<- grep("cong|muscle_tone|ultrasound",child_outcome_vars.delivery,value = T,invert = T)
+    child_outcome_vars.delivery<- grep("ant_fontanelle.pn.abnormal|apgar_one.pn.abnormal|apgar_ten.pn.abnormal|apgar_five.12.abnormal|apgar_ten_2.12.abnormal",child_outcome_vars.delivery,value = T,invert = T)
+    nonnormal<-grep("gestational_weeks_2_2|apgar|heart_rate|resp_rate|resp_rate|temperature",child_outcome_vars.delivery,value = T)
+
     
+#table 2
     child_outcomes <- CreateTableOne(vars = child_outcome_vars.delivery, data = ds2,strata = "zikv_exposed_mom")
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = T,smd=T)
+    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = T,smd=T, nonnormal=nonnormal)
     write.csv(child_outcomes, file = "Delivery_Outcomes_abnormal.csv")
     
 # growth --------------------------------------------------------------------
@@ -355,15 +357,34 @@ write.csv(sup.table1, file = "sup.table1.csv")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "child_growth_abnormal.csv")
     
-    #Congenital abnormalities/Complications 
-    #Ocular, Skeletal, Microcephaly, Seizures, Chromosomal 
-    child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex",names(ds2),value = T)
+# oxnda -----------------------------------------------------------------------
+#Congenital abnormalities/Complications 
+#Ocular, Skeletal, Microcephaly, Seizures, Chromosomal 
+#    child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex",names(ds2),value = T)
+  oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/oxnda_copy.csv")
+  ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all.x = T)
+  library(ggplot2)
+          
+  ds2_oxnda<-ds2_oxnda[ds2_oxnda$age.at.visit<=14 & ds2_oxnda$age.at.visit>=10 & ds2_oxnda$perc_responses_completed>=50,]
+  table(ds2_oxnda$zikv_exposed_mom,exclude = NULL)
+  ggplot(data=ds2_oxnda, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+facet_grid("zikv_exposed_mom")
+  cor.test(ds2_oxnda$Mean_OXNDA_score,ds2_oxnda$age.at.visit)
+  child_outcomes_vars<-names(oxnda[6:103])
+  child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda, strata = "zikv_exposed_mom")
+  child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+  write.csv(child_outcomes, file = "oxnda_normal.csv")
+
+# stop here ---------------------------------------------------------------------
+
+
     child_outcome_vars<-grep("pn|12",child_outcome_vars,value = T)
     child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
     write.csv(child_outcomes, file = "Congenital_abnormalities_Complications.csv")
+
+
     
-    # define normal/abnormal --------------------------------------------------
+  # define normal/abnormal --------------------------------------------------
     ds2$chromosomal_abn.12.abnormal<-ifelse(ds2$chromosomal_abn.12== "Yes", 1, ifelse(ds2$chromosomal_abn.12 =="No",0,NA))
     table(ds2$chromosomal_abn.12.abnormal)
     ds2$cong_abnormal.pn.abnormal<-ifelse(ds2$cong_abnormal.pn== "Yes", 1, ifelse(ds2$cong_abnormal.pn =="No",0,NA))
@@ -390,12 +411,6 @@ write.csv(sup.table1, file = "sup.table1.csv")
     child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
     child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,test=F)
     write.csv(child_outcomes, file = "Congenital_abnormalities_Complications_abnormal.csv")
-    
-#other 
-    child_outcome_vars<-grep("heart_rate|resp_rate|color|cry|tone|moving_limbs|cap_refill|child_referred|gender|muscle_tone_abnormal|resp_rate|temperature",names(ds2),value = T)
-    child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
-    write.csv(child_outcomes, file = "other.csv")
     
 #child changing gender over visits
 table(ds2$gender.pn,ds2$gender_2.12,exclude = NULL)
