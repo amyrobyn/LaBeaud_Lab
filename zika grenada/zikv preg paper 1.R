@@ -362,18 +362,123 @@ write.csv(sup.table1, file = "sup.table1.csv")
 #Ocular, Skeletal, Microcephaly, Seizures, Chromosomal 
 #    child_outcome_vars<-grep("cong_abnormal|specify_cong_abnormal|chromosomal_abn|gait|z_seizures|red_reflex",names(ds2),value = T)
   oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/oxnda_copy.csv")
-  ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all.x = T)
+  ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all = T)
+
+
+  ds2_oxnda_all<-ds2_oxnda[ds2_oxnda$perc_responses_completed>=50,]
+  ds2_oxnda_10_14<-ds2_oxnda[ds2_oxnda$age.at.visit<=14 & ds2_oxnda$age.at.visit>=10 & ds2_oxnda$perc_responses_completed>=50,]
+  ds2_oxnda_10_18<-ds2_oxnda[ds2_oxnda$age.at.visit<=18 & ds2_oxnda$age.at.visit>=10 & ds2_oxnda$perc_responses_completed>=50,]
+
   library(ggplot2)
-          
-  ds2_oxnda<-ds2_oxnda[ds2_oxnda$age.at.visit<=14 & ds2_oxnda$age.at.visit>=10 & ds2_oxnda$perc_responses_completed>=50,]
-  table(ds2_oxnda$zikv_exposed_mom,exclude = NULL)
-  ggplot(data=ds2_oxnda, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+facet_grid("zikv_exposed_mom")
-  cor.test(ds2_oxnda$Mean_OXNDA_score,ds2_oxnda$age.at.visit)
+  #age
+  ggplot(data=ds2_oxnda_all, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score by age:10-25 months")
+  install.packages("ggpmisc")
+  library(ggpmisc)
+  
+  ggplot(data=ds2_oxnda_10_18, aes(x=age.at.visit, y=Mean_OXNDA_score,color=)) + geom_point() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score by age: 10-18 months")
+  
+  #parental income, education, as well as bar charts for categorical variables such as gender, Parish, etc. 
+  #install.packages("ggpubr")
+  library(ggpubr)
+  ggplot(data=ds2_oxnda_10_18, aes(x=z_alcohol.24, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by alcohol use\n (10-18 months)")+ stat_compare_means()
+  ggplot(data=ds2_oxnda_10_18, aes(x=z_alcohol_amount.24, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by alcohol use amount \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=z_smoking.24, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by tobacco use \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=z_drugs.24, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by drug use \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=breastfeed.12, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by breastfeed \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  ggplot(data=ds2_oxnda_10_18, aes(x=education.mom.cat, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by maternal highest education category \n (10-18 months)")+ stat_compare_means()
+  
+  ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, monthly_income.mom[ds2_oxnda_10_18$monthly_income.mom=="Refused/Don't know"] <- NA)
+  ds2_oxnda_10_18$monthly_income.mom <- ordered(ds2_oxnda_10_18$monthly_income.mom, levels = c("Under $1000 EC", "$1,001-2,000 EC","$2,001-3000 EC", "Over $3000 EC"))
+  ggplot(data=ds2_oxnda_10_18, aes(x=monthly_income.mom, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by household monthly income category \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  ggplot(data=ds2_oxnda_10_18, aes(x=gender.pn, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by child gender \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=parish.mom, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by parish \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=latrine_type.mom, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by latrine type as proxy of wealth \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplot(data=ds2_oxnda_10_18, aes(x=occupation.mom, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by maternal occupation \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  
+  ggplot(data=ds2_oxnda_10_18, aes(x=zikv_exposed_mom, y=Mean_OXNDA_score)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by maternal occupation \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  hist(ds2_oxnda_10_18$Mean_OXNDA_score,breaks = 50)
+
+  ggplot(data=ds2_oxnda_10_18, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+facet_grid("zikv_exposed_mom")
+
   child_outcomes_vars<-names(oxnda[6:103])
   child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda, strata = "zikv_exposed_mom")
   child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
   write.csv(child_outcomes, file = "oxnda_normal.csv")
+  table(ds2_oxnda_10_18$monthly_income.mom)
+  
+  library("PerformanceAnalytics")
 
+  continous <- ds2_oxnda_10_18[, c("Mean_OXNDA_score","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit","perc_responses_completed")]
+  cat <- c("zikv_exposed_mom","breastfeed.12","z_alcohol.24","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat")
+  catcorrm <- function(vars, dat) sapply(vars, function(y) sapply(vars, function(x) assocstats(table(dat[,x], dat[,y]))$cramer))
+  mydata <- ds2_oxnda_10_18[, c("Mean_OXNDA_score","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit","zikv_exposed_mom","breastfeed.12","z_alcohol.24","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat","perc_responses_completed")]
+  mydata[,cat] <- lapply(mydata[,cat],as.factor)
+  mydata[,cat] <- lapply(mydata[,cat],as.numeric)
+  cor(mydata,use="pairwise.complete.obs",method = "pearson")
+  chart.Correlation(mydata, histogram=TRUE, pch=19,method ="pearson")
+  
+  tiff("correlations.png",width = 2000,height = 2000,units = "px")
+    chart.Correlation(mydata, histogram=TRUE, pch=19,method ="pearson")
+  dev.off()
+  
+  cat_cor<-catcorrm(cat,ds2_oxnda_10_18)
+  chart.Correlation(continous, histogram=TRUE, pch=19)
+
+  oxnda_model1<-R2BayesX::bayesx(Mean_OXNDA_score~as.factor(zikv_exposed_mom)+
+                                   perc_responses_completed+
+                                   as.factor(breastfeed.12)+
+                                   #as.factor(z_alcohol.24)+
+                                   monthly_income.mom +
+                                   as.factor(gender.pn)+
+                                   as.factor(parish.mom)+
+                                   as.factor(occupation.mom)+
+                                   as.factor(latrine_type.mom)+
+                                   mom_age_delivery+
+                                   as.factor(education.mom.cat)+
+                                   gestational_weeks_2_2.12+
+                                   age.at.visit,
+                                  data=ds2_oxnda_10_18,
+                                 method="REML", 
+                                 family="gaussian",
+                                 na.rm=T)
+  plot(oxnda_model1)
+  summary(oxnda_model1)
+  
+oxnda_model2<-R2BayesX::bayesx(Mean_OXNDA_score~as.factor(zikv_exposed_mom)+
+                                  sx(perc_responses_completed,bs="ps")+
+                                  as.factor(breastfeed.12)+
+                                   #as.factor(z_alcohol.24)+
+                                   as.factor(monthly_income.mom)+
+                                   as.factor(gender.pn)+
+                                   as.factor(parish.mom)+
+                                   as.factor(occupation.mom)+
+                                   as.factor(latrine_type.mom)+
+                                   sx(mom_age_delivery,bs = "ps")+
+                                   as.factor(education.mom.cat)+
+                                   sx(gestational_weeks_2_2.12,bs = "ps")+
+                                   sx(age.at.visit,bs = "ps"),
+                                 data=ds2_oxnda_10_18,
+                                 method="STEP", 
+                                 family="gaussian",
+                                 na.rm=T)
+  
+  plot(oxnda_model2)
+  summary(oxnda_model2)
+  
+  
+# bivariate analysis ------------------------------------------------------
+
+  #all children with >50% responses? 
+  
+  #Then, it would be very helpful to see similar plots for mean OXNDA scores from all children with >50% responses plotted against parental income, education, as well as bar charts for categorical variables such as gender, Parish, etc. 
+  
+  #So far, we know for sure we will need to include age as a covariate when run the group comparison.Agree We can see how the data looks for the others before making the decision to include them or not. Usually, I look at whether there is a correlation with the DV and then whether there are group differences in the potential confound. For example, there were differences in age between the Zika exposure groups when I last checked but this was prior to expanding these groups with the latest testing so you will need to check again with the latest group designations. Others may have a different analytic approach to data exploration but this is usually what I do prior to running the main model. I also make sure the data is normally distributed using Shapiro-Wilks (or something comparable) to justify the use of parametric analyses. We can also gauge this by looking at histogram or whisker plots. It would be good to plot mean OXNDA scores from each exposure group just to make sure they are not too differentially distributed before running the group comparison. 
+  
+  #I don't believe we systematically collected questionnaire data regarding parental attitudes towards corporal punishment, chaos in the home, etc at the 1-year time point but if this is available, it would also be good to plot those scores against mean OXNDA scores to see if there are any strong effects/confounds we need to consider before running the Zika exposure group comparison.
+  
 # stop here ---------------------------------------------------------------------
 
 
