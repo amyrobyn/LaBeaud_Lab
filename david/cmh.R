@@ -1,40 +1,33 @@
-#CMH
-AIC <- within(AIC, infected_denv_stfd[infected_denv_stfd==1] <-"DENV Pos" )
-AIC <- within(AIC, infected_denv_stfd[infected_denv_stfd==0] <-"DENV Neg" )
+#order factors ---------------------------------------------
+  AIC$aic_symptom_dizziness <- factor(AIC$aic_symptom_dizziness, levels = c(1, 0))
+  AIC$aic_pe_decreased_strength <- factor(AIC$aic_pe_decreased_strength, levels = c(1, 0))
+  AIC$aic_pe_icteric_sclerae <- factor(AIC$aic_pe_icteric_sclerae, levels = c(1, 0))
+  AIC$aic_symptom_abdominal_pain <- factor(AIC$aic_symptom_abdominal_pain, levels = c(1, 0))
+  AIC$aic_pe_swollen <- factor(AIC$aic_pe_swollen, levels = c(1, 0))
+  AIC$aic_pe_tender <- factor(AIC$aic_pe_tender, levels = c(1, 0))
+  AIC$infected_denv_stfd <- factor(AIC$infected_denv_stfd, levels = c(1, 0))
+  
+  #CMH for all significant symptoms ---------------------------------------------
+  attach(AIC)
+  
+  odds.ratio(table(infected_denv_stfd,aic_symptom_dizziness))
+  apply(table(infected_denv_stfd,aic_symptom_dizziness,malaria), 3, odds.ratio)
+  mantelhaen.test(table(infected_denv_stfd,aic_symptom_dizziness,malaria))
 
-AIC <- within(AIC, aic_symptom_abdominal_pain[aic_symptom_abdominal_pain==0] <-"no abdominal pain" )
-AIC <- within(AIC, aic_symptom_abdominal_pain[aic_symptom_abdominal_pain==1] <-"abdominal pain" )
+  odds.ratio(table(infected_denv_stfd,aic_pe_decreased_strength))
+  apply(table(infected_denv_stfd,aic_pe_decreased_strength,malaria), 3, odds.ratio)
+  mantelhaen.test(table(infected_denv_stfd,aic_pe_decreased_strength,malaria))
+  
+  odds.ratio(table(infected_denv_stfd,aic_pe_icteric_sclerae))
+  apply(table(infected_denv_stfd,aic_pe_icteric_sclerae,malaria), 3, odds.ratio)
+  mantelhaen.test(table(infected_denv_stfd,aic_pe_icteric_sclerae,malaria))
 
-AIC <- within(AIC, aic_symptom_chills[aic_symptom_chills==0] <-"no chills" )
-AIC <- within(AIC, aic_symptom_chills[aic_symptom_chills==1] <-"chills" )
-
-AIC <- within(AIC, aic_symptom_nausea[aic_symptom_nausea==0] <-"no nausea" )
-AIC <- within(AIC, aic_symptom_nausea[aic_symptom_nausea==1] <-"nausea" )
-
-AIC <- within(AIC, aic_symptom_loss_of_appetite[aic_symptom_loss_of_appetite==0] <-"no loss_of_appetite" )
-AIC <- within(AIC, aic_symptom_loss_of_appetite[aic_symptom_loss_of_appetite==1] <-"loss_of_appetite" )
-
-AIC <- within(AIC, aic_symptom_joint_pains[aic_symptom_joint_pains==0] <-"no joint_pains" )
-AIC <- within(AIC, aic_symptom_joint_pains[aic_symptom_joint_pains==1] <-"joint_pains" )
-
-AIC <- within(AIC, aic_pe_tender[aic_pe_tender==0] <-"no joint_tender" )
-AIC <- within(AIC, aic_pe_tender[aic_pe_tender==1] <-"joint_tender" )
-
-AIC <- within(AIC, malaria[malaria==0] <-"Malaria neg" )
-AIC <- within(AIC, malaria[malaria==1] <-"Malaria pos" )
-
-denv <- table(AIC$infected_denv_stfd,AIC$aic_symptom_abdominal_pain)
-denv_bymalaria <- table(AIC$infected_denv_stfd,AIC$aic_symptom_abdominal_pain,AIC$malaria)
-prop.table(denv)
-prop.table(denv, 1)
-prop.table(denv, 2)
-library(samplesizeCMH)
-
-denv
-odds.ratio(denv)
-denv_bymalaria
-apply(denv_bymalaria, 3, odds.ratio)
-mantelhaen.test(denv_bymalaria)
-
-library(DescTools)
-BreslowDayTest(x = denv_bymalaria, OR = 1)
+  odds.ratio(table(aic_symptom_abdominal_pain,infected_denv_stfd))
+  apply(table(infected_denv_stfd,aic_symptom_abdominal_pain,malaria), 3, odds.ratio)
+  mantelhaen.test(table(infected_denv_stfd,aic_symptom_abdominal_pain,malaria))
+  
+  odds.ratio(table(infected_denv_stfd,aic_pe_swollen))
+  apply(table(infected_denv_stfd,aic_pe_swollen,malaria), 3, odds.ratio)
+  mantelhaen.test(table(infected_denv_stfd,aic_pe_swollen,malaria))
+  
+  

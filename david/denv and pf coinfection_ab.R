@@ -31,11 +31,17 @@ tapply(AIC$int_date, AIC$redcap_event_name, summary)
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/z_scores.rda")
 zbmi<-z[which(z$zbmi>5|z$zbmi< (-5)),]
 zhfa<-z[which(z$zhfa>5|z$zhfa< (-5)),]
+zbfa<-z[which(z$zbfa>5|z$zbfa< (-5)),]
+
 write.csv(zhfa,file="height for age out of bounds.csv")
 write.csv(zbmi,file="bmi out of bounds.csv")
+write.csv(zbfa,file="bmi out of bounds_zbfa.csv")
 
 AIC<-merge(AIC,z,by=c("person_id","redcap_event_name"),all.x=T)
 colnames(AIC)[colnames(AIC) == 'age.x'] <- 'age'
+
+AIC$zbmi[is.na(AIC$zbmi)] <- AIC$zbfa[is.na(AIC$zbmi)]
+
 # demographics, ses, and mosquito indices ------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/demographics, ses, and mosquito indices.r")
 
@@ -48,7 +54,7 @@ AIC_B<-AIC[which(AIC$redcap_event_name=="visit_b_arm_1"), ]
 AIC<-AIC[which(AIC$acute==1&(AIC$redcap_event_name=="visit_a_arm_1")), ]
 table(AIC$acute,AIC$redcap_event_name)
 
-var<-c("age","height","sex","zhfa", "zbmi","ses_sum","infected_denv_stfd","malaria","strata_all")
+var<-c("age","height","sex","zhfa", "zbmi","ses_sum","infected_denv_stfd")
 acute<-CreateTableOne(vars = var, data = AIC)
 print(acute)
 acute_by_city <- CreateTableOne(vars = var, strata = "id_city", data = AIC)
@@ -79,6 +85,8 @@ boxplot(AIC$age)
 
 #denv and malaria case definition------------------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/strata definitions.R")
+table(AIC$strata_all)
+table(AIC$malaria)
 
 AIC$int_date_my<-format(as.Date(AIC$int_date), "%Y-%m")
 AIC_nonNA<-AIC[which(!is.na(AIC$denv_strata)),c("denv_strata","int_date_my","int_date")]
@@ -91,12 +99,12 @@ ggplot(AIC_nonNA, aes(x = int_date_my,fill=denv_strata,color=denv_strata)) +
   theme(axis.text.x=element_text(angle=60, hjust=1),text = element_text(size = 20,color="black")) + 
   xlab("") + ylab("No. Cases") +
   geom_bar(stat="count",position = "identity") + theme(strip.text.y = element_text(angle = 0))+ 
+  
 #  facet_grid(City~.)+
   guides(fill = guide_legend(title = "", title.position = "left",direction="vertical"))+ 
   theme(legend.position = c(0.8, 0.9),legend.background=element_blank())+guides(colour=FALSE)
 
 table(AIC$infected_denv_stfd,AIC$result_igg_denv_stfd,exclude = NULL)
-AIC$redcap_event_name
 PRNT<-AIC[which(AIC$infected_denv_stfd==1 & AIC$result_igg_denv_stfd==1),c("person_id","redcap_event_name","prnt_80_denv","result_igg_denv_stfd","infected_denv_stfd","seroc_denv_stfd_igg","infected_chikv_stfd","seroc_chikv_stfd_igg")]
 write.csv(PRNT,"PRNT.csv")
 
@@ -195,7 +203,25 @@ source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/demogarphy or tables.R
 
 # ses pca ------------------------------------------------------------
 source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/ses pca.R")
-table(AIC$strata_all)
+covariance<-AIC[,c("zhfa","zbmi","ses_sum")]
+
+cov(AIC$zbmi, AIC$ses_sum, use = "na.or.complete")
+plot(AIC$zbmi,AIC$ses_sum)
+model.1 = lm (zbmi ~ ses_sum,data = AIC)
+Anova(model.1)
+
+
+cov(AIC$zhfa, AIC$ses_sum, use = "na.or.complete")
+plot(AIC$zhfa,AIC$ses_sum)
+model.1 = lm (zhfa ~ ses_sum,data = AIC)
+Anova(model.1)
+
+
+cov(AIC$zhfa, AIC$zbmi, use = "na.or.complete")
+plot(AIC$zhfa,AIC$zbmi)
+model.1 = lm (zhfa ~ zbmi,data = AIC)
+Anova(model.1)
+
 
 # outcome hospitalized ----------------------------------------------------
  AIC$outcome_hospitalized<-as.numeric(as.character(AIC$outcome_hospitalized))
@@ -209,6 +235,7 @@ table(AIC$strata_all)
 ##merge with paired(acute and convalescent) pedsql data -----------------------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/calculate pedsql scores and pair.r")
  load("AIC.rda")
+ 
  names(pedsql_pairs_acute)[names(pedsql_pairs_acute) == 'redcap_event_name_acute_paired'] <- 'redcap_event_name'
  names(AIC)[names(AIC) == 'redcap_event'] <- 'redcap_event_name'
  pedsql_pairs_acute<-pedsql_pairs_acute[which(pedsql_pairs_acute$redcap_event_name=="visit_a_arm_1"),]
@@ -218,14 +245,23 @@ table(AIC$strata_all)
  
  save(pedsql_pairs_acute,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data/pedsql_pairs_acute_a.rda")
 
- 
  AIC <- join(AIC, pedsql_pairs_acute, by=c("person_id", "redcap_event_name"), match = "first" , type="left")
  AIC<-AIC[order(-(grepl('person_id|redcap|pedsql_', names(AIC)))+1L)]
+ 
+table(AIC$pedsql_parent_total_excluded_acute_paired,exclude = NULL)
+excluded<-AIC[,grepl("excluded",names(AIC))] 
+excluded<-excluded[,grepl("parent",names(excluded))] 
+conv<-excluded[,grepl("conv",names(excluded))] 
+acute<-excluded[,grepl("acute",names(excluded))] 
+lapply(acute, table)
+lapply(conv, table)
+
 
 #relabel levels of strata_all
-levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg_denv_pos", "Malaria"="malaria_pos_denv_neg","Coinfection"="malaria_pos_denv_pos")
- table(AIC$strata_all)
- AIC$strata_all<- revalue(AIC$strata_all, c("malaria_neg_denv_neg"="Neg", "malaria_neg_denv_pos"="DENV", "malaria_pos_denv_neg"="Malaria","malaria_pos_denv_pos"="Coinfection"))
+  table(AIC$strata_all)
+  levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg_denv_pos", "Malaria"="malaria_pos_denv_neg","Coinfection"="malaria_pos_denv_pos")
+  table(AIC$strata_all)
+  AIC$strata_all<- revalue(AIC$strata_all, c("malaria_neg_denv_neg"="Neg", "malaria_neg_denv_pos"="DENV", "malaria_pos_denv_neg"="Malaria","malaria_pos_denv_pos"="Coinfection"))
 
 # source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/acute visit outcomes-pedsql.R")
  
@@ -245,8 +281,17 @@ levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg
  AIC_B_afebrile<-AIC_B[which(AIC_B$acute_b==0 & !is.na(AIC_B$strata_all)), ]#only keep those that have an a strata
  
  
+ pedsql_mean<-AIC[,grepl("mean",names(AIC))] 
+ pedsql_mean<-pedsql_mean[,grepl("parent",names(pedsql_mean))] 
+ 
+ pedsqlfloor <- function(x) {table(x==0)}
+ lapply(pedsql_mean, pedsqlfloor)
+ 
+ pedsqlceiling <- function(x) {table(x==100)}
+ lapply(pedsql_mean, pedsqlceiling)
 
-# save and export data ----------------------------------------------------
+ 
+ # save and export data ----------------------------------------------------
  save(AIC,file="david_denv_malaria_cohort.rda")
  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/david coinfection paper/data")
  load("david_denv_malaria_cohort.rda")
@@ -264,7 +309,14 @@ vars<-c("pedsql_parent_total_mean_acute_paired","pedsql_parent_physical_mean_acu
 
 acutevars<-c("pedsql_parent_total_mean_acute_paired","pedsql_parent_physical_mean_acute_paired","pedsql_parent_emotional_mean_acute_paired","pedsql_parent_social_mean_acute_paired","pedsql_parent_school_mean_acute_paired")
 convvars<-c("pedsql_parent_total_mean_conv_paired","pedsql_parent_physical_mean_conv_paired","pedsql_parent_emotional_mean_conv_paired","pedsql_parent_social_mean_conv_paired","pedsql_parent_school_mean_conv_paired")
-tableone::CreateTableOne(vars,"strata_all",AIC,includeNA=F,test=T)
+tableone<-tableone::CreateTableOne(vars,"strata_all",AIC,includeNA=F,test=T)
+
+pedsql_acute_strata<-print(tableone,nonnormal=vars, quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,test=T)
+write.csv(pedsql_acute_strata, file = "pedsql_acute_strata_nonnormal.csv")
+
+pedsql_acute_strata<-print(tableone, quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,test=T)
+write.csv(pedsql_acute_strata, file = "pedsql_acute_strata_normal.csv")
+
 #acute total
 AIC$abnormal_pedsql_parent_total_mean_acute<-ifelse(AIC$pedsql_parent_total_mean_acute_paired<100,1,0)
 prop.table(table(AIC$abnormal_pedsql_parent_total_mean_acute,AIC$strata_all), margin=2)
@@ -437,3 +489,5 @@ table(!is.na(AIC$pedsql_child_total_mean_acute_paired), AIC$strata_all)
 table(!is.na(AIC$pedsql_child_total_mean_conv_paired), AIC$strata_all)
 
 AIC_complete_c<-AIC[ which(!is.na(AIC$pedsql_parent_total_mean_acute_paired)&!is.na(AIC$pedsql_child_total_mean_acute_paired)&!is.na(AIC$pedsql_parent_total_mean_conv_paired)&!is.na(AIC$pedsql_child_total_mean_conv_paired)) , ]
+
+save(AIC,file="aic_david.Rda")

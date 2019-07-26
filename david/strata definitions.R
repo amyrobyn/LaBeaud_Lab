@@ -28,7 +28,7 @@ table(AIC$seroc_denv_stfd_igg)
 table(AIC$seroc_denv_stfd_igg, AIC$pcr_denv, exclude = NULL)#87 by pcr, 6 by igg seroconversion.
 table(AIC$infected_denv_stfd, AIC$malaria, exclude = NULL)
 table(AIC$infected_denv_stfd, exclude = NULL)
-#  #some need to be malaria tested to be included in sample ------------------------------------------------------------------------
+#some need to be malaria tested to be included in sample ------------------------------------------------------------------------
 not_malaria_tested<-AIC[which(is.na(AIC$malaria) & AIC$infected_denv_stfd==1), ]
 table(is.na(AIC$malaria) & AIC$infected_denv_stfd==1)
 #  table(not_malaria_tested$person_id, not_malaria_tested$redcap_event_name)

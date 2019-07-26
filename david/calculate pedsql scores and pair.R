@@ -78,15 +78,27 @@ pedsql_child<-pedsql_child[, !grepl("parent", names(pedsql_child))]
 pedsql_child_total<- pedsql_child[, grepl("person_id|redcap_event_name|walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child))]
 pedsql_child_total$not_missing_child<-rowSums(!is.na(pedsql_child_total))
 pedsql_child_total$not_missing_child<-pedsql_child_total$not_missing_child-2
-table(pedsql_child_total$not_missing_child)
+hist(pedsql_child_total$not_missing_child)
+
+pedsql_child_total<-pedsql_child_total[pedsql_child_total$not_missing_child>0,]
+
 pedsql_child_total$pedsql_child_total_sum<-rowSums(pedsql_child_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_child_total))], na.rm = TRUE)
 pedsql_child_total$pedsql_child_total_mean<-round(pedsql_child_total$pedsql_child_total_sum/pedsql_child_total$not_missing_child)
+hist(pedsql_child_total$pedsql_child_total_mean)
 
+table(pedsql_child_total$not_missing_child<(15/2))
 
+table(pedsql_child_total$pedsql_child_total_mean==0)
+
+#add a new collum here with a note saying that we excluded to 50% or more.
+pedsql_child_total$pedsql_child_total_excluded<-NA
+pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_excluded[pedsql_child_total$not_missing_child<(15/2)] <- 1)
+pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_excluded[pedsql_child_total$not_missing_child>=(15/2)] <- 0)
 pedsql_child_total<- within(pedsql_child_total, pedsql_child_total_mean[pedsql_child_total$not_missing_child<(15/2)] <- NA)
+
 pedsql_child_total<-pedsql_child_total[order(-(grepl('pedsql_child_total_mean', names(pedsql_child_total)))+1L)]
 plyr::count(!is.na(pedsql_child_total$pedsql_child_total_mean))
-pedsql_child_total<-as.data.frame(pedsql_child_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_total))])
+pedsql_child_total<-as.data.frame(pedsql_child_total[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_total))])
 
 #physical vars
 #Mean score = Sum of the items over the number of items answered
@@ -96,11 +108,16 @@ pedsql_child_physical$not_missing_child_physical<-rowSums(!is.na(pedsql_child_ph
 pedsql_child_physical$not_missing_child_physical<-pedsql_child_physical$not_missing_child_physical-2
 pedsql_child_physical$pedsql_child_physical_sum<-rowSums(pedsql_child_physical[, grep("walk|run|play|lift|work", names(pedsql_child_physical))], na.rm = TRUE)
 pedsql_child_physical$pedsql_child_physical_mean<-round(pedsql_child_physical$pedsql_child_physical_sum/pedsql_child_physical$not_missing_child_physical)
+
+pedsql_child_physical<-pedsql_child_physical[pedsql_child_physical$not_missing_child>0,]
+pedsql_child_physical$pedsql_child_physical_excluded<-NA
+pedsql_child_physical<- within(pedsql_child_physical, pedsql_child_physical_excluded[pedsql_child_physical$not_missing_child_physical<2.5] <- 1)
+pedsql_child_physical<- within(pedsql_child_physical, pedsql_child_physical_excluded[pedsql_child_physical$not_missing_child_physical>=2.5] <- 0)
 pedsql_child_physical<- within(pedsql_child_physical, pedsql_child_physical_mean[pedsql_child_physical$not_missing_child_physical<2.5] <- NA)
 
 plyr::count(!is.na(pedsql_child_physical$pedsql_child_physical_mean))
 
-pedsql_child_physical<-pedsql_child_physical[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_physical))]
+pedsql_child_physical<-pedsql_child_physical[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_physical))]
 
 # emotion vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -109,10 +126,14 @@ pedsql_child_emotional$not_missing_child_emotional<-rowSums(!is.na(pedsql_child_
 pedsql_child_emotional$not_missing_child_emotional<-pedsql_child_emotional$not_missing_child_emotional-2
 pedsql_child_emotional$pedsql_child_emotional_sum<-rowSums(pedsql_child_emotional[, grep("fear|scared|angry|sad", names(pedsql_child_emotional))], na.rm = TRUE)
 pedsql_child_emotional$pedsql_child_emotional_mean<-round(pedsql_child_emotional$pedsql_child_emotional_sum/pedsql_child_emotional$not_missing_child_emotional)
+pedsql_child_emotional<-pedsql_child_emotional[pedsql_child_emotional$not_missing_child>0,]
+pedsql_child_emotional$pedsql_child_emotional_excluded<-NA
+pedsql_child_emotional<- within(pedsql_child_emotional, pedsql_child_emotional_excluded[pedsql_child_emotional$not_missing_child_emotional<1.5] <- 1)
+pedsql_child_emotional<- within(pedsql_child_emotional, pedsql_child_emotional_excluded[pedsql_child_emotional$not_missing_child_emotional>=1.5] <- 0)
 pedsql_child_emotional<- within(pedsql_child_emotional, pedsql_child_emotional_mean[pedsql_child_emotional$not_missing_child_emotional<1.5] <- NA)
 
 plyr::count(!is.na(pedsql_child_emotional$pedsql_child_emotional_mean))
-pedsql_child_emotional<-pedsql_child_emotional[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_emotional))]
+pedsql_child_emotional<-pedsql_child_emotional[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_emotional))]
 
 # social vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -121,10 +142,14 @@ pedsql_child_social$not_missing_child_social<-rowSums(!is.na(pedsql_child_social
 pedsql_child_social$not_missing_child_social<-pedsql_child_social$not_missing_child_social-2
 pedsql_child_social$pedsql_child_social_sum<-rowSums(pedsql_child_social[, grep("agreement|rejected|bullied", names(pedsql_child_social))], na.rm = TRUE)
 pedsql_child_social$pedsql_child_social_mean<-round(pedsql_child_social$pedsql_child_social_sum/pedsql_child_social$not_missing_child_social)
+pedsql_child_social<-pedsql_child_social[pedsql_child_social$not_missing_child>0,]
+pedsql_child_social$pedsql_child_social_excluded<-NA
+pedsql_child_social<- within(pedsql_child_social, pedsql_child_social_excluded[pedsql_child_social$not_missing_child_social<1.5] <- 1)
+pedsql_child_social<- within(pedsql_child_social, pedsql_child_social_excluded[pedsql_child_social$not_missing_child_social>=1.5] <- 0)
 pedsql_child_social<- within(pedsql_child_social, pedsql_child_social_mean[pedsql_child_social$not_missing_child_social<1.5] <- NA)
 
 plyr::count(!is.na(pedsql_child_social$pedsql_child_social_mean))
-pedsql_child_social<-pedsql_child_social[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_social))]
+pedsql_child_social<-pedsql_child_social[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_social))]
 
 # school vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -133,10 +158,15 @@ pedsql_child_school$not_missing_child_school<-rowSums(!is.na(pedsql_child_school
 pedsql_child_school$not_missing_child_school<-pedsql_child_school$not_missing_child_school-2
 pedsql_child_school$pedsql_child_school_sum<-rowSums(pedsql_child_school[, grep("understand|forget|schoolhomework", names(pedsql_child_school))], na.rm = TRUE)
 pedsql_child_school$pedsql_child_school_mean<-round(pedsql_child_school$pedsql_child_school_sum/pedsql_child_school$not_missing_child_school)
+pedsql_child_school<-pedsql_child_school[pedsql_child_school$not_missing_child>0,]
+
+pedsql_child_school$pedsql_child_school_excluded<-NA
+pedsql_child_school<- within(pedsql_child_school, pedsql_child_school_excluded[pedsql_child_school$not_missing_child_school<1.5] <- 1)
+pedsql_child_school<- within(pedsql_child_school, pedsql_child_school_excluded[pedsql_child_school$not_missing_child_school>=1.5] <- 0)
 pedsql_child_school<- within(pedsql_child_school, pedsql_child_school_mean[pedsql_child_school$not_missing_child_school<1.5] <- NA)
 
 plyr::count(!is.na(pedsql_child_school$pedsql_child_school_mean))
-pedsql_child_school<-pedsql_child_school[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_school))]
+pedsql_child_school<-pedsql_child_school[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_school))]
 
 # psychosocial vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -145,10 +175,15 @@ pedsql_child_psych$not_missing_child_psych<-rowSums(!is.na(pedsql_child_psych))
 pedsql_child_psych$not_missing_child_psych<-pedsql_child_psych$not_missing_child_psych-2
 pedsql_child_psych$pedsql_child_psych_sum<-rowSums(pedsql_child_psych[, grep("understand|forget|schoolhomework|agreement|rejected|bullied|fear|scared|angry|sad", names(pedsql_child_psych))], na.rm = TRUE)
 pedsql_child_psych$pedsql_child_psych_mean<-round(pedsql_child_psych$pedsql_child_psych_sum/pedsql_child_psych$not_missing_child_psych)
+pedsql_child_psych<-pedsql_child_psych[pedsql_child_psych$not_missing_child>0,]
+
+pedsql_child_psych$pedsql_child_psych_excluded<-NA
+pedsql_child_psych<- within(pedsql_child_psych, pedsql_child_psych_excluded[pedsql_child_psych$not_missing_child_psych>=5] <- 0)
+pedsql_child_psych<- within(pedsql_child_psych, pedsql_child_psych_excluded[pedsql_child_psych$not_missing_child_psych<5] <- 1)
 pedsql_child_psych<- within(pedsql_child_psych, pedsql_child_psych_mean[pedsql_child_psych$not_missing_child_psych<5] <- NA)
 
 plyr::count(!is.na(pedsql_child_psych$pedsql_child_psych_mean))
-pedsql_child_psych<-pedsql_child_psych[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_child_psych))]
+pedsql_child_psych<-pedsql_child_psych[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_child_psych))]
 
 # parents vars ------------------------------------------------------------
 pedsql_parent<- pedsql[, grepl("person_id|redcap_event_name|_parent", names(pedsql))]
@@ -158,9 +193,14 @@ pedsql_parent_total$not_missing_parent<-rowSums(!is.na(pedsql_parent_total))
 pedsql_parent_total$not_missing_parent<-pedsql_parent_total$not_missing_parent-2
 pedsql_parent_total$pedsql_parent_total_sum<-rowSums(pedsql_parent_total[, grep("walk|run|play|lift|work|fear|scared|angry|sad|agreement|rejected|bullied|understand|forget|schoolhomework", names(pedsql_parent_total))], na.rm = TRUE)
 pedsql_parent_total$pedsql_parent_total_mean<-round(pedsql_parent_total$pedsql_parent_total_sum/pedsql_parent_total$not_missing_parent)
+pedsql_parent_total<-pedsql_parent_total[pedsql_parent_total$not_missing_parent>0,]
+
+pedsql_parent_total$pedsql_parent_total_excluded<-NA
+pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_excluded[pedsql_parent_total$not_missing_parent>=(15/2)] <- 0)
+pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_excluded[pedsql_parent_total$not_missing_parent<(15/2)] <- 1)
 pedsql_parent_total<- within(pedsql_parent_total, pedsql_parent_total_mean[pedsql_parent_total$not_missing_parent<(15/2)] <- NA)
 
-pedsql_parent_total<-pedsql_parent_total[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_total))]
+pedsql_parent_total<-pedsql_parent_total[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_total))]
 plyr::count(!is.na(pedsql_parent_total$pedsql_parent_total_mean))
 
 # physical vars ------------------------------------------------------------
@@ -171,8 +211,12 @@ pedsql_parent_physical$not_missing_parent_physical<-rowSums(!is.na(pedsql_parent
 pedsql_parent_physical$not_missing_parent_physical<-pedsql_parent_physical$not_missing_parent_physical-2
 pedsql_parent_physical$pedsql_parent_physical_sum<-rowSums(pedsql_parent_physical[, grep("walk|run|play|lift|work", names(pedsql_parent_physical))], na.rm = TRUE)
 pedsql_parent_physical$pedsql_parent_physical_mean<-round(pedsql_parent_physical$pedsql_parent_physical_sum/pedsql_parent_physical$not_missing_parent_physical)
+pedsql_parent_physical<-pedsql_parent_physical[pedsql_parent_physical$not_missing_parent>0,]
+pedsql_parent_physical$pedsql_parent_physical_excluded<-NA
+pedsql_parent_physical<- within(pedsql_parent_physical, pedsql_parent_physical_excluded[pedsql_parent_physical$not_missing_parent_physical<2.5] <- 1)
+pedsql_parent_physical<- within(pedsql_parent_physical, pedsql_parent_physical_excluded[pedsql_parent_physical$not_missing_parent_physical>=2.5] <- 0)
 pedsql_parent_physical<- within(pedsql_parent_physical, pedsql_parent_physical_mean[pedsql_parent_physical$not_missing_parent_physical<2.5] <- NA)
-pedsql_parent_physical<-pedsql_parent_physical[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_physical))]
+pedsql_parent_physical<-pedsql_parent_physical[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_physical))]
 
 
 # emotional vars ------------------------------------------------------------
@@ -182,8 +226,13 @@ pedsql_parent_emotional$not_missing_parent_emotional<-rowSums(!is.na(pedsql_pare
 pedsql_parent_emotional$not_missing_parent_emotional<-pedsql_parent_emotional$not_missing_parent_emotional-2
 pedsql_parent_emotional$pedsql_parent_emotional_sum<-rowSums(pedsql_parent_emotional[, grep("fear|scared|angry|sad", names(pedsql_parent_emotional))], na.rm = TRUE)
 pedsql_parent_emotional$pedsql_parent_emotional_mean<-round(pedsql_parent_emotional$pedsql_parent_emotional_sum/pedsql_parent_emotional$not_missing_parent_emotional)
+pedsql_parent_emotional<-pedsql_parent_emotional[pedsql_parent_emotional$not_missing_parent>0,]
+
+pedsql_parent_emotional$pedsql_parent_emotional_excluded<-NA
+pedsql_parent_emotional<- within(pedsql_parent_emotional, pedsql_parent_emotional_excluded[pedsql_parent_emotional$not_missing_parent_emotional<1.5] <- 1)
+pedsql_parent_emotional<- within(pedsql_parent_emotional, pedsql_parent_emotional_excluded[pedsql_parent_emotional$not_missing_parent_emotional>=1.5] <- 0)
 pedsql_parent_emotional<- within(pedsql_parent_emotional, pedsql_parent_emotional_mean[pedsql_parent_emotional$not_missing_parent_emotional<1.5] <- NA)
-pedsql_parent_emotional<-pedsql_parent_emotional[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_emotional))]
+pedsql_parent_emotional<-pedsql_parent_emotional[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_emotional))]
 
 # social vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -192,8 +241,13 @@ pedsql_parent_social$not_missing_parent_social<-rowSums(!is.na(pedsql_parent_soc
 pedsql_parent_social$not_missing_parent_social<-pedsql_parent_social$not_missing_parent_social-2
 pedsql_parent_social$pedsql_parent_social_sum<-rowSums(pedsql_parent_social[, grep("agreement|rejected|bullied", names(pedsql_parent_social))], na.rm = TRUE)
 pedsql_parent_social$pedsql_parent_social_mean<-round(pedsql_parent_social$pedsql_parent_social_sum/pedsql_parent_social$not_missing_parent_social)
+pedsql_parent_social<-pedsql_parent_social[pedsql_parent_social$not_missing_parent>0,]
+
+pedsql_parent_social$pedsql_parent_social_excluded<-NA
+pedsql_parent_social<- within(pedsql_parent_social, pedsql_parent_social_excluded[pedsql_parent_social$not_missing_parent_social<1.5] <- 1)
+pedsql_parent_social<- within(pedsql_parent_social, pedsql_parent_social_excluded[pedsql_parent_social$not_missing_parent_social>=1.5] <- 0)
 pedsql_parent_social<- within(pedsql_parent_social, pedsql_parent_social_mean[pedsql_parent_social$not_missing_parent_social<1.5] <- NA)
-pedsql_parent_social<-pedsql_parent_social[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_social))]
+pedsql_parent_social<-pedsql_parent_social[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_social))]
 
 # school vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -202,8 +256,13 @@ pedsql_parent_school$not_missing_parent_school<-rowSums(!is.na(pedsql_parent_sch
 pedsql_parent_school$not_missing_parent_school<-pedsql_parent_school$not_missing_parent_school-2
 pedsql_parent_school$pedsql_parent_school_sum<-rowSums(pedsql_parent_school[, grep("understand|forget|schoolhomework", names(pedsql_parent_school))], na.rm = TRUE)
 pedsql_parent_school$pedsql_parent_school_mean<-round(pedsql_parent_school$pedsql_parent_school_sum/pedsql_parent_school$not_missing_parent_school)
+pedsql_parent_school<-pedsql_parent_school[pedsql_parent_school$not_missing_parent>0,]
+
+pedsql_parent_school$pedsql_parent_school_excluded<-NA
+pedsql_parent_school<- within(pedsql_parent_school, pedsql_parent_school_excluded[pedsql_parent_school$not_missing_parent_school<1.5] <- 1)
+pedsql_parent_school<- within(pedsql_parent_school, pedsql_parent_school_excluded[pedsql_parent_school$not_missing_parent_school>=1.5] <- 0)
 pedsql_parent_school<- within(pedsql_parent_school, pedsql_parent_school_mean[pedsql_parent_school$not_missing_parent_school<1.5] <- NA)
-pedsql_parent_school<-pedsql_parent_school[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_school))]
+pedsql_parent_school<-pedsql_parent_school[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_school))]
 
 # psychosocial vars ------------------------------------------------------------
 #Mean score = Sum of the items over the number of items answered
@@ -212,11 +271,17 @@ pedsql_parent_psych$not_missing_parent_psych<-rowSums(!is.na(pedsql_parent_psych
 pedsql_parent_psych$not_missing_parent_psych<-pedsql_parent_psych$not_missing_parent_psych-2
 pedsql_parent_psych$pedsql_parent_psych_sum<-rowSums(pedsql_parent_psych[, grep("understand|forget|schoolhomework|agreement|rejected|bullied|fear|scared|angry|sad", names(pedsql_parent_psych))], na.rm = TRUE)
 pedsql_parent_psych$pedsql_parent_psych_mean<-round(pedsql_parent_psych$pedsql_parent_psych_sum/pedsql_parent_psych$not_missing_parent_psych)
+pedsql_parent_psych<-pedsql_parent_psych[pedsql_parent_psych$not_missing_parent>0,]
+
+pedsql_parent_psych$pedsql_parent_psych_excluded<-NA
+pedsql_parent_psych<- within(pedsql_parent_psych, pedsql_parent_psych_excluded[pedsql_parent_psych$not_missing_parent_psych<5] <- 1)
+pedsql_parent_psych<- within(pedsql_parent_psych, pedsql_parent_psych_excluded[pedsql_parent_psych$not_missing_parent_psych>=5] <- 0)
 pedsql_parent_psych<- within(pedsql_parent_psych, pedsql_parent_psych_mean[pedsql_parent_psych$not_missing_parent_psych<5] <- NA)
-pedsql_parent_psych<-pedsql_parent_psych[, grepl("person_id|redcap_event_name|mean|missing|sum", names(pedsql_parent_psych))]
+pedsql_parent_psych<-pedsql_parent_psych[, grepl("person_id|redcap_event_name|mean|missing|sum|excluded", names(pedsql_parent_psych))]
 
 # merge subscores back to raw data ----------------------------------------
 pedsql<-list(pedsql, pedsql_child_total,pedsql_child_physical,pedsql_child_emotional,pedsql_child_social,pedsql_child_school,pedsql_child_psych,pedsql_parent_total,pedsql_parent_physical,pedsql_parent_emotional,pedsql_parent_social,pedsql_parent_school,pedsql_parent_psych) %>% reduce(full_join, by = c("person_id","redcap_event_name"))
+excluded<-pedsql[,grepl("excluded",names(pedsql))]; lapply(excluded, table)
 
 # remove all missing collumns ------------------------------------------------------------
 pedsql<-pedsql[, !grepl("complete|comments", names(pedsql))]
@@ -273,7 +338,7 @@ pedsql_wide$pairs_fg<-ifelse(pedsql_wide$elapsed.time_visit_g_arm_1>=14 & pedsql
 pedsql_wide$pairs_gh<-ifelse(pedsql_wide$elapsed.time_visit_h_arm_1>=14 & pedsql_wide$elapsed.time_visit_h_arm_1<=84 & pedsql_wide$acute_visit_g_arm_1==1 & !is.na(pedsql_wide$pedsql_date_visit_g_arm_1) & pedsql_wide$acute_visit_h_arm_1==0 & !is.na(pedsql_wide$pedsql_date_visit_h_arm_1), 1, 0)    
 
 #make var for acute and follow up measures at acute visit  based on acute. 
-pedsql_pairs<- pedsql_wide[, grepl("person_id|pairs|mean|acute|elapsed.time|int_date", names(pedsql_wide) ) ]
+pedsql_pairs<- pedsql_wide[, grepl("person_id|pairs|mean|acute|elapsed.time|int_date|excluded", names(pedsql_wide) ) ]
 pedsql_pairs<- pedsql_pairs[, !grepl("u24", names(pedsql_pairs))]
 pedsql_pairs$pair_sum <- as.integer(rowSums(pedsql_pairs[ , grep("pairs" , names(pedsql_pairs))], na.rm =TRUE))
 #remove acute and put in seperate data frame
@@ -293,11 +358,12 @@ pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_b_arm_1', names(pedsql_pairs)))+
 pedsql_pairs<-pedsql_pairs[order(-(grepl('visit_a_arm_1', names(pedsql_pairs)))+1L)]
 pedsql_pairs<-pedsql_pairs[order(-(grepl('patient_informatio_arm_1', names(pedsql_pairs)))+1L)]
 table(pedsql_pairs$pair_sum)
+names(pedsql_pairs)
 #reshape
 #v.names=c("elapsed.time","int_date","pedsql_child_emotional_mean", "pedsql_child_physical_mean","pedsql_child_psych_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_total_mean", "pedsql_parent_emotional_mean", "pedsql_parent_physical_mean","pedsql_parent_psych_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean") 
-v.names=c("elapsed.time","int_date","pedsql_child_emotional_mean", "pedsql_child_physical_mean", "pedsql_child_psych_mean", "pedsql_child_school_mean", "pedsql_child_social_mean","pedsql_child_total_mean","pedsql_parent_emotional_mean","pedsql_parent_physical_mean", "pedsql_parent_psych_mean","pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_total_mean")
+v.names=c("elapsed.time","int_date","pedsql_child_emotional_excluded","pedsql_child_emotional_mean", "pedsql_child_physical_excluded","pedsql_child_physical_mean", "pedsql_child_psych_excluded","pedsql_child_psych_mean", "pedsql_child_school_excluded","pedsql_child_school_mean", "pedsql_child_social_excluded","pedsql_child_social_mean","pedsql_child_total_excluded","pedsql_child_total_mean","pedsql_parent_emotional_excluded","pedsql_parent_emotional_mean","pedsql_parent_physical_excluded","pedsql_parent_physical_mean", "pedsql_parent_psych_excluded","pedsql_parent_psych_mean","pedsql_parent_school_excluded","pedsql_parent_school_mean", "pedsql_parent_social_excluded", "pedsql_parent_social_mean", "pedsql_parent_total_excluded","pedsql_parent_total_mean")
 times = c("visit_a_arm_1", "visit_b_arm_1", "visit_c_arm_1", "visit_d_arm_1", "visit_e_arm_1", "visit_f_arm_1", "visit_g_arm_1", "visit_h_arm_1")
-pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying=c(1:112),  direction = "long", timevar = "redcap_event_name", times = times, v.names=v.names )
+pedsql_pairs_long<-reshape(pedsql_pairs, idvar = "person_id", varying=c(1:208),  direction = "long", timevar = "redcap_event_name", times = times, v.names=v.names )
 colnames<-colnames(pedsql_pairs)
 
 # #merge acute id's back to database -------------------------------------------------------------------
@@ -305,28 +371,28 @@ colnames<-colnames(pedsql_pairs)
       pedsql_pairs_long <- merge(acute_long, pedsql_pairs_long,  by=c("person_id", "redcap_event_name"), all = TRUE)
       table(pedsql_pairs_long$pairs_ab==1)
 
-
       pedsql_pairs_long_ab<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_ab==1 & pedsql_pairs_long$redcap_event_name=="visit_a_arm_1")| (pedsql_pairs_long$pairs_ab==1 & pedsql_pairs_long$redcap_event_name=="visit_b_arm_1")),]
-      pedsql_pairs_long_ab <- pedsql_pairs_long_ab[, grepl("person_id|redcap|mean|acute|_ab|elapsed.time", names(pedsql_pairs_long_ab) ) ]
+      pedsql_pairs_long_ab <- pedsql_pairs_long_ab[, grepl("person_id|redcap|mean|acute|_ab|elapsed.time|excluded", names(pedsql_pairs_long_ab) ) ]
 
       pedsql_pairs_long_bc<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_bc==1 & pedsql_pairs_long$redcap_event_name=="visit_b_arm_1")|(pedsql_pairs_long$pairs_bc==1 & pedsql_pairs_long$redcap_event_name=="visit_c_arm_1")),]
-      pedsql_pairs_long_bc <- pedsql_pairs_long_bc[, grepl("person_id|redcap|mean|acute|_bc|elapsed.time", names(pedsql_pairs_long_bc) ) ]
+      pedsql_pairs_long_bc <- pedsql_pairs_long_bc[, grepl("person_id|redcap|mean|acute|_bc|elapsed.time|excluded", names(pedsql_pairs_long_bc) ) ]
 
       pedsql_pairs_long_cd<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_cd==1 & pedsql_pairs_long$redcap_event_name=="visit_c_arm_1")|(pedsql_pairs_long$pairs_cd==1 & pedsql_pairs_long$redcap_event_name=="visit_d_arm_1")),]
-      pedsql_pairs_long_cd <- pedsql_pairs_long_cd[, grepl("person_id|redcap|mean|acute|_cd|elapsed.time", names(pedsql_pairs_long_cd ) ) ]
+      pedsql_pairs_long_cd <- pedsql_pairs_long_cd[, grepl("person_id|redcap|mean|acute|_cd|elapsed.time|excluded", names(pedsql_pairs_long_cd ) ) ]
 
       pedsql_pairs_long_de<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_de==1 & pedsql_pairs_long$redcap_event_name=="visit_d_arm_1")|(pedsql_pairs_long$pairs_de==1 & pedsql_pairs_long$redcap_event_name=="visit_e_arm_1")),]
-      pedsql_pairs_long_de <- pedsql_pairs_long_de[, grepl("person_id|redcap|mean|acute|_de|elapsed.time", names(pedsql_pairs_long_de ) ) ]
+      pedsql_pairs_long_de <- pedsql_pairs_long_de[, grepl("person_id|redcap|mean|acute|_de|elapsed.time|excluded", names(pedsql_pairs_long_de ) ) ]
 
       pedsql_pairs_long_ef<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_ef==1 & pedsql_pairs_long$redcap_event_name=="visit_e_arm_1")|(pedsql_pairs_long$pairs_ef==1 & pedsql_pairs_long$redcap_event_name=="visit_f_arm_1")),]
-      pedsql_pairs_long_ef <- pedsql_pairs_long_ef[, grepl("person_id|redcap|mean|acute|_ef|elapsed.time", names(pedsql_pairs_long_ef ) ) ]
+      pedsql_pairs_long_ef <- pedsql_pairs_long_ef[, grepl("person_id|redcap|mean|acute|_ef|elapsed.time|excluded", names(pedsql_pairs_long_ef ) ) ]
 
       pedsql_pairs_long_fg<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_fg==1 & pedsql_pairs_long$redcap_event_name=="visit_f_arm_1")|(pedsql_pairs_long$pairs_fg==1 & pedsql_pairs_long$redcap_event_name=="visit_g_arm_1")),]
-      pedsql_pairs_long_fg <- pedsql_pairs_long_fg[, grepl("person_id|redcap|mean|acute|_fg|elapsed.time", names(pedsql_pairs_long_fg ) ) ]
+      pedsql_pairs_long_fg <- pedsql_pairs_long_fg[, grepl("person_id|redcap|mean|acute|_fg|elapsed.time|excluded", names(pedsql_pairs_long_fg ) ) ]
 
       pedsql_pairs_long_gh<-pedsql_pairs_long[which((pedsql_pairs_long$pairs_gh==1 & pedsql_pairs_long$redcap_event_name=="visit_g_arm_1")|(pedsql_pairs_long$pairs_gh==1 & pedsql_pairs_long$redcap_event_name=="visit_h_arm_1")),]
-      pedsql_pairs_long_gh <- pedsql_pairs_long_gh[, grepl("person_id|redcap|mean|acute|_gh|elapsed.time", names(pedsql_pairs_long_gh ) ) ]
+      pedsql_pairs_long_gh <- pedsql_pairs_long_gh[, grepl("person_id|redcap|mean|acute|_gh|elapsed.time|excluded", names(pedsql_pairs_long_gh ) ) ]
 # pair the acute and conv data -------------------------------------------------------------
+      pedsql_pairs_long_bind$acute
       pedsql_pairs_long_bind<-rbind.fill(pedsql_pairs_long_ab, pedsql_pairs_long_bc, pedsql_pairs_long_cd , pedsql_pairs_long_de, pedsql_pairs_long_ef, pedsql_pairs_long_fg, pedsql_pairs_long_gh)      
       #keep unique person ids and event names.> df[!duplicated(df[1:3]),]
         pedsql_pairs_long_bind<-pedsql_pairs_long_bind[!duplicated(pedsql_pairs_long_bind[1:2]), ]
