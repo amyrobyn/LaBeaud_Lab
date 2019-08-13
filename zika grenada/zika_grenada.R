@@ -5,18 +5,76 @@ library(tidyverse)
 library(rgdal)
 library(tableone)
 library(REDCapR)
-library(expss)
 # get data ----------------------------------------------------------------
-
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
 Redcap.token <- readLines("Redcap.token.zika.txt") # Read API token from folder
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-#ds <- redcap_read(  redcap_uri  = REDcap.URL,  token   = Redcap.token,  batch_size = 100)$data
+ds <- redcap_read(redcap_uri  = REDcap.URL,  token   = Redcap.token,  batch_size = 100)$data
 
+table(ds$zikv_ct)
+table(ds$denv_ct)
+table(ds$chikv_ct)
+
+table(ds$result_denv_urine_mom)
+table(ds$result_denv_serum_mom)
+
+ds$denv_pinsky<-NA
+ds <- within(ds, denv_pinsky[ds$result_denv_serum_mom==0] <- 0)
+ds <- within(ds, denv_pinsky[ds$result_denv_serum_mom==0] <- 0)
+
+ds <- within(ds, denv_pinsky[ds$result_denv_serum_mom==1] <- 1)
+ds <- within(ds, denv_pinsky[ds$result_denv_urine_mom==1] <- 1)
+table(ds$denv_pinsky)
+
+ds$denv_tetracore<-NA
+ds <- within(ds, denv_tetracore[ds$denv_ct==0] <- 0)
+ds <- within(ds, denv_tetracore[ds$denv_ct>0] <- 1)
+table(ds$denv_tetracore)
+
+table(ds$denv_tetracore, ds$denv_pinsky, exclude = NULL)
+
+ds$zikv_pinsky<-NA
+ds <- within(ds, zikv_pinsky[ds$result_zikv_serum_mom==0] <- 0)
+ds <- within(ds, zikv_pinsky[ds$result_zikv_serum_mom==0] <- 0)
+
+ds <- within(ds, zikv_pinsky[ds$result_zikv_serum_mom==1] <- 1)
+ds <- within(ds, zikv_pinsky[ds$result_zikv_urine_mom==1] <- 1)
+table(ds$zikv_pinsky)
+
+ds$zikv_tetracore<-NA
+ds <- within(ds, zikv_tetracore[ds$zikv_ct==0] <- 0)
+ds <- within(ds, zikv_tetracore[ds$zikv_ct>0] <- 1)
+table(ds$zikv_tetracore)
+
+table(ds$zikv_tetracore, ds$zikv_pinsky, exclude = NULL)
+
+ds$chikv_pinsky<-NA
+ds <- within(ds, chikv_pinsky[ds$result_chikv_serum_mom==0] <- 0)
+ds <- within(ds, chikv_pinsky[ds$result_chikv_serum_mom==0] <- 0)
+
+ds <- within(ds, chikv_pinsky[ds$result_chikv_serum_mom==1] <- 1)
+ds <- within(ds, chikv_pinsky[ds$result_chikv_urine_mom==1] <- 1)
+table(ds$chikv_pinsky)
+
+ds$chikv_tetracore<-NA
+ds <- within(ds, chikv_tetracore[ds$chikv_ct==0] <- 0)
+ds <- within(ds, chikv_tetracore[ds$chikv_ct>0] <- 1)
+table(ds$chikv_tetracore)
+
+table(ds$chikv_tetracore, ds$chikv_pinsky, exclude = NULL)
+
+
+
+
+table(ds$result_denv_urine_mom,ds$result_denv_serum_mom, exclude = NULL)
+9/(116+9+25+1)
+table(ds$result_zikv_urine_mom,ds$result_zikv_serum_mom, exclude = NULL)
+7/(121+22+4+3+1)
+(109/141)*100
 currentDate <- Sys.Date() 
 FileName <- paste("zika_grenada",currentDate,".rda",sep="") 
-#save(ds,file=FileName)
-load("zika_grenada 2018-04-26 .rda")
+save(ds,file=FileName)
+load("zika_grenada 2018-05-28 .rda")
 table(ds$redcap_event_name)
 table(ds$redcap_repeat_instance)
 
@@ -351,11 +409,23 @@ total <- within(total, result_zikv_pcr_mom [total$result_zikv_urine_mom==0] <- 0
 total <- within(total, result_zikv_pcr_mom[total$result_zikv_serum_mom==0] <- 0)
 total <- within(total, result_zikv_pcr_mom[total$result_zikv_urine_mom==1] <- 1)
 total <- within(total, result_zikv_pcr_mom[total$result_zikv_serum_mom==1] <- 1)
-table(total$result_zikv_pcr_mom)
+
+cro(total$result_zikv_pcr_mom,total$result_zikv_igg_pgold.x)
+cro(total$result_denv_pcr_mom,total$result_denv_igg_pgold.x)
+
 # pgold moms ----------------------------------------------------------------
 cro(total$result_zikv_igg_pgold.x)
 cro(total$result_denv_igg_pgold.x)
-cro(total$result_denv_igg_pgold.x,total$result_zikv_igg_pgold.x)
+cro_tpct(total$result_denv_igg_pgold.x,total$result_zikv_igg_pgold.x)
+
+cro_cpct(total$result_avidity_zikv_igg_pgold.x,total$result_zikv_igg_pgold.x)
+cro(total$result_avidity_zikv_igg_pgold.x,total$result_zikv_igg_pgold.x)
+
+cro_cpct(total$result_avidity_denv_igg_pgold.x,total$result_denv_igg_pgold.x)
+cro(total$result_avidity_denv_igg_pgold.x,total$result_denv_igg_pgold.x)
+
+cro(total$result_denv_igg_pgold.x,total$result_denv_igg_pgold.y)
+cro_cpct(total$result_denv_igg_pgold.y)
 
 cro(total$result_zikv_igg_pgold.x)
 cro(total$result_denv_igg_pgold.x)
@@ -428,7 +498,11 @@ print(tableOne,
 ## List numerically coded categorical variables
 total$parish<-as.factor(total$parish)
 total$race<-as.factor(total$race)
-total$race<-as.factor(total$gender)
+table(total$race)
+
+total$race<-as.factor(total$race)
+table(total$race)
+
 factorVars <- c("parish","race", "gender",  "child_delivery", "delivery_type", "outcome_of_delivery",
                 "opv_vaccine", "vac_utd", 
                 "color___1", "color___2", "color___3", "color___4", "color___5", "color___6",
@@ -468,4 +542,10 @@ print(tableOne,
 #20% of whom will be symptomatic with an estimated 50% MTCT rate, we will have power of 90% to detect 
 #a difference if the rate is 25% for asymptomatic mothers and 75% if the rate is 30% for asymptomatics.
 
-write.csv(total, "total.csv")
+write.csv(total, "total.csv", na="")
+total$mom_zikv_exposed
+
+tableOne <- CreateTableOne(vars = "zhc", strata = "mom_zikv_exposed", data = total)
+print(tableOne, exact = "zhc",    quote = TRUE)
+
+table(total$result_zikv_igg_pgold.x)
