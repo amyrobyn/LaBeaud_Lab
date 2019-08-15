@@ -7,13 +7,18 @@
   AIC$aic_pe_tender <- factor(AIC$aic_pe_tender, levels = c(1, 0))
   AIC$infected_denv_stfd <- factor(AIC$infected_denv_stfd, levels = c(1, 0))
   
+  #AIC$strata_all <- factor(AIC$strata_all, levels = c("malaria_pos_denv_pos", "malaria_neg_denv_pos", "malaria_pos_denv_neg","malaria_neg_denv_neg"))
+  
   #CMH for all significant symptoms ---------------------------------------------
   attach(AIC)
+#  install.packages("questionr")
+  library(questionr)
+  odds.ratio(table(malaria,aic_symptom_dizziness), level =.99)
+  apply(table(malaria,aic_symptom_dizziness,infected_denv_stfd), 3, odds.ratio,level=.99)
+  mantelhaen.test(table(malaria,aic_symptom_dizziness,infected_denv_stfd),conf.level = 0.99)
   
-  odds.ratio(table(infected_denv_stfd,aic_symptom_dizziness))
-  apply(table(infected_denv_stfd,aic_symptom_dizziness,malaria), 3, odds.ratio)
   mantelhaen.test(table(infected_denv_stfd,aic_symptom_dizziness,malaria))
-
+  
   odds.ratio(table(infected_denv_stfd,aic_pe_decreased_strength))
   apply(table(infected_denv_stfd,aic_pe_decreased_strength,malaria), 3, odds.ratio)
   mantelhaen.test(table(infected_denv_stfd,aic_pe_decreased_strength,malaria))
