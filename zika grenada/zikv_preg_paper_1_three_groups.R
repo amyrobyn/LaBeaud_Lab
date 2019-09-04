@@ -11,7 +11,7 @@ currentDate <- Sys.Date()
 FileName <- paste("zika",currentDate,".rda",sep=" ") 
 #save(ds,file=FileName)
 
-load("zika 2019-08-21 .rda")
+load("zika 2019-08-28 .rda")
 #load(FileName)
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
 
@@ -54,6 +54,8 @@ names(data30)[names(data30) == 'redcap_repeat_instance.30'] <- 'redcap_repeat_in
 
 child <- merge(datainfant, data12, by = c("mother_record_id","redcap_repeat_instance"), all.x=T)
 child <- merge(child, data24, by = c("mother_record_id","redcap_repeat_instance"), all.x=T)
+child <- merge(child, data24, by = c("mother_record_id","redcap_repeat_instance"), all.x=T)
+
 #child <- merge(child, data27, by = c("mother_record_id","redcap_repeat_instance"), all.x=T)
 #child <- merge(child, data30, by = c("mother_record_id","redcap_repeat_instance"), all.x=T)
 ds2 <- merge(dataMoms, child, by = "mother_record_id", suffixes = c("",""))
@@ -297,118 +299,10 @@ write.csv(sup.table1, file = "sup.table1.csv")
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance==1] <- "C1")
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance==2] <- "C2")
 #recalculate all the zscores. the nurses did not fill these out each time. 
-    #source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/igrowup_longitudinal.R")
-
-    child_outcome_vars<-grep("zlen|zhc|zwei|zwfl|mean",names(ds2),value = T)
-    child_outcome_vars<-grep(".12|.pn",child_outcome_vars,value = T)
-    child_outcome_vars<-grep("cognitive|motor|language|height",child_outcome_vars,value = T,invert = T)
-    child_outcome_vars2<-c(child_outcome_vars,"mother_record_id","redcap_repeat_instance","zikv_exposed_mom")
-    growth<-ds2[,child_outcome_vars2]
-    growth<-growth[order(-(grepl('zhc', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('mic_nurse', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('zwei', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('zlen', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('zwfl', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('mean_hc', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('mean_length', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('mean_weight', names(growth)))+1L)]
-    growth<-growth[order(-(grepl('.pn', names(growth)))+1L)]
-    library(ggplot2)
-    table(is.na(growth$mean_hc.pn),is.na(growth$mean_hc_2.12))
-    hist(growth$mean_hc.pn)
-    hist(growth$mean_hc_2.12)
-    v.names  <-c("mean_weight","mean_length","mean_hc","zwfl","zlen","zwei","zhc")     
-    growth_long<-reshape(growth, idvar = c("mother_record_id","redcap_repeat_instance"), varying = c(1:14),  direction = "long", timevar = "visit", times = c(".pn", ".12"), v.names=v.names)
-    table(is.na(growth_long$mean_length),growth_long$visit)
     
-    ds2$zlen_pn_12<-ds2$zlen_2.12-ds2$zlen.pn
-    plot(as.factor(ds2$zikv_exposed_mom),ds2$zlen_pn_12)
-    is_outlier <- function(x) {
-      return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
-    }
-    growth_long %>% 
-      filter(!is.na(growth_long$zlen))%>%
-      group_by(zikv_exposed_mom) %>%
-      mutate(outlier=ifelse(is_outlier(zlen),mother_record_id,as.numeric(NA))) %>%
-      ggplot(aes(x=factor(zikv_exposed_mom), zlen)) + 
-      geom_boxplot(outlier.colour = NA) +
-      ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
+    source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/igrowup_longitudinal.R")
     
-    growth_long %>% 
-      filter(!is.na(growth_long$zwfl))%>%
-      group_by(zikv_exposed_mom) %>%
-      mutate(outlier=ifelse(is_outlier(zwfl),mother_record_id,as.numeric(NA))) %>%
-      ggplot(aes(x=factor(zikv_exposed_mom), zwfl)) + 
-      geom_boxplot(outlier.colour = NA) +
-      ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
-
-    growth_long %>% 
-      filter(!is.na(growth_long$zhc))%>%
-      group_by(zikv_exposed_mom) %>%
-      mutate(outlier=ifelse(is_outlier(zhc),mother_record_id,as.numeric(NA))) %>%
-      ggplot(aes(x=factor(zikv_exposed_mom), zhc)) + 
-      geom_boxplot(outlier.colour = NA) +
-      ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
-
-    growth_long %>% 
-      filter(!is.na(growth_long$zwei))%>%
-      group_by(zikv_exposed_mom) %>%
-      mutate(outlier=ifelse(is_outlier(zwei),mother_record_id,as.numeric(NA))) %>%
-      ggplot(aes(x=factor(zikv_exposed_mom), zwei)) + 
-      geom_boxplot(outlier.colour = NA) +
-      ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
-        
-    child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2,strata = "zikv_exposed_mom")
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
-    write.csv(child_outcomes, file = "child_growth_strata.csv")
-    child_outcomes <- CreateTableOne(vars = child_outcome_vars, data = ds2[!is.na(ds2$zikv_exposed_mom),])
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
-    write.csv(child_outcomes, file = "child_growth.csv")
-    
-# define normal/abnormal --------------------------------------------------------------------
-    zscores<-grep("zlen|zhc|zbmi|zwei|zwfl",names(ds2),value = T)
-    abnormal<-function(x) ifelse(ds2[x] >= 2|ds2[x] <= -2, 1, ifelse(ds2[x] > -2 & ds2[x] < 2,0,NA))
-    zscores_matrix<-lapply(zscores, abnormal)
-    
-    rename<-function(x) paste(x,"abnormal",sep=".")
-    zscores<-lapply(zscores, rename)
-    zscores_matrix<-as.data.frame(zscores_matrix)
-    colnames(zscores_matrix)<-zscores
-    ds2<-cbind(ds2,zscores_matrix)
-    ds2$zhc_2.12.abnormal
-    ds2$zhc.pn.abnormal
-    
-    zscores_matrix$zhc_2.12.abnormal
-    ds2$mic_nurse_2.12<-as.numeric(as.factor(ds2$mic_nurse_2.12))-1
-    child_outcomes.12<-grep(".12",names(ds2),value = T)
-    child_outcomes.12<-grep("z|mic",child_outcomes.12,value = T)
-    child_outcomes.12<-grep("abnormal|mic",child_outcomes.12,value = T)
-    ds2$sum_growth_Outcomes_abnormal.12<-rowSums(ds2[c("zhc_2.12.abnormal", "zlen_2.12.abnormal",  "zwei_2.12.abnormal" , "zwfl_2.12.abnormal" , "zlen_pn_12.abnormal")],na.rm = T)
-    ds2 <- within(ds2, sum_growth_Outcomes_abnormal.12[is.na(ds2$zhc_2.12.abnormal)&is.na(ds2$zlen_2.12.abnormal)&is.na(ds2$zwei_2.12.abnormal)&is.na(ds2$zlen_pn_12.abnormal)] <- NA)
-    table(ds2$zikv_exposed_mom,ds2$sum_growth_Outcomes_abnormal.12,exclude = NULL)
-    
-    ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal.12)) + geom_boxplot() 
-    
-    child_outcomes.pn<-grep(".pn",zscores,value = T)
-    child_outcomes.pn<-grep(".abnormal|mic",child_outcomes.pn,value = T)
-    
-    ds2$sum_growth_Outcomes_abnormal.pn<-rowSums(ds2[c("zbmi.pn.abnormal",    "zhc.pn.abnormal" ,    "zlen.pn.abnormal",    "zwei.pn.abnormal"    ,"zwfl.pn.abnormal")],na.rm = T)
-    ds2 <- within(ds2, sum_growth_Outcomes_abnormal.pn[is.na(ds2$zbmi.pn.abnormal)&is.na(ds2$zhc.pn.abnormal)&is.na(ds2$zlen.pn.abnormal)&is.na(ds2$zwei.pn.abnormal)&is.na(ds2$zwfl.pn.abnormal)] <- NA)
-    table(ds2$zikv_exposed_mom,ds2$sum_growth_Outcomes_abnormal.pn,exclude = NULL)
-    
-    ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal.pn)) + geom_boxplot() 
-
-    child_outcomes<-grep("z|mic|mir|sum_growth_Outcomes_abnormal",names(ds2),value = T)
-    child_outcomes<-grep("abnormal|mic|mir|sum_growth_Outcomes_abnormal",child_outcomes,value = T)
-    child_outcomes_vars<-grep("pn|12",child_outcomes,value = T)
-    
-    child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2,strata = "zikv_exposed_mom",factorVars = child_outcomes_vars)
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,cramVars=child_outcomes_vars)
-    write.csv(child_outcomes, file = "child_growth_abnormal_strata.csv")
-    child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2[!is.na(ds2$zikv_exposed_mom),],factorVars = child_outcomes_vars)
-    child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,cramVars=child_outcomes_vars)
-    write.csv(child_outcomes, file = "child_growth_abnormal.csv")
-    
+#define substance use generally.
     
     ds2$substance_use<-NA
     ds2 <- within(ds2, substance_use[ds2$z_alcohol.24=="No"|ds2$z_drugs.24=="No"|ds2$z_smoking.24=="No"] <- "no")
@@ -422,7 +316,7 @@ write.csv(sup.table1, file = "sup.table1.csv")
     
     ds2$zikv_exposed_mom<-  as.factor(ds2$zikv_exposed_mom)
     levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposed_during_pregnancy"] <- "Probably ZIKV Infected During Pregnancy"
-    levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_possible_during_pregnancy"] <- "Possiblely ZIKV Infected During Pregnancy"
+    levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_possible_during_pregnancy"] <- "Possibly ZIKV Infected During Pregnancy"
     levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_during_pregnancy"] <- "Not ZIKV Infected"
 
   ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all = T)
@@ -488,8 +382,8 @@ tiff("oxnda_mean_bygroup.tiff",width = 6000,height = 3000,units = "px")
     geom_boxplot(size=3) +
     stat_smooth(method="lm", se=FALSE)+ 
     ggtitle("Plot of mean oxnda score by maternal occupation (10-18 months)\n")+ 
-    stat_compare_means(size=30,bracket.size = 4,comparisons = list(c("Not ZIKV Infected","Possiblely ZIKV Infected During Pregnancy"),
-                                                  c("Possiblely ZIKV Infected During Pregnancy","Probably ZIKV Infected During Pregnancy"),
+    stat_compare_means(size=30,bracket.size = 4,comparisons = list(c("Not ZIKV Infected","Possibly ZIKV Infected During Pregnancy"),
+                                                  c("Possibly ZIKV Infected During Pregnancy","Probably ZIKV Infected During Pregnancy"),
                                                   c("Probably ZIKV Infected During Pregnancy","Not ZIKV Infected") )) + 
     stat_compare_means(size=30,label.y = 4.5)+
   labs(title = "Plot of mean oxnda score by age:10-18 months\n", 
@@ -498,8 +392,11 @@ tiff("oxnda_mean_bygroup.tiff",width = 6000,height = 3000,units = "px")
 dev.off()
 
   hist(ds2_oxnda_10_18$Mean_OXNDA_score,breaks = 50)
+  ggplot(ds2_oxnda_10_18,aes(x=Mean_OXNDA_score))+geom_histogram(bins=100)+facet_wrap(~zikv_exposed_mom)+theme_bw()
+  
 
-  ggplot(data=ds2_oxnda_10_18, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+facet_grid("zikv_exposed_mom")
+  ggplot(data=ds2_oxnda_10_18, aes(x=age.at.visit, y=Mean_OXNDA_score,color=perc_responses_completed)) + geom_point() + stat_smooth(method="lm", se=FALSE)+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 10))
+
 #table one of oxnda outcomes all.
 #  install.packages("tableone")
 #  install.packages("haven")
@@ -542,50 +439,39 @@ dev.off()
 
 # model -------------------------------------------------------------------
 
-  summary(glm(Mean_OXNDA_score~zikv_exposed_mom+age.at.visit+mom_age_delivery+gender.pn+gestational_weeks_2_2.12+education.mom.cat+monthly_income.mom+parish.mom+breastfeed.12-1,family = gaussian,data = ds2_oxnda_10_18))
-  table(ds2_oxnda_10_18$monthly_income.mom)
-  
-  oxnda_model1<-R2BayesX::bayesx(Mean_OXNDA_score~as.factor(zikv_exposed_mom)+
-                                   perc_responses_completed+
-                                   as.factor(breastfeed.12)+
-                                   #as.factor(z_alcohol.24)+
-                                   monthly_income.mom +
-                                   as.factor(gender.pn)+
-                                   as.factor(parish.mom)+
-                                   as.factor(occupation.mom)+
-                                   as.factor(latrine_type.mom)+
-                                   mom_age_delivery+
-                                   as.factor(education.mom.cat)+
-                                   gestational_weeks_2_2.12+
-                                   age.at.visit,
-                                  data=ds2_oxnda_10_18,
-                                 method="REML", 
-                                 family="gaussian",
-                                 na.rm=T)
-  plot(oxnda_model1)
-  summary(oxnda_model1)
-  
-oxnda_model2<-R2BayesX::bayesx(Mean_OXNDA_score~as.factor(zikv_exposed_mom)+
-                                  sx(perc_responses_completed,bs="ps")+
-                                  as.factor(breastfeed.12)+
-                                   #as.factor(z_alcohol.24)+
-                                   as.factor(monthly_income.mom)+
-                                   as.factor(gender.pn)+
-                                   as.factor(parish.mom)+
-                                   as.factor(occupation.mom)+
-                                   as.factor(latrine_type.mom)+
-                                   sx(mom_age_delivery,bs = "ps")+
-                                   as.factor(education.mom.cat)+
-                                   sx(gestational_weeks_2_2.12,bs = "ps")+
-                                   sx(age.at.visit,bs = "ps"),
-                                 data=ds2_oxnda_10_18,
-                                 method="REML", 
-                                 family="gaussian",
-                                 na.rm=T)
-  
-  plot(oxnda_model2)
-  summary(oxnda_model2)
-  
+  lab <- c("Maternal Exposure Category", "Child age (months)", "Maternal age at delivery (years)", "Child gender", "gestational age at delivery (weeks)","Highest Maternal educaton","Household monthly income","Parish of residence","Child Breastfed")
+  labdep <- c("Mean OXNDA score")  
+
+  library(sjPlot)
+  library(sjlabelled)
+  library(sjmisc)
+  library(ggplot2)
+theme_set(theme_sjplot(base_size = 20,base_family = ""))
+set_label(ds2_oxnda_10_18$zikv_exposed_mom) <- "Mean OXNDA score"
+set_label(ds2_oxnda_10_18$breastfeed.12) <- "Child Breastfed"
+table(ds2_oxnda_10_18$breastfeed.12)
+
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, monthly_income.mom[ds2_oxnda_10_18$monthly_income.mom=="Under $1000 EC"] <- 0)
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, monthly_income.mom[ds2_oxnda_10_18$monthly_income.mom=="$1,001-2,000 EC"] <- 1)
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, monthly_income.mom[ds2_oxnda_10_18$monthly_income.mom=="$2,001-3000 EC"] <- 2)
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, monthly_income.mom[ds2_oxnda_10_18$monthly_income.mom=="Over $3000 EC"] <- 3)
+ds2_oxnda_10_18$monthly_income.mom <- set_labels(ds2_oxnda_10_18$monthly_income.mom, labels = c("<1000", "1,001-2,000","2,001-3000",">3000"))
+
+model1<-glm(Mean_OXNDA_score~zikv_exposed_mom+age.at.visit+mom_age_delivery+gender.pn+gestational_weeks_2_2.12+education.mom.cat+monthly_income.mom+parish.mom+breastfeed.12-1,family = gaussian,data = ds2_oxnda_10_18)
+
+model2<-glm(Mean_OXNDA_score~zikv_exposed_mom+age.at.visit+mom_age_delivery+gender.pn+gestational_weeks_2_2.12+education.mom.cat+monthly_income.mom+parish.mom+breastfeed.12,family = gaussian,data = ds2_oxnda_10_18)
+
+tiff(filename = "glm_model2_estimates.tif",width = 2000,height=3000,units="px",family = "sans",bg="white",pointsize = 12,res=300)
+plot_model(model2,
+           vline.color = "red",
+           #sort.est = TRUE,
+           show.values = TRUE,
+           value.offset = .3,
+           show.reflvl =T)
+dev.off()
+
+tab_model(model1,model2,show.reflvl =T)
+
 # bivariate analysis ------------------------------------------------------
 
   #all children with >50% responses? 
