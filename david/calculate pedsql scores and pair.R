@@ -317,6 +317,14 @@ pedsqlvar<-grep("mean|sum", names(pedsql_all_coinfection), value = TRUE)
 pedsql_all_coinfection$strata_acute<-paste(pedsql_all_coinfection$strata, pedsql_all_coinfection$acute, sep="")
 pedsql_all_coinfection<- within(pedsql_all_coinfection, strata_acute[strata_acute =="NA1"|strata_acute =="NA0"|strata_acute =="NANA"] <- NA)
 pedsql_all_coinfection_acute<-pedsql_all_coinfection[which(pedsql_all_coinfection$acute==1)  , ]
+
+library(ggplot2)
+ggplot(data=pedsql_all_coinfection,aes(x=strata_all,y=pedsql_parent_total_mean))+geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center', dotsize=.1)
+ggplot(data=pedsql_all_coinfection,aes(x=strata_all,y=pedsql_parent_total_mean))+geom_violin()
+
+hist(pedsql_all_coinfection_acute$pedsql_parent_total_mean)
+table(pedsql_all_coinfection_acute$strata_all,exclude=NA)
+
 # #make pairs of acute and convalescent pedsql visits. #2 weeks -12 weeks  is a convalescent visit to pair with acute. --------
 pedsql_wide<-reshape(pedsql, direction = "wide", idvar = "person_id", timevar = "redcap_event", sep = "_")
 pedsql_wide$elapsed.time_visit_a_arm_1 <- NA

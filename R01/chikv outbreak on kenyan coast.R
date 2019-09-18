@@ -1,5 +1,5 @@
 #chikv outbreak in kenyan coast
-#last updated march 6 2019
+#last updated april 16 2019 to exlcude ufi results.
 
 # import data -------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy's Externally Shareable Files/chikv outbreak")
@@ -12,7 +12,6 @@ cases_month<-as.data.frame(table(R01_lab_results$infected_chikv_stfd, R01_lab_re
 plot(cases_month$Var2,cases_month$Freq,col=cases_month$Var1)
 library(ggplot2)
 R01_lab_results$epi_week<-epiweek(R01_lab_results$int_date)
-
 # define acute febrile illness------------------------------------------------------------------------
 R01_lab_results <- R01_lab_results[, !grepl("u24|sample", names(R01_lab_results) ) ]
 R01_lab_results$acute<-NA
@@ -58,13 +57,13 @@ library(zoo)
 coast_oubreak$month_year<-as.yearmon(coast_oubreak$int_date)
 coast_oubreak$year<-format(as.Date(coast_oubreak$int_date, format="%d/%m/%Y"),"%Y")
 
-coast_oubreak.csv<-coast_oubreak[c("person_id","redcap_event_name","int_date","month_year","City","infected_chikv_stfd","result_pcr_chikv_kenya","chikv_result_ufi","chikv_result_ufi2","seroc_chikv_stfd_igg","malaria","strata_chikv_malaria")]
+coast_oubreak.csv<-coast_oubreak[c("person_id","redcap_event_name","int_date","month_year","City","infected_chikv_stfd","result_pcr_chikv_kenya","chikv_result_ufi","chikv_result_ufi2","seroc_chikv_stfd_igg","malaria","strata_chikv_malaria","travel","outcome_hospitalized")]
 write.csv(coast_oubreak.csv, "enrolled.csv")
-
 # data managemnet- exclude those without testing ------------------------------------------------------------------
 table(coast_oubreak$infected_chikv_stfd,coast_oubreak$malaria,exclude = NULL)
 table(coast_oubreak$infected_chikv_stfd,exclude = NULL)
-table(coast_oubreak$malaria,exclude = NULL)
+259/(259+445)
+table(coast_oubreak$strata_chikv_malaria,exclude = NULL)
 
 coast_oubreak<-coast_oubreak[ !is.na(coast_oubreak$strata_chikv_malaria),]
 
@@ -83,6 +82,9 @@ prop.table(table(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all), ma
 table(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all)
 fisher.test(coast_oubreak$infected_chikv_stfd,coast_oubreak$gender_all,or = 1, alternative = "two.sided",conf.int = TRUE, conf.level = 0.95)
 summary(coast_oubreak$age)
+chisq.test(coast_oubreak$age,coast_oubreak$infected_chikv_stfd)
+ddply(coast_oubreak,~infected_chikv_stfd,summarise,mean=mean(age),sd=sd(age))
+
 library(ggpubr)
 coast_oubreak$int_date_my<-format(as.Date(coast_oubreak$int_date), "%Y-%m")
 coast_oubreak$int_date_week<-format(as.Date(coast_oubreak$int_date), "%Y-%W")
@@ -152,10 +154,11 @@ coast_oubreak <- within(coast_oubreak, mosquito_net_aic[coast_oubreak$mosquito_n
 coast_oubreak$outcome_hospitalized<-as.numeric(as.character(coast_oubreak$outcome_hospitalized))
 coast_oubreak <- within(coast_oubreak, outcome_hospitalized[outcome_hospitalized==8] <-1 )
 
-table(coast_oubreak$outcome_hospitalized,coast_oubreak$outcome, exclude = NULL)
-table(coast_oubreak$outcome)
-table(coast_oubreak$outcome_hospitalized)
-coast_oubreak$med_antipyretic
+coast_oubreak <- within(coast_oubreak, child_travel[child_travel==8] <-NA )
+
+coast_oubreak <- within(coast_oubreak, mosquito_net_aic[mosquito_net_aic==2] <-0 )
+coast_oubreak <- within(coast_oubreak, mosquito_net_aic[mosquito_net_aic==4] <-0 )
+table(coast_oubreak$mosquito_net_aic)
 
 # merge with pedsql data ------------------------------------------------------------------
 library(tableone)
@@ -171,8 +174,8 @@ table(coast_oubreak$pedsql_parent_physical_mean)
 
 # create tables by chikv exposure and chikv/malaria strata ------------------------------------------------------------------
 library(tableone)
-vars=c("City", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","outcome_hospitalized","aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "nausea_vomitting","symptomatic","number_meds","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_antipyretic","med_antifungal","med_allergy","med_painmed","med_bronchospasm","med_ors","pedsql_parent_total_mean","pedsql_child_total_mean","pedsql_child_school_mean","pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean",  "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean","pedsql_child_psych_mean","pedsql_parent_psych_mean")
-factorVars <- c("City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","outcome_hospitalized","aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache","nausea_vomitting","symptomatic","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_antipyretic")
+vars=c("City","child_travel", "gender_all","aic_calculated_age","ses_sum","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","outcome_hospitalized","aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache", "temp", "heart_rate", "nausea_vomitting","symptomatic","number_meds","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_antipyretic","med_antifungal","med_allergy","med_painmed","med_bronchospasm","med_ors","pedsql_parent_total_mean","pedsql_child_total_mean","pedsql_child_school_mean","pedsql_child_social_mean", "pedsql_parent_school_mean",  "pedsql_parent_social_mean",  "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean","pedsql_child_psych_mean","pedsql_parent_psych_mean")
+factorVars <- c("child_travel","outcome_hospitalized","gender_all","City","mosquito_bites_aic", "mosquito_coil_aic", "outdoor_activity_aic", "mosquito_net_aic","aic_symptom_abdominal_pain", "aic_symptom_chills", "aic_symptom_cough", "aic_symptom_vomiting", "aic_symptom_headache", "aic_symptom_loss_of_appetite", "aic_symptom_diarrhea", "aic_symptom_sick_feeling",  "aic_symptom_general_body_ache", "aic_symptom_joint_pains", "aic_symptom_dizziness", "aic_symptom_runny_nose", "aic_symptom_sore_throat", "aic_symptom_rash", "aic_symptom_shortness_of_breath", "aic_symptom_nausea", "aic_symptom_fever", "aic_symptom_funny_taste", "aic_symptom_red_eyes", "aic_symptom_earache", "aic_symptom_stiff_neck", "aic_symptom_pain_behind_eyes", "aic_symptom_itchiness", "aic_symptom_impaired_mental_status", "aic_symptom_eyes_sensitive_to_light", "bleeding", "body_ache","nausea_vomitting","symptomatic","med_antibacterial", "med_antihelmenthic","med_antimalarial","med_antipyretic")
 nonnormal<-c("pedsql_parent_total_mean","pedsql_child_total_mean","pedsql_child_school_mean", "pedsql_child_school_mean", "pedsql_child_social_mean", "pedsql_child_social_mean", "pedsql_parent_school_mean", "pedsql_parent_school_mean", "pedsql_parent_social_mean", "pedsql_parent_social_mean", "pedsql_child_physical_mean", "pedsql_child_physical_mean", "pedsql_parent_physical_mean", "pedsql_parent_physical_mean", "pedsql_child_emotional_mean", "pedsql_child_emotional_mean", "pedsql_parent_emotional_mean", "pedsql_parent_emotional_mean","pedsql_child_psych_mean","pedsql_parent_psych_mean")
 
 tableOne_strata <- CreateTableOne(vars = vars, factorVars = factorVars, strata = "strata_chikv_malaria", data = coast_oubreak)

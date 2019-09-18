@@ -1,19 +1,14 @@
-#install.packages(c("plotly", "plyr"))
-#library(lubridate)
-#library(plotly)
-#library(plyr)
-#require(ggplot2)
-#require(reshape)
-#library(xlsx)
 library(readxl) # Excel file reading
 library(plotly)
 library(plyr)
 library(dplyr)
 library(zoo)
+require(RSelenium)
 
 
-#rm(list=ls()) #remove previous variable assignments
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Gates/may_2017_presi")
+df<-read.csv("noah_data.csv", header = TRUE, sep = ",", quote = "\"",dec = ".", fill = TRUE, comment.char = "")
+
 m <- list(
   l = 90,
   r = 30,
@@ -61,8 +56,6 @@ x <- list(
   )
 
 
-df<-read.csv("noah_data.csv", header = TRUE, sep = ",", quote = "\"",
-         dec = ".", fill = TRUE, comment.char = "")
 #loop over strata and ab
 
 df$ab_name<-revalue(df$ab, c("dptcrm"="Anti-diphtheria toxoid (dptcrm)",
@@ -150,7 +143,10 @@ for (i in 1:length(strata)){
                     name = "95% CI")%>%
         layout(xaxis = x, yaxis = y, title = paste(" ", ab[j], " by ", strata[i],"", sep = ""), titlefont = f,  legend = l, margin = m)
 
-    api_create(p, filename = paste("r-docs/Noah AB graphs June 26 2017/", ab[j], "_", strata[i], sep = ""))
-
+    #api_create(p, filename = paste("r-docs/Noah AB graphs June 26 2017/", ab[j], "_", strata[i], sep = ""))
+    export(file = paste("r-docs/Noah AB graphs June 26 2017/", ab[j], "_", strata[i], sep = ""),selenium = RSelenium::rsDriver(browser = "chrome"))
+    
       }
 }
+
+#p %>%  export(file = "filename.svg",selenium = RSelenium::rsDriver(browser = "chrome"))

@@ -783,7 +783,31 @@ vis.gam(gamu,view = c("temp_mean_30_30dlag","rain_sum_30_30dlag"),color = 'topo'
 summary(malaria_climate_u$temp_mean_30_30dlag)
 or_gam(data = malaria_climate_u, model = gamu, pred = c("temp_mean_30_30dlag"), values=c(25,28.58))#25 to 3rd q.
 #not enough data to calculate or for 25-
-
+summary(malaria_climate_c$rain_sum_30_30dlag)
+or_gam(data = malaria_climate_c, model = gamc, pred = c("rain_sum_30_30dlag"), values = c(153,285))#1st quartile to 25.
+# all sites ------------------------------------------------------------------
+gam<-gam(malaria_climate$result_microscopy_malaria_kenya_A~s(temp_mean_30_30dlag,rain_sum_30_30dlag,bs='ts')  + agecat + net + poorses+(1|site_A), sp=c(2,2), family="binomial", data = malaria_climate_u, method="REML")
+summary(gam, shade=TRUE)#interaction
+plot(gamu, scale=0, main="Temp Effect on Malaria Transmission",sub="Chulaimbo",ylab="Log odds of Plasmodium Positive Microscopy", xlab="Mean Temperature 30 days prior")
+malaria_climate$
+vis.gam(gamu,view = c("temp_mean_30_30dlag","rain_sum_30_30dlag"),color = 'topo',xlab="Temp (C)",ylab="Rain (cm)",plot.type = 'contour',main="Log odds of Malaria Positivity",sub="Ukunda")
+vis.gam(gamu,view = c("temp_mean_30_30dlag","rain_sum_30_30dlag"),color = 'topo',xlab="Temp (C)",ylab="Rain (cm)",plot.type = 'persp',main="Log odds of Malaria Positivity",sub="Ukunda",theta=50)
+summary(malaria_climate_u$temp_mean_30_30dlag)
+or_gam(data = malaria_climate_u, model = gamu, pred = c("temp_mean_30_30dlag"), values=c(25,28.58))#25 to 3rd q.
+#not enough data to calculate or for 25-
 summary(malaria_climate_c$rain_sum_30_30dlag)
 or_gam(data = malaria_climate_c, model = gamc, pred = c("rain_sum_30_30dlag"), values = c(153,285))#1st quartile to 25.
 
+
+# simpler -----------------------------------------------------------------
+library(lmerTest)
+library(lme4)
+
+malaria_climate$rain_sum_30_30dlag_2<-malaria_climate$rain_sum_30_30dlag*malaria_climate$rain_sum_30_30dlag
+malaria_climate$temp_mean_30_30dlag_2<-malaria_climate$temp_mean_30_30dlag*malaria_climate$temp_mean_30_30dlag
+
+summary(test <- lmer(result_microscopy_malaria_kenya_A ~ temp_mean_30_30dlag_2 + rain_sum_30_30dlag_2 + aic_calculated_age_A + net + (1|id_site_A) + poorses, data = malaria_climate))
+
+anova(test)
+exp(confint(test, method="boot", parallel="multicore", ncpus=4))
+exp(cbind(OR = coef(test), confint(test)))

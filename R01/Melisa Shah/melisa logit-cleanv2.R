@@ -23,25 +23,25 @@ plot(temp.long$date_collected, round(temp.long$meanTemp), exclude=NULL)
 
 
 # import climate data from redcap -----------------------------------------
-  library(redcapAPI)
-  library(REDCapR)
-  setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
-  Redcap.token <- readLines("api.key.txt") # Read API token from folder
-  REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-  rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
-  climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R 
-  #save backup from today
-  currentDate <- Sys.Date() 
-  FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
-    save(climate,file=FileName)
-  
-    # or 2. load saved climate -----------------------------------------------------------------
-            currentDate <- Sys.Date() 
-            FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
-          #load most recent backup
-          #  load(FileName)
-    #or 3. import from redcap export  -----------------------------------------------------------------
-        #climate<-  read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah/climate/20180411111858_pid11751_MeJzB3.csv")
+library(redcapAPI)
+library(REDCapR)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector")
+Redcap.token <- readLines("api.key.txt") # Read API token from folder
+REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
+climate <- redcap_read(redcap_uri  = REDcap.URL, token = Redcap.token, batch_size = 100)$data#export data from redcap to R 
+#save backup from today
+currentDate <- Sys.Date() 
+FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+save(climate,file=FileName)
+
+# or 2. load saved climate -----------------------------------------------------------------
+currentDate <- Sys.Date() 
+FileName <- paste("vector_climate",currentDate,".rda",sep=" ") 
+#load most recent backup
+#  load(FileName)
+#or 3. import from redcap export  -----------------------------------------------------------------
+climate<-  read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/melisa shah/climate/20180411111858_pid11751_MeJzB3.csv")
 # rain climate -----------------------------------------------------------------
 library(zoo)
 library(lubridate)
@@ -60,8 +60,8 @@ colnames(chulaimbo.clim)[3] <- "redcap_event_name"
 chulaimbo.clim$redcap_event_name<-as.character(chulaimbo.clim$redcap_event_name)
 table(chulaimbo.clim$redcap_event_name)
 climate<-climate[which(climate$redcap_event_name=="ukunda_arm_1"|climate$redcap_event_name=="obama_arm_1"|climate$redcap_event_name=="msambweni_arm_1"),]
+library(plyr)
 climate<-rbind.fill(climate,chulaimbo.clim)
-
 climate$site<-NA
 climate <- within (climate, site[climate$redcap_event_name=="chulaimbo_hospital_arm_1"] <-"Chulaimbo")
 climate <- within (climate, site[climate$redcap_event_name=="ukunda_arm_1"] <-"Ukunda")
@@ -84,10 +84,12 @@ climate.c<-climate[which(climate$site=="Chulaimbo"),]
 climate.c <- merge(all.dates.frame, climate.c, all.x=T, by=c("date_collected"))
 climate<-rbind(climate.c,climate.k,climate.m,climate.u)
 rain<-climate[,c("date_collected","daily_rainfall","rainfall_hobo","site","daily_rainfall_long_term_mean")]
+table(climate$site)
 
 plot(rain$date_collected, round(rain$daily_rainfall), exclude=NULL)
 temp.long <- merge(all.dates.frame, temp.long, all.x=T, by=c("date_collected"))
 climate<-merge(rain, temp.long, by = c("date_collected", "site") )
+
 
 
 # make rolling means and sums over time -----------------------------------
@@ -96,9 +98,41 @@ climate = climate %>%
   group_by(site) %>%
   arrange(site, date_collected) %>%
   mutate(
-    temp_mean_30 = rollmean(x = meanTemp, 30, align = "right", fill = NA),
-    rainfall_sum_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
+  temp_mean_30 = rollmean(x = meanTemp, 30, align = "right", fill = NA),
+  rainfall_sum_30 = rollsum(x = daily_rainfall, 30, align = "right", fill = NA)
   )
+
+
+# lagged time series -------------------------------------------------------------
+library(xts)
+dates<-as.Date(climate$date_collected)
+data<-climate[c("temp_mean_30","rainfall_sum_30","site","date_collected")]
+table(xts$site)
+xts<-xts(x=data, order.by=dates)
+xts$rainfall_sum_30.7 <- lag(xts$rainfall_sum_30,k=-7)
+xts$rainfall_sum_30.14 <- lag(xts$rainfall_sum_30,k=-14)
+xts$rainfall_sum_30.21 <- lag(xts$rainfall_sum_30,k=-21)
+xts$rainfall_sum_30.28 <- lag(xts$rainfall_sum_30,k=-28)
+
+xts$temp_mean_30.7 <- lag(xts$temp_mean_30,k=-7)
+xts$temp_mean_30.14 <- lag(xts$temp_mean_30,k=-14)
+xts$temp_mean_30.21 <- lag(xts$temp_mean_30,k=-21)
+xts$temp_mean_30.28 <- lag(xts$temp_mean_30,k=-28)
+
+View(xts)
+plot(xts[,c("temp_mean_30")])
+xts.monthly<-to.monthly(xts)
+
+ep2 <- endpoints(xts.monthly,on="months") 
+xts.monthly.means<-period.apply(xts.monthly,INDEX=ep2,FUN=mean)
+plot(xts.monthly.means[,c("xts.Low","xts.High")])
+xts.monthly.mean<-period.apply(xts.monthly,INDEX=ep2,FUN=function(x) mean(x))
+plot(xts.monthly.means)
+
+test<-apply.monthly(xts,mean)
+plot(test[,"result_microscopy_malaria_kenya_A"])
+test<-lag.xts(xts[,"temp_mean_30"],7)
+climate<-as.data.frame(xts)
 # plot rolling means and sums over time -----------------------------------
 library(ggplot2)
 ggplot (climate, aes (x = date_collected, y = temp_mean_30, colour = site)) +geom_line(linetype = "solid",size=2) +scale_x_date(date_breaks = "2 months", date_labels =  "%b %Y") +theme(axis.text.x=element_text(angle=60, hjust=1),legend.position="none",text = element_text(size = 20)) + facet_grid(site ~ .)+xlab("Month-Year") + ylab("Average Temperature (C) in last 30 days") 
@@ -112,7 +146,13 @@ class(aicmalaria$interview_date_aic_A)
 class(climate$date_collected)
 table(aicmalaria$id_site_A)
 table(climate$site)
+
 malaria_climate<-merge(aicmalaria, climate, by.x = c("interview_date_aic_A","id_site_A"), by.y = c("date_collected","site"), all.x = T) 
+
+malaria_climate$temp_mean_30.7<-as.numeric(malaria_climate$temp_mean_30.7)
+class(malaria_climate$temp_mean_30.7)
+
+hist(malaria_climate$temp_mean_30.7)
 
 table(round(malaria_climate$temp_mean_30), malaria_climate$id_site_A, exclude = NULL)
 table(round(malaria_climate$rainfall_sum_30), malaria_climate$id_site_A, exclude = NULL)
@@ -175,7 +215,8 @@ library(lmerTest)
 library(lme4)
 summary(spline.malaria.random <- lmer(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) + agecat_A +   fever_contact_A + mosquito_bites_aic_A +  (1|id_site_A)+gender_aic_A + ses_sum, data = malaria_climate))
 anova(spline.malaria.random)
-#exp(confint(spline.malaria.random, method="boot", parallel="multicore", ncpus=4))
+exp(confint(spline.malaria.random, method="boot", parallel="multicore", ncpus=4))
+exp(cbind(OR = coef(spline.malaria.random), confint(spline.malaria.random)))
 
 # all sites -----------------------------------------------------------------
 summary(spline.malaria <- lm(result_microscopy_malaria_kenya_A ~ bs(temp_mean_30, df = 3) + bs(rainfall_sum_30, df = 4) + agecat_A +  fever_contact_A + mosquito_bites_aic_A + id_site_A + gender_aic_A +ses_sum, data = malaria_climate))
@@ -238,3 +279,14 @@ plot(effects::Effect(focal.predictors = c("temp_mean_30"), mod = spline.malaria,
 # save merged dataset.  ---------------------------------------------------
 saveRDS(malaria_climate, file="malaria_climate.rds")
 
+library(zoo)
+uktest1$month <- as.yearmon(uktest1$date)
+library(dplyr)
+ts.uktest<-uktest1 %>%group_by(month) %>%summarize(monthly_malaria = mean(microA, na.rm = TRUE))
+plot(ts.uktest$month,ts.uktest$monthly_malaria)
+
+ts.uktest = ts(ts.uktest$monthly_malaria, start = c(2014,1), end=c(2018, 1), frequency = 12)
+plot(ts.uktest) 
+
+components.ts=decompose(ts.uktest)
+plot(components.ts)

@@ -1,4 +1,4 @@
-symptoms_zika<-ds2[ds2$zikv_exposed_mom=="mom_ZIKV_Exposed",grep("symptoms_zika|^symptoms__|mother_record_id",names(ds2))]
+symptoms_zika<-ds2[ds2$zikv_exposed_mom=="mom_ZIKV_Exposed_during_pregnancy"|ds2$zikv_exposed_mom=="mom_ZIKV_Exposure_possible_during_pregnancy",grep("symptoms_zika|^symptoms__|mother_record_id|redcap_repeat_instance",names(ds2))]
 symptoms_zika[symptoms_zika=="Unchecked"]<-0
 symptoms_zika[symptoms_zika=="Checked"]<-1
 
@@ -37,23 +37,21 @@ symptoms_zika$abdominal_complaints_group<-NA
 symptoms_zika <- within(symptoms_zika, abdominal_complaints_group[symptoms_zika$symptoms___19.mom==0|symptoms_zika$symptoms___21.mom==0|symptoms_zika$symptoms___22.mom==0|symptoms_zika$symptoms___24.mom==0|symptoms_zika$symptoms___23.mom==0] <- 0)
 symptoms_zika <- within(symptoms_zika, abdominal_complaints_group[symptoms_zika$symptoms___19.mom==1|symptoms_zika$symptoms___21.mom==1|symptoms_zika$symptoms___22.mom==1|symptoms_zika$symptoms___23.mom==1|symptoms_zika$symptoms___24.mom==1] <- 1)
 
-
 symptoms_zika$bleeding_group<-NA
 symptoms_zika <- within(symptoms_zika, bleeding_group[symptoms_zika$symptoms___26.mom==0 | symptoms_zika$symptoms___27.mom==0 | symptoms_zika$symptoms___28.mom==0  | symptoms_zika$symptoms___29.mom==0  | symptoms_zika$symptoms___30.mom==0 | symptoms_zika$symptoms___31.mom==0] <- 0)
 symptoms_zika <- within(symptoms_zika, bleeding_group[symptoms_zika$symptoms___26.mom==1 | symptoms_zika$symptoms___27.mom==1 | symptoms_zika$symptoms___28.mom==1  | symptoms_zika$symptoms___29.mom==1  | symptoms_zika$symptoms___30.mom==1 | symptoms_zika$symptoms___31.mom==1] <- 1)
-
 
 symptoms_zika$lymphadenopathy_group<-NA
 symptoms_zika <- within(symptoms_zika, lymphadenopathy_group[symptoms_zika$symptoms_zika___12.mom==0] <- 0)
 symptoms_zika <- within(symptoms_zika, lymphadenopathy_group[symptoms_zika$symptoms_zika___12.mom==1] <- 1)
 
-symptoms_zika<-symptoms_zika[,c(1,56:65)]
+symptoms_zika<-symptoms_zika[,c(1:2,57:66)]
 
-symptoms_zika[2:11]<-lapply(symptoms_zika[2:11], as.numeric)
-symptoms_zika$zika_symptom_sum_groups<-rowSums(symptoms_zika[2:11])
+symptoms_zika[3:12]<-lapply(symptoms_zika[3:12], as.numeric)
+symptoms_zika$zika_symptom_sum_groups<-rowSums(symptoms_zika[3:12])
 
-symptoms_zika_group_var<-names(symptoms_zika[,c(2:12)])
-lapply(symptoms_zika[2:12], table)
+symptoms_zika_group_var<-names(symptoms_zika[,c(3:13)])
+lapply(symptoms_zika[3:13], table)
 symptoms_zika_groups<-symptoms_zika
 
 #save(symptoms_zika,file="symptoms_zika_groups.rda")

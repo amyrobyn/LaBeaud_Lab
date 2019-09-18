@@ -1,21 +1,45 @@
 # import data ---------------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-09-28 .rda")
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2019-05-06 .rda")
+
 growth.over.time<-R01_lab_results
-list<-c("u24_weight","child_weight","child_weight","child_weight_aic", 
+list<-c("u24_weight","child_weight","child_weight","child_weight_aic", "u24_participant",
         "u24_height_stad","u24_height_mt","u24_height","child_height","child_height_aic",
         "gender","gender_aic","u24_gender", "age_calc","age_calc_rc","u24_child_age","u24_age_calc","aic_calculated_age","person_id","redcap_event_name")
 growth.over.time<-as.data.frame(growth.over.time[list])
+
+growth.over.time[growth.over.time==999] <- NA
+growth.over.time[growth.over.time==99.9] <- NA
+
 growth.over.time$weight <- rowMeans(growth.over.time[, c("u24_weight","child_weight","child_weight","child_weight_aic")], na.rm=TRUE) 
 growth.over.time$height <- rowMeans(growth.over.time[, c("u24_height_stad","u24_height_mt","u24_height","child_height","child_height_aic")], na.rm=TRUE) 
 growth.over.time$sex <- rowMeans(growth.over.time[, c("gender","gender_aic","u24_gender")], na.rm=TRUE) 
 growth.over.time$age <- rowMeans(growth.over.time[,c("age_calc","age_calc_rc","u24_child_age","u24_age_calc","aic_calculated_age")], na.rm=TRUE) 
 
+growth.over.time$age_group<-NA
+growth.over.time <- within(growth.over.time, age_group[age<=2] <- "under 2")
+growth.over.time <- within(growth.over.time, age_group[age>2 & age<=5] <- "2-5")
+growth.over.time <- within(growth.over.time, age_group[age>5 & age<=10] <- "6-10")
+growth.over.time <- within(growth.over.time, age_group[age>10 & age<=15] <- "11-15")
+growth.over.time <- within(growth.over.time, age_group[age>15] <- "over 15")
+growth.over.time$age_group <- factor(growth.over.time$age_group, levels = c("under 2", "2-5", "6-10", "11-15", "over 15"))
+
+growth.over.time <- within(growth.over.time, height[growth.over.time$height>200|growth.over.time$height<40] <-NA)
+growth.over.time <- within(growth.over.time, weight[growth.over.time$weight>90|growth.over.time$weight<2] <-NA)
+
+tapply(growth.over.time$weight,growth.over.time$age_group, summary)
+tapply(growth.over.time$height,growth.over.time$age_group, summary)
+
+boxplot(growth.over.time$weight~growth.over.time$age_group)
+boxplot(growth.over.time$weight~growth.over.time$sex)
+boxplot(growth.over.time$height~growth.over.time$age_group)
+boxplot(growth.over.time$height~growth.over.time$sex)
+
 #growth.over.time<-readxl::read_excel("C:/Users/amykr/Box Sync/U24 Project/nutrition/growth over time.xlsx")
 
 growth.over.time <- within(growth.over.time, sex[growth.over.time$sex==1] <-"f")
 growth.over.time <- within(growth.over.time, sex[growth.over.time$sex==0] <-"m")
-z_scores<-growth.over.time[c("person_id","redcap_event_name","height","sex","weight","age")]
+z_scores<-growth.over.time[c("person_id","redcap_event_name","height","sex","weight","age","u24_participant")]
 
 library(tidyr)
 z_scores<-z_scores %>% drop_na(height,age,sex,weight)
@@ -38,7 +62,9 @@ source("igrowup_standard.r")
 source("igrowup_restricted.r")
 
 lessthan5<-as.data.frame(z_scores[which(z_scores$age<=5),])
+lessthan5_u24<-as.data.frame(lessthan5[which(lessthan5$u24_participant==1),])
 igrowup.standard(mydf=lessthan5, sex=sex, age = agemonth, age.month=T, weight=weight, lenhei=height, FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_under5_long")
+igrowup.standard(mydf=lessthan5_u24, sex=sex, age = agemonth, age.month=T, weight=weight, lenhei=height, FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_under5_long_u24")
 # 5-19 --------------------------------------------------------------------
 setwd("C:/Program Files/R/R-3.3.2/library/who2007_R/")
 wfawho2007<-read.table("wfawho2007.txt",header=T,sep="",skip=0)
@@ -46,12 +72,15 @@ hfawho2007<-read.table("hfawho2007.txt",header=T,sep="",skip=0)
 bfawho2007<-read.table("bfawho2007.txt",header=T,sep="",skip=0)
 source("who2007.r")
 fiveplus<-as.data.frame(z_scores[which(z_scores$age>5),])
+fiveplus_u24<-as.data.frame(fiveplus[which(fiveplus$u24_participant==1),])
 who2007(mydf=fiveplus, sex=sex, age=agemonth, weight=weight,height=height, FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_5plus_long")
+who2007(mydf=fiveplus_u24, sex=sex, age=agemonth, weight=weight,height=height, FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="z_scores_5plus_long_u24")
 
 # load and merge z-score ------------------------------------------------------
 fiveplus<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/z_scores_5plus_long_z.csv")
 lessthan5<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/z_scores_under5_long_z_st.csv")
-z<-rbind.fill(fiveplus,lessthan5)
+z<-plyr::rbind.fill(fiveplus,lessthan5)
+save(z,file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/z_scores.rda")
 
 # plot --------------------------------------------------------------------
 wfawho2007$sd<-wfawho2007$s*wfawho2007$m
@@ -63,10 +92,10 @@ lenanthro$sd<-lenanthro$s*lenanthro$m
 wfhanthro$sd<-wfhanthro$s*wfhanthro$m
 wflanthro$sd<-wflanthro$s*wflanthro$m
 library(plyr)
-who_sd_weight_age<-rbind.fill(weianthro,wfawho2007)
-who_sd_height_age<-rbind.fill(lenanthro,hfawho2007)
+who_sd_weight_age<-plyr::rbind.fill(weianthro,wfawho2007)
+who_sd_height_age<-plyr::rbind.fill(lenanthro,hfawho2007)
 wflanthro$height<-wflanthro$length
-who_sd_wfh<-rbind.fill(wflanthro,wfhanthro)
+who_sd_wfh<-plyr::rbind.fill(wflanthro,wfhanthro)
 
 who_sd_w_h_age<-merge(who_sd_weight_age,who_sd_height_age,by=c("sex","age"),  suffixes = c(".weight",".height") )
 

@@ -303,14 +303,14 @@ write.csv(sup.table1, file = "sup.table1.csv")
     source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/igrowup_longitudinal.R")
     
 #define substance use generally.
-    
     ds2$substance_use<-NA
     ds2 <- within(ds2, substance_use[ds2$z_alcohol.24=="No"|ds2$z_drugs.24=="No"|ds2$z_smoking.24=="No"] <- "no")
     ds2 <- within(ds2, substance_use[ds2$z_alcohol.24=="Yes"|ds2$z_drugs.24=="Yes"|ds2$z_smoking.24=="Yes"] <- "yes")
     table(ds2$substance_use)
     
 # oxnda -----------------------------------------------------------------------
-  oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/oxnda_copy.csv")
+#  oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/oxnda_copy.csv")
+
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance=="C1"] <- 1)
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance== "C2"] <-2)
     
@@ -319,7 +319,8 @@ write.csv(sup.table1, file = "sup.table1.csv")
     levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_possible_during_pregnancy"] <- "Possibly ZIKV Infected During Pregnancy"
     levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_during_pregnancy"] <- "Not ZIKV Infected"
 
-  ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all = T)
+    oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/OX-NDA Data_August 2019 _rescored.csv")
+    ds2_oxnda <- merge(ds2, oxnda, by = c("mother_record_id","redcap_repeat_instance"),all.x = T)
 #  library(Hmisc)
   label(ds2_oxnda$perc_responses_completed) <- "Percent Of Responses Completed" 
   
@@ -520,6 +521,8 @@ dev.off()
 
 factorVars <- c("mir.pn", "result_zikv_igg_pgold", "result_avidity_zikv_igg_pgold", "result_denv_igg_pgold","result_avidity_denv_igg_pgold")
 ds2[, factorVars] <- lapply(ds2[, factorVars], factor)
+
+#stop. the sum_growth_Outcomes_abnormal is not included here. it needs to be added back in wide format.
 
 # zika -------------------------------------------------------------------
 ds2$sum_outcomes.pn<-rowSums(ds2[,c("sum_delivery_Outcomes_abnormal.pn","sum_growth_Outcomes_abnormal.pn")],na.rm = T)

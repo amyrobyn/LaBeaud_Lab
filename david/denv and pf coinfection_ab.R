@@ -230,6 +230,7 @@ Anova(model.1)
 
 # symptoms table ----------------------------------------------------------
  source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/symptoms.R")
+ 
  source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/cmh.R")
  
 ##merge with paired(acute and convalescent) pedsql data -----------------------------------------------------------------------
@@ -253,8 +254,8 @@ excluded<-AIC[,grepl("excluded",names(AIC))]
 excluded<-excluded[,grepl("parent",names(excluded))] 
 conv<-excluded[,grepl("conv",names(excluded))] 
 acute<-excluded[,grepl("acute",names(excluded))] 
-lapply(acute, table)
-lapply(conv, table)
+#lapply(acute, table)
+#lapply(conv, table)
 
 
 #relabel levels of strata_all
@@ -262,7 +263,7 @@ lapply(conv, table)
   levels(AIC$strata_all) <- list("Neg"="malaria_neg_denv_neg", "DENV"="malaria_neg_denv_pos", "Malaria"="malaria_pos_denv_neg","Coinfection"="malaria_pos_denv_pos")
   table(AIC$strata_all)
   AIC$strata_all<- revalue(AIC$strata_all, c("malaria_neg_denv_neg"="Neg", "malaria_neg_denv_pos"="DENV", "malaria_pos_denv_neg"="Malaria","malaria_pos_denv_pos"="Coinfection"))
-
+  
 # source("C:/Users/amykr/Documents/GitHub/labeaud_lab/david/acute visit outcomes-pedsql.R")
  
 ##merge with unpaired pedsql data -----------------------------------------------------------------------
@@ -271,6 +272,10 @@ lapply(conv, table)
 #all a
  pedsql_unpaired_a<-pedsql_unpaired[which(pedsql_unpaired$redcap_event_name=="visit_a_arm_1"),grepl("mean|sum|person_id|redcap", names(pedsql_unpaired))]
  AIC <- merge(AIC, pedsql_unpaired_a, by="person_id",suffix = c("", "_a"),all.x = T)
+
+ ggplot(data=AIC,aes(x=strata_all,y=pedsql_parent_total_mean))+geom_boxplot()
+ table(AIC$strata_all)
+
 #all b
  load("pedsql_b.rda")
  pedsql_b<-pedsql_b[,grepl("mean|sum|person_id|redcap", names(pedsql_b))]
@@ -325,6 +330,7 @@ abnormal_pedsql_parent_total_mean_acute<-AIC[AIC$abnormal_pedsql_parent_total_me
 tableone::CreateTableOne("pedsql_parent_total_mean_acute_paired","strata_all",abnormal_pedsql_parent_total_mean_acute,includeNA=F,test=T)
 
 table(is.na(AIC$pedsql_parent_school_mean_acute_paired),AIC$strata_all)
+
 
 #conv total
 AIC$abnormal_pedsql_parent_total_mean_conv<-ifelse(AIC$pedsql_parent_total_mean_conv_paired<100,1,0)
@@ -491,3 +497,6 @@ table(!is.na(AIC$pedsql_child_total_mean_conv_paired), AIC$strata_all)
 AIC_complete_c<-AIC[ which(!is.na(AIC$pedsql_parent_total_mean_acute_paired)&!is.na(AIC$pedsql_child_total_mean_acute_paired)&!is.na(AIC$pedsql_parent_total_mean_conv_paired)&!is.na(AIC$pedsql_child_total_mean_conv_paired)) , ]
 
 save(AIC,file="aic_david.Rda")
+
+save(AIC,file="david_boxplots.rda")
+write.csv(AIC,"boxplots.csv")

@@ -8,8 +8,9 @@ library(REDCapR)
 library(ggplot2)
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-  
-load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-09-28 .rda")
+
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-11-16 .rda")
+
 u24_results<-R01_lab_results
 u24_results<-u24_results[,order(colnames(u24_results))]
 u24_results<-u24_results[order(-(grepl('interview_date|person_id|redcap_event_name|u24_participant', names(u24_results)))+1L)]
@@ -24,45 +25,23 @@ library(data.table)
 setDT(u24_results)[, u24_participant:= u24_participant[!is.na(u24_participant)][1L] , by = person_id]
 setDT(u24_results)[, u24_interview_date:= u24_interview_date[!is.na(u24_interview_date)][1L] , by = person_id]
 table(u24_results$redcap_event_name,u24_results$u24_participant)
-table(u24_results$u24_participant)
 
 # all u24 participant visits (aic + hcc) before the u24 visit count towards exposure --------
 u24_results<- as.data.frame(u24_results[which(u24_results$u24_participant==1 & (u24_results$int_date<=u24_results$u24_interview_date|is.na(u24_results$int_date))), ])
 table(u24_results$redcap_event_name,u24_results$u24_participant,exclude = NULL)
+u24_results<-u24_results[ , grepl("person_id|redcap_event_name|int_date|fever_contact|u24_participant|u24_interview_date|age_calc|age_calc_rc|child_travel|where_travel_aic|stay_overnight_aic|u24_when_dengue|pedsql_date_parent|fever_contact|result_igg_denv_stfd|result_igm_denv_stfd|result_pcr_denv_kenya|result_pcr_denv_stfd|denv_result_ufi|result_igg_chikv_stfd|result_igm_chikv_stfd|pedsql_date|result_pcr_chikv_kenya|result_pcr_chikv_stfd|chikv_result_ufi|time_blood_drawn|serotype_pcr_denv_kenya___1|serotype_pcr_denv_kenya___2|serotype_pcr_denv_kenya___3|serotype_pcr_denv_kenya___4|time_on_machine|serotype_pcr_denv_stfd___1|serotype_pcr_denv_stfd___2|serotype_pcr_denv_stfd___3|serotype_pcr_denv_stfd___4|ab_denv_stfd_igg|bc_denv_stfd_igg|time_off_machine|cd_denv_stfd_igg|de_denv_stfd_igg|ef_denv_stfd_igg|fg_denv_stfd_igg|gh_denv_stfd_igg|ab_chikv_stfd_igg|bc_chikv_stfd_igg|cd_chikv_stfd_igg|de_chikv_stfd_igg|ef_chikv_stfd_igg|fg_chikv_stfd_igg|gh_chikv_stfd_igg|result_microscopy_malaria_kenya|microscopy_malaria_pf_kenya___1|microscopy_malaria_po_kenya___1|microscopy_malaria_pm_kenya___1|microscopy_malaria_pv_kenya___1|microscopy_malaria_ni_kenya___1|result_stool_test_|result_stool_test_2|result_stool_test_3|result_stool_test_4|result_stool_test_5|result_stool_test_6|result_urine_test_kenya|schistosoma_a|schistosoma_b|u24_date_of_birth|u24_gender|u24_exposure_strata|child_w_freq_white_tubers_and_roots|child_w_freq_eggs|child_w_freq_fish|child_w_freq_organ_meat_iron_rich|child_w_freq_beverages_condiments|child_w_freq_breads_cereals|child_w_freq_other|child_w_freq_other_fruits|child_w_freq_vitamin_a_rich_fruits|child_w_freq_milk_milk_products|child_w_freq_red_palm_products|child_w_freq_flesh_meats|child_w_freq_legumes_nuts_seeds|child_w_freq_oils_and_fats|child_w_freq_sweets|child_w_freq_other_vegetables|child_w_freq_dark_leafy_vegetables|child_w_freq_vitamin_a_rich_vegetables|rely_on_lowcost_food|balanced_meal|not_eat_enough|cut_meal_size|first_food_age|child_hungry|skip_meals|skip_meals_3_months|no_food_entire_day|breastfed|bf_other|bf_formula|bf_animal_milk|dietary_slate|pica_child|child_eats_freq_day|child_eats_freq_day|child_nutrition_complete|first_food_what|first_food_age", names(u24_results) ) ]
+u24_results<-u24_results[ , !grepl("incident_prnt_u24_strata", names(u24_results) ) ]
 
-
-u24_results<-u24_results[c("person_id", "redcap_event_name", "int_date","fever_contact","u24_participant","u24_interview_date","age_calc","age_calc_rc"
-                                     , "child_travel", "where_travel_aic", "stay_overnight_aic","u24_when_dengue","pedsql_date_parent"                                      , "fever_contact", "result_igg_denv_stfd", "result_igm_denv_stfd"
-                                     , "result_pcr_denv_kenya", "result_pcr_denv_stfd", "denv_result_ufi"
-                                     , "result_igg_chikv_stfd", "result_igm_chikv_stfd","pedsql_date"
-                                     , "result_pcr_chikv_kenya", "result_pcr_chikv_stfd", "chikv_result_ufi","time_blood_drawn"
-                                     , "serotype_pcr_denv_kenya___1", "serotype_pcr_denv_kenya___2"
-                                     , "serotype_pcr_denv_kenya___3", "serotype_pcr_denv_kenya___4","time_on_machine"
-                                     , "serotype_pcr_denv_stfd___1", "serotype_pcr_denv_stfd___2"
-                                     , "serotype_pcr_denv_stfd___3", "serotype_pcr_denv_stfd___4"
-                                     , "ab_denv_stfd_igg", "bc_denv_stfd_igg","time_off_machine"
-                                     , "cd_denv_stfd_igg", "de_denv_stfd_igg", "ef_denv_stfd_igg"
-                                     , "fg_denv_stfd_igg", "gh_denv_stfd_igg", "ab_chikv_stfd_igg"
-                                     , "bc_chikv_stfd_igg", "cd_chikv_stfd_igg", "de_chikv_stfd_igg"
-                                     , "ef_chikv_stfd_igg", "fg_chikv_stfd_igg", "gh_chikv_stfd_igg", "result_microscopy_malaria_kenya", "microscopy_malaria_pf_kenya___1"
-                                     , "microscopy_malaria_po_kenya___1", "microscopy_malaria_pm_kenya___1", "microscopy_malaria_pv_kenya___1"
-                                     , "microscopy_malaria_ni_kenya___1", "result_stool_test_", "result_stool_test_2"
-                                     , "result_stool_test_3", "result_stool_test_4", "result_stool_test_5", "result_stool_test_6"
-                                     , "result_urine_test_kenya", "schistosoma_a", "schistosoma_b","u24_date_of_birth","u24_gender","u24_exposure_strata", "child_w_freq_white_tubers_and_roots","child_w_freq_eggs","child_w_freq_fish","child_w_freq_organ_meat_iron_rich","child_w_freq_beverages_condiments","child_w_freq_breads_cereals","child_w_freq_other","child_w_freq_other_fruits","child_w_freq_vitamin_a_rich_fruits","child_w_freq_milk_milk_products","child_w_freq_red_palm_products","child_w_freq_flesh_meats","child_w_freq_legumes_nuts_seeds","child_w_freq_oils_and_fats","child_w_freq_sweets","child_w_freq_other_vegetables","child_w_freq_dark_leafy_vegetables","child_w_freq_vitamin_a_rich_vegetables"
-                                     ,"rely_on_lowcost_food","balanced_meal","not_eat_enough","cut_meal_size","first_food_age"
-                           ,"child_hungry","skip_meals","skip_meals_3_months","no_food_entire_day","breastfed","bf_other","bf_formula","bf_animal_milk","dietary_slate","pica_child","child_eats_freq_day","child_eats_freq_day","child_nutrition_complete","first_food_what","first_food_age")]
-
-#source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/u24/u24 exposure strata.R")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_exposure.rds")
 
 u24_results<-merge(u24_all_wide,u24_results,by=c("person_id"), all.y=T)
-
+table(u24_all_wide$u24_strata)
+table(u24_results$incident_prnt_u24_strata)
 # combined exposure and incidence -----------------------------------------
 table(u24_results$u24_participant,u24_results$incident_prnt_u24_strata,u24_results$redcap_event_name,exclude=NULL)
 u24_results <- within(u24_results, incident_prnt_u24_strata[u24_results$incident_prnt_u24_strata=="chikv"] <-"Recent CHIKV")
 u24_results <- within(u24_results, incident_prnt_u24_strata[u24_results$incident_prnt_u24_strata=="denv"] <-"Recent DENV")
 u24_results <- within(u24_results, incident_prnt_u24_strata[u24_results$incident_prnt_u24_strata=="both"] <-"Recent Co-Exposure")
-
 u24_results <- within(u24_results, u24_strata[u24_results$u24_strata=="chikv"] <-"CHIKV")
 u24_results <- within(u24_results, u24_strata[u24_results$u24_strata=="denv"] <-"DENV")
 u24_results <- within(u24_results, u24_strata[u24_results$u24_strata=="both"] <-"Co-Exposure")
@@ -74,7 +53,6 @@ table(u24_results$combined_strata,u24_results$redcap_event_name)
 u24_results<-u24_results[!is.na(u24_results$combined_strata),]
 
 # #merge to z-score ------------------------------------------------------
-#source("C:/Users/amykr/Documents/GitHub/lebeaud_lab/u24/igrowup_longitudinal.R")
 fiveplus<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/z_scores_5plus_long_z.csv")
 lessthan5<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/z_scores_under5_long_z_st.csv")
 z<-plyr::rbind.fill(fiveplus,lessthan5)
@@ -84,8 +62,6 @@ u24_results<-merge(u24_results,z,by=c("person_id","redcap_event_name"),all.x=T)
 plot(u24_results$zwfa,u24_results$zhfa)
 u24_results$incident_prnt_u24_strata<-as.factor(u24_results$incident_prnt_u24_strata)
 ggplot(u24_results,aes(x=zwfa, y=zhfa,color=incident_prnt_u24_strata))+geom_point(size=7)+scale_y_continuous(breaks=c(-9:9))+scale_x_continuous(breaks=c(-9:9))
-
-
 
 # merge u24 data to who standards for weight for age and height for age by age and sex --------------------------------------
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/who_height.Rda")
@@ -147,13 +123,12 @@ height.age<-ggplot()+
   )
 
 setwd(  "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
-tiff(file = "anthro_exposed.tiff", width = 8000, height = 3200, units = "px", res = 600)
-height.age
-dev.off()
+#tiff(file = "anthro_exposed.tiff", width = 8000, height = 3200, units = "px", res = 600)
+#height.age
+#dev.off()
 
 # only the u24 visit ------------------------------------------------------
 u24_results<-u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"&u24_results$u24_participant==1),]
-
 # nutrtion scores ---------------------------------------------------------
 food_groups<-names(u24_results[grep("child_w_freq_",names(u24_results))])
 for(i in food_groups ){
@@ -193,7 +168,8 @@ table(u24_results$animal_protein)
 
 u24_results_nutrition<-u24_results[ , grepl( "redcap_event_name|bin|child_w_freq_|strata|z|height|weight|diet_diversity|animal_protein|flesh|grains_tubers|vit_a_fruit_veg|other_fruit_veg" , names(u24_results) ) ]
 u24_results_nutrition<-u24_results_nutrition[ , !grepl( "aic|zone|trizol|hospitaliz|history|immunizations|complete" , names(u24_results_nutrition) ) ]
-write.csv(u24_results_nutrition,file="u24_results_nutrition.csv",na="")
+#write.csv(u24_results_nutrition,file="u24_results_nutrition.csv",na="")
+save(u24_results,file="u24_results.rda")
 
 # pedsql ------------------------------------------------------------------
 
@@ -225,10 +201,11 @@ u24_results[vars3] <- lapply(u24_results[vars3], factor, levels=c(0,1,2,3,4,99),
 
 vars4<-c("rely_on_lowcost_food","balanced_meal","not_eat_enough","cut_meal_size")
 u24_results[vars4] <- lapply(u24_results[vars4], factor, levels=c(1,2,3,99), labels = c("Often true", "sometimes true","never true","refused /dont know"))
-
 vars5<-c("child_hungry","skip_meals","skip_meals_3_months","no_food_entire_day","breastfed","bf_other","bf_formula","bf_animal_milk","dietary_slate","pica_child")
 u24_results[vars5] <- lapply(u24_results[vars5], factor, levels=c(0,1,99), labels = c("no","yes","refused/dont know"))
 u24_results$first_food_age <- ordered(u24_results$first_food_age, levels = c(1,2,3,4,99), labels = c("0-3", "4-6","7-9", "10+","Refused/Don't Know"))
+food_security<-u24_results[vars4<-c("person_id","rely_on_lowcost_food","balanced_meal","not_eat_enough","cut_meal_size","child_hungry","skip_meals","skip_meals_3_months","no_food_entire_day","breastfed","bf_other","bf_formula","bf_animal_milk","dietary_slate","pica_child")]
+write.csv(food_security,"food_security.csv")
 library(tableone)
 #install.packages("expss")
 library(expss)
@@ -272,5 +249,8 @@ tableOne<-CreateTableOne(data=u24_results, vars=vars3, strata = "nutr_outcome")
 table1 <- print(tableOne, quote = FALSE, exact=vars, nonnormal=vars,noSpaces = TRUE, printToggle = FALSE)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
 write.csv(table1, file = "u24_table1_nutr_outcome.csv")
+load("food_insecurity_db.rda")
+table(food_insecurity_db$food_insecurity_cat)
 
-write.csv(u24_results,"C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_strata_exposure.csv")
+u24_results<-merge(u24_results,food_insecurity_db,by=c("redcap_event_name","person_id"))
+save(u24_results,file="u24_results.rda")

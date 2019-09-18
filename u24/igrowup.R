@@ -10,8 +10,6 @@ tsanthro<-read.table("tsanthro.txt",header=T,sep="",skip=0)
 wflanthro<-read.table("wflanthro.txt",header=T,sep="",skip=0)
 wfhanthro<-read.table("wfhanthro.txt",header=T,sep="",skip=0)
 
-
-
 source("igrowup_standard.r")
 source("igrowup_restricted.r")
 
@@ -27,7 +25,7 @@ z_scores<-z_scores %>% drop_na(u24_height_stad,u24_age_month,sex,u24_weight)
 z_scores$u24_age_month<-round(z_scores$u24_child_age*12,0)
 table(z_scores$u24_age_month,exclude = NULL)
 table(z_scores$u24_height_stad,exclude = NULL)
-lessthan5<-z_scores[which(z_scores$u24_child_age<5),]
+lessthan5<-z_scores[which(z_scores$u24_child_age<=5),]
 
 igrowup.standard(mydf=lessthan5, sex=sex, age=u24_age_month, age.month=T, weight=u24_weight,lenhei=u24_height_stad,FilePath = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data",FileLab="u24_z_scores_under5")
 

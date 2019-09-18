@@ -44,7 +44,7 @@ names(cohort_long)<-c("id", "pregnant","onset","jp_today","jp_lastweek","jp_last
 cohort_long<-as.data.frame(subset(cohort_long,!duplicated(cohort_long$id)))
 
 cohort_long<-reshape(cohort_long, varying = 4:9, timevar = "when", idvar = "id", direction="long",sep="_")
-test<-merge(cohort_long,cohort_covariates,by="id")
+cohort_long<-merge(cohort_long,cohort_covariates,by="id")
 
 library(survival)
 #install.packages("survminer")
@@ -59,7 +59,9 @@ table(cohort_long$jp_cure)
 require("survival")
 fit <-survfit(Surv(fu, jp)~pregnant, data=cohort_long)
 tiff(filename = "joint_paint_preg.tiff",width = 5200, height = 4200, units = "px", res = 800)
-ggsurvplot(fit, data = cohort_long, legend = "top", surv.median.line = "hv", legend.title = "CHIKV Infection Timing", legend.labs = c("Not pregnant", "Pregnant"), pval = TRUE, conf.int = TRUE, risk.table = TRUE, tables.height = 0.2, tables.theme = theme_cleantable(), palette = c("#E7B800", "#2E9FDF"), ggtheme = theme_bw())+xlab("Time (days from acute infection)")+ylab("Persistance of joint pain")
+plot<-ggsurvplot(fit, data = cohort_long, legend = "top", surv.median.line = "hv", legend.title = "CHIKV Infection Timing", legend.labs = c("Not pregnant", "Pregnant"), pval = TRUE, conf.int = TRUE, risk.table = TRUE, tables.height = 0.2, tables.theme = theme_cleantable(), palette = c("#E7B800", "#2E9FDF"), ggtheme = theme_bw())+xlab("Time (days from acute infection)")+ylab("Persistance of joint pain")
+plot+guides(fill=guide_legend(nrow=2,byrow=TRUE))
+
 dev.off()   
 write.csv(cohort_long,"joint_point_duration_days.csv")
 cohort_jp<-cohort[,c("pregnant","joint_pain_today","joint_pain_last_week","joint_pain_last_month","onset","joint_pain_since","participant_id")]

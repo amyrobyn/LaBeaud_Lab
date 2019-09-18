@@ -19,6 +19,8 @@ ds2$split_sutures<-ifelse(ds2$sutures.pn== "Split", 1, ifelse(ds2$sutures.pn =="
 #summary
 child_outcome_vars.delivery<-c("intrapartum_fever","assisted_delivery","neonate_need_resuscitation","apgar_ten.pn.abnormal","apgar_one.pn.abnormal","split_sutures","bulging_fontanelle","abnormal_reflex","facial_dysmoph_cleft","preterm","lateterm")
 ds2$sum_delivery_Outcomes_abnormal.pn<-rowSums(ds2[child_outcome_vars.delivery],na.rm = T)
-table(ds2$sum_delivery_Outcomes_abnormal.pn)
+ds2 <- within(ds2, sum_delivery_Outcomes_abnormal.pn[is.na(ds2$intrapartum_fever)&is.na(ds2$assisted_delivery)&is.na(ds2$neonate_need_resuscitation)&is.na(ds2$apgar_ten.pn.abnormal)&is.na(ds2$apgar_one.pn.abnormal)&is.na(ds2$split_sutures)&is.na(ds2$bulging_fontanelle)&is.na(ds2$abnormal_reflex)&is.na(ds2$facial_dysmoph_cleft)&is.na(ds2$preterm)&is.na(ds2$facial_dysmoph_cleft)&is.na(ds2$preterm)&is.na(ds2$lateterm)] <- NA)
+
+addmargins(table(ds2$sum_delivery_Outcomes_abnormal.pn,ds2$zikv_exposed_mom))
 library(ggplot2)
 ggplot2::ggplot(ds2, aes(x = zikv_exposed_mom, y = sum_delivery_Outcomes_abnormal.pn)) + geom_boxplot() 

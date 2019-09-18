@@ -36,18 +36,34 @@ rcon <- redcapConnection(url=REDcap.URL, token=Redcap.token)
 describe(vector_climate) 
 
 # graph denv and chikv ----------------------------------------------------
+    load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
+    load(file="C:/Users/amykr/Box Sync/Amy Krystosik's Files/vector/Monthlyvector.rda")
+    
+    monthly_infection <- ddply(R01_lab_results, .(month_year, City),
+                               summarise, 
+                               infected_denv_stfd_sum = sum(infected_denv_stfd, na.rm = TRUE),
+                               infected_chikv_stfd_sum = sum(infected_chikv_stfd, na.rm = TRUE),
+                               infected_denv_stfd_inc = mean(infected_denv_stfd, na.rm = TRUE),
+                               infected_chikv_stfd_inc = mean(infected_chikv_stfd, na.rm = TRUE),
+                               infected_denv_stfd_sd = sd(infected_denv_stfd, na.rm = TRUE),
+                               infected_chikv_stfd_sd = sd(infected_chikv_stfd, na.rm = TRUE)
+    )
+    
 plot_ly() %>%
-    add_trace(name ="DENV",x=monthly_infection$month_year, y =monthly_infection$infected_denv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, axis="y")%>%
-    add_trace(name ="CHIKV",x=monthly_infection$month_year, y =monthly_infection$infected_chikv_stfd_inc, type = 'scatter', mode = 'lines', line=list(width=4), connectgaps=TRUE, showlegend=T, axis="y")%>%
+    add_trace(name ="DENV",x=monthly_infection$month_year, y =monthly_infection$infected_denv_stfd_inc, type = 'bar',  line=list(width=4), connectgaps=TRUE, showlegend=T, axis="y")%>%
+    add_trace(name ="CHIKV",x=monthly_infection$month_year, y =monthly_infection$infected_chikv_stfd_inc, type = 'bar', line=list(width=4), connectgaps=TRUE, showlegend=T, axis="y")%>%
     add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.Indoor.ovi+ttl_Aedes_spp_Outdoor.ovi, type = 'bar', name = 'Ovitrap', yaxis = "y2")%>%
     add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.larva, type = 'bar', name = 'Larva', yaxis = "y2")%>%
     add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp_in.proko+Ttl_Aedes.spp_out.proko, type = 'bar', name = 'Prokopack', yaxis = "y")%>%
     add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.bg, type = 'bar', name = 'BG', yaxis = "y2")%>%
     add_trace(data=Monthlyvector, x = ~month_year, y = ~Ttl_Aedes.spp.hlc, type = 'bar', name = 'HLC', yaxis = "y2")%>%
     layout(title='Incident Exposure over Time', 
-           titlefont=f3, 
-           xaxis = a, 
-           yaxis = list(title = 'Proportion infected', tickfont=f1,titlefont=f2,range = c(0,1)),legend=legend, 
+           #titlefont=f3, 
+           #xaxis = a, 
+           yaxis = list(title = 'Proportion infected', 
+                        #tickfont=f1,titlefont=f2,
+                        range = c(0,1)),
+           #legend=legend, 
            yaxis2 = list(side = 'right', overlaying = "y", title = 'Aedes Mosquito (count)', showgrid = FALSE, zeroline = FALSE),
            barmode = 'stack',
            margin = margin)

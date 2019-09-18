@@ -549,6 +549,14 @@ table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$rural, exclude=NULL)
 table(R01_lab_results$result_igg_chikv_stfd, R01_lab_results$id_cohort)
 table(R01_lab_results$result_igg_denv_stfd, R01_lab_results$id_cohort)
 
+colnames(R01_lab_results)[colnames(R01_lab_results)=="id_city"] <- "City"
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="G"] <- "M")
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="L"] <- "M")
+
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="R"] <- "C")
+R01_lab_results <- within(R01_lab_results, City[R01_lab_results$City=="O"] <- NA)
+table(R01_lab_results$City)
+
 # meds prescribed ---------------------------------------------------------
 R01_lab_results$malaria_treatment_other_kenya<-gsub(",", "_", R01_lab_results$malaria_treatment_other_kenya)
 R01_lab_results$all_meds<-NA

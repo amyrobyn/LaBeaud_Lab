@@ -115,7 +115,7 @@ fitdistr(dat$prop.dead.inset,"Normal")
 descdist(dat$prop.dead.inset, discrete = FALSE)
 fit.norm <- fitdist(dat$prop.dead.inset, "norm")
 plot(fit.norm)
-install.packages("gamlss")
+#install.packages("gamlss")
 
 library(gamlss)
 beinf<-gamlss(prop.dead.inset~bti.age_group+BTI_conc+Season, data=na.omit(dat),family=BEINF())

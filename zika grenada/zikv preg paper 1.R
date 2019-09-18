@@ -11,7 +11,8 @@ currentDate <- Sys.Date()
 FileName <- paste("zika",currentDate,".rda",sep=" ") 
 #save(ds,file=FileName)
 
-load("zika 2019-08-13 .rda")
+load("zika 2019-08-14 .rda")
+#load(FileName)
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
 
 # merge -------------------------------------------------------------------
@@ -87,6 +88,16 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
     ds2$zikv_exposed_mom<-NA
     ds2 <- within(ds2, zikv_exposed_mom[ds2$result_zikv_igg_pgold.mom=="Negative"|ds2$result_zikv_igg_pgold_fu.mom=="Negative"] <- "mom_zikv_Unexposed")
     ds2 <- within(ds2, zikv_exposed_mom[ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive"|ds2$result_zikv_igg_pgold_fu.mom=="Positive"] <- "mom_ZIKV_Exposed")
+
+    ds2$zikv_exposed_mom3<-NA
+    ds2 <- within(ds2, zikv_exposed_mom3[ds2$result_zikv_igg_pgold.mom=="Negative"|ds2$result_zikv_igg_pgold_fu.mom=="Negative"] <- "mom_zikv_Unexposed")
+    ds2 <- within(ds2, zikv_exposed_mom3[ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive"] <- "mom_ZIKV_Exposed")
+    ds2 <- within(ds2, zikv_exposed_mom3[(ds2$result_zikv_igg_pgold.mom=="Negative"|is.na(ds2$result_zikv_igg_pgold.mom)) & ds2$result_zikv_igg_pgold_fu.mom=="Positive"] <- "mom_ZIKV_Exposure_possible")
+    
+    table(ds2$zikv_exposed_mom3,ds2$result_avidity_zikv_igg_pgold.mom,exclude=NULL)
+    table(ds2$zikv_exposed_mom3,ds2$result_avidity_zikv_igg_pgold_fu.mom,exclude=NULL)
+    
+    table(ds2$result_zikv_igg_pgold_fu.mom,ds2$result_zikv_igg_pgold.mom,exclude = NULL)
     
     table(ds2$zikv_exposed_mom,ds2$redcap_repeat_instance, exclude = NULL)
     table(ds2$pcr_positive_zikv_mom=="Positive"|ds2$result_zikv_igg_pgold.mom=="Positive",ds2$cohort___1.mom,ds2$redcap_repeat_instance, exclude = NULL)
@@ -113,6 +124,7 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
     ds2 <- within(ds2, denv_exposed_mom[ds2$pcr_positive_denv_mom=="Positive"|ds2$result_denv_igg_pgold.mom=="Positive"|result_denv_igg_pgold_fu.mom=="Positive"] <- "mom denv Exposed")
     
     table(ds2$denv_exposed_mom,ds2$redcap_repeat_instance, exclude = NULL)
+    
 #child denv exposure
     ds2$denv_exposed_child<-NA
     ds2 <- within(ds2, denv_exposed_child[ds2$result_denv_igg_pgold.pn=="Negative"|ds2$result_denv_igg_pgold.12=="Negative"|ds2$result_denv_igg_pgold.24=="Negative"|ds2$result_denv_igg_pgold.27=="Negative"] <- "child denv Unexposed")

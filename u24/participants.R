@@ -9,14 +9,54 @@ library(REDCapR)
 library(ggplot2)
 # get data -----------------------------------------------------------------
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long")
-load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-06-22 .rda")
+  
+load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-09-28 .rda")
+
 u24_results<-R01_lab_results
-u24_results<- u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"& u24_results$u24_participant==1)  , ]
-table(u24_results$redcap_event_name)
+u24_results<-u24_results[,order(colnames(u24_results))]
+u24_results<-u24_results[order(-(grepl('interview_date|person_id', names(u24_results)))+1L)]
+u24_results<-unite(u24_results, int_date, interview_date_aic:interview_date, sep='')
+
+library(data.table)
+setDT(u24_results)[, u24_participant:= u24_participant[!is.na(u24_participant)][1L] , by = person_id]
+setDT(u24_results)[, u24_interview_date:= u24_interview_date[!is.na(u24_interview_date)][1L] , by = person_id]
+
+u24_participants<- as.data.frame(u24_results[which(u24_results$u24_participant==1 & (u24_results$int_date<u24_results$u24_interview_date)), ])
+u24_participants<-u24_participants[c("person_id", "id_site", "redcap_event_name", "int_date","fever_contact"
+                                     , "child_travel", "where_travel_aic", "stay_overnight_aic", "temp"
+                                     , "fever_contact", "result_igg_denv_stfd", "result_igm_denv_stfd"
+                                     , "result_pcr_denv_kenya", "result_pcr_denv_stfd", "denv_result_ufi"
+                                     , "result_igg_chikv_stfd", "result_igm_chikv_stfd"
+                                     , "result_pcr_chikv_kenya", "result_pcr_chikv_stfd", "chikv_result_ufi"
+                                     , "serotype_pcr_denv_kenya___1", "serotype_pcr_denv_kenya___2"
+                                     , "serotype_pcr_denv_kenya___3", "serotype_pcr_denv_kenya___4"
+                                     , "serotype_pcr_denv_stfd___1", "serotype_pcr_denv_stfd___2"
+                                     , "serotype_pcr_denv_stfd___3", "serotype_pcr_denv_stfd___4"
+                                     , "ab_denv_stfd_igg", "bc_denv_stfd_igg"
+                                     , "cd_denv_stfd_igg", "de_denv_stfd_igg", "ef_denv_stfd_igg"
+                                     , "fg_denv_stfd_igg", "gh_denv_stfd_igg", "ab_chikv_stfd_igg"
+                                     , "bc_chikv_stfd_igg", "cd_chikv_stfd_igg", "de_chikv_stfd_igg"
+                                     , "ef_chikv_stfd_igg", "fg_chikv_stfd_igg", "gh_chikv_stfd_igg", "result_microscopy_malaria_kenya", "microscopy_malaria_pf_kenya___1"
+                                     , "microscopy_malaria_po_kenya___1", "microscopy_malaria_pm_kenya___1", "microscopy_malaria_pv_kenya___1"
+                                     , "microscopy_malaria_ni_kenya___1", "result_stool_test_", "result_stool_test_2"
+                                     , "result_stool_test_3", "result_stool_test_4", "result_stool_test_5", "result_stool_test_6"
+                                     , "result_urine_test_kenya", "schistosoma_a", "schistosoma_b")]
+
+
+u24_results<- u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"& u24_results$u24_participant==1), ]
+table(R01_lab_results$u24_participant,R01_lab_results$redcap_event_name)
+table(u24_results$u24_participant)
 
 currentDate <- Sys.Date() 
 FileName <- paste("u24_results",currentDate,".rda",sep=" ") 
 save(u24_results,file=FileName)
+
+#merge to z-score
+fiveplus<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_z_scores_5plus_z.csv")
+lessthan5<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_z_scores_under5_z_st.csv")
+
+u24_results<-merge(u24_results,fiveplus,by=c("person_id"),all=T)
+u24_results<-merge(u24_results,lessthan5,by=c("person_id"),all=T)
 
 
 u24_results$u24_date_of_birth<-as.Date(u24_results$u24_date_of_birth)
@@ -53,6 +93,7 @@ u24_results[vars5] <- lapply(u24_results[vars5], factor, levels=c(0,1,99), label
 u24_results$first_food_age <- ordered(u24_results$first_food_age, levels = c(1,2,3,4,99), labels = c("0-3", "4-6","7-9", "10+","Refused/Don't Know"))
 
 library(tableone)
+#install.packages("expss")
 library(expss)
 u24_results = apply_labels(u24_results,
                       result_stool_test_ = "Hookworm",
@@ -63,17 +104,43 @@ u24_results = apply_labels(u24_results,
                       result_stool_test_6 = "Strongyloides",
                       result_urine_test_kenya = "Result Schistosoma haematobium"
                       )
-use_labels(u24_results, {tableOne<-CreateTableOne(data=u24_results, vars=vars, strata = "u24_exposure_strata")})
+tableOne<-CreateTableOne(data=u24_results, vars=vars)
+table1 <- print(tableOne, quote = FALSE, exact=vars, nonnormal=vars,noSpaces = TRUE, printToggle = FALSE)
+write.csv(table1, file = "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_table1_cohort.csv")
+
+
 tableOne<-CreateTableOne(data=u24_results, vars=vars, strata = "u24_exposure_strata")
 
+u24_results$stunting<-NA
+u24_results <- within(u24_results, stunting[u24_results$zhfa>-2|u24_results$zlen>-2] <-0)
+u24_results <- within(u24_results, stunting[u24_results$zhfa<=-2|u24_results$zlen<=-2] <-1)
+table(u24_results$stunting)
+
+u24_results$wasting<-NA
+u24_results <- within(u24_results, wasting[u24_results$zwfl>-2|u24_results$zbmi>-2|u24_results$zbfa>-2] <-0)
+u24_results <- within(u24_results, wasting[u24_results$zwfl<=-2|u24_results$zbmi<=-2|u24_results$zbfa<=-2] <-1)
+table(u24_results$wasting)
+u24_results$nutr_outcome<-u24_results$stunting+u24_results$wasting
+u24_results$nutr_outcome<-ifelse(u24_results$stunting==1|u24_results$wasting==1,1,0)
+
+tableOne<-CreateTableOne(data=u24_results, vars=vars3, strata = "stunting")
 table1 <- print(tableOne, quote = FALSE, exact=vars, nonnormal=vars,noSpaces = TRUE, printToggle = FALSE)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
-write.csv(table1, file = "u24_table1.csv")
+write.csv(table1, file = "u24_table1_stunting.csv")
+
+tableOne<-CreateTableOne(data=u24_results, vars=vars3, strata = "wasting")
+table1 <- print(tableOne, quote = FALSE, exact=vars, nonnormal=vars,noSpaces = TRUE, printToggle = FALSE)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
+write.csv(table1, file = "u24_table1_wasting.csv")
+
+tableOne<-CreateTableOne(data=u24_results, vars=vars3, strata = "nutr_outcome")
+table1 <- print(tableOne, quote = FALSE, exact=vars, nonnormal=vars,noSpaces = TRUE, printToggle = FALSE)
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
+write.csv(table1, file = "u24_table1_nutr_outcome.csv")
+
 write.csv(u24_results,"C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_strata_exposure.csv")
 
 # subjects lists. ------------------------------------------------------------
-load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/u24_results 2018-06-22 .rda")
-u24_results<- u24_results[which(u24_results$redcap_event_name=="visit_u24_arm_1"& u24_results$u24_participant==1)  , ]
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results.clean.rda")
 
 R01_lab_results[R01_lab_results==98]<-NA
@@ -93,7 +160,7 @@ table(R01_lab_results$id_city)
   u24_all_wide$person_id<-as.character(as.factor(u24_all_wide$person_id))
   u24_all_wide<-as.data.frame(u24_all_wide)
   u24_results<-  join(u24_all_wide,u24_results, by = "person_id")
-      
+
 
 #all visits must be negative to be a control.
       u24_all_wide$exposure_sum<-rowSums(u24_all_wide[, grep("prnt_interpretation_flavi___1|prnt_interpretation_alpha___2|result_igg_denv_stfd|infected_denv_stfd|infected_chikv_stfd|result_igg_chikv_stfd|result_igg_denv_stfd", names(u24_all_wide))], na.rm = TRUE)
@@ -125,7 +192,7 @@ table(R01_lab_results$id_city)
     u24_all_wide$incident_prnt_u24_strata<-NA
     u24_all_wide$date_of_birth.visit_a_arm_1<-as.Date(u24_all_wide$date_of_birth.visit_a_arm_1)
     u24_all_wide$date_of_birth.visit_a_arm_1<-as.Date(u24_all_wide$date_of_birth.visit_a_arm_1)
-    
+
     summary(u24_all_wide$date_of_birth.visit_a_arm_1)
     u24_all_wide <- within(u24_all_wide, incident_prnt_u24_strata[u24_all_wide$exposure_sum ==0] <- "control")
     u24_all_wide <- within(u24_all_wide, incident_prnt_u24_strata[u24_all_wide$incident_prnt_chikv_exposure_sum >=1 ] <- "chikv")
@@ -148,16 +215,17 @@ u24_all_wide_m<-merge(u24_all_wide,u24_results,by="person_id")
 u24_results_report<-u24_all_wide_m[which(u24_all_wide_m$u24_participant==1),
                                    c("person_id","incident_prnt_u24_strata.x","u24_strata","chikv_prnt_sum","denv_prnt_sum","denv_pcr_sum","chikv_pcr_sum","u24_child_age","u24_age_calc","u24_gender","u24_temp","chikv_outbreak_sum",	"sample_completed_protocol",	"notes_smart_tube", "time_blood_drawn",	"time_on_machine",	"time_off_machine",	"temperature_off_machine","result_urine_test_kenya", "schistosoma_a", "schistosoma_b","result_stool_test_6","result_stool_test_", "value_stool_test_",	"result_stool_test_2",	"value_stool_test_2",	"result_stool_test_3",	"value_stool_test_3",	"result_stool_test_4",	"result_stool_test_5","microscopy_malaria_pf_kenya___1","result_microscopy_malaria_kenya","u24_interview_date","tech_smart_tube","tech_smart_tube_other")]
 
+table(u24_all_wide_m$u24_participant,u24_all_wide_m$u24_strata,exclude=NULL)
+18    +54      +32   +30
+
 write.csv(u24_results_report,
           "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_results_report.csv",
           na="",row.names = F)
-
 
 table(u24_results_report$incident_prnt_u24_strata.x)
 u24<-u24_all_wide[c("person_id", "u24_strata","incident_prnt_u24_strata")]
 saveRDS(u24, file = "u24.rds")
 write.csv(u24,"C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24.csv")
-
 
 controls<-u24[which(u24$u24_strata=="control"),]
 write_rds(controls,"controls.rds")
@@ -176,3 +244,10 @@ write.csv(both,"both.csv")
 u24_all_wide[which(u24_all_wide$u24_strata=="both"),"person_id"]
 u24_all_wide[which(u24_all_wide$u24_strata=="chikv"),"person_id"]
 table(u24_all_wide$u24_strata,u24_all_wide$id_city)
+
+U24.Sample.Shipment.inventory.May.2018 <- read.csv("C:/Users/amykr/Box Sync/U24 Project/U24 Sample Shipment inventory May 2018.csv",fileEncoding="UTF-8-BOM", sep=",")
+u24_results_report_inventory_may2018<-merge(U24.Sample.Shipment.inventory.May.2018,u24_results_report,all=T)
+
+write.csv(u24_results_report_inventory_may2018,
+          "C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data/u24_results_report_inventory.csv",
+          na="",row.names = F)

@@ -72,7 +72,7 @@ z_scores<-read.csv("z_scores_z_st.csv")
 
 z_scores<-z_scores[,c(1:9,16:20)]
 exposure <- ds2[,c("mother_record_id","redcap_repeat_instance","zikv_exposed_mom","mic_nurse_2.12")]
-growth_long<-merge(exposure,z_scores,by=c("mother_record_id","redcap_repeat_instance"),all = T)
+growth_long<-merge(exposure,z_scores,by=c("mother_record_id","redcap_repeat_instance"),all.x = T)
 
 
 # plots -------------------------------------------------------------------

@@ -1,3 +1,4 @@
+setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/secure- u24 participants/data")
 load("C:/Users/amykr/Box Sync/Amy Krystosik's Files/Data Managment/redcap/ro1 lab results long/R01_lab_results 2018-11-16 .rda")
 food_insecurity_db<-R01_lab_results[which(R01_lab_results$redcap_event_name=="visit_u24_arm_1"& R01_lab_results$u24_participant==1) ,c("person_id","redcap_event_name","child_hungry","skip_meals","skip_meals_3_months","no_food_entire_day","rely_on_lowcost_food","balanced_meal","not_eat_enough","cut_meal_size")  ]
 #For the food insecurity assessment questions 1-4 of the attached document, I would recommend using this scoring metric from the USDA: 

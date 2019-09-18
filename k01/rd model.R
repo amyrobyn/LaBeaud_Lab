@@ -1,0 +1,7 @@
+#install.packages("rdrobust")
+library("rdrobust")
+data(rdrobust_RDsenate)
+attach(rdrobust_RDsenate)
+rdbwselect(vote,margin)
+rdrobust(vote,margin)
+rdplot(vote,margin,x.label = "Violence",y.label = "Arboviral Risk",title = "RD Arboviral risk vs Violence",c=0)

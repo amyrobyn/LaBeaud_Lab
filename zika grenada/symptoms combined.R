@@ -1,4 +1,4 @@
-symptoms_zika<-ds2[ds2$zikv_exposed_mom=="mom_ZIKV_Exposed",grep("symptoms_zika|^symptoms__|mother_record_id",names(ds2))]
+symptoms_zika<-ds2[ds2$zikv_exposed_mom=="mom_ZIKV_Exposed_during_pregnancy"|ds2$zikv_exposed_mom=="mom_ZIKV_Exposure_possible_during_pregnancy",grep("symptoms_zika|^symptoms__|mother_record_id|redcap_repeat_instance",names(ds2))]
 symptoms_zika[symptoms_zika=="Unchecked"]<-0
 symptoms_zika[symptoms_zika=="Checked"]<-1
 
@@ -110,11 +110,11 @@ symptoms_zika$other_symptom<-NA
 symptoms_zika <- within(symptoms_zika, other_symptom[symptoms_zika$symptoms_zika___98.mom==0] <- 0)
 symptoms_zika <- within(symptoms_zika, other_symptom[symptoms_zika$symptoms_zika___98.mom==1] <- 1)
 
-symptoms_zika<-symptoms_zika[,c(1,56:82)]
-symptoms_zika[2:28]<-lapply(symptoms_zika[2:28], as.numeric)
-symptoms_zika$zika_symptom_sum<-rowSums(symptoms_zika[2:28])
-lapply(symptoms_zika[2:29], table)
+symptoms_zika<-symptoms_zika[,c(1,56:83)]
+symptoms_zika[3:29]<-lapply(symptoms_zika[3:29], as.numeric)
+symptoms_zika$zika_symptom_sum<-rowSums(symptoms_zika[3:29])
+lapply(symptoms_zika[3:30], table)
 
 save(symptoms_zika,file="symptoms_zika.rda")
 
-symptoms_zika_var<-names(symptoms_zika[,c(2:29)])
+symptoms_zika_var<-names(symptoms_zika[,c(3:30)])

@@ -2,7 +2,7 @@
 #internda
 library(pwr)
 
-samplessize<-pwr.t.test(sig.level = 0.05, power = 0.80, d=-0.30,alternative = "less")
+samplessize<-pwr.t.test(sig.level = 0.05, power = 0.80, d=-0.45,alternative = "less")
 
 plot(samplessize)
 
