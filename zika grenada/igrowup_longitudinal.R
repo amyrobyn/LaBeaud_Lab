@@ -77,8 +77,9 @@ growth_long<-merge(exposure,z_scores,by=c("mother_record_id","redcap_repeat_inst
 
 # plots -------------------------------------------------------------------
 is_outlier <- function(x) {
-  return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
+  return(x < quantile(x, 0.25) - 2 * IQR(x) | x > quantile(x, 0.75) + 2 * IQR(x))
 }
+
 growth_long %>% 
   filter(!is.na(growth_long$zlen))%>%
   group_by(zikv_exposed_mom) %>%
@@ -110,6 +111,9 @@ growth_long %>%
   ggplot(aes(x=factor(visit), zwei)) + 
   geom_boxplot(outlier.colour = NA) +
   ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
+
+#remove outliers beyond 6 z scores per who recomendations. 
+growth_long<-growth_long[growth_long$zwei<6&growth_long$zwei>-6&growth_long$zhc<6&growth_long$zhc>-6&growth_long$zwfl<6&growth_long$zwfl>-6&growth_long$zlen<6&growth_long$zlen>-6,]
 
 child_outcomes <- CreateTableOne(vars = names(growth_long[4:16]), data = growth_long[growth_long$visit=="pn",], strata = c("zikv_exposed_mom"))
 child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
