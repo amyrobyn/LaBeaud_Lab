@@ -11,7 +11,7 @@ levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_d
 
 oxnda<-read.csv("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/oxnda and internda data/OX-NDA Data_August 2019 _rescored.csv")
 #replace all 'X' in oxnda with NA
-#oxnda[oxnda=="X"]<-NA
+oxnda[oxnda=="X"]<-NA
 oxnda$age.at.visit_months<-oxnda$Chronological_age_in_days/30
 hist(oxnda$Chronological_age_in_days)
 hist(oxnda$age.at.visit_months)
@@ -114,7 +114,7 @@ ggplot(ds2_oxnda_10_18,aes(x=Mean_OXNDA_score_rescaled))+geom_histogram(bins=100
 library(tableone)
 library(haven)
 
-child_outcomes_vars<-names(oxnda[11:99])
+child_outcomes_vars<-names(oxnda[11:102])
 child_outcomes_vars_non_normal<-names(sapply(oxnda, is.numeric))
 
 child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_18, strata = "zikv_exposed_mom")
@@ -124,6 +124,70 @@ child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10
 child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T,nonnormal=child_outcomes_vars_non_normal)
 write.csv(child_outcomes, file = "oxnda_non_normal2.csv")
 
+##The OX-NDA was designed for 10 to 14 months. I see that in this dataset we have children aged up to 18 months.
+#It might be worth to run a sensitivity analysis to see if the scores of children aged 10 to 14 months differ 
+#systematically from the 14 to 18 month age group, and also to check whether the socio-demographic and 
+#ZIKV profile of these two groups differ. These could be included as SI in the paper.
+ds2_oxnda_10_18$age_group<-NA
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group[ds2_oxnda_10_18$age.at.visit_months<18] <- "14-18")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group[ds2_oxnda_10_18$age.at.visit_months<14] <- "10-<14")
+table(ds2_oxnda_10_18$age_group)
+
+child_outcomes_vars<-names(oxnda[11:99])
+child_outcomes_vars<-append(child_outcomes_vars,tab1vars)
+child_outcomes_vars[105]<-"zikv_exposed_mom"
+
+child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], strata = "age_group")
+child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+write.csv(child_outcomes, file = "oxnda_normal_10_14_10_18.csv")
+
+#Following on from this comment, it would be good if we could run age-band scores as well; i.e. 10-11 months, 11-12 months and so on; and present this as a 
+#table (the scatter plots illustrate this nicely but a tabulated version of the data with actual values could also go into the SI) - again checking whether age 
+#at assessment contributes to systematic differences. I wouldn't have suggested this for older age groups but 12 months +/- 2 weeks is still quite young and a 
+#10 month old child performs very differently from a 14 or an 18 month old child. 
+ds2_oxnda_10_18$age_group2<-NA
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=18] <- "18")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=17] <- "17")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=16] <- "16")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=15] <- "15")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=14] <- "14")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=13] <- "13")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=12] <- "12")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=11] <- "11")
+ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=10] <- "10")
+
+ds2_oxnda_10_18 %>%
+  group_by(age_group2) %>%
+  summarise(Mean_OXNDA_score_rescaled_avg = mean(Mean_OXNDA_score_rescaled),Mean_OXNDA_score_rescaled_sd = sd(Mean_OXNDA_score_rescaled,na.rm=TRUE),n=n())
+
+ds2_oxnda_10_18$age_group2<-as.factor(ds2_oxnda_10_18$age_group2)
+for (cat in levels(ds2_oxnda_10_18$age_group2)){
+  d <- subset(ds2_oxnda_10_18, age_group2 != cat)
+  #plot(d$age_group2, d$Mean_OXNDA_score_2)
+  tiff(paste('oxnda_age_sensitivity_analysis_exclude',cat,'.tif',sep = ''),width = 2000,height = 2000,units = "px")
+  print(ggplot(d,aes(d$age_group2,d$Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
+  dev.off()
+  child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = d, strata = "zikv_exposed_mom")
+  child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+  write.csv(child_outcomes, file = paste('oxnda_age_sensitivity_analysis_exclude',cat,'.csv',sep = ''))
+}
+
+  tiff('oxnda_age_sensitivity_analysis_10-18.tif',width = 4000,height = 2000,units = "px")
+  print(ggplot(ds2_oxnda_10_18,aes(factor(round(age.at.visit_months,0)),Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
+  dev.off()
+  child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_18, strata = "zikv_exposed_mom")
+  child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+  write.csv(child_outcomes, file = 'oxnda_age_sensitivity_analysis_10-18.csv')
+
+  tiff('oxnda_age_sensitivity_analysis_10-14.tif',width = 4000,height = 2000,units = "px")
+  print(ggplot(ds2_oxnda_10_14,aes(factor(round(age.at.visit_months,0)),Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
+  dev.off()
+  child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_14, strata = "zikv_exposed_mom")
+  child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
+  write.csv(child_outcomes, file = 'oxnda_age_sensitivity_analysis_10-14.csv')
+  
+
+table(ds2_oxnda_10_18$age_group2,ds2_oxnda_10_18$Mean_OXNDA_score_rescaled)
 #ds2_oxnda_10_18$perc_responses_completed<-  as.integer(ds2_oxnda_10_18$perc_responses_completed)
 #class(ds2_oxnda_10_18$perc_responses_completed)
 #ds2[ds2$zikv_exposed_child=="child ZIKV Exposed","mother_record_id"]
@@ -133,7 +197,6 @@ library("PerformanceAnalytics")
 continous <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","perc_responses_completed")]
 cat <- c("zikv_exposed_mom","breastfeed.12","z_alcohol.24.x","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat")
 catcorrm <- function(vars, dat) sapply(vars, function(y) sapply(vars, function(x) assocstats(table(dat[,x], dat[,y]))$cramer))
-ds2_oxnda_10_18$
 
 mydata <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","zikv_exposed_mom","breastfeed.12","z_alcohol.24.x","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat","perc_responses_completed")]
 mydata[,cat] <- lapply(mydata[,cat],as.factor)

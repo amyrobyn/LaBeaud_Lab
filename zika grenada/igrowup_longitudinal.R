@@ -83,7 +83,7 @@ growth_long %>%
   filter(!is.na(growth_long$zlen))%>%
   group_by(zikv_exposed_mom) %>%
   mutate(outlier=ifelse(is_outlier(zlen),mother_record_id,as.numeric(NA))) %>%
-  ggplot(aes(x=factor(zikv_exposed_mom), zlen)) + 
+  ggplot(aes(x=factor(visit), zlen)) + 
   geom_boxplot(outlier.colour = NA) +
   ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
 
@@ -91,7 +91,7 @@ growth_long %>%
   filter(!is.na(growth_long$zwfl))%>%
   group_by(zikv_exposed_mom) %>%
   mutate(outlier=ifelse(is_outlier(zwfl),mother_record_id,as.numeric(NA))) %>%
-  ggplot(aes(x=factor(zikv_exposed_mom), zwfl)) + 
+  ggplot(aes(x=factor(visit), zwfl)) + 
   geom_boxplot(outlier.colour = NA) +
   ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
 
@@ -99,7 +99,7 @@ growth_long %>%
   filter(!is.na(growth_long$zhc))%>%
   group_by(zikv_exposed_mom) %>%
   mutate(outlier=ifelse(is_outlier(zhc),mother_record_id,as.numeric(NA))) %>%
-  ggplot(aes(x=factor(zikv_exposed_mom), zhc)) + 
+  ggplot(aes(x=factor(visit), zhc)) + 
   geom_boxplot(outlier.colour = NA) +
   ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
 
@@ -107,7 +107,7 @@ growth_long %>%
   filter(!is.na(growth_long$zwei))%>%
   group_by(zikv_exposed_mom) %>%
   mutate(outlier=ifelse(is_outlier(zwei),mother_record_id,as.numeric(NA))) %>%
-  ggplot(aes(x=factor(zikv_exposed_mom), zwei)) + 
+  ggplot(aes(x=factor(visit), zwei)) + 
   geom_boxplot(outlier.colour = NA) +
   ggrepel::geom_text_repel(data=. %>% filter(!is.na(outlier)), aes(label=mother_record_id))
 

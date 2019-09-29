@@ -11,7 +11,8 @@ currentDate <- Sys.Date()
 FileName <- paste("zika",currentDate,".rda",sep=" ") 
 #save(ds,file=FileName)
 
-load("zika 2019-08-28 .rda")
+load("zika 2019-09-23 .rda")
+#load("zika 2019-08-28 .rda")
 #load(FileName)
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
 
@@ -88,6 +89,8 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
     ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Positive"|ds2$result_zikv_serum_mom.mom=="Positive"] <- "Positive")
 
     source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/maternal_exposure_strata_3.R")#change to maternal_exposure_strata_2.R to switch strata for total analysis.
+    #check mother PZ182.
+    subset(ds2, mother_record_id == 'PZ182', c(zikv_exposed_mom,pcr_positive_zikv_mom,result_zikv_igg_pgold.mom,result_zikv_igg_pgold_fu.mom))
     
     table(ds2$zikv_exposed_mom,ds2$result_zikv_igg_pgold.pn, exclude = NULL)
     table(ds2$zikv_exposed_mom,ds2$result_zikv_igg_pgold.12, exclude = NULL)
@@ -197,6 +200,7 @@ ds2$asthma_resp<-NA
     ds2[factor] <- lapply(ds2[factor], as.factor) 
     tab1vars <- c("parish.mom","mom_40plus","occupation.mom","asthma_resp","medical_conditions___10.mom","medical_conditions___12.mom","medical_conditions___13.mom","cdv_risk","parity","marrital_status.mom","education.mom.cat","monthly_income.mom","latrine_type.mom","dad_40plus","any_mosquito_protection")
     require(tableone)
+    
     tab1All <- CreateTableOne(vars = tab1vars, data = ds2[ds2$redcap_repeat_instance==1 & !is.na(ds2$zikv_exposed_mom),], factorVars = factor)
     tab1All<-print(tab1All,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,cramVars = tab1vars)
     setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada/ms zika spectrum of disease")
