@@ -156,9 +156,34 @@ ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.vis
 ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=11] <- "11")
 ds2_oxnda_10_18 <- within(ds2_oxnda_10_18, age_group2[ds2_oxnda_10_18$age.at.visit_months<=10] <- "10")
 
+
 ds2_oxnda_10_18 %>%
   group_by(age_group2) %>%
   summarise(Mean_OXNDA_score_rescaled_avg = mean(Mean_OXNDA_score_rescaled),Mean_OXNDA_score_rescaled_sd = sd(Mean_OXNDA_score_rescaled,na.rm=TRUE),n=n())
+
+pivot <- ds2_oxnda_10_18 %>%
+  #select(age_group, zikv_exposed_mom, Mean_OXNDA_score_rescaled)%>%
+  filter(!is.na(zikv_exposed_mom))%>%
+  group_by(age_group, zikv_exposed_mom)%>%
+  summarise(Mean_OXNDA_score_rescaled_group_mean = mean(Mean_OXNDA_score_rescaled, na.rm = T), n = n(), sd = sd(as.numeric(Mean_OXNDA_score_rescaled), na.rm = TRUE))
+write.csv(pivot, file = 'oxnda_group.csv')
+
+pivot2 <- ds2_oxnda_10_18 %>%
+  #select(age_group, zikv_exposed_mom, Mean_OXNDA_score_rescaled)%>%
+  filter(!is.na(zikv_exposed_mom))%>%
+  group_by(age_group2, zikv_exposed_mom)%>%
+  summarise(Mean_OXNDA_score_rescaled_group_mean = mean(Mean_OXNDA_score_rescaled, na.rm = T), n = n(), sd = sd(as.numeric(Mean_OXNDA_score_rescaled), na.rm = TRUE))
+write.csv(pivot2, file = 'oxnda_group2.csv')
+
+pivot3 <- ds2_oxnda_10_18 %>%
+  #select(age_group, zikv_exposed_mom, Mean_OXNDA_score_rescaled)%>%
+  filter(!is.na(zikv_exposed_mom))%>%
+  group_by(zikv_exposed_mom)%>%
+  summarise(Mean_OXNDA_score_rescaled_group_mean = mean(Mean_OXNDA_score_rescaled, na.rm = T), n = n(), sd = sd(as.numeric(Mean_OXNDA_score_rescaled), na.rm = TRUE))
+write.csv(pivot3, file = 'oxnda.csv')
+
+kruskal.test(Mean_OXNDA_score_rescaled ~ zikv_exposed_mom, data = ds2_oxnda_10_18[ds2_oxnda_10_18$age_group2=='18',])
+
 
 ds2_oxnda_10_18$age_group2<-as.factor(ds2_oxnda_10_18$age_group2)
 for (cat in levels(ds2_oxnda_10_18$age_group2)){
