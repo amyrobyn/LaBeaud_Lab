@@ -91,7 +91,8 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
 
     source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/maternal_exposure_strata_3.R")#change to maternal_exposure_strata_2.R to switch strata for total analysis.
     #check mother PZ182.
-    subset(ds2, mother_record_id == 'PZ182', c(zikv_exposed_mom,pcr_positive_zikv_mom,result_zikv_igg_pgold.mom,result_zikv_igg_pgold_fu.mom))
+    subset(ds2, pcr_positive_zikv_mom == 'Positive', c(mom_id_orig_study_2.mom,mom_id_orig_study.mom,mother_record_id,zikv_exposed_mom,pcr_positive_zikv_mom,result_zikv_igg_pgold.mom,result_zikv_igg_pgold_fu.mom))
+    table(ds2$mom_id_orig_study_2.mom)
     
     table(ds2$zikv_exposed_mom,ds2$result_zikv_igg_pgold.pn, exclude = NULL)
     table(ds2$zikv_exposed_mom,ds2$result_zikv_igg_pgold.12, exclude = NULL)
@@ -340,7 +341,17 @@ set_label(ds2_oxnda_10_18$education.mom) <- "Maternal Highest Education"
 set_label(ds2_oxnda_10_18$age.at.visit_months) <- "Child age (months) at assessment"
 
 model1<-glm(Mean_OXNDA_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+gender.pn+gestational_weeks_2_2.12+education.mom.cat+monthly_income.mom+parish.mom+breastfeed.12,family = gaussian,data = ds2_oxnda_10_18)
+tab_model(model1,show.reflvl =T)
+
 model2<-glm(Mean_OXNDA_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18)
+model3<-glm(Mean_Negative_Behaviour_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
+model4<-glm(Mean_Positive_Behaviour_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
+model5<-glm(Mean_overall_language_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
+model6<-glm(Mean_overall_motor_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
+model7<-glm(Mean_cognitive_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
+
+tab_model(model2,model3,model4,model5,model6,model7,show.reflvl =T)
+
 
 tiff(filename = "glm_model2_estimates.tif",width = 2500,height=3000,units="px",family = "sans",bg="white",pointsize = 12,res=300)
 plot_model(model2,

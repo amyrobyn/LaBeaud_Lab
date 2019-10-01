@@ -54,9 +54,61 @@ ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),],
   labs(title = "Plot of mean oxnda score by age:10-18 months\n", 
        x = "Child age (months) at assessment", y = "Mean Total OXNDA Score", 
        color = "Percent Responses Completed\n")+
-  theme_set(theme_gray(base_size = 60))
+  theme_set(theme_gray(base_size = 100))
 dev.off()
 
+ds2_oxnda_10_18$Mean_cognitive_score_rescaled<-ds2_oxnda_10_18$Mean_cognitive_score*25
+ds2_oxnda_10_18$Mean_overall_language_score_rescaled<-ds2_oxnda_10_18$Mean_overall_language_score*25
+ds2_oxnda_10_18$Mean_Positive_Behaviour_score_rescaled<-ds2_oxnda_10_18$Mean_Positive_Behaviour_score*25
+ds2_oxnda_10_18$Mean_Negative_Behaviour_rescaled<-ds2_oxnda_10_18$Mean_Negative_Behaviour*25
+
+summary(ds2_oxnda_10_18$Mean_OXNDA_score_rescaled)
+summary(ds2_oxnda_10_18$Mean_cognitive_score_rescaled)
+summary(ds2_oxnda_10_18$Mean_overall_language_score_rescaled)
+summary(ds2_oxnda_10_18$Mean_Positive_Behaviour_score_rescaled)
+summary(ds2_oxnda_10_18$Mean_Negative_Behaviour_rescaled)
+summary(ds2_oxnda_10_18$Mean_overall_motor_score_rescaled)
+
+library(ggplot2)
+ggplot(ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], aes(age.at.visit_months, y = value, color = variable)) + 
+  geom_point(aes(y = Mean_overall_motor_score_rescaled, col = "Mean_overall_motor_score_rescaled")) + 
+  geom_smooth(aes(y = Mean_overall_motor_score_rescaled, col = "Mean_overall_motor_score_rescaled"),method=glm) + 
+  geom_point(aes(y = Mean_cognitive_score_rescaled, col = "Mean_cognitive_score_rescaled")) + 
+  geom_smooth(aes(y = Mean_cognitive_score_rescaled, col = "Mean_cognitive_score_rescaled"),method=glm) + 
+  geom_point(aes(y = Mean_overall_language_score_rescaled, col = "Mean_overall_language_score_rescaled")) + 
+  geom_smooth(aes(y = Mean_overall_language_score_rescaled, col = "Mean_overall_language_score_rescaled"),method=glm) + 
+  geom_point(aes(y = Mean_Positive_Behaviour_score_rescaled, col = "Mean_Positive_Behaviour_score_rescaled")) + 
+  geom_smooth(aes(y = Mean_Positive_Behaviour_score_rescaled, col = "Mean_Positive_Behaviour_score_rescaled"),method=glm) + 
+  geom_point(aes(y = Mean_Negative_Behaviour_rescaled, col = "Mean_Negative_Behaviour_rescaled")) + 
+  geom_smooth(aes(y = Mean_Negative_Behaviour_rescaled, col = "Mean_Negative_Behaviour_rescaled"),method=glm) + 
+  facet_wrap("zikv_exposed_mom" )+ 
+  theme_set(theme_gray(base_size = 10))
+
+library(reshape2)
+long_oxnda<-melt(ds2_oxnda_10_18, id.vars = c("zikv_exposed_mom","age.at.visit_months"), measure.vars = c("Mean_OXNDA_score_rescaled","Mean_Negative_Behaviour_rescaled","Mean_Positive_Behaviour_score_rescaled","Mean_overall_language_score_rescaled","Mean_overall_motor_score_rescaled","Mean_cognitive_score_rescaled"))
+
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_OXNDA_score_rescaled"] <- "Total"
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_Negative_Behaviour_rescaled"] <- "Negative Behavior"
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_Positive_Behaviour_score_rescaled"] <- "Positive Behavior"
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_overall_language_score_rescaled"] <- "Language"
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_overall_motor_score_rescaled"] <- "Motor"
+levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_cognitive_score_rescaled"] <- "Cognitive"
+
+tiff("oxnda_mean_domains_byage_strata.tiff",width = 4500,height = 2000,units = "px")
+ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_months,0), y = value, color = zikv_exposed_mom)) + 
+  theme_set(theme_gray(base_size = 60))+
+  geom_smooth(method=glm,size=4) + 
+  geom_point(size = 6) + 
+  facet_wrap("variable" )+
+  labs(x = "Child age (months) at assessment", y = "Mean Score", 
+       color = "Maternal Exposure\n")+
+  theme(legend.position="bottom")
+dev.off()  
+  
+ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
+       aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
+  
+  
 tiff("oxnda_mean_byage_byprec_all.tiff",width = 4500,height = 2000,units = "px")
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
@@ -219,11 +271,12 @@ table(ds2_oxnda_10_18$age_group2,ds2_oxnda_10_18$Mean_OXNDA_score_rescaled)
 #table(ds2$mother_record_id)
 library("PerformanceAnalytics")
 
-continous <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","perc_responses_completed")]
+
+continous <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","Mean_Negative_Behaviour_rescaled","Mean_Positive_Behaviour_score_rescaled","Mean_overall_language_score_rescaled","Mean_overall_motor_score_rescaled","Mean_cognitive_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","perc_responses_completed")]
 cat <- c("zikv_exposed_mom","breastfeed.12","z_alcohol.24.x","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat")
 catcorrm <- function(vars, dat) sapply(vars, function(y) sapply(vars, function(x) assocstats(table(dat[,x], dat[,y]))$cramer))
 
-mydata <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","zikv_exposed_mom","breastfeed.12","z_alcohol.24.x","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat","perc_responses_completed")]
+mydata <- ds2_oxnda_10_18[, c("Mean_OXNDA_score_rescaled","Mean_Negative_Behaviour_rescaled","Mean_Positive_Behaviour_score_rescaled","Mean_overall_language_score_rescaled","Mean_overall_motor_score_rescaled","Mean_cognitive_score_rescaled","mom_age_delivery","gestational_weeks_2_2.12","age.at.visit_months","zikv_exposed_mom","breastfeed.12","z_alcohol.24.x","monthly_income.mom","gender.pn","parish.mom", "occupation.mom","latrine_type.mom","education.mom.cat","perc_responses_completed")]
 mydata[,cat] <- lapply(mydata[,cat],as.factor)
 mydata[,cat] <- lapply(mydata[,cat],as.numeric)
 cor(mydata,use="pairwise.complete.obs",method = "pearson")
