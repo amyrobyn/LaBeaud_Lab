@@ -95,16 +95,36 @@ levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_overall_motor_s
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_cognitive_score_rescaled"] <- "Cognitive"
 
 tiff("oxnda_mean_domains_byage_strata.tiff",width = 4500,height = 2000,units = "px")
-ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_months,0), y = value, color = zikv_exposed_mom)) + 
-  theme_set(theme_gray(base_size = 60))+
-  geom_smooth(method=glm,size=4) + 
-  geom_point(size = 6) + 
-  facet_wrap("variable" )+
-  labs(x = "Child age (months) at assessment", y = "Mean Score", 
-       color = "Maternal Exposure\n")+
-  theme(legend.position="bottom")
+transparent.plot=ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_months,0), y = value, color = zikv_exposed_mom)) + 
+    geom_smooth(method=glm,size=10) + 
+    geom_point(size = 20) + 
+    facet_wrap("variable" )+
+    labs(x = "Child age (months) at assessment", y = "Mean Score", color = "Maternal Exposure: \n")+
+    theme(
+      text = element_text(size = 100,color ='white'),
+      legend.position = 'top',
+      #panel.background = element_rect(fill = "transparent"), # bg of the panel
+      plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+      panel.grid.major = element_blank(), # get rid of major grid
+      panel.grid.minor = element_blank(), # get rid of minor grid
+      legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+      legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg,
+      axis.title = element_text(colour = 'white'),
+      axis.ticks =element_line(colour = 'white',size=10),
+      axis.text = element_text(colour = 'white'),
+      axis.ticks.length = unit(0.25, "cm"),
+      axis.line.x = element_line(color='white')
+    )+
+    guides(color = guide_legend(override.aes = list(size=30),nrow=3))+
+    scale_x_continuous(breaks = seq(10, 18, by = 2))
+
 dev.off()  
-  
+
+ggsave(filename = "oxnda-transparent-background.png",
+       plot = transparent.plot,
+       bg = "transparent", 
+       width = 45, height = 25, units = "in", limitsize = FALSE)
+
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
   

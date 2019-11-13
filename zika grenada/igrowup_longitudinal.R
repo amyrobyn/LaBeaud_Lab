@@ -151,7 +151,38 @@ child_outcomes.12<-grep("abnormal|mic",child_outcomes.12,value = T)
 growth_long$sum_growth_Outcomes_abnormal<-rowSums(growth_long[17:21],na.rm = T)
 table(growth_long$zikv_exposed_mom,growth_long$sum_growth_Outcomes_abnormal,exclude = NULL)
 
-ggplot(growth_long, aes(x = zikv_exposed_mom, y = sum_growth_Outcomes_abnormal)) + geom_boxplot() 
+# New facet label names for visit variable
+visit.labs <- c("Visit 1", "Visit 2")
+names(visit.labs) <- c("pn", "12")
+library(stringr)
+
+transparent.plot=ggplot(growth_long[!is.na(growth_long$zikv_exposed_mom),], aes(x= zikv_exposed_mom,y = sum_growth_Outcomes_abnormal)) + 
+  geom_boxplot(size=5, outlier.size = 8,alpha=.8) +
+  theme(
+    text = element_text(size = 80),
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg,
+    axis.ticks =element_line(colour = 'black',size=10),
+    axis.text = element_text(colour = 'black',size = 80),
+    axis.title = element_text(color = 'black',size=80),
+    axis.ticks.length =  unit(0.25, "cm"),
+    axis.line = element_line(color='black',size=10)
+  )+
+  labs(y = "Sum of abnormal growth outcomes", x = "Maternal Exposure")+
+  facet_wrap('visit',nrow=2,dir='v',labeller = labeller(visit = visit.labs))+
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
+  stat_compare_means(size=20,label.y = 5)
+  
+
+transparent.plot
+
+ggsave(filename = "growth-transparent-background_test.png",
+       plot = transparent.plot,
+       bg = "transparent", 
+       width = 30, height = 25, units = "in", limitsize = FALSE)
 
 child_outcomes_vars<-grep("z|mic|mir|sum_growth_Outcomes_abnormal",names(growth_long),value = T)
 child_outcomes_vars<-grep("abnormal|mic|mir|sum_growth_Outcomes_abnormal",child_outcomes_vars,value = T)

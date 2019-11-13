@@ -17,6 +17,10 @@ load("zika 2019-09-29 .rda")
 #load(FileName)
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
 
+library(Hmisc)
+Hmisc::describe(ds$z_mainsurvey_date_dmy)
+write.csv(ds,"ds.csv",na='')
+
 # merge -------------------------------------------------------------------
 library(dplyr)
 dataMoms <- ds[ds$redcap_event_name=="Mother",]
@@ -305,8 +309,11 @@ write.csv(sup.table1, file = "sup.table1.csv")
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance==1] <- "C1")
     ds2 <- within(ds2, redcap_repeat_instance[ds2$redcap_repeat_instance==2] <- "C2")
 #recalculate all the zscores. the nurses did not fill these out each time. 
-    
     source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/igrowup_longitudinal.R")
+#define eye exam outcomes 
+    source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/vision.R")
+#define sga
+    source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/sga.R")
     
 #define substance use generally.
     ds2$substance_use<-NA
@@ -351,7 +358,6 @@ model6<-glm(Mean_overall_motor_score_rescaled~zikv_exposed_mom+age.at.visit_mont
 model7<-glm(Mean_cognitive_score_rescaled~zikv_exposed_mom+age.at.visit_months+mom_age_delivery+parish.mom,family = gaussian,data = ds2_oxnda_10_18, na.action = na.omit)
 
 tab_model(model2,model3,model4,model5,model6,model7,show.reflvl =T)
-
 
 tiff(filename = "glm_model2_estimates.tif",width = 2500,height=3000,units="px",family = "sans",bg="white",pointsize = 12,res=300)
 plot_model(model2,
@@ -473,3 +479,4 @@ summary(c(m1,m2,m3))
 exp(coef(m2))
 
 plot(m2)
+
