@@ -66,6 +66,7 @@ source("igrowup_restricted.r")
 
 wd="C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada"
 setwd(wd)
+
 igrowup.standard(mydf=z_scores, sex=sex, age = age, age.month=T, weight=weight,headc=hc, len=length, FilePath = wd,FileLab="z_scores")
 
 z_scores<-read.csv("z_scores_z_st.csv")
@@ -76,6 +77,7 @@ growth_long<-merge(exposure,z_scores,by=c("mother_record_id","redcap_repeat_inst
 
 
 # plots -------------------------------------------------------------------
+setwd("C:/Users/amykr/Box Sync/Amy's Externally Shareable Files/zika_grenada/zikv paper 1 analysis")
 is_outlier <- function(x) {
   return(x < quantile(x, 0.25) - 2 * IQR(x) | x > quantile(x, 0.75) + 2 * IQR(x))
 }
@@ -155,34 +157,40 @@ table(growth_long$zikv_exposed_mom,growth_long$sum_growth_Outcomes_abnormal,excl
 visit.labs <- c("Visit 1", "Visit 2")
 names(visit.labs) <- c("pn", "12")
 library(stringr)
+library(ggpubr)
+
+ds2$zikv_exposed_mom<-  as.factor(ds2$zikv_exposed_mom)
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposed_during_pregnancy"] <- "Probably ZIKV Infected During Pregnancy"
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_possible_during_pregnancy"] <- "Possibly ZIKV Infected During Pregnancy"
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_during_pregnancy"] <- "Not ZIKV Infected"
 
 transparent.plot=ggplot(growth_long[!is.na(growth_long$zikv_exposed_mom),], aes(x= zikv_exposed_mom,y = sum_growth_Outcomes_abnormal)) + 
   geom_boxplot(size=5, outlier.size = 8,alpha=.8) +
   theme(
-    text = element_text(size = 80),
+    text = element_text(size = 150),
     plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
     panel.grid.major = element_blank(), # get rid of major grid
     panel.grid.minor = element_blank(), # get rid of minor grid
     legend.background = element_rect(fill = "transparent"), # get rid of legend bg
     legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg,
     axis.ticks =element_line(colour = 'black',size=10),
-    axis.text = element_text(colour = 'black',size = 80),
-    axis.title = element_text(color = 'black',size=80),
+    axis.text = element_text(colour = 'black',size = 150),
+    axis.title = element_text(color = 'black',size=150),
     axis.ticks.length =  unit(0.25, "cm"),
-    axis.line = element_line(color='black',size=10)
+    axis.line = element_line(color='black',size=10),
+    panel.background = element_rect(fill = "transparent"),
+    strip.text.x = element_text(size = 150, colour = "black")
+    # bg of the panel
   )+
   labs(y = "Sum of abnormal growth outcomes", x = "Maternal Exposure")+
   facet_wrap('visit',nrow=2,dir='v',labeller = labeller(visit = visit.labs))+
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
-  stat_compare_means(size=20,label.y = 5)
-  
+  scale_x_discrete(labels=c("Probable ZIKV \nExposed Pregnancy", "Possible ZIKV \nExposed Pregnancy","ZIKV \nUnexposed Pregnancy"))+
+  stat_compare_means(size=40,label.y = 5)
 
-transparent.plot
 
 ggsave(filename = "growth-transparent-background_test.png",
-       plot = transparent.plot,
        bg = "transparent", 
-       width = 30, height = 25, units = "in", limitsize = FALSE)
+       width = 70, height = 40, units = "in", limitsize = FALSE)
 
 child_outcomes_vars<-grep("z|mic|mir|sum_growth_Outcomes_abnormal",names(growth_long),value = T)
 child_outcomes_vars<-grep("abnormal|mic|mir|sum_growth_Outcomes_abnormal",child_outcomes_vars,value = T)

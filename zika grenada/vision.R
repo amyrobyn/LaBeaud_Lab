@@ -14,11 +14,25 @@ ds2 <- within(ds2, Acuityat50cm_n[ds2$Acuityat50cm=="L"] <- 12)
 ds2 <- within(ds2, Acuityat50cm_n[ds2$Acuityat50cm=="M"] <- 13)
 table(ds2$Contrast.Sensitivity)
 library(ggpubr)
-ggplot(ds2,aes(zikv_exposed_mom,LogMAR))+geom_boxplot()+
-  stat_compare_means(size=3,bracket.size = 1,comparisons = list(c("mom_zikv_Unexposed_during_pregnancy","mom_ZIKV_Exposure_possible_during_pregnancy"),
-                                                                c("mom_ZIKV_Exposure_possible_during_pregnancy","mom_ZIKV_Exposed_during_pregnancy"),
-                                                                c("mom_ZIKV_Exposed_during_pregnancy","mom_zikv_Unexposed_during_pregnancy") )) + 
-  stat_compare_means(size=3,label.y = 1.75)
+
+ds2$zikv_exposed_mom<-  as.factor(ds2$zikv_exposed_mom)
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposed_during_pregnancy"] <- "Probably ZIKV Infected During Pregnancy"
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_possible_during_pregnancy"] <- "Possibly ZIKV Infected During Pregnancy"
+levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_during_pregnancy"] <- "Not ZIKV Infected"
+
+library(stringr)
+tiff(filename = "logmar.tif",width = 10000,height=8000,units="px",res = 800)
+ggplot(ds2[!is.na(ds2$zikv_exposed_mom),],aes(zikv_exposed_mom,LogMAR))+geom_boxplot()+
+  #stat_compare_means(size=10,bracket.size = 1,comparisons = list(c("Not ZIKV Infected","Possibly ZIKV Infected During Pregnancy"),
+   #                                                              c("Possibly ZIKV Infected During Pregnancy","Probably ZIKV Infected During Pregnancy"),
+    #                                                             c("Probably ZIKV Infected During Pregnancy","Not ZIKV Infected") )) + 
+  stat_compare_means(size=12,label.y = 1)+
+  theme(text=element_text(size=40),
+        panel.background = element_rect(fill = "transparent") # bg of the panel
+  )+
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
+  labs(x='Maternal Exposure', y = 'LogMAR Score at 50 cm')
+dev.off()
 
 ggplot(ds2,aes(zikv_exposed_mom,Acuityat50cm_n))+geom_boxplot()+
   stat_compare_means(size=3,bracket.size = 1,comparisons = list(c("mom_zikv_Unexposed_during_pregnancy","mom_ZIKV_Exposure_possible_during_pregnancy"),

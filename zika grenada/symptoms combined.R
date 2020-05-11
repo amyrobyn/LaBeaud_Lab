@@ -115,6 +115,6 @@ symptoms_zika[3:29]<-lapply(symptoms_zika[3:29], as.numeric)
 symptoms_zika$zika_symptom_sum<-rowSums(symptoms_zika[3:29])
 lapply(symptoms_zika[3:30], table)
 
-save(symptoms_zika,file="symptoms_zika.rda")
+#save(symptoms_zika,file="symptoms_zika.rda")
 
 symptoms_zika_var<-names(symptoms_zika[,c(3:30)])
