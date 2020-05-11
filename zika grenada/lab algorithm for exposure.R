@@ -14,7 +14,8 @@ currentDate <- Sys.Date()
 FileName <- paste("zika",currentDate,".rda",sep=" ") 
 #save(ds,file=FileName)
 
-load("zika 2020-04-13 .rda")
+load("zika 2020-05-11 .rda")
+#load("zika 2020-04-13 .rda")
 #load("zika 2020-03-04 .rda")
 #load("zika 2020-02-25 .rda")
 #load("zika 2019-12-02 .rda")
@@ -148,11 +149,11 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
       ds2 <- within(ds2, maternal_zikv_exposure.mom[ds2$maternal_zikv_exposure.mom=="ZIKV Exposure possible during pregnancy"] <- "mom_ZIKV_Exposure_possible_during_pregnancy")
       ds2 <- within(ds2, maternal_zikv_exposure.mom[ds2$maternal_zikv_exposure.mom=="ZIKV Unexposed during pregnancy"] <- "mom_zikv_Unexposed_during_pregnancy")
       ds2 <- within(ds2, zikv_exposed_mom[is.na(ds2$zikv_exposed_mom)] <- "unknown")
-    
+    table(ds2$zikv_exposed_mom,ds2$maternal_zikv_exposure.mom)
   #write to csv
-      write.csv(ds2[c('mother_record_id','mom_id_orig_study.mom','mom_id_orig_study_2.mom','cohort___1.mom','cohort___2.mom','cohort___3.mom','redcap_repeat_instance','zikv_exposed_mom','maternal_zikv_exposure.mom','result_zikv_urine_mom.mom','result_zikv_serum_mom.mom','result_zikv_igg_pgold_fu.mom','result_zikv_igg_pgold.mom','pcr_positive_zikv_mom')],'zikv_exposure.csv', na='',row.names = FALSE,quote = FALSE)    
-
-#denv exposure mom
+      write.csv(ds2[c('mother_record_id','mom_id_orig_study.mom','mom_id_orig_study_2.mom','cohort___1.mom','cohort___2.mom','cohort___3.mom','redcap_repeat_instance','zikv_exposed_mom','maternal_zikv_exposure.mom','result_zikv_urine_mom.mom','result_zikv_serum_mom.mom','result_zikv_igg_pgold_fu.mom','result_zikv_igg_pgold.mom','pcr_positive_zikv_mom')],'zikv_exposure.csv', na='',row.names = FALSE,quote = FALSE)
+      
+  #denv exposure mom
     ds2$pcr_positive_denv_mom<-NA
     ds2 <- within(ds2, pcr_positive_denv_mom[ds2$result_denv_urine_mom.mom=="Negative"|ds2$result_denv_serum_mom.mom=="Negative"] <- "Negative")
     ds2 <- within(ds2, pcr_positive_denv_mom[ds2$result_denv_urine_mom.mom=="Positive"|ds2$result_denv_serum_mom.mom=="Positive"] <- "Positive")
@@ -168,6 +169,8 @@ ds2 <- Filter(function(x)!all(x==""), ds2)
     ds2$denv_exposed_child<-NA
     ds2 <- within(ds2, denv_exposed_child[ds2$result_denv_igg_pgold.pn=="Negative"|ds2$result_denv_igg_pgold.12=="Negative"] <- "child denv Unexposed")
     ds2 <- within(ds2, denv_exposed_child[ds2$result_denv_igg_pgold.pn=="Positive"|ds2$result_denv_igg_pgold.12=="Positive"] <- "child denv Exposed")
+
     
+        
 #review the lab assays and algorithms
 source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/pgold testing.R")
