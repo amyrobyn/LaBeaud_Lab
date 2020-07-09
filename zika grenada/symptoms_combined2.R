@@ -49,9 +49,10 @@ symptoms_zika<-symptoms_zika[,c(1:2,57:66)]
 
 symptoms_zika[3:12]<-lapply(symptoms_zika[3:12], as.numeric)
 symptoms_zika$zika_symptom_sum_groups<-rowSums(symptoms_zika[3:12])
+symptoms_zika$zika_symptom_sum_groups_cat<-ifelse(symptoms_zika$zika_symptom_sum_groups == 0, 0, (ifelse(symptoms_zika$zika_symptom_sum_groups == 1, 1, ifelse(symptoms_zika$zika_symptom_sum_groups >1, '2+', NA))))
 
-symptoms_zika_group_var<-names(symptoms_zika[,c(3:13)])
-lapply(symptoms_zika[3:13], table)
+symptoms_zika_group_var<-names(symptoms_zika[,c(3:14)])
+lapply(symptoms_zika[3:14], table)
 symptoms_zika_groups<-symptoms_zika
 
 #save(symptoms_zika,file="symptoms_zika_groups.rda")

@@ -3,12 +3,12 @@ library(REDCapR)
 library(tidyr)
 setwd("C:/Users/amykr/Box Sync/Amy Krystosik's Files/zika study- grenada")
 # load data -------------------------------------------------------------------
-Redcap.token <- readLines("Redcap.token.zika.txt") # Read API token from folder
-REDcap.URL  <- 'https://redcap.stanford.edu/api/'
-#ds <- redcap_read(  redcap_uri  = REDcap.URL, token = Redcap.token,  batch_size = 100,raw_or_label="label")$data
-currentDate <- Sys.Date() 
-FileName <- paste("zika",currentDate,".rda",sep=" ") 
-#save(ds,file=FileName)
+  #Redcap.token <- readLines("Redcap.token.zika.txt") # Read API token from folder
+  #REDcap.URL  <- 'https://redcap.stanford.edu/api/'
+  #ds <- redcap_read(  redcap_uri  = REDcap.URL, token = Redcap.token,  batch_size = 100,raw_or_label="label")$data
+  #currentDate <- Sys.Date() 
+  #FileName <- paste("zika",currentDate,".rda",sep=" ") 
+  #save(ds,file=FileName)
 
 load("zika 2020-05-11 .rda")
 #load("zika 2020-04-13 .rda")
