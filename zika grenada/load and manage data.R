@@ -19,6 +19,7 @@ load("zika 2020-05-11 .rda")
 #load(FileName)
 #ds<-read.csv("ZikaPregnancyCohort_DATA_2019-11-29_1743.csv")
 ds<-dplyr::filter(ds, !grepl("--",mother_record_id))
+library(dplyr)
 ds <-ds %>% mutate_all(na_if,"")
 
 library(Hmisc)
@@ -80,3 +81,7 @@ ds2 <- merge(dataMoms, child[child$redcap_repeat_instance==1,], by = "mother_rec
 # subset to non missing collumns-------------------------------------------------------------------
 ds2 <- Filter(function(x)!all(is.na(x)), ds2)
 ds2 <- Filter(function(x)!all(x==""), ds2)
+
+
+# Exclude PZ222 from the analysis because no FU ... With regards to the duplicates, please leave in since Dr Blackmon has it included in her paper-------------------------------------------------------------------
+ds2<-ds2[ds2$mother_record_id != "PZ222", ]

@@ -2,6 +2,9 @@
     ds2$pcr_positive_zikv_mom<-NA
     ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Negative"|ds2$result_zikv_serum_mom.mom=="Negative"] <- "Negative")
     ds2 <- within(ds2, pcr_positive_zikv_mom[ds2$result_zikv_urine_mom.mom=="Positive"|ds2$result_zikv_serum_mom.mom=="Positive"] <- "Positive")
+    
+    table(ds2$pcr_positive_zikv_mom, ds2$redcap_event_name.mom, exclude = NULL)
+    table(ds2$zikv_exposed_mom,ds2$pcr_positive_denv_mom)
 
     source("C:/Users/amykr/Documents/GitHub/LaBeaud_lab/zika grenada/maternal_exposure_strata_3.R")#change to maternal_exposure_strata_2.R to switch strata for total analysis.
 

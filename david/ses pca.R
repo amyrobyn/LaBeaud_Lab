@@ -3,7 +3,7 @@ ses<-AIC[, c("person_id","redcap_event_name","id_city","strata_all","telephone",
 ses<-ses[complete.cases(ses), ]
 ses.pca<-prcomp(ses[,5:16 ], center = TRUE,scale. = TRUE)
 summary(ses.pca)
-#install_github("vqv/ggbiplot")
+install_github("vqv/ggbiplot")
 library("ggbiplot")
 ggbiplot(ses.pca)
 ggbiplot(ses.pca,ellipse=TRUE, groups=ses$id_city)

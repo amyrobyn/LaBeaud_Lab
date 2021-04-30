@@ -23,7 +23,7 @@ levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_ZIKV_Exposure_po
 levels(ds2$zikv_exposed_mom)[levels(ds2$zikv_exposed_mom)=="mom_zikv_Unexposed_during_pregnancy"] <- "Not ZIKV Infected"
 
 library(stringr)
-tiff(filename = "Fig4_logmar.tif",width = 10000,height=8000,units="px",res = 800)
+tiff(filename = "Fig4_logmar_1_21.tif",width = 10000,height=8000,units="px",res = 800)
 ggplot(ds2[!is.na(ds2$zikv_exposed_mom)& ds2$zikv_exposed_mom !='unknown',],aes(zikv_exposed_mom,LogMAR))+geom_boxplot()+
   #stat_compare_means(size=10,bracket.size = 1,comparisons = list(c("Not ZIKV Infected","Possibly ZIKV Infected During Pregnancy"),
    #                                                              c("Possibly ZIKV Infected During Pregnancy","Probably ZIKV Infected During Pregnancy"),
@@ -36,9 +36,9 @@ ggplot(ds2[!is.na(ds2$zikv_exposed_mom)& ds2$zikv_exposed_mom !='unknown',],aes(
   labs(x='Maternal Exposure', y = 'LogMAR Score at 50 cm')
 dev.off()
 
-  stat_compare_means(size=3,label.y = 18)
+table(ds2$zikv_exposed_mom)
 
-tiff(filename = "Fig4_contrast.tif",width = 10000,height=8000,units="px",res = 800)
+tiff(filename = "Fig4_contrast_2_22_21.tif",width = 10000,height=8000,units="px",res = 800)
 ggplot(ds2[!is.na(ds2$zikv_exposed_mom)& ds2$zikv_exposed_mom !='unknown',],aes(zikv_exposed_mom,Contrast.Sensitivity))+geom_boxplot()+
   stat_compare_means(size=3,bracket.size = 1,comparisons = list(c("Probably ZIKV Infected During Pregnancy","Possibly ZIKV Infected During Pregnancy"),
                                                                 c("Probably ZIKV Infected During Pregnancy","Not ZIKV infected"),
@@ -50,5 +50,3 @@ stat_compare_means(size=12,label.y = 105)+
   scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
   labs(x='Maternal Exposure', y = 'Cardiff Contrast')
 dev.off()
-
-#describe(ds2[2865:2872])

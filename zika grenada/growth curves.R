@@ -63,6 +63,6 @@ growthcurve<-ggplot()+
         strip.background = element_rect(colour = "white", fill = "white")  )
 growthcurve
 # print to tiff -----------------------------------------------------------
-tiff(file = "growth_curve.tiff", width = 6200, height = 3200, units = "px", res = 600)
+tiff(file = "growth_curve_1_21.tiff", width = 6200, height = 3200, units = "px", res = 600)
   growthcurve
 dev.off()

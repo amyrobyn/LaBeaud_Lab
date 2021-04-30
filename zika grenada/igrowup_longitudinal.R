@@ -281,6 +281,23 @@ child_outcomes_tableone<-print(child_outcomes_tableone,
                       printToggle = FALSE,
                       smd=T,
                       cramVars=child_outcomes_vars)
+write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_pn_strata_missing.csv")
+
+child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
+                                          includeNA=FALSE, 
+                                          data = growth_long[growth_long$visit=="pn",],
+                                          strata = "zikv_exposed_mom",
+                                          factorVars = child_outcomes_vars_factor)
+summary(child_outcomes_tableone$ContTable)
+summary(child_outcomes_tableone$CatTable)
+
+child_outcomes_tableone<-print(child_outcomes_tableone,
+                               quote = F, 
+                               noSpaces = TRUE, 
+                               nonnormal = 'age',
+                               printToggle = FALSE,
+                               smd=T,
+                               cramVars=child_outcomes_vars)
 write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_pn_strata.csv")
 
 child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
@@ -294,7 +311,21 @@ child_outcomes_tableone<-print(child_outcomes_tableone,quote = F,
                       printToggle = FALSE,
                       smd=T,
                       cramVars=child_outcomes_vars)
+write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_12_strata_missing.csv")
+
+child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
+                                          includeNA=FALSE, 
+                                          data = growth_long[growth_long$visit=="12",],
+                                          strata = "zikv_exposed_mom",
+                                          factorVars = child_outcomes_vars_factor)
+child_outcomes_tableone<-print(child_outcomes_tableone,quote = F, 
+                               nonnormal = 'age',
+                               noSpaces = TRUE, 
+                               printToggle = FALSE,
+                               smd=T,
+                               cramVars=child_outcomes_vars)
 write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_12_strata.csv")
+
 
 child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
                                  includeNA=TRUE, 
@@ -309,6 +340,22 @@ child_outcomes_tableone<-print(child_outcomes_tableone,
                       printToggle = FALSE,
                       smd=T,
                       cramVars=child_outcomes_vars)
+
+write.csv(child_outcomes_tableone, file = "table_5child_growth_abnormal_pn_missing.csv")
+
+child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
+                                          includeNA=FALSE, 
+                                          data = growth_long[!is.na(growth_long$zikv_exposed_mom)&growth_long$visit=="pn",],
+                                          factorVars = child_outcomes_vars_factor)
+summary(child_outcomes_tableone$ContTable)
+
+child_outcomes_tableone<-print(child_outcomes_tableone,
+                               nonnormal = 'age',
+                               quote = F, 
+                               noSpaces = TRUE, 
+                               printToggle = FALSE,
+                               smd=T,
+                               cramVars=child_outcomes_vars)
 
 write.csv(child_outcomes_tableone, file = "table_5child_growth_abnormal_pn.csv")
 
@@ -325,7 +372,23 @@ child_outcomes_tableone<-print(child_outcomes_tableone,
                       printToggle = FALSE,
                       smd=T,
                       cramVars=child_outcomes_vars)
+write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_12_missing.csv")
+
+child_outcomes_tableone <- CreateTableOne(vars = child_outcomes_vars, 
+                                          includeNA=FALSE, 
+                                          data = growth_long[!is.na(growth_long$zikv_exposed_mom)&growth_long$visit=="12",],
+                                          factorVars = child_outcomes_vars_factor)
+summary(child_outcomes_tableone$ContTable)
+
+child_outcomes_tableone<-print(child_outcomes_tableone,
+                               nonnormal = 'age',
+                               quote = F, 
+                               noSpaces = TRUE, 
+                               printToggle = FALSE,
+                               smd=T,
+                               cramVars=child_outcomes_vars)
 write.csv(child_outcomes_tableone, file = "table5_child_growth_abnormal_12.csv")
+
 
 ##plot figure 2. z scores over visit by subject.
 #::::::::::::::::::::::::::::::::::::::::::

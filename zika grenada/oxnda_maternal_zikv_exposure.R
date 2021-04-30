@@ -44,7 +44,7 @@ table(ds2_oxnda_all$age.at.visit_months<18,ds2_oxnda_all$zikv_exposed_mom)
 
 #  install.packages("ggpmisc")
 library(ggpmisc)
-tiff("figure9_oxnda_mean_byage_byprec1.tiff",width = 6000,height = 2000,units = "px")
+tiff("figure9_oxnda_mean_byage_byprec1_1_21.tiff",width = 6000,height = 2000,units = "px")
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
   geom_point(size=20) + 
@@ -56,7 +56,7 @@ ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),],
        color = "% Responses\n Completed\n")+
   theme_set(theme_gray(base_size = 100))
 dev.off()
-tiff("figure10_oxnda_mean_byage_byprec1.tiff",width = 6000,height = 2000,units = "px")
+tiff("figure10_oxnda_mean_byage_byprec1_1_21.tiff",width = 6000,height = 2000,units = "px")
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
   geom_point(size=20) + 
@@ -74,7 +74,6 @@ ds2_oxnda_10_18$Mean_overall_language_score_rescaled<-ds2_oxnda_10_18$Mean_overa
 ds2_oxnda_10_18$Mean_Positive_Behaviour_score_rescaled<-ds2_oxnda_10_18$Mean_Positive_Behaviour_score*25
 ds2_oxnda_10_18$Mean_Negative_Behaviour_rescaled<-ds2_oxnda_10_18$Mean_Negative_Behaviour*25
 
-summary(ds2_oxnda_10_18$Mean_OXNDA_score_rescaled)
 summary(ds2_oxnda_10_18$Mean_cognitive_score_rescaled)
 summary(ds2_oxnda_10_18$Mean_overall_language_score_rescaled)
 summary(ds2_oxnda_10_18$Mean_Positive_Behaviour_score_rescaled)
@@ -97,21 +96,20 @@ ggplot(ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], aes(age.at.vi
   theme_set(theme_gray(base_size = 10))
 
 library(reshape2)
-long_oxnda<-melt(ds2_oxnda_10_18, id.vars = c("zikv_exposed_mom","age.at.visit_months"), measure.vars = c("Mean_OXNDA_score_rescaled","Mean_Negative_Behaviour_rescaled","Mean_Positive_Behaviour_score_rescaled","Mean_overall_language_score_rescaled","Mean_overall_motor_score_rescaled","Mean_cognitive_score_rescaled"))
+long_oxnda<-melt(ds2_oxnda_10_18, id.vars = c("zikv_exposed_mom","age.at.visit_months"), measure.vars = c("Mean_Negative_Behaviour_rescaled","Mean_Positive_Behaviour_score_rescaled","Mean_overall_language_score_rescaled","Mean_overall_motor_score_rescaled","Mean_cognitive_score_rescaled"))
 
-levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_OXNDA_score_rescaled"] <- "Total"
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_Negative_Behaviour_rescaled"] <- "Negative Behavior"
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_Positive_Behaviour_score_rescaled"] <- "Positive Behavior"
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_overall_language_score_rescaled"] <- "Language"
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_overall_motor_score_rescaled"] <- "Motor"
 levels(long_oxnda$variable)[levels(long_oxnda$variable) == "Mean_cognitive_score_rescaled"] <- "Cognitive"
 
-tiff("fig3_oxnda_mean_domains_byage_strata.tiff",width = 5000,height = 2000,units = "px")
+tiff("fig3_oxnda_mean_domains_byage_strata_1_21.tiff",width = 5000,height = 2000,units = "px")
 ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_months,0), y = value, color = zikv_exposed_mom)) + 
   geom_smooth(method=glm,size=10) + 
   geom_point(size = 10) + 
   facet_wrap("variable" )+
-  labs(x = "Child age (months) at assessment", y = "Mean Score", color = "Maternal Exposure: ")+
+  labs(x = "Child age (months) at assessment", y = "Standardized OX-NDA domain score", color = "Maternal Exposure: ")+
   theme(
     text = element_text(size = 75,color ='black'),
     legend.position = 'bottom',
@@ -133,11 +131,31 @@ ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_
   scale_y_continuous(breaks = seq(0, 100, by = 20))
 dev.off()  
 
+long_oxnda$zikv_exposed_mom_label = str_wrap(long_oxnda$zikv_exposed_mom, width = 10)
+
+tiff("figure2_oxnda_domains_bygroup_2_22_21.tiff",width = 6000,height = 3000,units = "px")
+ggplot(data=long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], 
+       aes(zikv_exposed_mom_label, value)) +
+  geom_boxplot(size=2) +
+  facet_wrap("variable" )+
+  
+  stat_smooth(method="lm", se=FALSE)+ 
+  stat_compare_means(size=20,bracket.size = 2,comparisons = list(c("Not ZIKV\nInfected","Possibly\nZIKV\nInfected\nDuring\nPregnancy"),
+                                                                 c("Possibly\nZIKV\nInfected\nDuring\nPregnancy","Probably\nZIKV\nInfected\nDuring\nPregnancy"),
+                                                                 c("Probably\nZIKV\nInfected\nDuring\nPregnancy","Not ZIKV\nInfected") )) + 
+  stat_compare_means(size=20,label.y = 140, label.x = 1)+
+  labs(title = "Standardized OX-NDA domain score By Maternal Exposure Category", 
+       x = "", y = "Standardized OX-NDA domain score")+
+  theme_set(theme_gray(base_size = 100))
+dev.off()
+
+
+
 transparent.plot=ggplot(long_oxnda[!is.na(long_oxnda$zikv_exposed_mom),], aes(round(age.at.visit_months,0), y = value, color = zikv_exposed_mom)) + 
     geom_smooth(method=glm,size=10) + 
     geom_point(size = 20) + 
     facet_wrap("variable" )+
-    labs(x = "Child age (months) at assessment", y = "Mean Score", color = "Maternal Exposure: \n")+
+    labs(x = "Child age (months) at assessment", y = "Standardized OX-NDA domain score", color = "Maternal Exposure: \n")+
     theme(
       text = element_text(size = 100,color ='white'),
       legend.position = 'top',
@@ -165,7 +183,7 @@ ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),],
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
   
   
-tiff("oxnda_mean_byage_byprec_all.tiff",width = 4500,height = 2000,units = "px")
+tiff("oxnda_mean_byage_byprec_all_1_21.tiff",width = 4500,height = 2000,units = "px")
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(x=age.at.visit_months, y=Mean_OXNDA_score_rescaled,color=perc_responses_completed)) + 
   geom_point(size=20) + 
@@ -198,7 +216,7 @@ ggplot(data=ds2_oxnda_10_18, aes(x=parish.mom, y=Mean_OXNDA_score_rescaled)) + g
 ggplot(data=ds2_oxnda_10_18, aes(x=latrine_type.mom, y=Mean_OXNDA_score_rescaled)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by latrine type as proxy of wealth \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggplot(data=ds2_oxnda_10_18, aes(x=occupation.mom, y=Mean_OXNDA_score_rescaled)) + geom_boxplot() + stat_smooth(method="lm", se=FALSE)+ ggtitle("Plot of mean oxnda score \n by maternal occupation \n (10-18 months)")+ stat_compare_means() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-tiff("figure2_oxnda_mean_bygroup.tiff",width = 6000,height = 3000,units = "px")
+tiff("figure2_oxnda_mean_bygroup_1_21.tiff",width = 6000,height = 3000,units = "px")
 ggplot(data=ds2_oxnda_10_18[!is.na(ds2_oxnda_10_18$zikv_exposed_mom),], 
        aes(zikv_exposed_mom, Mean_OXNDA_score_rescaled)) +
   geom_boxplot(size=3) +
@@ -299,7 +317,7 @@ ds2_oxnda_10_18$age_group2<-as.factor(ds2_oxnda_10_18$age_group2)
 for (cat in levels(ds2_oxnda_10_18$age_group2)){
   d <- subset(ds2_oxnda_10_18, age_group2 != cat)
   #plot(d$age_group2, d$Mean_OXNDA_score_2)
-  tiff(paste('oxnda_age_sensitivity_analysis_exclude',cat,'.tif',sep = ''),width = 2000,height = 2000,units = "px")
+  tiff(paste('oxnda_age_sensitivity_analysis_exclude_1_21',cat,'.tif',sep = ''),width = 2000,height = 2000,units = "px")
   print(ggplot(d,aes(d$age_group2,d$Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
   dev.off()
   child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = d, strata = "zikv_exposed_mom")
@@ -307,14 +325,14 @@ for (cat in levels(ds2_oxnda_10_18$age_group2)){
   write.csv(child_outcomes, file = paste('oxnda_age_sensitivity_analysis_exclude',cat,'.csv',sep = ''))
 }
 
-  tiff('oxnda_age_sensitivity_analysis_10-18.tif',width = 4000,height = 2000,units = "px")
+  tiff('oxnda_age_sensitivity_analysis_10-18_1_21.tif',width = 4000,height = 2000,units = "px")
   print(ggplot(ds2_oxnda_10_18,aes(factor(round(age.at.visit_months,0)),Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
   dev.off()
   child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_18, strata = "zikv_exposed_mom")
   child_outcomes<-print(child_outcomes,quote = F, noSpaces = TRUE, includeNA=TRUE, printToggle = FALSE,smd=T)
   write.csv(child_outcomes, file = 'oxnda_age_sensitivity_analysis_10-18.csv')
 
-  tiff('oxnda_age_sensitivity_analysis_10-14.tif',width = 4000,height = 2000,units = "px")
+  tiff('oxnda_age_sensitivity_analysis_10-14_1_21.tif',width = 4000,height = 2000,units = "px")
   print(ggplot(ds2_oxnda_10_14,aes(factor(round(age.at.visit_months,0)),Mean_OXNDA_score_rescaled))+geom_boxplot()+facet_wrap("zikv_exposed_mom")+theme_set(theme_gray(base_size = 100)))
   dev.off()
   child_outcomes <- CreateTableOne(vars = child_outcomes_vars, data = ds2_oxnda_10_14, strata = "zikv_exposed_mom")
@@ -340,6 +358,6 @@ mydata[,cat] <- lapply(mydata[,cat],as.numeric)
 cor(mydata,use="pairwise.complete.obs",method = "pearson")
 chart.Correlation(mydata, histogram=TRUE, pch=19,method ="pearson")
 
-tiff("correlations.png",width = 2000,height = 2000,units = "px")
+tiff("correlations_1_21.png",width = 2000,height = 2000,units = "px")
 chart.Correlation(mydata, histogram=TRUE, pch=19,method ="pearson")
 dev.off()
